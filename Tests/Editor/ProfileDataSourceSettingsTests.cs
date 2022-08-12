@@ -16,6 +16,7 @@ namespace UnityEditor.AddressableAssets.Tests
         protected string ConfigFolder => TestFolder + "/Config";
 
         protected ProfileDataSourceSettings m_Settings;
+
         protected ProfileDataSourceSettings Settings
         {
             get
@@ -45,6 +46,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 Debug.Log($"{GetType()} - (cleanup) deleting {TestFolder}");
                 AssetDatabase.DeleteAsset(TestFolder);
             }
+
             EditorBuildSettings.RemoveConfigObject(k_TestConfigName);
         }
 

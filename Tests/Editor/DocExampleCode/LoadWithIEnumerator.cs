@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_LoadWithIEnumerator
+
     using System.Collections;
     using UnityEngine;
     using UnityEngine.AddressableAssets;
@@ -11,7 +12,8 @@ namespace AddressableAssets.DocExampleCode
         public string address;
         AsyncOperationHandle<GameObject> opHandle;
 
-        public IEnumerator Start() {
+        public IEnumerator Start()
+        {
             opHandle = Addressables.LoadAssetAsync<GameObject>(address);
 
             // yielding when already done still waits until the next frame
@@ -19,16 +21,21 @@ namespace AddressableAssets.DocExampleCode
             if (!opHandle.IsDone)
                 yield return opHandle;
 
-            if (opHandle.Status == AsyncOperationStatus.Succeeded) {
+            if (opHandle.Status == AsyncOperationStatus.Succeeded)
+            {
                 Instantiate(opHandle.Result, transform);
-            } else {
+            }
+            else
+            {
                 Addressables.Release(opHandle);
             }
         }
 
-        void OnDestroy() {
+        void OnDestroy()
+        {
             Addressables.Release(opHandle);
         }
     }
+
     #endregion
 }

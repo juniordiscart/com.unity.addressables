@@ -8,6 +8,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI.Graph
     {
         int m_MaxValueStream;
         internal IGraphLayer[] layers;
+
         internal GraphDefinition(int maxValueStream, IGraphLayer[] l)
         {
             layers = l;

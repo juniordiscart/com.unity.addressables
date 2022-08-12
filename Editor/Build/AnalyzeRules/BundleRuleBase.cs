@@ -24,18 +24,29 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 	{
 		[NonSerialized]
 		internal Dictionary<string, List<GUID>> m_ResourcesToDependencies = new Dictionary<string, List<GUID>>();
+
 		[NonSerialized]
 		internal readonly List<ContentCatalogDataEntry> m_Locations = new List<ContentCatalogDataEntry>();
+
 		[NonSerialized]
 		internal readonly List<AssetBundleBuild> m_AllBundleInputDefs = new List<AssetBundleBuild>();
+
 		[NonSerialized]
 		internal readonly Dictionary<string, string> m_BundleToAssetGroup = new Dictionary<string, string>();
+
 		[NonSerialized]
 		internal List<AddressableAssetEntry> m_AssetEntries = new List<AddressableAssetEntry>();
+
 		[NonSerialized]
 		internal ExtractDataTask m_ExtractData = null;
 
+		/// <summary>
+		/// The BuildTask used to extract write data from the build.
+		/// </summary>
 		protected ExtractDataTask ExtractData => m_ExtractData;
+		/// <summary>
+		/// A mapping of resources to a list of guids that correspond to their dependencies
+		/// </summary>
 		protected Dictionary<string, List<GUID>> ResourcesToDependencies => m_ResourcesToDependencies;
 		protected internal List<AssetBundleBuild> AllBundleInputDefs => m_AllBundleInputDefs;
 
@@ -143,6 +154,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 				Debug.LogError("Build not run, RefreshBuild needed before GetAllBundleDependencies");
 				return new List<GUID>();
 			}
+
 			var explicitGuids = m_ExtractData.WriteData.AssetToFiles.Keys;
 			var implicitGuids = GetImplicitGuidToFilesMap().Keys;
 			var allBundleGuids = explicitGuids.Union(implicitGuids);
@@ -182,6 +194,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 					EditorUtility.ClearProgressBar();
 					return;
 				}
+
 				string[] dependencies;
 				if (path.EndsWith(".unity"))
 				{
@@ -223,6 +236,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 					m_ResourcesToDependencies[path].Add(new GUID(AssetDatabase.AssetPathToGUID(dependency)));
 				}
 			}
+
 			EditorUtility.ClearProgressBar();
 		}
 
@@ -237,6 +251,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 				Debug.LogError("Build not run, RefreshBuild needed before ConvertBundleNamesToGroupNames");
 				return;
 			}
+
 			Dictionary<string, string> bundleNamesToUpdate = new Dictionary<string, string>();
 
 			foreach (var assetGroup in buildContext.Settings.groups)
@@ -318,6 +333,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 					m_AllBundleInputDefs.AddRange(bundleInputDefinitions);
 				}
 			}
+
 			if (progressDisplayed)
 				EditorUtility.ClearProgressBar();
 		}
@@ -438,15 +454,12 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
 			results = (from resource in m_ResourcesToDependencies.Keys
 					   from dependency in m_ResourcesToDependencies[resource]
-
 					   let assetPath = AssetDatabase.GUIDToAssetPath(dependency.ToString())
 					   let files = m_ExtractData.WriteData.FileToObjects.Keys
-
 					   from file in files
 					   where m_ExtractData.WriteData.FileToObjects[file].Any(oid => oid.guid == dependency)
 					   where m_ExtractData.WriteData.FileToBundle.ContainsKey(file)
 					   let bundle = m_ExtractData.WriteData.FileToBundle[file]
-
 					   select new AnalyzeResult
 					   {
 						   resultName =
@@ -462,6 +475,12 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 			return results;
 		}
 
+		/// <summary>
+		/// Calculates and gathers dependencies for built in data.
+		/// </summary>
+		/// <param name="settings">The AddressableAssetSettings to pull data from.</param>
+		/// <param name="builtInResourcesPaths">The paths that lead to all the built in Resource locations</param>
+		/// <returns>A ReturnCode indicating various levels of success or failure.</returns>
 		protected ReturnCode BuildAndGetResourceDependencies(AddressableAssetSettings settings, string[] builtInResourcesPaths)
 		{
 			BuiltInResourcesToDependenciesMap(builtInResourcesPaths);
@@ -580,6 +599,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 						}
 					}
 				}
+
 				return m_ResultData;
 			}
 		}
@@ -613,6 +633,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 					results.Add(new AnalyzeResult { resultName = ruleName + " - No issues found." });
 					return results;
 				}
+
 				if (buildSuccess != ReturnCode.Success)
 				{
 					results.Add(new AnalyzeResult { resultName = ruleName + "Analyze build failed. " + buildSuccess });

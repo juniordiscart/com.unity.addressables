@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_Load
+
     using UnityEngine;
     using UnityEngine.AddressableAssets;
     using UnityEngine.ResourceManagement.AsyncOperations;
@@ -12,13 +13,16 @@ namespace AddressableAssets.DocExampleCode
         public string key; // address string
         private AsyncOperationHandle<SceneInstance> loadHandle;
 
-        void Start() {
+        void Start()
+        {
             loadHandle = Addressables.LoadSceneAsync(key, LoadSceneMode.Additive);
         }
 
-        void OnDestroy() {
+        void OnDestroy()
+        {
             Addressables.UnloadSceneAsync(loadHandle);
         }
     }
+
     #endregion
 }

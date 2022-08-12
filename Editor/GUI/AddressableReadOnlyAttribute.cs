@@ -4,7 +4,9 @@ using UnityEngine;
 namespace UnityEditor.AddressableAssets.GUI
 {
     [AttributeUsage(AttributeTargets.Field)]
-    internal class AddressableReadOnly : PropertyAttribute { }
+    internal class AddressableReadOnly : PropertyAttribute
+    {
+    }
 
     [CustomPropertyDrawer(typeof(AddressableReadOnly))]
     internal class AddressableReadOnlyDrawer : PropertyDrawer

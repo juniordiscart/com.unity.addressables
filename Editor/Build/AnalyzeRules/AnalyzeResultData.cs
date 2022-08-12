@@ -36,8 +36,11 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         [Serializable]
         private class RuleToResults
         {
-            [SerializeField] public string RuleName;
-            [SerializeField] public List<AnalyzeRule.AnalyzeResult> Results;
+            [SerializeField]
+            public string RuleName;
+
+            [SerializeField]
+            public List<AnalyzeRule.AnalyzeResult> Results;
 
             public RuleToResults(string ruleName, List<AnalyzeRule.AnalyzeResult> results)
             {
@@ -46,7 +49,8 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             }
         }
 
-        [SerializeField] private List<RuleToResults> m_RuleToResults = new List<RuleToResults>();
+        [SerializeField]
+        private List<RuleToResults> m_RuleToResults = new List<RuleToResults>();
 
         internal Dictionary<string, List<AnalyzeRule.AnalyzeResult>> Data =
             new Dictionary<string, List<AnalyzeRule.AnalyzeResult>>();

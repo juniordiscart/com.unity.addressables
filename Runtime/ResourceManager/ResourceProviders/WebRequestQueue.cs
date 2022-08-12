@@ -11,10 +11,12 @@ namespace UnityEngine.ResourceManagement
     public class WebRequestQueueOperation
     {
         private bool m_Completed = false;
+
         /// <summary>
         /// Stores the async operation object returned from sending the web request.
         /// </summary>
         public UnityWebRequestAsyncOperation Result;
+
         /// <summary>
         /// Event that is invoked when the async operation is complete.
         /// </summary>
@@ -29,6 +31,7 @@ namespace UnityEngine.ResourceManagement
         }
 
         internal UnityWebRequest m_WebRequest;
+
         /// <summary>
         /// The web request.
         /// </summary>
@@ -108,6 +111,7 @@ namespace UnityEngine.ResourceManagement
                     if (UnityWebRequestUtilities.IsAssetBundleDownloaded(webRequestAsyncOp))
                         completedRequests.Add(webRequestAsyncOp);
                 }
+
                 foreach (UnityWebRequestAsyncOperation webRequestAsyncOp in completedRequests)
                 {
                     bool requestIsActive = s_QueuedOperations.Peek() == request;
@@ -116,6 +120,7 @@ namespace UnityEngine.ResourceManagement
                     if (requestIsActive)
                         return;
                 }
+
                 System.Threading.Thread.Sleep(millisecondsTimeout);
             }
         }
@@ -138,12 +143,19 @@ namespace UnityEngine.ResourceManagement
             try
             {
                 webRequestAsyncOp = request.SendWebRequest();
-                s_ActiveRequests.Add(webRequestAsyncOp);
+                if (webRequestAsyncOp != null)
+                {
+                    s_ActiveRequests.Add(webRequestAsyncOp);
 
-                if (webRequestAsyncOp.isDone)
-                    OnWebAsyncOpComplete(webRequestAsyncOp);
+                    if (webRequestAsyncOp.isDone)
+                        OnWebAsyncOpComplete(webRequestAsyncOp);
+                    else
+                        webRequestAsyncOp.completed += OnWebAsyncOpComplete;
+                }
                 else
-                    webRequestAsyncOp.completed += OnWebAsyncOpComplete;
+                {
+                    OnWebAsyncOpComplete(null);
+                }
             }
             catch (Exception e)
             {

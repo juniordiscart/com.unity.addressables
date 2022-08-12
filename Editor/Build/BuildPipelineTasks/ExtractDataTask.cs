@@ -13,27 +13,42 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// <summary>
         /// The ExtractDataTask version.
         /// </summary>
-        public int Version { get { return 1; } }
+        public int Version
+        {
+            get { return 1; }
+        }
 
         /// <summary>
         /// Get the injected dependency data of the task.
         /// </summary>
-        public IDependencyData DependencyData { get { return m_DependencyData; } }
+        public IDependencyData DependencyData
+        {
+            get { return m_DependencyData; }
+        }
 
         /// <summary>
         /// Get the injected write data of the task.
         /// </summary>
-        public IBundleWriteData WriteData { get { return m_WriteData; } }
+        public IBundleWriteData WriteData
+        {
+            get { return m_WriteData; }
+        }
 
         /// <summary>
         /// Get the injected build cache of the task.
         /// </summary>
-        public IBuildCache BuildCache { get { return m_BuildCache; } }
+        public IBuildCache BuildCache
+        {
+            get { return m_BuildCache; }
+        }
 
         /// <summary>
         /// The build context of the task.
         /// </summary>
-        public IBuildContext BuildContext { get { return m_BuildContext; } }
+        public IBuildContext BuildContext
+        {
+            get { return m_BuildContext; }
+        }
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]

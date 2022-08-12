@@ -21,6 +21,7 @@ namespace UnityEngine.ResourceManagement.Tests
     public class VirtualAssetBundleProviderTests
     {
         Action<AsyncOperationHandle, Exception> m_PrevHandler;
+
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
@@ -85,6 +86,7 @@ namespace UnityEngine.ResourceManagement.Tests
                     Assert.IsFalse(op.IsDone);
                     Assert.Less(op.PercentComplete, 1.0f);
                 }
+
                 provider.Update(kTimeSlize);
             }
 

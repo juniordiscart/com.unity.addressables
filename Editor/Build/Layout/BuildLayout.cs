@@ -44,10 +44,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The Name of the AdressableAssetGroup
             /// </summary>
             public string Name;
+
             /// <summary>
             /// The Guid of the AddressableAssetGroup
             /// </summary>
             public string Guid;
+
             /// <summary>
             /// The packing mode as defined by the BundledAssetGroupSchema on the AddressableAssetGroup
             /// </summary>
@@ -58,6 +60,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// </summary>
             [SerializeReference]
             public List<Bundle> Bundles = new List<Bundle>();
+
             /// <summary>
             /// Data about the AddressableAssetGroupSchemas associated with the Group
             /// </summary>
@@ -75,6 +78,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The Guid of the AddressableAssetGroupSchema
             /// </summary>
             public string Guid;
+
             /// <summary>
             /// The class type of the AddressableAssetGroupSchema
             /// </summary>
@@ -97,10 +101,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The name of the AssetBundle
             /// </summary>
             public string Name;
+
             /// <summary>
             /// The file size of the AssetBundle on disk, in bytes
             /// </summary>
             public ulong FileSize;
+
             /// <summary>
             /// The Compression method used for the AssetBundle.
             /// </summary>
@@ -141,10 +147,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The name of the sub-file
             /// </summary>
             public string Name;
+
             /// <summary>
             /// If the main File is a serialized file, this will be true.
             /// </summary>
             public bool IsSerializedFile;
+
             /// <summary>
             /// The size of the sub-file, in bytes
             /// </summary>
@@ -190,18 +198,22 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The final filename of the AssetBundle file
             /// </summary>
             public string WriteResultFilename;
+
             /// <summary>
             /// Data about the AssetBundleObject
             /// </summary>
             public AssetBundleObjectInfo BundleObjectInfo;
+
             /// <summary>
             /// The size of the data that needs to be preloaded for this File.
             /// </summary>
             public int PreloadInfoSize;
+
             /// <summary>
             /// The number of Mono scripts referenced by the File
             /// </summary>
             public int MonoScriptCount;
+
             /// <summary>
             /// The size of the Mono scripts referenced by the File
             /// </summary>
@@ -218,37 +230,45 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The Asset Guid.
             /// </summary>
             public string Guid;
+
             /// <summary>
             /// The Asset path on disk
             /// </summary>
             public string AssetPath;
+
             /// <summary>
             /// The Addressable address defined in the Addressable Group window for an Asset.
             /// </summary>
             public string AddressableName;
+
             /// <summary>
             /// The size of the file on disk.
             /// </summary>
             public ulong SerializedSize;
+
             /// <summary>
             /// The size of the streamed Asset.
             /// </summary>
             public ulong StreamedSize;
+
             /// <summary>
             /// The file that the Asset was added to
             /// </summary>
             [SerializeReference]
             public File File;
+
             /// <summary>
             /// List of data from other Assets referenced by an Asset in the File
             /// </summary>
             [SerializeReference]
             public List<DataFromOtherAsset> InternalReferencedOtherAssets = new List<DataFromOtherAsset>();
+
             /// <summary>
             /// List of explicit Assets in the File
             /// </summary>
             [SerializeReference]
             public List<ExplicitAsset> InternalReferencedExplicitAssets = new List<ExplicitAsset>();
+
             /// <summary>
             /// List of Assets referenced by the File, but not included in the File.
             /// </summary>
@@ -266,6 +286,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The Guid of the Asset
             /// </summary>
             public string AssetGuid;
+
             /// <summary>
             /// The Asset path on disk
             /// </summary>
@@ -281,10 +302,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The number of Objects in the data
             /// </summary>
             public int ObjectCount;
+
             /// <summary>
             /// The size of the data on disk
             /// </summary>
             public ulong SerializedSize;
+
             /// <summary>
             /// The size of the streamed data
             /// </summary>
@@ -313,14 +336,17 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// The AssetBundle name to the Bundle data map.
         /// </summary>
         public Dictionary<string, BuildLayout.Bundle> Bundles = new Dictionary<string, BuildLayout.Bundle>();
+
         /// <summary>
         /// File name to File data map.
         /// </summary>
         public Dictionary<string, BuildLayout.File> Files = new Dictionary<string, BuildLayout.File>();
+
         /// <summary>
         /// Guid to ExplicitAsset data map.
         /// </summary>
         public Dictionary<string, BuildLayout.ExplicitAsset> GuidToExplicitAsset = new Dictionary<string, BuildLayout.ExplicitAsset>();
+
         /// <summary>
         /// Group name to Group data map.
         /// </summary>

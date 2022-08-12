@@ -11,7 +11,7 @@ namespace UnityEngine.AddressableAssets
     {
         AddressablesImpl m_Addressables;
         List<ResourceLocatorInfo> m_LocatorInfos;
-        AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
+        internal AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
         AsyncOperationHandle<bool> m_CleanCacheOp;
         bool m_AutoCleanBundleCache = false;
 
@@ -32,6 +32,7 @@ namespace UnityEngine.AddressableAssets
                 locations.Add(loc.CatalogLocation);
                 m_LocatorInfos.Add(loc);
             }
+
             if (locations.Count == 0)
                 return m_Addressables.ResourceManager.CreateCompletedOperation(default(List<IResourceLocator>), "Content update not available.");
 
@@ -96,7 +97,18 @@ namespace UnityEngine.AddressableAssets
             }
 
             if (!m_AutoCleanBundleCache)
-                Complete(catalogs, true, null);
+            {
+                if (m_DepOp.Status == AsyncOperationStatus.Succeeded)
+                    Complete(catalogs, true, null);
+                else if (m_DepOp.Status == AsyncOperationStatus.Failed)
+                    Complete(catalogs, false, $"Cannot update catalogs. Failed to load catalog: {m_DepOp.OperationException.Message}");
+                else
+                {
+                    var errorMessage = "Cannot update catalogs. Catalog loading operation is still in progress when it should already be completed. ";
+                    errorMessage += (m_DepOp.OperationException != null) ? m_DepOp.OperationException.Message : "";
+                    Complete(catalogs, false, errorMessage);
+                }
+            }
             else
             {
                 m_CleanCacheOp = m_Addressables.CleanBundleCache(m_DepOp, false);

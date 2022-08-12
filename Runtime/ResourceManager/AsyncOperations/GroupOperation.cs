@@ -31,7 +31,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         ///<inheritdoc />
-        protected  override bool InvokeWaitForCompletion()
+        protected override bool InvokeWaitForCompletion()
         {
             //If Result is null then we've auto released and need to return
             if (IsDone || Result == null)
@@ -74,7 +74,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
         internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
         {
-            var status = new DownloadStatus() { IsDone = IsDone };
+            var status = new DownloadStatus() {IsDone = IsDone};
             for (int i = 0; i < Result.Count; i++)
             {
                 if (Result[i].IsValid())
@@ -84,6 +84,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                     status.TotalBytes += depStatus.TotalBytes;
                 }
             }
+
             return status;
         }
 
@@ -156,6 +157,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 else
                     Result[i].Completed += m_InternalOnComplete;
             }
+
             CompleteIfDependenciesComplete();
         }
 
@@ -177,6 +179,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                         }
                     }
                 }
+
                 Complete(Result, success, ex, m_Settings.HasFlag(GroupOperationSettings.ReleaseDependenciesOnFailure));
             }
         }

@@ -57,7 +57,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
-            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> { "hash", string.Empty }, true);
+            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", string.Empty}, true);
 
             Assert.AreEqual(k_LocationId, loadedId);
         }
@@ -77,7 +77,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            var loadedId = contentCatalogOp.DetermineIdToLoad(m_SimpleLocation, new List<object> { 1 });
+            var loadedId = contentCatalogOp.DetermineIdToLoad(m_SimpleLocation, new List<object> {1});
 
             Assert.AreEqual(k_LocationId, loadedId);
         }
@@ -87,7 +87,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            var loadedId = contentCatalogOp.DetermineIdToLoad(m_SimpleLocation, new List<object> { 1, 2, 3 });
+            var loadedId = contentCatalogOp.DetermineIdToLoad(m_SimpleLocation, new List<object> {1, 2, 3});
 
             Assert.AreEqual(k_LocationId, loadedId);
         }
@@ -97,7 +97,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            var loadedId = contentCatalogOp.DetermineIdToLoad(m_SimpleLocation, new List<object> { string.Empty, string.Empty });
+            var loadedId = contentCatalogOp.DetermineIdToLoad(m_SimpleLocation, new List<object> {string.Empty, string.Empty});
 
             Assert.AreEqual(k_LocationId, loadedId);
         }
@@ -113,7 +113,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
-            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> { string.Empty, "hash" });
+            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {string.Empty, "hash"});
 
             Assert.AreEqual(k_CacheLocationId, loadedId);
         }
@@ -129,7 +129,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
-            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> { "hash", "hash" });
+            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", "hash"});
 
             Assert.AreEqual(k_CacheLocationId, loadedId);
         }
@@ -145,7 +145,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
-            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> { "hash", "" }, true);
+            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", ""}, true);
 
             Assert.AreEqual(k_LocationId, loadedId);
         }
@@ -161,7 +161,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
-            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> { "hash", "local" }, true);
+            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", "local"}, true);
             Assert.AreEqual(k_CacheLocationId, loadedId);
         }
 
@@ -177,7 +177,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
             Assert.IsTrue(string.IsNullOrEmpty(contentCatalogOp.m_LocalHashValue));
-            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> { "hash", "" }, true);
+            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", ""}, true);
             Assert.IsFalse(string.IsNullOrEmpty(contentCatalogOp.m_LocalHashValue));
         }
 
@@ -194,10 +194,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
 
 
-            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> { "newHash", "hash" });
+            var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"newHash", "hash"});
             Assert.AreEqual(k_RemoteLocationId, loadedId);
 
-            loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> { "newHash", string.Empty });
+            loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"newHash", string.Empty});
             Assert.AreEqual(k_RemoteLocationId, loadedId);
         }
 
@@ -217,13 +217,13 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             var bundleFilePath = Path.Combine(k_TempBuildFolder, "catalog.bundle");
             Directory.CreateDirectory(Path.GetDirectoryName(bundleFilePath));
 
-            var bytes = new byte[] { 1, 2, 3, 4, 5, 6 };
+            var bytes = new byte[] {1, 2, 3, 4, 5, 6};
             File.WriteAllBytes(bundleFilePath, bytes);
 
             LogAssert.Expect(LogType.Error, new Regex("Failed to read data for the AssetBundle", RegexOptions.IgnoreCase));
 
             LogAssert.Expect(LogType.Error, new Regex("Unable to load dependent " +
-                $"bundle from location :", RegexOptions.IgnoreCase));
+                                                      $"bundle from location :", RegexOptions.IgnoreCase));
 
             var bundledCatalog = new ContentCatalogProvider.InternalOp.BundledCatalog(bundleFilePath);
             bundledCatalog.LoadCatalogFromBundleAsync();

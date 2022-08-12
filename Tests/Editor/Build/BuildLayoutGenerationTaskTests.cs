@@ -57,6 +57,7 @@ public class BuildLayoutGenerationTaskTests
             if (File.Exists(layoutFile))
                 File.Delete(layoutFile);
         }
+
         m_PrevGenerateBuildLayout = ProjectConfigData.GenerateBuildLayout;
         m_PrevFileFormat = ProjectConfigData.BuildLayoutReportFileFormat;
         BuildScriptPackedMode.s_SkipCompilePlayerScripts = true;
@@ -110,7 +111,7 @@ public class BuildLayoutGenerationTaskTests
     static string CreateSpriteAtlas(string name, string guidTargetTexture)
     {
         var sa = new SpriteAtlas();
-        var targetObjects = new UnityEngine.Object[] { AssetDatabase.LoadAssetAtPath<Texture>(AssetDatabase.GUIDToAssetPath(guidTargetTexture)) };
+        var targetObjects = new UnityEngine.Object[] {AssetDatabase.LoadAssetAtPath<Texture>(AssetDatabase.GUIDToAssetPath(guidTargetTexture))};
         sa.Add(targetObjects);
         string saPath = $"{TempPath}/{name}.spriteAtlas";
         AssetDatabase.CreateAsset(sa, saPath);
@@ -200,6 +201,7 @@ public class BuildLayoutGenerationTaskTests
     {
         public string DataDirectory;
         public string[] Files;
+
         public WebExtractSession(string filePath)
         {
             DataDirectory = filePath + "_data";
@@ -419,6 +421,7 @@ public class BuildLayoutGenerationTaskTests
     class SpritePackerScope : IDisposable
     {
         SpritePackerMode m_PrevMode;
+
         public SpritePackerScope(SpritePackerMode mode)
         {
             m_PrevMode = EditorSettings.spritePackerMode;

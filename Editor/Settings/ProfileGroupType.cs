@@ -36,6 +36,7 @@ namespace UnityEditor.AddressableAssets.Settings
             ///
             [SerializeField]
             internal string m_Suffix;
+
             internal string Suffix
             {
                 get { return m_Suffix; }
@@ -47,6 +48,7 @@ namespace UnityEditor.AddressableAssets.Settings
             /// </summary>
             [SerializeField]
             internal string m_Value;
+
             internal string Value
             {
                 get { return m_Value; }
@@ -75,6 +77,7 @@ namespace UnityEditor.AddressableAssets.Settings
         ///
         [SerializeField]
         internal List<GroupTypeVariable> m_Variables;
+
         internal List<GroupTypeVariable> Variables
         {
             get { return m_Variables; }
@@ -83,7 +86,9 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// ctors for profile group type
         /// </summary>
-        internal ProfileGroupType() { }
+        internal ProfileGroupType()
+        {
+        }
 
         internal ProfileGroupType(string prefix)
         {
@@ -114,11 +119,12 @@ namespace UnityEditor.AddressableAssets.Settings
                 Addressables.LogErrorFormat("{0} already exists.", GetName(variable));
                 return false;
             }
+
             m_Variables.Add(variable);
             return true;
         }
 
-        
+
         // Adds a variable to the group, or updates the value if already exists
         internal void AddOrUpdateVariable(GroupTypeVariable variable)
         {
@@ -190,6 +196,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     {
                         group = new ProfileGroupType(prefix);
                     }
+
                     GroupTypeVariable variable = new GroupTypeVariable(suffix, profileEntryValue);
                     group.AddVariable(variable);
                     groups[prefix] = group;
@@ -210,5 +217,4 @@ namespace UnityEditor.AddressableAssets.Settings
             return m_GroupTypePrefix != null && GetVariableBySuffix("BuildPath") != null && GetVariableBySuffix("LoadPath") != null;
         }
     }
-
 }

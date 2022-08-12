@@ -25,7 +25,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     /// Available in Unity 2021.2 or later.
     /// </remarks>
     public static Func<AddressableAssetSettings, AddressablesPlayerBuildResult> BuildAddressablesOverride { get; set; }
-    
+
     /// <summary>
     /// Returns the player build processor callback order.
     /// </summary>
@@ -33,13 +33,13 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     {
         get { return 1; }
     }
-    
+
     [InitializeOnLoadMethod]
     private static void CleanTemporaryPlayerBuildData()
     {
         RemovePlayerBuildLinkXML(AddressableAssetSettingsDefaultObject.Settings);
     }
-    
+
     internal static void RemovePlayerBuildLinkXML(AddressableAssetSettings settings)
     {
         string linkProjectPath = GetLinkPath(settings, false);
@@ -48,7 +48,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
             AssetDatabase.DeleteAsset(linkProjectPath);
         else if (File.Exists(linkProjectPath))
             File.Delete(linkProjectPath);
-        
+
         DirectoryUtility.DeleteDirectory(Path.GetDirectoryName(linkProjectPath));
     }
 
@@ -65,10 +65,11 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
             Directory.CreateDirectory(folderPath);
             AssetDatabase.ImportAsset(folderPath);
         }
-        
-        return Path.Combine(folderPath, "link.xml");;
+
+        return Path.Combine(folderPath, "link.xml");
+        ;
     }
-    
+
     /// <summary>
     /// Invoked before performing a Player build. Maintains building Addressables step and processing Addressables build data.
     /// </summary>
@@ -90,7 +91,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
                 {
                     result = BuildAddressablesOverride.Invoke(settings);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     result = new AddressablesPlayerBuildResult();
                     result.Error = "Exception in BuildAddressablesOverride: " + e;
@@ -98,11 +99,11 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
             }
             else
                 AddressableAssetSettings.BuildPlayerContent(out result);
-            
+
             if (result != null && !string.IsNullOrEmpty(result.Error))
                 Debug.LogError($"Failed to build Addressables content, content not included in Player Build. \"{result.Error}\"");
         }
-        
+
         if (buildPlayerContext != null)
         {
             var streamingAssetValues = GetStreamingAssetPaths();
@@ -112,7 +113,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
                     streamingAssetValue.Value);
             }
         }
-        
+
         string buildPath = Addressables.BuildPath + "/AddressablesLink/link.xml";
         if (File.Exists(buildPath))
         {
@@ -126,7 +127,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     {
         if (settings == null)
             return false;
-        
+
         switch (settings.BuildAddressablesWithPlayerBuild)
         {
             case AddressableAssetSettings.PlayerBuildOption.DoNotBuildWithPlayer:
@@ -138,10 +139,10 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
                     return false;
                 break;
         }
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Gets a list of StreamingAsset files managed through Addressables, and relative path in StreamingAssets.
     /// </summary>
@@ -213,4 +214,3 @@ public class AddressablesPlayerBuildProcessor : IPreprocessBuildWithReport, IPos
     }
 }
 #endif
-

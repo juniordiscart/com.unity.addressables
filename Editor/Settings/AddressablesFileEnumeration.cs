@@ -93,8 +93,10 @@ namespace UnityEditor.AddressableAssets.Settings
                     it.AddChild(p, it2);
                     it.IsFolder = true;
                 }
+
                 it = it2;
             }
+
             return it;
         }
     }
@@ -117,6 +119,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     AddressableAssetTree.TreeNode node = tree.FindNode(path, true);
                     node.IsAddressable = true;
                 }
+
                 return tree;
             }
         }
@@ -137,6 +140,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     paths.Add(convertedPath);
                 }
             }
+
             return hasAddrFolder;
         }
 
@@ -165,6 +169,7 @@ namespace UnityEditor.AddressableAssets.Settings
         internal class AddressablesFileEnumerationScope : IDisposable
         {
             AddressableAssetTree m_PrevTree;
+
             internal AddressablesFileEnumerationScope(AddressableAssetTree tree)
             {
                 m_PrevTree = m_PrecomputedTree;
@@ -236,6 +241,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     files.Add(file);
                 }
             }
+
             return files;
         }
     }

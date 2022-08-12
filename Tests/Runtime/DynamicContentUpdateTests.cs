@@ -28,11 +28,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             public IEnumerable<object> Keys => m_Locations.Keys;
 
             public string LocatorId { get; set; }
+
             public TestLocator(string id, params ResourceLocationBase[] locs)
             {
                 LocatorId = id;
                 foreach (var l in locs)
-                    m_Locations.Add(l.PrimaryKey, new List<IResourceLocation>(new IResourceLocation[] { l }));
+                    m_Locations.Add(l.PrimaryKey, new List<IResourceLocation>(new IResourceLocation[] {l}));
             }
 
             public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
@@ -44,6 +45,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         class TestHashProvider : ResourceProviderBase
         {
             string m_Hash;
+
             public TestHashProvider(string id, string hash)
             {
                 m_ProviderId = id;
@@ -59,6 +61,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         class TestCatalogProvider : ResourceProviderBase
         {
             string m_LocatorId;
+
             public TestCatalogProvider(string locatorId)
             {
                 m_LocatorId = locatorId;
@@ -199,6 +202,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator UpdateContent_UpdatesCatalogs_WhenAutoCleanCacheEnabled_RemovesNonReferencedBundlesFromCache()
         {
 #if ENABLE_CACHING
@@ -270,7 +274,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, localHashLoc);
 
             //causes a compile err.  Needs re-evaluation on ps4
-            //m_Addressables.RuntimePath = m_RuntimeSettingsPath; 
+            //m_Addressables.RuntimePath = m_RuntimeSettingsPath;
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId, "different"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
@@ -290,6 +294,28 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Assert.Ignore("Caching is enabled, but test expects to run on caching-disabled platforms or platform was skipped.");
             yield return null;
 #endif
+        }
+
+        [Test]
+        [TestCase(AsyncOperationStatus.Failed, "Failed to load catalog:")]
+        [TestCase(AsyncOperationStatus.None, "Catalog loading operation is still in progress when it should already be completed.")]
+        public void UpdateContent_UpdatesCatalogs_ThrowsCorrectError_DuringNonSuccessState(AsyncOperationStatus opState, string expectedMessage)
+        {
+            var updateOp = new UpdateCatalogsOperation(m_Addressables);
+            var failedDepOp = new AsyncOperationHandle<IList<AsyncOperationHandle>>();
+
+            failedDepOp.m_InternalOp = new ProviderOperation<IList<AsyncOperationHandle>>();
+            failedDepOp.m_InternalOp.m_Status = opState;
+            failedDepOp.m_InternalOp.Result = new List<AsyncOperationHandle>();
+            failedDepOp.m_InternalOp.m_Error = new Exception();
+
+            updateOp.m_DepOp = failedDepOp;
+            updateOp.m_Error = failedDepOp.m_InternalOp.m_Error;
+            updateOp.m_RM = m_Addressables.ResourceManager;
+
+            updateOp.InvokeExecute();
+            Assert.IsTrue(updateOp.OperationException != null);
+            LogAssert.Expect(LogType.Error, $"OperationException : Cannot update catalogs. {expectedMessage} {updateOp.m_DepOp.OperationException.Message}\n");
         }
 
         internal class ExceptionTestOperation : AsyncOperationBase<string>
@@ -447,14 +473,37 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
     }
 
 #if UNITY_EDITOR
-    class DynamicContentUpdateTests_FastMode : DynamicContentUpdateTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
-    class DynamicContentUpdateTests_VirtualMode : DynamicContentUpdateTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
-    class DynamicContentUpdateTests_PackedPlaymode : DynamicContentUpdateTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class DynamicContentUpdateTests_FastMode : DynamicContentUpdateTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
+
+    class DynamicContentUpdateTests_VirtualMode : DynamicContentUpdateTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
+
+    class DynamicContentUpdateTests_PackedPlaymode : DynamicContentUpdateTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
     class DynamicContentUpdateTests_Packed : DynamicContentUpdateTests
     {
-        protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } }
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
 #if UNITY_EDITOR
         protected override void RunBuilder(AddressableAssetSettings settings)
         {

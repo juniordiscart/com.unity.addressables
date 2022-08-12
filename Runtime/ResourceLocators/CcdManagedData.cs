@@ -71,5 +71,5 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             return !string.IsNullOrEmpty(EnvironmentId) && !string.IsNullOrEmpty(BucketId) && !string.IsNullOrEmpty(Badge);
         }
     }
-#endif 
+#endif
 }

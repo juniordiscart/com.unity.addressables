@@ -32,6 +32,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         return o;
                 }
             }
+
             return null;
         }
 
@@ -50,7 +51,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <summary>
         /// Default constructor.
         /// </summary>
-        public AssetDatabaseProvider() {}
+        public AssetDatabaseProvider()
+        {
+        }
 
         /// <summary>
         /// Constructor that allows for a sepcified delay for all requests.
@@ -75,6 +78,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         {
             ProvideHandle m_ProvideHandle;
             bool m_Loaded;
+
             public void Start(ProvideHandle provideHandle, float loadDelay)
             {
                 m_Loaded = false;
@@ -110,7 +114,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     else
                         result = LoadAssetAtPath(assetPath, m_ProvideHandle);
                 }
-                m_ProvideHandle.Complete(result, result != null, result == null ? new Exception($"Unable to load asset of type {m_ProvideHandle.Type} from location {m_ProvideHandle.Location}.") : null);
+
+                m_ProvideHandle.Complete(result, result != null,
+                    result == null ? new Exception($"Unable to load asset of type {m_ProvideHandle.Type} from location {m_ProvideHandle.Location}.") : null);
             }
         }
 

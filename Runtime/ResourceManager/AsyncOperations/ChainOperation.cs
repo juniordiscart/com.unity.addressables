@@ -21,7 +21,10 @@ namespace UnityEngine.ResourceManagement
             m_CachedOnWrappedCompleted = OnWrappedCompleted;
         }
 
-        protected override string DebugName { get { return $"ChainOperation<{typeof(TObject).Name},{typeof(TObjectDependency).Name}> - {m_DepOp.DebugName}"; } }
+        protected override string DebugName
+        {
+            get { return $"ChainOperation<{typeof(TObject).Name},{typeof(TObjectDependency).Name}> - {m_DepOp.DebugName}"; }
+        }
 
         /// <inheritdoc />
         public override void GetDependencies(List<AsyncOperationHandle> deps)
@@ -92,7 +95,7 @@ namespace UnityEngine.ResourceManagement
         internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
         {
             RefreshDownloadStatus(visited);
-            return new DownloadStatus() { DownloadedBytes = m_depStatus.DownloadedBytes + m_wrapStatus.DownloadedBytes, TotalBytes = m_depStatus.TotalBytes + m_wrapStatus.TotalBytes, IsDone = IsDone };
+            return new DownloadStatus() {DownloadedBytes = m_depStatus.DownloadedBytes + m_wrapStatus.DownloadedBytes, TotalBytes = m_depStatus.TotalBytes + m_wrapStatus.TotalBytes, IsDone = IsDone};
         }
 
         void RefreshDownloadStatus(HashSet<object> visited = default)
@@ -142,7 +145,10 @@ namespace UnityEngine.ResourceManagement
             m_CachedOnWrappedCompleted = OnWrappedCompleted;
         }
 
-        protected override string DebugName { get { return $"ChainOperation<{typeof(TObject).Name}> - {m_DepOp.DebugName}"; } }
+        protected override string DebugName
+        {
+            get { return $"ChainOperation<{typeof(TObject).Name}> - {m_DepOp.DebugName}"; }
+        }
 
         /// <inheritdoc />
         public override void GetDependencies(List<AsyncOperationHandle> deps)
@@ -213,7 +219,7 @@ namespace UnityEngine.ResourceManagement
         internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
         {
             RefreshDownloadStatus(visited);
-            return new DownloadStatus() { DownloadedBytes = m_depStatus.DownloadedBytes + m_wrapStatus.DownloadedBytes, TotalBytes = m_depStatus.TotalBytes + m_wrapStatus.TotalBytes, IsDone = IsDone };
+            return new DownloadStatus() {DownloadedBytes = m_depStatus.DownloadedBytes + m_wrapStatus.DownloadedBytes, TotalBytes = m_depStatus.TotalBytes + m_wrapStatus.TotalBytes, IsDone = IsDone};
         }
 
         void RefreshDownloadStatus(HashSet<object> visited = default)

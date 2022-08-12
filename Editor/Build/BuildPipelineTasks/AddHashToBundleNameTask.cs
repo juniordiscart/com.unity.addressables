@@ -19,7 +19,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// <summary>
         /// The task version.
         /// </summary>
-        public int Version { get { return 1; } }
+        public int Version
+        {
+            get { return 1; }
+        }
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
@@ -30,6 +33,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         [InjectContext]
         IDependencyData m_DependencyData;
+
         [InjectContext(ContextUsage.InOut, true)]
         IBuildSpriteData m_SpriteData;
 
@@ -63,6 +67,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     aa.bundleToAssetGroup.Add(newName, assetGroup);
                 }
             }
+
             m_BuildContent.BundleLayout.Clear();
 
             foreach (var bid in newBundleLayout)
@@ -83,6 +88,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     GetAssetHashes(hashes, g, diskOnlyReferencedObjects, m_Cache != null && m_Parameters.UseCache);
                 }
             }
+
             return HashingMethods.Calculate(hashes.ToArray());
         }
 

@@ -42,6 +42,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// The name used in the GUI for this provider
         /// </summary>
         string Name { get; }
+
         /// <summary>
         /// Construct initialization data for runtime.
         /// </summary>
@@ -61,6 +62,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="typeHash">The hash code of the type.</param>
         /// <returns>The new object.</returns>
         object New(Type type, int typeHash);
+
         /// <summary>
         /// Release an object.
         /// </summary>
@@ -68,6 +70,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="obj">The object to release.</param>
         void Release(int typeHash, object obj);
     }
+
     /// <summary>
     /// Default allocator that relies in garbace collection
     /// </summary>
@@ -95,6 +98,7 @@ namespace UnityEngine.ResourceManagement.Util
         int m_poolCacheMaxSize;
         List<List<object>> m_poolCache = new List<List<object>>();
         Dictionary<int, List<object>> m_cache = new Dictionary<int, List<object>>();
+
         /// <summary>
         /// Create a new LRUAllocationStrategy objct.
         /// </summary>
@@ -141,8 +145,10 @@ namespace UnityEngine.ResourceManagement.Util
                     m_cache.Remove(typeHash);
                     ReleasePool(pool);
                 }
+
                 return v;
             }
+
             return Activator.CreateInstance(type);
         }
 
@@ -176,6 +182,7 @@ namespace UnityEngine.ResourceManagement.Util
     {
         int m_NodesCreated = 0;
         LinkedList<T> m_NodeCache;
+
         /// <summary>
         /// Creates or returns a LinkedListNode of the requested type and set the value.
         /// </summary>
@@ -193,6 +200,7 @@ namespace UnityEngine.ResourceManagement.Util
                     return n;
                 }
             }
+
             m_NodesCreated++;
             return new LinkedListNode<T>(val);
         }
@@ -210,7 +218,10 @@ namespace UnityEngine.ResourceManagement.Util
             m_NodeCache.AddLast(node);
         }
 
-        internal int CreatedNodeCount { get { return m_NodesCreated; } }
+        internal int CreatedNodeCount
+        {
+            get { return m_NodesCreated; }
+        }
 
         internal int CachedNodeCount
         {
@@ -239,7 +250,7 @@ namespace UnityEngine.ResourceManagement.Util
                 m_globalCache = new LinkedListNodeCache<T>();
             m_globalCache.CachedNodeCount = length;
         }
-        
+
         public static LinkedListNode<T> Acquire(T val)
         {
             if (m_globalCache == null)
@@ -264,18 +275,26 @@ namespace UnityEngine.ResourceManagement.Util
         [FormerlySerializedAs("m_assemblyName")]
         [SerializeField]
         string m_AssemblyName;
+
         /// <summary>
         /// The assembly name of the type.
         /// </summary>
-        public string AssemblyName { get { return m_AssemblyName; } }
+        public string AssemblyName
+        {
+            get { return m_AssemblyName; }
+        }
 
         [FormerlySerializedAs("m_className")]
         [SerializeField]
         string m_ClassName;
+
         /// <summary>
         /// The name of the type.
         /// </summary>
-        public string ClassName { get { return m_ClassName; } }
+        public string ClassName
+        {
+            get { return m_ClassName; }
+        }
 
         Type m_CachedType;
 
@@ -306,6 +325,7 @@ namespace UnityEngine.ResourceManagement.Util
                         if (assembly != null)
                             m_CachedType = assembly.GetType(m_ClassName);
                     }
+
                     return m_CachedType;
                 }
                 catch (Exception ex)
@@ -346,26 +366,38 @@ namespace UnityEngine.ResourceManagement.Util
         [FormerlySerializedAs("m_id")]
         [SerializeField]
         string m_Id;
+
         /// <summary>
         /// The object id.
         /// </summary>
-        public string Id { get { return m_Id; } }
+        public string Id
+        {
+            get { return m_Id; }
+        }
 
         [FormerlySerializedAs("m_objectType")]
         [SerializeField]
         SerializedType m_ObjectType;
+
         /// <summary>
         /// The object type that will be created.
         /// </summary>
-        public SerializedType ObjectType { get { return m_ObjectType; } }
+        public SerializedType ObjectType
+        {
+            get { return m_ObjectType; }
+        }
 
         [FormerlySerializedAs("m_data")]
         [SerializeField]
         string m_Data;
+
         /// <summary>
         /// String representation of the data that will be passed to the IInitializableObject.Initialize method of the created object.  This is usually a JSON string of the serialized data object.
         /// </summary>
-        public string Data { get { return m_Data; } }
+        public string Data
+        {
+            get { return m_Data; }
+        }
 #pragma warning restore 0649
 
 
@@ -398,6 +430,7 @@ namespace UnityEngine.ResourceManagement.Util
                     if (!serObj.Initialize(idOverride == null ? m_Id : idOverride, m_Data))
                         return default(TObject);
                 }
+
                 return (TObject)obj;
             }
             catch (Exception ex)
@@ -435,6 +468,7 @@ namespace UnityEngine.ResourceManagement.Util
 
 #if UNITY_EDITOR
         Type[] m_RuntimeTypes;
+
         /// <summary>
         /// Construct a serialized data for the object.
         /// </summary>
@@ -446,10 +480,10 @@ namespace UnityEngine.ResourceManagement.Util
         {
             return new ObjectInitializationData
             {
-                m_ObjectType = new SerializedType { Value = objectType },
+                m_ObjectType = new SerializedType {Value = objectType},
                 m_Id = string.IsNullOrEmpty(id) ? objectType.FullName : id,
                 m_Data = dataObject == null ? null : JsonUtility.ToJson(dataObject),
-                m_RuntimeTypes = dataObject == null ? null : new[] { dataObject.GetType() }
+                m_RuntimeTypes = dataObject == null ? null : new[] {dataObject.GetType()}
             };
         }
 
@@ -506,6 +540,7 @@ namespace UnityEngine.ResourceManagement.Util
                     }
                 }
             }
+
             mainKey = null;
             subKey = null;
             return false;
@@ -583,6 +618,7 @@ namespace UnityEngine.ResourceManagement.Util
                 if (elementType.IsAssignableFrom(asset.GetType()))
                     length++;
             }
+
             var array = Array.CreateInstance(elementType, length);
             int index = 0;
 
@@ -625,6 +661,7 @@ namespace UnityEngine.ResourceManagement.Util
                 if (elementType.IsAssignableFrom(a.GetType()))
                     list.Add(a);
             }
+
             return list;
         }
 

@@ -42,7 +42,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             var buttonRect = new Rect(rect.xMin, rect.yMin, rect.width, rect.height);
             buttonRect.height = k_ButtonHeight;
-            
+
             GUILayout.BeginArea(buttonRect);
             EditorGUI.BeginDisabledGroup(!m_Tree.SelectionContainsRuleContainer);
 
@@ -55,6 +55,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 EditorApplication.delayCall += () => m_Tree.RunAllSelectedRules();
             }
+
             var fixRect = buttonRect;
             activeWidth = 120;
             fixRect.width = activeWidth;
@@ -64,9 +65,10 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 EditorApplication.delayCall += () => m_Tree.FixAllSelectedRules();
             }
+
             EditorGUI.EndDisabledGroup();
-            
-            var  clearRect = buttonRect;
+
+            var clearRect = buttonRect;
             activeWidth = 80;
             clearRect.width = activeWidth;
             buttonRect.x += activeWidth;
@@ -109,7 +111,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 });
                 menu.DropDown(plusRect);
             }
-            
+
             GUILayout.EndArea();
 
             //TODO

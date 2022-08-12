@@ -8,14 +8,19 @@ namespace UnityEditor.AddressableAssets.Settings
     {
         [SerializeField]
         internal string id;
+
         [SerializeField]
         internal string name;
+
         [SerializeField]
         internal string foreign_key;
+
         [SerializeField]
         internal string billable_user_fk;
+
         [SerializeField]
         internal string org_identifier;
+
         [SerializeField]
         internal string orgIdentifier;
 
@@ -26,6 +31,7 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 throw new ArgumentException("Unable to parse org data.");
             }
+
             return orgData;
         }
     }

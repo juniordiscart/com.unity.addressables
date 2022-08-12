@@ -10,6 +10,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
     {
         TextDataProvider m_TextDataProvider;
         string m_FakeRemoteFolder;
+
         public TextDataProviderStub(string fakeRemoteFolder, TextDataProvider textDataProvider)
         {
             m_TextDataProvider = textDataProvider;
@@ -27,6 +28,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             string m_FakeRemoteFolder;
             static readonly Regex k_Pattern = new Regex(@"http://[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}");
+
             public InternalOpStub(string fakeRemoteFolder)
             {
                 m_FakeRemoteFolder = fakeRemoteFolder;
@@ -51,6 +53,8 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
     public class JsonAssetProviderStub : TextDataProviderStub
     {
         public JsonAssetProviderStub(string fakeRemoteFolder, JsonAssetProvider jsonAssetProvider)
-            : base(fakeRemoteFolder, jsonAssetProvider) {}
+            : base(fakeRemoteFolder, jsonAssetProvider)
+        {
+        }
     }
 }

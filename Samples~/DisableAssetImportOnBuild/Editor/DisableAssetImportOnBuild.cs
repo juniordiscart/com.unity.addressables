@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,7 @@ public class DisableAssetImportOnBuild
             string buildPath = $"DisabledImporterBuildPath/{EditorUserBuildSettings.activeBuildTarget}/";
             Directory.CreateDirectory(buildPath);
 
-            AssetDatabase.StopAssetEditing();
+            AssetDatabase.StartAssetEditing(); // prevent imports until AssetDatabase.StopAssetEditing is called
             BuildPlayerOptions options = new BuildPlayerOptions()
             {
                 target = EditorUserBuildSettings.activeBuildTarget,
@@ -42,7 +42,7 @@ public class DisableAssetImportOnBuild
         }
         finally
         {
-            AssetDatabase.StartAssetEditing();
+            AssetDatabase.StopAssetEditing();
         }
     }
 

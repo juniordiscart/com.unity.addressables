@@ -29,10 +29,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             /// Use to represent the index of the remote entry in the dependencies list.
             /// </summary>
             Remote = 0,
+
             /// <summary>
             /// Use to represent the index of the cache entry in the dependencies list.
             /// </summary>
             Cache,
+
             /// <summary>
             /// Use to represent the number of entries in the dependencies list.
             /// </summary>
@@ -51,6 +53,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
         internal Dictionary<IResourceLocation, InternalOp> m_LocationToCatalogLoadOpMap = new Dictionary<IResourceLocation, InternalOp>();
         ResourceManager m_RM;
+
         /// <summary>
         /// Constructor for this provider.
         /// </summary>
@@ -69,6 +72,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 m_LocationToCatalogLoadOpMap[location].Release();
                 m_LocationToCatalogLoadOpMap.Remove(location);
             }
+
             base.Release(location, obj);
         }
 
@@ -140,7 +144,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             internal bool CanLoadCatalogFromBundle(string idToLoad, IResourceLocation location)
             {
                 return Path.GetExtension(idToLoad) == ".bundle" &&
-                    idToLoad.Equals(GetTransformedInternalId(location));
+                       idToLoad.Equals(GetTransformedInternalId(location));
             }
 
             internal void LoadCatalog(string idToLoad, bool loadCatalogFromLocalBundle)
@@ -303,6 +307,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                         Addressables.LogError($"Unable to load dependent bundle from location : {m_BundlePath}");
                         m_OpInProgress = false;
                     }
+
                     webReq.Dispose();
                 }
 
@@ -319,6 +324,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     {
                         Addressables.LogError($"No catalog text assets where found in bundle {m_BundlePath}");
                     }
+
                     Unload();
                     m_OpInProgress = false;
                 }
@@ -384,6 +390,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                         }
                     }
                 }
+
                 return idToLoad;
             }
 

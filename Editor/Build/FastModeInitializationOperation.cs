@@ -19,6 +19,7 @@ namespace UnityEditor.AddressableAssets.Settings
         AddressableAssetSettings m_settings;
         internal ResourceManagerDiagnostics m_Diagnostics;
         AsyncOperationHandle<IList<AsyncOperationHandle>> groupOp;
+
         public FastModeInitializationOperation(AddressablesImpl addressables, AddressableAssetSettings settings)
         {
             m_addressables = addressables;
@@ -37,7 +38,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         return db as T;
                 return null;
             }
-            
+
             ScriptableObject dataBuilder = null;
             foreach (var db in settings.DataBuilders)
             {
@@ -50,6 +51,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 else if (currentType.IsSubclassOf(dataBuilder.GetType()))
                     dataBuilder = db;
             }
+
             return dataBuilder as T;
         }
 
@@ -60,7 +62,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 return true;
 
             m_RM?.Update(Time.unscaledDeltaTime);
-            if(!HasExecuted)
+            if (!HasExecuted)
                 InvokeExecute();
             return true;
         }
@@ -86,7 +88,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 ResourceManager.ExceptionHandler = null;
 
             //NOTE: for some reason, the data builders can get lost from the settings asset during a domain reload - this only happens in tests and custom instance and scene providers are not needed
-            m_addressables.InstanceProvider = db == null ? new InstanceProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.instanceProviderType.Value).CreateInstance<IInstanceProvider>();
+            m_addressables.InstanceProvider =
+                db == null ? new InstanceProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.instanceProviderType.Value).CreateInstance<IInstanceProvider>();
             m_addressables.SceneProvider = db == null ? new SceneProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.sceneProviderType.Value).CreateInstance<ISceneProvider>();
             m_addressables.ResourceManager.ResourceProviders.Add(new AssetDatabaseProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new TextDataProvider());

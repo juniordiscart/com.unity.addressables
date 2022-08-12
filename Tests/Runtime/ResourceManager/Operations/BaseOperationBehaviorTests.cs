@@ -80,10 +80,24 @@ namespace UnityEngine.ResourceManagement.Tests
             Exception onDec = null;
             op.Destroyed += (x) =>
             {
-                try { x.Acquire(); }
-                catch (Exception e) { onInc = e; }
-                try { x.Release(); }
-                catch (Exception e) { onDec = e; }
+                try
+                {
+                    x.Acquire();
+                }
+                catch (Exception e)
+                {
+                    onInc = e;
+                }
+
+                try
+                {
+                    x.Release();
+                }
+                catch (Exception e)
+                {
+                    onDec = e;
+                }
+
                 resultInDestroyCallback = x.Convert<int>().Result;
             };
             op.Release();
@@ -93,7 +107,8 @@ namespace UnityEngine.ResourceManagement.Tests
 
         class MockOperation<T> : AsyncOperationBase<T>
         {
-            public Action ExecuteCallback = () => {};
+            public Action ExecuteCallback = () => { };
+
             protected override void Execute()
             {
                 ExecuteCallback();
@@ -188,11 +203,11 @@ namespace UnityEngine.ResourceManagement.Tests
             var handle = m_RM.StartOperation(op, default(AsyncOperationHandle));
 
             Assert.False(op.CompletedEventHasListeners);
-            handle.Completed -= oph => {};
+            handle.Completed -= oph => { };
             Assert.False(op.CompletedEventHasListeners);
 
             Assert.False(op.DestroyedEventHasListeners);
-            handle.Destroyed -= oph => {};
+            handle.Destroyed -= oph => { };
             Assert.False(op.DestroyedEventHasListeners);
 
             handle.Release();
@@ -203,6 +218,7 @@ namespace UnityEngine.ResourceManagement.Tests
             public long m_bytesDownloaded = 0;
             public long m_totalBytes = 1024;
             public bool m_IsDone = false;
+
             protected override void Execute()
             {
             }
@@ -215,7 +231,7 @@ namespace UnityEngine.ResourceManagement.Tests
 
             internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
             {
-                return new DownloadStatus() { DownloadedBytes = m_bytesDownloaded, TotalBytes = m_totalBytes, IsDone = m_IsDone };
+                return new DownloadStatus() {DownloadedBytes = m_bytesDownloaded, TotalBytes = m_totalBytes, IsDone = m_IsDone};
             }
         }
 
@@ -229,14 +245,14 @@ namespace UnityEngine.ResourceManagement.Tests
         [Test]
         public void DownloadStatusWithNoBytes_WithIsDoneFalse_Returns_PercentCompleteZero()
         {
-            var dls = new DownloadStatus() { DownloadedBytes = 0, TotalBytes = 0, IsDone = false };
+            var dls = new DownloadStatus() {DownloadedBytes = 0, TotalBytes = 0, IsDone = false};
             Assert.AreEqual(0f, dls.Percent);
         }
 
         [Test]
         public void DownloadStatusWithNoBytes_WithIsDoneTrue_Returns_PercentCompleteOne()
         {
-            var dls = new DownloadStatus() { DownloadedBytes = 0, TotalBytes = 0, IsDone = true };
+            var dls = new DownloadStatus() {DownloadedBytes = 0, TotalBytes = 0, IsDone = true};
             Assert.AreEqual(1f, dls.Percent);
         }
 
@@ -285,10 +301,7 @@ namespace UnityEngine.ResourceManagement.Tests
         {
             var baseOperation = m_RM.CreateChainOperation<AsyncOperationHandle>(
                 new AsyncOperationHandle(new ManualPercentCompleteOperation(1f)),
-                (obj) =>
-                {
-                    return new AsyncOperationHandle<AsyncOperationHandle>();
-                });
+                (obj) => { return new AsyncOperationHandle<AsyncOperationHandle>(); });
 
             Assert.AreEqual(0, baseOperation.PercentComplete);
         }
@@ -324,10 +337,26 @@ namespace UnityEngine.ResourceManagement.Tests
         {
             var op = new TestOp();
             int count = 0;
-            op.Completed += o => { Assert.AreEqual(0, count); count++; };
-            op.CompletedTypeless += o => { Assert.AreEqual(1, count); count++; };
-            op.Completed += o => { Assert.AreEqual(2, count); count++; };
-            op.CompletedTypeless += o => { Assert.AreEqual(3, count); count++; };
+            op.Completed += o =>
+            {
+                Assert.AreEqual(0, count);
+                count++;
+            };
+            op.CompletedTypeless += o =>
+            {
+                Assert.AreEqual(1, count);
+                count++;
+            };
+            op.Completed += o =>
+            {
+                Assert.AreEqual(2, count);
+                count++;
+            };
+            op.CompletedTypeless += o =>
+            {
+                Assert.AreEqual(3, count);
+                count++;
+            };
             op.Start(null, default, null);
             op.Complete(1, true, null);
         }

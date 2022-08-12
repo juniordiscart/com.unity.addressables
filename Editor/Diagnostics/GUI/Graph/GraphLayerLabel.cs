@@ -8,7 +8,13 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI.Graph
     {
         Func<int, string> m_LabelFunc;
         Color m_BgColor;
-        internal GraphLayerLabel(int stream, string name, string desc, Color color, Color bgColor, Func<int, string> func) : base(stream, name, desc, color) { m_LabelFunc = func; m_BgColor = bgColor; }
+
+        internal GraphLayerLabel(int stream, string name, string desc, Color color, Color bgColor, Func<int, string> func) : base(stream, name, desc, color)
+        {
+            m_LabelFunc = func;
+            m_BgColor = bgColor;
+        }
+
         public override void Draw(EventDataSet dataSet, Rect rect, int startFrame, int frameCount, int inspectFrame, bool expanded, Material material, int maxValue)
         {
             if (dataSet == null)
@@ -44,6 +50,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI.Graph
                         EditorGUI.LabelField(labelRect, text, UnityEngine.GUI.skin.label);
                     }
                 }
+
                 UnityEngine.GUI.color = prevCol;
             }
         }

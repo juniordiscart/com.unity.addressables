@@ -63,7 +63,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 m_PI.Complete(obj.Result, success, obj.OperationException);
             }
 
-            public float GetPercentComplete() { return m_RequestOperation != null ? m_RequestOperation.PercentComplete : 0.0f; }
+            public float GetPercentComplete()
+            {
+                return m_RequestOperation != null ? m_RequestOperation.PercentComplete : 0.0f;
+            }
         }
 
         public override void Provide(ProvideHandle provideHandle)

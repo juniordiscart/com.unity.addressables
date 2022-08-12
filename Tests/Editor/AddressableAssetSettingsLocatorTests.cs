@@ -36,6 +36,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 AssetDatabase.DeleteAsset($"Assets/{TempPath}");
                 AssetDatabase.Refresh();
             }
+
             AssetDatabase.CreateFolder("Assets", "TempGen");
             m_PreviousScenes = EditorBuildSettings.scenes;
             m_Settings = AddressableAssetSettings.Create(GetPath("Settings"), "AddressableAssetSettings.Tests", true, true);
@@ -80,6 +81,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 var guid = a.EndsWith(".unity") ? CreateScene(Path.Combine(path, a)) : CreateAsset(a, Path.Combine(path, a));
                 guids?.Add(guid);
             }
+
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
             return AssetDatabase.AssetPathToGUID(path);
@@ -95,6 +97,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 foreach (var l in locations)
                     Assert.IsTrue(type.IsAssignableFrom(l.ResourceType));
             }
+
             Assert.AreEqual(expectedInternalIds.Length, locations.Count);
             foreach (var e in expectedInternalIds)
                 Assert.NotNull(locations.FirstOrDefault(s => s.InternalId == e), $"Locations do not contain entry with internal id of {e}");
@@ -208,8 +211,8 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetsThatMatchAssetsInFolderAndResources_LocateAllMatches()
         {
-            CreateFolder("Resources/TestFolder", new string[] { "asset1.asset"});
-            var folderGUID = CreateFolder("TestFolder", new string[] { "asset1.asset" });
+            CreateFolder("Resources/TestFolder", new string[] {"asset1.asset"});
+            var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TestFolder";
             var assetGUID = CreateAsset("asset1", GetPath("asset1.asset"));
             m_Settings.CreateOrMoveEntry(assetGUID, m_Settings.DefaultGroup).address = "TestFolder/asset1.asset";
@@ -223,7 +226,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetsInMarkedFolder_LocateWithAssetReferenceSucceeds()
         {
-            CreateFolder("TestFolder1/TestFolder2", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
+            CreateFolder("TestFolder1/TestFolder2", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
             var folderGUID = AssetDatabase.AssetPathToGUID(GetPath("TestFolder1"));
             m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF1";
             var assetRef = m_Settings.CreateAssetReference(AssetDatabase.AssetPathToGUID(GetPath("TestFolder1/TestFolder2/asset1.asset")));
@@ -233,7 +236,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetsInFolder_LocateWithAssetKeySucceeds()
         {
-            var folderGUID = CreateFolder("TestFolder", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
+            var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
             AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "TF/asset1.asset", GetPath("TestFolder/asset1.asset"));
         }
@@ -241,8 +244,8 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetsInMatchingFolders_LocateWithAssetKeySucceeds()
         {
-            var folderGUID1 = CreateFolder("TestFolder1", new string[] { "asset1_1.asset", "asset2_1.asset", "asset3_1.asset" });
-            var folderGUID2 = CreateFolder("TestFolder2", new string[] { "asset1_2.asset", "asset2_2.asset", "asset3_2.asset" });
+            var folderGUID1 = CreateFolder("TestFolder1", new string[] {"asset1_1.asset", "asset2_1.asset", "asset3_1.asset"});
+            var folderGUID2 = CreateFolder("TestFolder2", new string[] {"asset1_2.asset", "asset2_2.asset", "asset3_2.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID1, m_Settings.DefaultGroup).address = "TF";
             m_Settings.CreateOrMoveEntry(folderGUID2, m_Settings.DefaultGroup).address = "TF";
             AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "TF/asset1_1.asset", GetPath("TestFolder1/asset1_1.asset"));
@@ -252,17 +255,18 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetsInMatchingFolderAndAssets_LocateWithAssetKeySucceeds()
         {
-            var folderGUID1 = CreateFolder("TestFolder1", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
-            var folderGUID2 = CreateFolder("TestFolder2", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
+            var folderGUID1 = CreateFolder("TestFolder1", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
+            var folderGUID2 = CreateFolder("TestFolder2", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID1, m_Settings.DefaultGroup).address = "TF";
             m_Settings.CreateOrMoveEntry(folderGUID2, m_Settings.DefaultGroup).address = "TF";
-            AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "TF/asset1.asset", GetPath("TestFolder1/asset1.asset"), GetPath("TestFolder2/asset1.asset"));
+            AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "TF/asset1.asset", GetPath("TestFolder1/asset1.asset"),
+                GetPath("TestFolder2/asset1.asset"));
         }
 
         [Test]
         public void WhenLocatorWithAssetAndFolderNameMatch_LocateWithAssetKeySucceeds()
         {
-            var folderGUID = CreateFolder("TestName", new string[] { "TestName.asset" });
+            var folderGUID = CreateFolder("TestName", new string[] {"TestName.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
             AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "TF/TestName.asset", GetPath("TestName/TestName.asset"));
         }
@@ -270,7 +274,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetAndFolderAddrMatch_LocateWithAssetKeySucceeds()
         {
-            var folderGUID = CreateFolder("TestName", new string[] { "TF.asset" });
+            var folderGUID = CreateFolder("TestName", new string[] {"TF.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
             AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "TF/TF.asset", GetPath("TestName/TF.asset"));
         }
@@ -278,7 +282,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetsInFolder_LocateWithFolderKeyFails()
         {
-            var folderGUID = CreateFolder("TestFolder", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
+            var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
             var locator = new AddressableAssetSettingsLocator(m_Settings);
             Assert.IsFalse(locator.Locate("TF", null, out var locations));
@@ -287,17 +291,18 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetsInFolder_LocateWithFolderLabelSucceeds()
         {
-            var folderGUID = CreateFolder("TestFolder", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
+            var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
             var folderEntry = m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup);
             folderEntry.address = "TF";
             folderEntry.SetLabel("FolderLabel", true, true, true);
-            AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "FolderLabel", GetPath("TestFolder/asset1.asset"), GetPath("TestFolder/asset2.asset"), GetPath("TestFolder/asset3.asset"));
+            AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "FolderLabel", GetPath("TestFolder/asset1.asset"),
+                GetPath("TestFolder/asset2.asset"), GetPath("TestFolder/asset3.asset"));
         }
 
         [Test]
         public void WhenLocatorWithAssetsInFolderWithSimilarNames_LocateWithAssetKeySucceeds()
         {
-            var folderGUID = CreateFolder("TestFolder", new string[] { "asset1.asset", "asset.asset", "asset1_more.asset" });
+            var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset", "asset.asset", "asset1_more.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
             AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "TF/asset1.asset", GetPath("TestFolder/asset1.asset"));
         }
@@ -305,22 +310,23 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenLocatorWithAssetsInNestedFolders_LocateWithAssetKeySucceeds()
         {
-            var folderGUID1 = CreateFolder("TestFolder", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
-            var folderGUID2 = CreateFolder("TestFolder/TestSubFolder1", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
-            var folderGUID3 = CreateFolder("TestFolder/TestSubFolder1/TestSubFolder2", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
+            var folderGUID1 = CreateFolder("TestFolder", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
+            var folderGUID2 = CreateFolder("TestFolder/TestSubFolder1", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
+            var folderGUID3 = CreateFolder("TestFolder/TestSubFolder1/TestSubFolder2", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID1, m_Settings.DefaultGroup).address = "TF";
             var locator = new AddressableAssetSettingsLocator(m_Settings);
             AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(locator, "TF/asset1.asset", GetPath("TestFolder/asset1.asset"));
             AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(locator, "TF/TestSubFolder1/asset1.asset", GetPath("TestFolder/TestSubFolder1/asset1.asset"));
-            AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(locator, "TF/TestSubFolder1/TestSubFolder2/asset1.asset", GetPath("TestFolder/TestSubFolder1/TestSubFolder2/asset1.asset"));
+            AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(locator, "TF/TestSubFolder1/TestSubFolder2/asset1.asset",
+                GetPath("TestFolder/TestSubFolder1/TestSubFolder2/asset1.asset"));
         }
 
         [Test]
         public void WhenLocatorWithAssetsInNestedFoldersThatAreBothAddressable_LocateWithAssetKeySucceeds()
         {
-            var folderGUID1 = CreateFolder("TestFolder", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
-            var folderGUID2 = CreateFolder("TestFolder/TestSubFolder1", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
-            var folderGUID3 = CreateFolder("TestFolder/TestSubFolder1/TestSubFolder2", new string[] { "asset1.asset", "asset2.asset", "asset3.asset" });
+            var folderGUID1 = CreateFolder("TestFolder", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
+            var folderGUID2 = CreateFolder("TestFolder/TestSubFolder1", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
+            var folderGUID3 = CreateFolder("TestFolder/TestSubFolder1/TestSubFolder2", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID1, m_Settings.DefaultGroup).address = "TF";
             m_Settings.CreateOrMoveEntry(folderGUID2, m_Settings.DefaultGroup).address = "TF2";
             var locator = new AddressableAssetSettingsLocator(m_Settings);
@@ -341,6 +347,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 guids?.Add(guid);
                 sceneList.Add(new EditorBuildSettingsScene(path, true));
             }
+
             EditorBuildSettings.scenes = sceneList.ToArray();
         }
 
@@ -450,8 +457,8 @@ namespace UnityEditor.AddressableAssets.Tests
 
         static HashSet<object> ExpectedKeys = new HashSet<object>(new object[]
         {
-            "TestScene0",   //scene name in build settings
-            0,              //index if TestScene0
+            "TestScene0", //scene name in build settings
+            0, //index if TestScene0
             "TestScene1",
             1,
             "TestScene2",
@@ -484,13 +491,13 @@ namespace UnityEditor.AddressableAssets.Tests
         void SetupLocatorAssets()
         {
             var folderGUID1 = CreateFolder("TestFolder",
-                new string[] { "asset1.asset", "asset2.asset", "asset3.asset" }, ExpectedKeys);
+                new string[] {"asset1.asset", "asset2.asset", "asset3.asset"}, ExpectedKeys);
             var folderGUID2 = CreateFolder("TestFolder/TestSubFolder1",
-                new string[] { "asset1.asset", "asset2.asset", "asset3.asset" }, ExpectedKeys);
+                new string[] {"asset1.asset", "asset2.asset", "asset3.asset"}, ExpectedKeys);
             var folderGUID3 = CreateFolder("TestFolder/TestSubFolder1/Resources",
-                new string[] { "asset1.asset", "asset2.asset", "asset3.asset" }, ExpectedKeys);
+                new string[] {"asset1.asset", "asset2.asset", "asset3.asset"}, ExpectedKeys);
             var folderGUID4 = CreateFolder("TestFolder/TestSubFolder2",
-                new string[] { "scene1.unity", "scene2.unity", "scene3.unity" }, ExpectedKeys);
+                new string[] {"scene1.unity", "scene2.unity", "scene3.unity"}, ExpectedKeys);
             CreateAndAddScenesToEditorBuildSettings("TestScene", 3, ExpectedKeys);
             var assetInFolder = m_Settings.CreateOrMoveEntry(
                 AssetDatabase.AssetPathToGUID(GetPath("TestFolder/asset1.asset")), m_Settings.DefaultGroup);

@@ -14,18 +14,22 @@ namespace UnityEditor.AddressableAssets.Settings
         [FormerlySerializedAs("m_serializeEntries")]
         [SerializeField]
         List<AddressableAssetEntry> m_SerializeEntries = new List<AddressableAssetEntry>();
+
         /// <summary>
         /// The collection of entries.
         /// </summary>
-        public List<AddressableAssetEntry> Entries { get { return m_SerializeEntries; } }
-        
+        public List<AddressableAssetEntry> Entries
+        {
+            get { return m_SerializeEntries; }
+        }
+
         internal static bool ConvertEntryCollectionToEntries(AddressableAssetEntryCollection collection, AddressableAssetSettings settings)
         {
             if (settings == null)
                 settings = AddressableAssetSettingsDefaultObject.Settings;
             if (settings == null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(collection, out var collectionGuid, out long localId))
                 return false;
-            
+
             var collectionEntry = settings.FindAssetEntry(collectionGuid, true);
 
             var group = collectionEntry == null ? settings.DefaultGroup : collectionEntry.parentGroup;

@@ -40,18 +40,16 @@ namespace UnityEditor.AddressableAssets.Build
                 if (rule.GetType().Equals(typeof(TRule)))
                     return;
             }
+
             Rules.Add(new TRule());
         }
 
         internal static string AnalyzeRuleDataFolder
         {
-            get
-            {
-                return $"{Addressables.LibraryPath}/AnalyzeData";
-            }
+            get { return $"{Addressables.LibraryPath}/AnalyzeData"; }
         }
 
-        internal static string AnalyzeRuleDataName => "AnalyzeRuleData.json"; 
+        internal static string AnalyzeRuleDataName => "AnalyzeRuleData.json";
         internal static string AnalyzeRuleDataPath => AnalyzeRuleDataFolder + "/" + AnalyzeRuleDataName;
 
         internal static string AnalyzeRuleDataAssetsFolderPath
@@ -66,6 +64,7 @@ namespace UnityEditor.AddressableAssets.Build
                 return path + "/AnalyzeData/";
             }
         }
+
         internal static AddressableAssetSettings Settings => AddressableAssetSettingsDefaultObject.Settings;
 
         internal static List<AnalyzeRule> Rules { get; } = new List<AnalyzeRule>();
@@ -128,11 +127,11 @@ namespace UnityEditor.AddressableAssets.Build
                 Directory.Delete(AnalyzeRuleDataAssetsFolderPath, true);
 
             m_AnalyzeData = JsonUtility.FromJson<AddressablesAnalyzeResultData>(File.ReadAllText(path));
-            if(m_AnalyzeData == null)
+            if (m_AnalyzeData == null)
                 Addressables.LogWarning($"Unable to load Analyze Result Data at {path}.");
             else
             {
-                if(m_AnalyzeData.Data == null)
+                if (m_AnalyzeData.Data == null)
                     m_AnalyzeData.Data = new Dictionary<string, List<AnalyzeRule.AnalyzeResult>>();
 
                 foreach (var rule in Rules)
@@ -147,7 +146,7 @@ namespace UnityEditor.AddressableAssets.Build
                         m_AnalyzeData.Data.Add(rule.ruleName, new List<AnalyzeRule.AnalyzeResult>());
                 }
             }
-            
+
             ReloadUI();
         }
 
@@ -203,7 +202,8 @@ namespace UnityEditor.AddressableAssets.Build
             if (!AnalyzeData.Data.ContainsKey(rule.ruleName))
                 AnalyzeData.Data.Add(rule.ruleName, new List<AnalyzeRule.AnalyzeResult>());
 
-            rule.ClearAnalysis();;
+            rule.ClearAnalysis();
+            ;
             AnalyzeData.Data[rule.ruleName].Clear();
         }
 

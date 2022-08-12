@@ -20,11 +20,11 @@ namespace UnityEditor.AddressableAssets.Tests
             savedOptions = EditorSettings.enterPlayModeOptions;
             EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
             Addressables.reinitializeAddressables = true;
-            
+
             Assert.False(Application.isPlaying);
             yield return new EnterPlayMode(false);
         }
-        
+
         [UnityTearDown]
         public IEnumerator RuntimeTearDown()
         {
@@ -37,7 +37,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.False(Application.isPlaying);
         }
 #endif
-        
+
         [Test]
         [Platform(Exclude = "OSX")]
         public void DomainReloadTests_ReInitAddressablesFlagIsSetCorrectly_WhenExitingPlaymode()

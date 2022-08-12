@@ -16,10 +16,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <inheritdoc />
         public override string Name
         {
-            get
-            {
-                return "Use Asset Database (fastest)";
-            }
+            get { return "Use Asset Database (fastest)"; }
         }
 
         private bool m_DataBuilt;
@@ -53,13 +50,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(builderInput.AddressableSettings, out var guid, out long _))
             {
-                IDataBuilderResult res = new AddressablesPlayModeBuildResult() { Error = "Invalid Settings asset." };
+                IDataBuilderResult res = new AddressablesPlayModeBuildResult() {Error = "Invalid Settings asset."};
                 return (TResult)res;
             }
             else
             {
                 PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, $"GUID:{guid}");
-                IDataBuilderResult res = new AddressablesPlayModeBuildResult() { OutputPath = "", Duration = 0 };
+                IDataBuilderResult res = new AddressablesPlayModeBuildResult() {OutputPath = "", Duration = 0};
                 m_DataBuilt = true;
                 return (TResult)res;
             }

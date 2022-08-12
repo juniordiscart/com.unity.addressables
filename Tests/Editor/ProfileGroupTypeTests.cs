@@ -79,38 +79,38 @@ namespace UnityEditor.AddressableAssets.Tests
             LogAssert.Expect(LogType.Error, "prefix.BuildPath already exists.");
             Assert.IsFalse(profileGroupType.AddVariable(buildPath));
         }
-        
+
         [Test]
         public void AddOrUpdateVariableToGroupType_AddsVariable()
         {
             ProfileGroupType profileGroupType = new ProfileGroupType("TestPrefix");
             var bp = profileGroupType.GetVariableBySuffix("TestSuffix");
             Assert.IsNull(bp);
-            
+
             profileGroupType.AddOrUpdateVariable(new ProfileGroupType.GroupTypeVariable("TestSuffix", "TestValue"));
-            
+
             bp = profileGroupType.GetVariableBySuffix("TestSuffix");
             Assert.IsNotNull(bp);
             Assert.AreEqual(bp.m_Value, "TestValue", "Unexpected GroupTypeVariable, variable value should be TestValue");
             Assert.True(profileGroupType.Variables.Count == 1);
         }
-        
+
         [Test]
         public void AddOrUpdateVariableToGroupType_UpdatesVariable()
         {
             ProfileGroupType profileGroupType = new ProfileGroupType("TestPrefix");
             var bp = profileGroupType.GetVariableBySuffix("TestSuffix");
             Assert.IsNull(bp);
-            
+
             profileGroupType.AddOrUpdateVariable(new ProfileGroupType.GroupTypeVariable("TestSuffix", "TestValue"));
-            
+
             bp = profileGroupType.GetVariableBySuffix("TestSuffix");
             Assert.IsNotNull(bp);
             Assert.AreEqual(bp.m_Value, "TestValue", "Unexpected GroupTypeVariable, variable value should be TestValue");
             Assert.True(profileGroupType.Variables.Count == 1);
-            
+
             profileGroupType.AddOrUpdateVariable(new ProfileGroupType.GroupTypeVariable("TestSuffix", "UpdatedTestValue"));
-            
+
             bp = profileGroupType.GetVariableBySuffix("TestSuffix");
             Assert.IsNotNull(bp);
             Assert.AreEqual(bp.m_Value, "UpdatedTestValue", "Unexpected GroupTypeVariable, variable value should be UpdatedTestValue");
@@ -139,7 +139,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void DoesContainVariable_Returns_True()
         {
-
             ProfileGroupType.GroupTypeVariable buildPath = new ProfileGroupType.GroupTypeVariable("BuildPath", "Test Build Path");
             ProfileGroupType profileGroupType = new ProfileGroupType("prefix");
             profileGroupType.AddVariable(buildPath);
@@ -149,7 +148,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void DoesContainVariable_Returns_False()
         {
-
             ProfileGroupType.GroupTypeVariable buildPath = new ProfileGroupType.GroupTypeVariable("BuildPath", "Test Build Path");
             ProfileGroupType profileGroupType = new ProfileGroupType("prefix");
             Assert.False(profileGroupType.ContainsVariable(buildPath));

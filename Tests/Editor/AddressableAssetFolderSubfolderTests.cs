@@ -85,6 +85,7 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 pathsWithCache = EnumerateAddressableFolder(path, settings, true).ToList<string>();
             }
+
             List<string> pathsWithoutCache = EnumerateAddressableFolder(path, settings, true).ToList<string>();
 
             // Compare the results of two different code paths: with cache and without cache
@@ -93,6 +94,7 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 Assert.AreEqual(pathsWithCache[i], pathsWithoutCache[i]);
             }
+
             return pathsWithCache;
         }
 
@@ -153,9 +155,9 @@ namespace UnityEditor.AddressableAssets.Tests
 
             GameObject obj = new GameObject("TestObject");
             string objPath = path + "/childObj.prefab";
-     
+
             PrefabUtility.SaveAsPrefabAsset(obj, objPath);
-            
+
             List<string> assetPaths = EnumerateAddressableFolder(m_AddrParentFolderPath, Settings, false);
             Assert.AreEqual(1, assetPaths.Count);
             Assert.AreEqual(m_ParentObjPath, assetPaths[0]);
@@ -167,10 +169,7 @@ namespace UnityEditor.AddressableAssets.Tests
         public void WhenPathDoesNotExist_EnumerateFiles_ThrowsException()
         {
             string path = "PathDoesntExist";
-            Exception ex = Assert.Throws<Exception>(() =>
-            {
-                EnumerateAddressableFolder(path, Settings, false);
-            });
+            Exception ex = Assert.Throws<Exception>(() => { EnumerateAddressableFolder(path, Settings, false); });
             Assert.AreEqual($"Path {path} cannot be enumerated because it does not exist", ex.Message);
         }
 

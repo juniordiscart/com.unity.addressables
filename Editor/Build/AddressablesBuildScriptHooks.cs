@@ -39,6 +39,7 @@ namespace UnityEditor.AddressableAssets.Build
                         var result = AddressableAssetBuildResult.CreateResult<AddressableAssetBuildResult>(null, 0, err);
                         BuildScript.buildCompleted(result);
                     }
+
                     return;
                 }
 

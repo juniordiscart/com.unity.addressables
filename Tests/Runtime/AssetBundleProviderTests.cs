@@ -29,7 +29,11 @@ namespace AddressableTests.SyncAddressables
 
         const int kForceUWRBundleCount = 10;
         const int kMaxConcurrentRequests = 3;
-        string GetForceUWRAddrName(int i) { return $"forceuwrasset{i}"; }
+
+        string GetForceUWRAddrName(int i)
+        {
+            return $"forceuwrasset{i}";
+        }
 
 #if UNITY_EDITOR
         internal override void Setup(AddressableAssetSettings settings, string tempAssetFolder)
@@ -74,6 +78,7 @@ namespace AddressableTests.SyncAddressables
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator WhenUWRExceedsMaxLimit_UWRAreQueued()
         {
             List<AsyncOperationHandle<GameObject>> l =
@@ -88,6 +93,7 @@ namespace AddressableTests.SyncAddressables
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator WhenUWRExceedsMaxLimit_CompletesSynchronously()
         {
             List<AsyncOperationHandle<GameObject>> loadOps =
@@ -106,6 +112,7 @@ namespace AddressableTests.SyncAddressables
         }
 
         [Test]
+        [Platform(Exclude = "PS5")]
         public void WhenUWRIsUsed_CompletesSynchronously()
         {
             AsyncOperationHandle<GameObject> h = m_Addressables.LoadAssetAsync<GameObject>(GetForceUWRAddrName(0));
@@ -114,6 +121,7 @@ namespace AddressableTests.SyncAddressables
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator WhenAssetBundleIsLocal_AndForceUWRIsEnabled_UWRIsUsed()
         {
             AsyncOperationHandle<GameObject> h = m_Addressables.LoadAssetAsync<GameObject>(GetForceUWRAddrName(0));
@@ -123,6 +131,7 @@ namespace AddressableTests.SyncAddressables
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator WhenAssetBundleIsLocal_AndForceUWRIsDisabled_UWRIsNotUsed()
         {
             AsyncOperationHandle<GameObject> h = m_Addressables.LoadAssetAsync<GameObject>("testprefab");
@@ -131,27 +140,8 @@ namespace AddressableTests.SyncAddressables
             h.Release();
         }
 
-#if ENABLE_ASYNC_ASSETBUNDLE_UWR
         [UnityTest]
-        public IEnumerator WhenAssetBundleLoadedThroughUWR_NoMainThreadFileIO()
-        {
-            AsyncOperationHandle<GameObject> h;
-            try
-            {
-                TestReflectionHelpers.SetResritctMainThreadFileIO(true);
-                h = m_Addressables.LoadAssetAsync<GameObject>(GetForceUWRAddrName(0));
-                yield return h;
-            }
-            finally
-            {
-                TestReflectionHelpers.SetResritctMainThreadFileIO(false);
-            }
-            h.Release();
-        }
-
-#endif
-
-        [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator WhenWebRequestOverrideIsSet_CallbackIsCalled_AssetBundleProvider()
         {
             bool webRequestOverrideCalled = false;
@@ -172,6 +162,7 @@ namespace AddressableTests.SyncAddressables
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator WhenWebRequestFails_RetriesCorrectAmount_AssetBundleProvider()
         {
             var prev = LogAssert.ignoreFailingMessages;
@@ -194,18 +185,19 @@ namespace AddressableTests.SyncAddressables
         }
 
         [Test]
+        [Platform(Exclude = "PS5")]
         [TestCase("Relative/Local/Path", true, false)]
         [TestCase("Relative/Local/Path", true, true)]
-        [TestCase("http://127.0.0.1/Web/Path",  false, true)]
-        [TestCase("jar:file://Local/Path",  true, false)]
-        [TestCase("jar:file://Local/Path",  true, true)]
+        [TestCase("http://127.0.0.1/Web/Path", false, true)]
+        [TestCase("jar:file://Local/Path", true, false)]
+        [TestCase("jar:file://Local/Path", true, true)]
         public void AssetBundleLoadPathsCorrectForGetLoadInfo(string internalId, bool isLocal, bool useUnityWebRequestForLocalBundles)
         {
             if (internalId.StartsWith("jar") && Application.platform != RuntimePlatform.Android)
                 Assert.Ignore($"Skipping test {TestContext.CurrentContext.Test.Name} due jar based tests are only for running on Android Platform.");
 
             var loc = new ResourceLocationBase("dummy", internalId, "dummy", typeof(Object));
-            loc.Data = new AssetBundleRequestOptions { UseUnityWebRequestForLocalBundles = useUnityWebRequestForLocalBundles };
+            loc.Data = new AssetBundleRequestOptions {UseUnityWebRequestForLocalBundles = useUnityWebRequestForLocalBundles};
             ProviderOperation<Object> op = new ProviderOperation<Object>();
             op.Init(m_Addressables.ResourceManager, null, loc, new AsyncOperationHandle<IList<AsyncOperationHandle>>());
             ProvideHandle h = new ProvideHandle(m_Addressables.ResourceManager, op);
@@ -218,8 +210,9 @@ namespace AddressableTests.SyncAddressables
             {
                 expectedPath = internalId.StartsWith("jar") ? internalId : "file:///" + Path.GetFullPath(internalId);
             }
+
             Assert.AreEqual(expectedPath, path);
-		}
+        }
 
         [UnityTest]
         public IEnumerator LoadBundleAsync_WithUnfinishedUnload_WaitsForUnloadAndCompletes()
@@ -262,9 +255,21 @@ namespace AddressableTests.SyncAddressables
         }
     }
 #if UNITY_EDITOR
-    class AssetBundleProviderTests_PackedPlaymodeMode : AssetBundleProviderTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class AssetBundleProviderTests_PackedPlaymodeMode : AssetBundleProviderTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
-    class AssetBundleProviderTests_PackedMode : AssetBundleProviderTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } } }
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
+    class AssetBundleProviderTests_PackedMode : AssetBundleProviderTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
+    }
 }

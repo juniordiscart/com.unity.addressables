@@ -26,6 +26,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 SetDirty();
             }
         }
+
         [FormerlySerializedAs("m_compileScriptsInVirtualMode")]
         [SerializeField]
         bool m_CompileScriptsInVirtualMode;
@@ -42,6 +43,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 SetDirty();
             }
         }
+
         [FormerlySerializedAs("m_cleanupStreamingAssetsAfterBuilds")]
         [SerializeField]
         bool m_CleanupStreamingAssetsAfterBuilds = true;
@@ -49,6 +51,7 @@ namespace UnityEditor.AddressableAssets.Settings
         [FormerlySerializedAs("m_logResourceManagerExceptions")]
         [SerializeField]
         bool m_LogResourceManagerExceptions = true;
+
         /// <summary>
         /// When enabled, the Addressables.ResourceManager.ExceptionHandler is set to (op, ex) => Debug.LogException(ex);
         /// </summary>
@@ -88,6 +91,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         [NonSerialized]
         AddressableAssetSettings m_Settings;
+
         void SetDirty()
         {
             if (m_Settings != null)

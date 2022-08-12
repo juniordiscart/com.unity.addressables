@@ -32,6 +32,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         entries = new List<AddressableAssetEntry>();
                         entries.Add(obj as AddressableAssetEntry);
                     }
+
                     CheckForScenesInBuildList(entries);
                     break;
             }
@@ -84,6 +85,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     }
                 }
             }
+
             if (changed)
                 BuiltinSceneCache.scenes = scenes;
         }

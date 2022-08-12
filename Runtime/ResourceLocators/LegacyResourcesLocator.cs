@@ -33,10 +33,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// </summary>
         public IEnumerable<object> Keys
         {
-            get
-            {
-                return null;
-            }
+            get { return null; }
         }
 
         /// <summary>

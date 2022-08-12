@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_DownloadError
+
     using UnityEngine;
     using UnityEngine.AddressableAssets;
     using UnityEngine.ResourceManagement.AsyncOperations;
@@ -9,6 +10,7 @@ namespace AddressableAssets.DocExampleCode
     internal class HandleDownloadError : MonoBehaviour
     {
         private AsyncOperationHandle m_Handle;
+
         void LoadAsset()
         {
             m_Handle = Addressables.LoadAssetAsync<GameObject>("addressKey");
@@ -21,7 +23,7 @@ namespace AddressableAssets.DocExampleCode
                 }
             };
         }
-        
+
         string GetDownloadError(AsyncOperationHandle fromHandle)
         {
             if (fromHandle.Status != AsyncOperationStatus.Failed)
@@ -36,8 +38,10 @@ namespace AddressableAssets.DocExampleCode
                     return remoteException.WebRequestResult.Error;
                 e = e.InnerException;
             }
+
             return null;
         }
     }
+
     #endregion
 }

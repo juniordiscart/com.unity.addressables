@@ -13,6 +13,7 @@ namespace UnityEngine.ResourceManagement.Util
             int m_Id;
             Delegate m_Delegate;
             object[] m_Target;
+
             public DelegateInfo(Delegate d, float invocationTime, params object[] p)
             {
                 m_Delegate = d;
@@ -22,6 +23,7 @@ namespace UnityEngine.ResourceManagement.Util
             }
 
             public float InvocationTime { get; private set; }
+
             public override string ToString()
             {
                 if (m_Delegate == null || m_Delegate.Method.DeclaringType == null)
@@ -33,6 +35,7 @@ namespace UnityEngine.ResourceManagement.Util
                     n += sep + o;
                     sep = ", ";
                 }
+
                 return n + ") @" + InvocationTime;
             }
 
@@ -48,11 +51,13 @@ namespace UnityEngine.ResourceManagement.Util
                 }
             }
         }
-        List<DelegateInfo>[] m_Actions = { new List<DelegateInfo>(), new List<DelegateInfo>() };
+
+        List<DelegateInfo>[] m_Actions = {new List<DelegateInfo>(), new List<DelegateInfo>()};
         LinkedList<DelegateInfo> m_DelayedActions = new LinkedList<DelegateInfo>();
         Stack<LinkedListNode<DelegateInfo>> m_NodeCache = new Stack<LinkedListNode<DelegateInfo>>(10);
         int m_CollectionIndex;
         bool m_DestroyOnCompletion;
+
         LinkedListNode<DelegateInfo> GetNode(ref DelegateInfo del)
         {
             if (m_NodeCache.Count > 0)
@@ -61,6 +66,7 @@ namespace UnityEngine.ResourceManagement.Util
                 node.Value = del;
                 return node;
             }
+
             return new LinkedListNode<DelegateInfo>(del);
         }
 
@@ -146,8 +152,8 @@ namespace UnityEngine.ResourceManagement.Util
                     t += timeAdvanceAmount;
                 else
                     t = Time.unscaledTime;
-            }
-            while (IsActive && (timeout <= 0 || timer.Elapsed.TotalSeconds < timeout));
+            } while (IsActive && (timeout <= 0 || timer.Elapsed.TotalSeconds < timeout));
+
             return !IsActive;
         }
 
@@ -177,10 +183,10 @@ namespace UnityEngine.ResourceManagement.Util
                         list[i].Invoke();
                     list.Clear();
                 }
+
                 iterationCount++;
                 Debug.Assert(iterationCount < 100);
-            }
-            while (m_Actions[m_CollectionIndex].Count > 0);
+            } while (m_Actions[m_CollectionIndex].Count > 0);
 
             if (m_DestroyOnCompletion && !IsActive)
                 Destroy(gameObject);

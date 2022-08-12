@@ -15,9 +15,11 @@ namespace UnityEditor.AddressableAssets.GUI
         [FormerlySerializedAs("fullBuildFoldout")]
         [SerializeField]
         bool m_FullBuildFoldout = true;
+
         [FormerlySerializedAs("updateFoldout")]
         [SerializeField]
         bool m_UpdateFoldout = true;
+
         [FormerlySerializedAs("snapshotPath")]
         [SerializeField]
         string m_SnapshotPath = "/Snapshots/ABuildSnapshot";
@@ -35,13 +37,15 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_FullBuildFoldout)
             {
                 EditorGUI.indentLevel++;
-                EditorGUILayout.HelpBox(new GUIContent("This section will create a rebuild of all content packs as well as the core player build.  A snapshot of this build must be saved in order to do updates to it later."));
+                EditorGUILayout.HelpBox(new GUIContent(
+                    "This section will create a rebuild of all content packs as well as the core player build.  A snapshot of this build must be saved in order to do updates to it later."));
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("Build and Save Snapshot"))
                 {
                     Addressables.Log("we aren't actually building yet.");
                 }
+
                 GUILayout.EndHorizontal();
                 EditorGUI.indentLevel--;
             }
@@ -60,6 +64,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     Addressables.Log("we aren't actually browsing yet.");
                 }
+
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
@@ -67,6 +72,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     Addressables.Log("we aren't actually updating yet.");
                 }
+
                 GUILayout.EndHorizontal();
                 EditorGUI.indentLevel--;
             }

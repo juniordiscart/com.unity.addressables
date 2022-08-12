@@ -15,17 +15,37 @@ namespace UnityEditor.AddressableAssets.GUI
     internal class ProfileDataSourceDropdownWindow : PopupWindowContent
     {
         internal Rect m_WindowRect;
-        internal enum DropdownState { None, BuiltIn, EditorHosted, CCD, Custom };
+
+        internal enum DropdownState
+        {
+            None,
+            BuiltIn,
+            EditorHosted,
+            CCD,
+            Custom
+        };
+
         internal DropdownState state;
         internal ProfileGroupType m_GroupType;
         internal const float k_Margin = 4;
         internal const float k_MaxHeight = 286;
         internal const float k_MinHeight = 80;
         internal Vector2 scrollPos;
+
         internal delegate void ValueChangedEventHandler(object sender, DropdownWindowEventArgs e);
+
         internal event ValueChangedEventHandler ValueChanged;
 
-        internal enum CCDDropdownState { None, General, Bucket, Badge, Environment, AutomaticEnvironment };
+        internal enum CCDDropdownState
+        {
+            None,
+            General,
+            Bucket,
+            Badge,
+            Environment,
+            AutomaticEnvironment
+        };
+
         internal CCDDropdownState CCDState = CCDDropdownState.General;
 
         //temp variables
@@ -84,7 +104,7 @@ namespace UnityEditor.AddressableAssets.GUI
             options.Add(new CustomOption());
 
             var blackTexture = new Texture2D(2, 2);
-            blackTexture.SetPixels(new Color[4] { Color.black, Color.black, Color.black, Color.black });
+            blackTexture.SetPixels(new Color[4] {Color.black, Color.black, Color.black, Color.black});
             blackTexture.Apply();
 
             dropdownTitleStyle = new GUIStyle()
@@ -120,7 +140,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 normal =
                 {
                     background = blackTexture,
-                    scaledBackgrounds = new Texture2D[1] { blackTexture }
+                    scaledBackgrounds = new Texture2D[1] {blackTexture}
                 },
                 fixedHeight = 1,
                 stretchHeight = false
@@ -150,7 +170,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 case DropdownState.None:
                     EditorGUILayout.LabelField(m_BundleLocationsGUIContent, dropdownTitleStyle);
                     EditorGUILayout.Space(10);
-                    EditorGUI.LabelField(horizontalBarRect, "", new GUIStyle(horizontalBarStyle) { fixedWidth = window.width });
+                    EditorGUI.LabelField(horizontalBarRect, "", new GUIStyle(horizontalBarStyle) {fixedWidth = window.width});
                     //List all options
                     foreach (var option in options)
                     {
@@ -179,6 +199,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             }
                         });
                     }
+
                     return;
                 case DropdownState.CCD:
                     var isRefreshing = false;
@@ -190,23 +211,20 @@ namespace UnityEditor.AddressableAssets.GUI
                             break;
                         case CCDDropdownState.General:
 #if !ENABLE_CCD
-                            isRefreshing = DrawCcdDisabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Cloud Content Delivery", DropdownState.None, CCDDropdownState.General);
+                            isRefreshing = DrawCcdDisabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Cloud Content Delivery", DropdownState.None,
+                                CCDDropdownState.General);
 #else
-                            isRefreshing = await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Cloud Content Delivery", DropdownState.None, CCDDropdownState.General);
+                            isRefreshing =
+ await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Cloud Content Delivery", DropdownState.None, CCDDropdownState.General);
 #endif
                             if (isRefreshing) return;
-                            BaseOption.DrawMenuItem("Automatic (set using CcdManager)", nextIcon, () =>
-                            {
-                                CCDState = CCDDropdownState.AutomaticEnvironment;
-                            });
-                            BaseOption.DrawMenuItem("Specify the Environment, Bucket, and Badge", nextIcon, () =>
-                            {
-                                CCDState = CCDDropdownState.Environment;
-                            });
+                            BaseOption.DrawMenuItem("Automatic (set using CcdManager)", nextIcon, () => { CCDState = CCDDropdownState.AutomaticEnvironment; });
+                            BaseOption.DrawMenuItem("Specify the Environment, Bucket, and Badge", nextIcon, () => { CCDState = CCDDropdownState.Environment; });
                             break;
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
                         case CCDDropdownState.AutomaticEnvironment:
-                            isRefreshing = await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Select Environment", DropdownState.CCD, CCDDropdownState.General);
+                            isRefreshing =
+ await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Select Environment", DropdownState.CCD, CCDDropdownState.General);
                             if (isRefreshing) return;
 
                             m_WindowRect.height = m_ProfileDataSource.environments.Count > 0 ? k_MaxHeight : k_MinHeight;
@@ -246,7 +264,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
                             break;
                         case CCDDropdownState.Environment:
-                            isRefreshing = await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Select Environment", DropdownState.CCD, CCDDropdownState.General);
+                            isRefreshing =
+ await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Select Environment", DropdownState.CCD, CCDDropdownState.General);
                             if (isRefreshing) return;
 
                             m_WindowRect.height = m_ProfileDataSource.environments.Count > 0 ? k_MaxHeight : k_MinHeight;
@@ -264,7 +283,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
                             break;
                         case CCDDropdownState.Bucket:
-                            isRefreshing = await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, $"{m_EnvironmentName} Buckets", DropdownState.CCD, CCDDropdownState.Environment);
+                            isRefreshing =
+ await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, $"{m_EnvironmentName} Buckets", DropdownState.CCD, CCDDropdownState.Environment);
                             if (isRefreshing) return;
 
                             scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandHeight(true));
@@ -296,7 +316,8 @@ namespace UnityEditor.AddressableAssets.GUI
                             EditorGUILayout.EndScrollView();
                             break;
                         case CCDDropdownState.Badge:
-                            isRefreshing = await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, $"{m_BucketName} Badges", DropdownState.CCD, CCDDropdownState.Bucket);
+                            isRefreshing =
+ await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, $"{m_BucketName} Badges", DropdownState.CCD, CCDDropdownState.Bucket);
                             if (isRefreshing) return;
 
                             scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandHeight(true));
@@ -348,6 +369,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
 #endif
                     }
+
                     break;
                 case DropdownState.BuiltIn:
                 case DropdownState.EditorHosted:
@@ -355,10 +377,12 @@ namespace UnityEditor.AddressableAssets.GUI
                     editorWindow.Close();
                     break;
             }
+
             EditorGUI.EndDisabledGroup();
         }
 
-        private bool DrawCcdDisabledDropdownHeader(Rect window, Rect horizontalBarRect, Rect backButtonRect, Rect refreshButtonRect, Event evt, string title, DropdownState dropdownState, CCDDropdownState prevState)
+        private bool DrawCcdDisabledDropdownHeader(Rect window, Rect horizontalBarRect, Rect backButtonRect, Rect refreshButtonRect, Event evt, string title, DropdownState dropdownState,
+            CCDDropdownState prevState)
         {
             DrawHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, title, dropdownState, prevState);
 #if !ENABLE_CCD
@@ -415,7 +439,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             EditorGUILayout.LabelField(title, dropdownTitleStyle);
             EditorGUILayout.Space(10);
-            EditorGUI.LabelField(horizontalBarRect, "", new GUIStyle(horizontalBarStyle) { fixedWidth = window.width });
+            EditorGUI.LabelField(horizontalBarRect, "", new GUIStyle(horizontalBarStyle) {fixedWidth = window.width});
         }
 
         private void SyncProfileGroupTypes()
@@ -433,6 +457,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     throw new Exception("Failed to retrieve org data.");
                 }
+
                 var data = await response.Content.ReadAsStringAsync();
                 return OrgData.ParseOrgData(data);
             }
@@ -472,6 +497,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     Rect linkRect = new Rect(labelRect.x + labelRect.width - menuOptionStyle.fixedHeight - 10, labelRect.y, menuOptionStyle.fixedHeight, menuOptionStyle.fixedHeight);
                     EditorGUI.LabelField(linkRect, EditorGUIUtility.IconContent(displayIcon));
                 }
+
                 if (Event.current.type == EventType.MouseDown && labelRect.Contains(Event.current.mousePosition))
                 {
                     action.Invoke();
@@ -495,6 +521,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     Rect linkRect = new Rect(labelRect.x + labelRect.width - menuOptionStyle.fixedHeight, labelRect.y, menuOptionStyle.fixedHeight, menuOptionStyle.fixedHeight);
                     EditorGUI.LabelField(linkRect, EditorGUIUtility.IconContent(displayIcon));
                 }
+
                 if (Event.current.type == EventType.MouseDown && labelRect.Contains(Event.current.mousePosition))
                 {
                     action.Invoke(arg);

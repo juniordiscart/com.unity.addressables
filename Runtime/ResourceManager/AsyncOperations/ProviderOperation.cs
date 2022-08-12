@@ -41,8 +41,17 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         IOperationCacheKey ICachable.Key { get; set; }
         private ResourceManager m_ResourceManager;
         private const float k_OperationWaitingToCompletePercentComplete = 0.99f;
-        public int ProvideHandleVersion { get { return m_ProvideHandleVersion; } }
-        public IResourceLocation Location { get { return m_Location; } }
+
+        public int ProvideHandleVersion
+        {
+            get { return m_ProvideHandleVersion; }
+        }
+
+        public IResourceLocation Location
+        {
+            get { return m_Location; }
+        }
+
         public void SetDownloadProgressCallback(Func<DownloadStatus> callback)
         {
             m_GetDownloadProgressCallback = callback;
@@ -56,7 +65,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         ///<inheritdoc />
-        protected  override bool InvokeWaitForCompletion()
+        protected override bool InvokeWaitForCompletion()
         {
             if (IsDone || m_ProviderCompletedCalled)
                 return true;
@@ -84,7 +93,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             if (Status == AsyncOperationStatus.Succeeded)
                 m_DownloadStatus.DownloadedBytes = m_DownloadStatus.TotalBytes;
 
-            return new DownloadStatus() { DownloadedBytes = m_DownloadStatus.DownloadedBytes + depDLS.DownloadedBytes, TotalBytes = m_DownloadStatus.TotalBytes + depDLS.TotalBytes, IsDone = IsDone };
+            return new DownloadStatus() {DownloadedBytes = m_DownloadStatus.DownloadedBytes + depDLS.DownloadedBytes, TotalBytes = m_DownloadStatus.TotalBytes + depDLS.TotalBytes, IsDone = IsDone};
         }
 
         public ProviderOperation()
@@ -106,10 +115,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
         protected override string DebugName
         {
-            get
-            {
-                return string.Format("Resource<{0}>({1})", typeof(TObject).Name, m_Location == null ? "Invalid" : ShortenPath(m_Location.InternalId, true));
-            }
+            get { return string.Format("Resource<{0}>({1})", typeof(TObject).Name, m_Location == null ? "Invalid" : ShortenPath(m_Location.InternalId, true)); }
         }
 
         internal const string kInvalidHandleMsg = "The ProvideHandle is invalid. After the handle has been completed, it can no longer be used";
@@ -128,14 +134,14 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 dstList.Add(m_DepOp.Result[i].Result);
         }
 
-        public Type RequestedType { get { return typeof(TObject); } }
+        public Type RequestedType
+        {
+            get { return typeof(TObject); }
+        }
 
         public int DependencyCount
         {
-            get
-            {
-                return (!m_DepOp.IsValid() || m_DepOp.Result == null) ? 0 : m_DepOp.Result.Count;
-            }
+            get { return (!m_DepOp.IsValid() || m_DepOp.Result == null) ? 0 : m_DepOp.Result.Count; }
         }
 
         public TDepObject GetDependency<TDepObject>(int index)
@@ -175,7 +181,9 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             }
             else
             {
-                string errorMsg = string.Format("Provider of type {0} with id {1} has provided a result of type {2} which cannot be converted to requested type {3}. The operation will be marked as failed.", m_Provider.GetType().ToString(), m_Provider.ProviderId, typeof(T), typeof(TObject));
+                string errorMsg = string.Format(
+                    "Provider of type {0} with id {1} has provided a result of type {2} which cannot be converted to requested type {3}. The operation will be marked as failed.",
+                    m_Provider.GetType().ToString(), m_Provider.ProviderId, typeof(T), typeof(TObject));
                 Complete(Result, false, errorMsg);
                 throw new Exception(errorMsg);
             }

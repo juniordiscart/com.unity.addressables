@@ -11,13 +11,28 @@ namespace UnityEditor.AddressableAssets.Build
     {
 #pragma warning disable CA1061 // Do not hide base class methods
         /// <inheritdoc />
-        public new void AddTypes(params Type[] types) { base.AddTypes(types); }
+        public new void AddTypes(params Type[] types)
+        {
+            base.AddTypes(types);
+        }
+
         /// <inheritdoc />
-        public new void AddTypes(IEnumerable<Type> types) { base.AddTypes(types); }
+        public new void AddTypes(IEnumerable<Type> types)
+        {
+            base.AddTypes(types);
+        }
+
         /// <inheritdoc />
-        public new void SetTypeConversion(Type a, Type b) { base.SetTypeConversion(a, b); }
+        public new void SetTypeConversion(Type a, Type b)
+        {
+            base.SetTypeConversion(a, b);
+        }
+
         /// <inheritdoc />
-        public new void Save(string path) { base.Save(path); }
+        public new void Save(string path)
+        {
+            base.Save(path);
+        }
 #pragma warning restore CA1061 // Do not hide base class methods
     }
 }

@@ -22,7 +22,7 @@ namespace AddressableTests.FastModeInitTests
             bool originalValue = ProjectConfigData.PostProfilerEvents;
             ProjectConfigData.PostProfilerEvents = sendProfilerEvents;
             var settings = AddressableAssetSettings.Create(Path.Combine(GetGeneratedAssetsPath(), "Settings"), "AddressableAssetSettings.Tests", false, true);
-           
+
             //Test
             FastModeInitializationOperation fmInit = new FastModeInitializationOperation(m_Addressables, settings);
             fmInit.InvokeExecute();
@@ -48,7 +48,7 @@ namespace AddressableTests.FastModeInitTests
             fmInit.InvokeExecute();
 
             //Assert
-            if(sendProfilerEvents)
+            if (sendProfilerEvents)
                 Assert.IsNotNull(fmInit.m_Diagnostics, "Diagnostic event collector was null when send profiler events was set to true.");
             else
                 Assert.IsNull(fmInit.m_Diagnostics, "Diagnostic event collector was not null when send profiler events was false.");
@@ -82,16 +82,16 @@ namespace AddressableTests.FastModeInitTests
         {
             var settings = base.CreateSettings("AddressableAssetSettings.Tests", Path.Combine(GetGeneratedAssetsPath(), "Settings"));
             var db = FastModeInitializationOperation.GetBuilderOfType<BuildScriptFastMode>(settings, true);
-            
+
             // default fast mode should be added on Validate of the settings object
             Assert.IsNotNull(db, "Failed to find the FastMode build script");
             Assert.AreEqual(db.GetType(), typeof(BuildScriptFastMode), "Fast mode build script expected to be BuildScriptFastMode type");
-            
+
             Assert.IsTrue(settings.AddDataBuilder(settings.CreateScriptAsset<FastModeInitializationTestsBuildScriptFastMode>(), false), "Failed to Add custom buildScript FastMode");
             db = FastModeInitializationOperation.GetBuilderOfType<BuildScriptFastMode>(settings, true);
             Assert.IsNotNull(db, "Failed to find the FastMode build script");
             Assert.AreEqual(db.GetType(), typeof(FastModeInitializationTestsBuildScriptFastMode), "Fast mode build script expected to be FastModeInitializationTestsBuildScriptFastMode type");
-            
+
             db = FastModeInitializationOperation.GetBuilderOfType<BuildScriptFastMode>(settings, false);
             Assert.IsNotNull(db, "Failed to find the FastMode build script");
             Assert.AreEqual(db.GetType(), typeof(BuildScriptFastMode), "Fast mode build script expected to be BuildScriptFastMode type, where requesting exact type and exists in the settings");

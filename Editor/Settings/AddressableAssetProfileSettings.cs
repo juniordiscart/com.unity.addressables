@@ -42,20 +42,27 @@ namespace UnityEditor.AddressableAssets.Settings
                 [FormerlySerializedAs("m_id")]
                 [SerializeField]
                 string m_Id;
+
                 public string id
                 {
                     get { return m_Id; }
                     set { m_Id = value; }
                 }
+
                 [FormerlySerializedAs("m_value")]
                 [SerializeField]
                 string m_Value;
+
                 public string value
                 {
                     get { return m_Value; }
                     set { m_Value = value; }
                 }
-                internal ProfileEntry() {}
+
+                internal ProfileEntry()
+                {
+                }
+
                 internal ProfileEntry(string id, string v)
                 {
                     m_Id = id;
@@ -68,6 +75,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     m_Value = copy.m_Value;
                 }
             }
+
             [NonSerialized]
             internal AddressableAssetProfileSettings m_ProfileParent;
 
@@ -80,25 +88,31 @@ namespace UnityEditor.AddressableAssets.Settings
                 get { return m_InheritedParent; }
                 set { m_InheritedParent = value; }
             }
+
             [FormerlySerializedAs("m_id")]
             [SerializeField]
             string m_Id;
+
             internal string id
             {
                 get { return m_Id; }
                 set { m_Id = value; }
             }
+
             [FormerlySerializedAs("m_profileName")]
             [SerializeField]
             string m_ProfileName;
+
             internal string profileName
             {
                 get { return m_ProfileName; }
                 set { m_ProfileName = value; }
             }
+
             [FormerlySerializedAs("m_values")]
             [SerializeField]
             List<ProfileEntry> m_Values = new List<ProfileEntry>();
+
             internal List<ProfileEntry> values
             {
                 get { return m_Values; }
@@ -160,10 +174,15 @@ namespace UnityEditor.AddressableAssets.Settings
 
         [NonSerialized]
         AddressableAssetSettings m_Settings;
+
         [FormerlySerializedAs("m_profiles")]
         [SerializeField]
         List<BuildProfile> m_Profiles = new List<BuildProfile>();
-        internal List<BuildProfile> profiles { get { return m_Profiles; } }
+
+        internal List<BuildProfile> profiles
+        {
+            get { return m_Profiles; }
+        }
 
         /// <summary>
         /// A container for profile specific data, such as the name and ID of a profile.
@@ -174,14 +193,19 @@ namespace UnityEditor.AddressableAssets.Settings
             [FormerlySerializedAs("m_id")]
             [SerializeField]
             string m_Id;
+
             /// <summary>
             /// The unique ID set to identify a specific profile.
             /// </summary>
-            public string Id { get { return m_Id; } }
+            public string Id
+            {
+                get { return m_Id; }
+            }
 
             [FormerlySerializedAs("m_name")]
             [SerializeField]
             string m_Name;
+
             /// <summary>
             /// The name of the specific profile.
             /// </summary>
@@ -189,6 +213,7 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 get { return m_Name; }
             }
+
             /// <summary>
             /// Changes the name of a given profile and updates the values in the profile settings.
             /// </summary>
@@ -217,8 +242,15 @@ namespace UnityEditor.AddressableAssets.Settings
             [FormerlySerializedAs("m_inlineUsage")]
             [SerializeField]
             bool m_InlineUsage;
-            internal bool InlineUsage { get { return m_InlineUsage; } }
-            internal ProfileIdData() {}
+
+            internal bool InlineUsage
+            {
+                get { return m_InlineUsage; }
+            }
+
+            internal ProfileIdData()
+            {
+            }
 
             /// <summary>
             /// Create a new ProfileIdData.
@@ -238,10 +270,13 @@ namespace UnityEditor.AddressableAssets.Settings
         [FormerlySerializedAs("m_profileEntryNames")]
         [SerializeField]
         List<ProfileIdData> m_ProfileEntryNames = new List<ProfileIdData>();
+
         [FormerlySerializedAs("m_profileVersion")]
         [SerializeField]
         internal int m_ProfileVersion;
+
         const int k_CurrentProfileVersion = 1;
+
         internal List<ProfileIdData> profileEntryNames
         {
             get
@@ -259,6 +294,7 @@ namespace UnityEditor.AddressableAssets.Settings
                             break;
                         }
                     }
+
                     if (!string.IsNullOrEmpty(removeId))
                         RemoveValue(removeId);
                 }
@@ -272,10 +308,12 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Text that represents a custom profile entry.
         /// </summary>
         public const string customEntryString = "<custom>";
+
         /// <summary>
         /// Text that represents when the default settings path is being used.
         /// </summary>
         public const string defaultSettingsPathString = "<default settings path>";
+
         /// <summary>
         /// Text that represents an undefined profile entry.
         /// </summary>
@@ -335,6 +373,7 @@ namespace UnityEditor.AddressableAssets.Settings
                                 return v;
                         }
                     }
+
                     v = AddressablesRuntimeProperties.EvaluateProperty(s);
                 }
 
@@ -350,6 +389,7 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         const string k_RootProfileName = "Default";
+
         internal string CreateDefaultProfile()
         {
             if (!ValidateProfiles())
@@ -364,6 +404,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 CreateValue(AddressableAssetSettings.kRemoteBuildPath, AddressableAssetSettings.kRemoteBuildPathValue);
                 CreateValue(AddressableAssetSettings.kRemoteLoadPath, AddressableAssetSettings.RemoteLoadPathValue);
             }
+
             return GetDefaultProfileId();
         }
 
@@ -456,6 +497,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (p.id == profileId)
                     return p.profileName;
             }
+
             return "";
         }
 
@@ -471,6 +513,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (p.profileName == profileName)
                     return p.id;
             }
+
             return "";
         }
 
@@ -607,7 +650,10 @@ namespace UnityEditor.AddressableAssets.Settings
         public void RemoveProfile(string profileId)
         {
             m_Profiles.RemoveAll(p => p.id == profileId);
-            m_Profiles.ForEach(p => { if (p.inheritedParent == profileId) p.inheritedParent = null; });
+            m_Profiles.ForEach(p =>
+            {
+                if (p.inheritedParent == profileId) p.inheritedParent = null;
+            });
             SetDirty(AddressableAssetSettings.ModificationEvent.ProfileRemoved, profileId, true);
             ProfileWindow.MarkForReload();
         }
@@ -634,6 +680,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (idPair.ProfileName == variableName)
                     return idPair.Id;
             }
+
             return null;
         }
 
@@ -698,6 +745,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     pro.values.Add(new BuildProfile.ProfileEntry(id, defaultValue));
                 }
             }
+
             SetDirty(AddressableAssetSettings.ModificationEvent.ProfileModified, null, true);
             return id;
         }
@@ -712,6 +760,7 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 pro.values.RemoveAll(x => x.id == variableId);
             }
+
             m_ProfileEntryNames.RemoveAll(x => x.Id == variableId);
             SetDirty(AddressableAssetSettings.ModificationEvent.ProfileModified, null, false);
             ProfileWindow.MarkForReload();
@@ -752,6 +801,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (counter == int.MaxValue)
                     throw new OverflowException();
             }
+
             return newName;
         }
 

@@ -24,6 +24,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
             /// Use to indicate that the request succeeded.
             /// </summary>
             Ok = 200,
+
             /// <summary>
             /// Use to indicate that the requested resource could not be found.
             /// </summary>
@@ -55,6 +56,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
                     Debug.LogException(e);
                     throw;
                 }
+
                 m_Context.Response.ContentLength64 = m_ReadFileStream.Length;
             }
 
@@ -131,8 +133,10 @@ namespace UnityEditor.AddressableAssets.HostingServices
 
         GUIContent m_UploadSpeedGUI =
             new GUIContent("Upload Speed (Kb/s)", "Speed in Kb/s the hosting service will upload content. 0 for no limit");
+
         GUIContent m_PortNumberGUI =
             new GUIContent("Port", "Port number used by the service");
+
         GUIContent m_ResetPortGUI =
             new GUIContent("Reset", "Selects the next available port. Value will remain unchanged if no other port is available");
 
@@ -148,10 +152,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         // ReSharper disable once MemberCanBePrivate.Global
         public int HostingServicePort
         {
-            get
-            {
-                return m_ServicePort;
-            }
+            get { return m_ServicePort; }
             protected set
             {
                 if (value > 0)
@@ -350,7 +351,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
             bool autoPickPort = port == 0;
             var newPort = autoPickPort ? GetAvailablePort() : port;
             StopHostingService();
-            
+
             if (autoPickPort)
             {
                 var oldPort = HostingServicePort;

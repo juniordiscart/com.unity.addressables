@@ -25,6 +25,7 @@ namespace UnityEditor.AddressableAssets.Tests
         internal class InitializeScriptable : ScriptableObject, IObjectInitializationDataProvider
         {
             public string Name { get; }
+
             public ObjectInitializationData CreateObjectInitializationData()
             {
                 return new ObjectInitializationData();
@@ -40,6 +41,7 @@ namespace UnityEditor.AddressableAssets.Tests
         internal class InitializationObejctTest : IObjectInitializationDataProvider
         {
             public string Name { get; }
+
             public ObjectInitializationData CreateObjectInitializationData()
             {
                 return new ObjectInitializationData();
@@ -50,6 +52,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             public string Name { get; set; }
             public bool CacheCleared = false;
+
             public bool CanBuildData<T>() where T : IDataBuilderResult
             {
                 return true;
@@ -89,7 +92,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsTrue(cache.TryGetCached(key, out result));
             Assert.AreEqual(result, 20);
         }
-        
+
         [Test]
         public void SettingsCache_CacheClearedOnSettingsChanged()
         {
@@ -99,7 +102,7 @@ namespace UnityEditor.AddressableAssets.Tests
             cache.Add(key, 20);
             Assert.IsTrue(cache.TryGetCached(key, out result));
             Assert.AreEqual(result, 20);
-            
+
             Settings.AddLabel("SettingsCache_CacheClearedOnSettingsChanged.testLabel", false);
             try
             {
@@ -109,17 +112,16 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 Settings.RemoveLabel("SettingsCache_CacheClearedOnSettingsChanged.testLabel", false);
             }
-            
         }
 
         [Test]
         public void GetDefaultGroupDoesNotThrowNullExceptionWhenGroupsNull()
         {
-            Settings.groups.Insert(0,null);
+            Settings.groups.Insert(0, null);
             Assert.IsNotNull(Settings.DefaultGroup);
             Settings.groups.RemoveAt(0);
         }
-        
+
         [Test]
         public void HasDefaultInitialGroups()
         {
@@ -174,7 +176,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Assert.IsFalse(Settings.GetLabels().Contains(replaceMe));
             Assert.IsTrue(Settings.GetLabels().Contains(useMeToReplace));
-            
+
             Settings.RemoveLabel(useMeToReplace);
         }
 
@@ -277,8 +279,8 @@ namespace UnityEditor.AddressableAssets.Tests
             string guid2 = "guid2";
             string guid3 = "guid3";
 
-            Settings.CreateOrMoveEntries(new List<string>() { guid1, guid2, guid3 }, Settings.DefaultGroup, 
-                new List<AddressableAssetEntry>(), 
+            Settings.CreateOrMoveEntries(new List<string>() {guid1, guid2, guid3}, Settings.DefaultGroup,
+                new List<AddressableAssetEntry>(),
                 new List<AddressableAssetEntry>());
 
             Assert.IsNotNull(Settings.FindAssetEntry(guid1));
@@ -297,12 +299,12 @@ namespace UnityEditor.AddressableAssets.Tests
             string guid2 = "guid2";
             string guid3 = "guid3";
             var group = Settings.CreateGroup("SeparateGroup", false, false, true, new List<AddressableAssetGroupSchema>());
-            group.AddAssetEntry(Settings.CreateEntry(guid1, "addr1", group,false));
-            group.AddAssetEntry(Settings.CreateEntry(guid2, "addr2", group,false));
-            group.AddAssetEntry(Settings.CreateEntry(guid3, "addr3", group,false));
+            group.AddAssetEntry(Settings.CreateEntry(guid1, "addr1", group, false));
+            group.AddAssetEntry(Settings.CreateEntry(guid2, "addr2", group, false));
+            group.AddAssetEntry(Settings.CreateEntry(guid3, "addr3", group, false));
 
-            Settings.CreateOrMoveEntries(new List<string>() { guid1, guid2, guid3 }, Settings.DefaultGroup, 
-                new List<AddressableAssetEntry>(), 
+            Settings.CreateOrMoveEntries(new List<string>() {guid1, guid2, guid3}, Settings.DefaultGroup,
+                new List<AddressableAssetEntry>(),
                 new List<AddressableAssetEntry>());
 
             Assert.IsNull(group.GetAssetEntry(guid1));
@@ -323,11 +325,11 @@ namespace UnityEditor.AddressableAssets.Tests
             string guid2 = "guid2";
             string guid3 = "guid3";
             var group = Settings.CreateGroup("SeparateGroup", false, false, true, new List<AddressableAssetGroupSchema>());
-            group.AddAssetEntry(Settings.CreateEntry(guid1, "addr1", group,false));
-            group.AddAssetEntry(Settings.CreateEntry(guid3, "addr3", group,false));
+            group.AddAssetEntry(Settings.CreateEntry(guid1, "addr1", group, false));
+            group.AddAssetEntry(Settings.CreateEntry(guid3, "addr3", group, false));
 
-            Settings.CreateOrMoveEntries(new List<string>() { guid1, guid2, guid3 }, Settings.DefaultGroup, 
-                new List<AddressableAssetEntry>(), 
+            Settings.CreateOrMoveEntries(new List<string>() {guid1, guid2, guid3}, Settings.DefaultGroup,
+                new List<AddressableAssetEntry>(),
                 new List<AddressableAssetEntry>());
 
             Assert.IsNull(group.GetAssetEntry(guid1));
@@ -594,6 +596,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 Directory.CreateDirectory(TestFolder + "/resources");
                 AssetDatabase.Refresh();
             }
+
             Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(newAssetPath), Settings.groups[0]);
             movedAssets[0] = newAssetPath;
             movedFromAssetPaths[0] = assetPath;
@@ -762,6 +765,7 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 testSettings.RemoveGroupTemplateObject(0);
             }
+
             Assert.AreEqual(0, testSettings.GroupTemplateObjects.Count);
             Assert.IsNull(testSettings.GetGroupTemplateObject(1));
         }
@@ -865,6 +869,7 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 testSettings.RemoveDataBuilder(0);
             }
+
             Assert.AreEqual(0, testSettings.DataBuilders.Count);
             Assert.IsNull(testSettings.GetDataBuilder(1));
         }
@@ -934,7 +939,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             var initTestObject = new InitializationObejctTest();
             Assert.IsFalse(Settings.AddInitializationObject(initTestObject as IObjectInitializationDataProvider));
-            Assert.AreEqual(currentInitObjectsCount , Settings.InitializationObjects.Count);
+            Assert.AreEqual(currentInitObjectsCount, Settings.InitializationObjects.Count);
             Assert.IsNull(Settings.GetDataBuilder(Settings.InitializationObjects.Count - 1));
         }
 
@@ -983,6 +988,7 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 testSettings.RemoveInitializationObject(0);
             }
+
             Assert.AreEqual(0, testSettings.InitializationObjects.Count);
             Assert.IsNull(testSettings.GetInitializationObject(1));
         }
@@ -1148,8 +1154,8 @@ namespace UnityEditor.AddressableAssets.Tests
                 Settings.RemoveLabel(testLabels[i]);
 
             foreach (var e in entries)
-                foreach (var l in testLabels)
-                    Assert.IsTrue(e.labels.Contains(l));
+            foreach (var l in testLabels)
+                Assert.IsTrue(e.labels.Contains(l));
 
             // Check that each of the first half of labels were removed
             foreach (var e in entries)
@@ -1191,7 +1197,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             string notSet = null;
             AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => notSet = "set");
-            Assert.IsTrue(AddressableAssetSettings.InvokeAssetEntryCommand("cmd1", new AddressableAssetEntry[] {}));
+            Assert.IsTrue(AddressableAssetSettings.InvokeAssetEntryCommand("cmd1", new AddressableAssetEntry[] { }));
             Assert.AreEqual("set", notSet);
             AddressableAssetSettings.UnregisterCustomAssetEntryCommand("cmd1");
         }
@@ -1203,7 +1209,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Encountered exception when running Asset Entry Command 'cmd1': Exception of type 'System.Exception' was thrown.");
-                Assert.IsFalse(AddressableAssetSettings.InvokeAssetEntryCommand("cmd1", new AddressableAssetEntry[] {}));
+                Assert.IsFalse(AddressableAssetSettings.InvokeAssetEntryCommand("cmd1", new AddressableAssetEntry[] { }));
             });
             AddressableAssetSettings.UnregisterCustomAssetEntryCommand("cmd1");
         }
@@ -1211,7 +1217,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CustomEntryCommand_WhenCommandHasNullEntries_ReturnsFalseAndLogsError()
         {
-            AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => {});
+            AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => { });
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Asset Entry Command 'cmd1' called with null entry collection.");
@@ -1226,14 +1232,14 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Asset Entry Command 'cmd' not found.  Ensure that it is registered by calling RegisterCustomAssetEntryCommand.");
-                Assert.IsFalse(AddressableAssetSettings.InvokeAssetEntryCommand("cmd", new AddressableAssetEntry[] {}));
+                Assert.IsFalse(AddressableAssetSettings.InvokeAssetEntryCommand("cmd", new AddressableAssetEntry[] { }));
             });
         }
 
         [Test]
         public void CustomEntryCommand_RegisterWithValidIdAndFunc_Succeeds()
         {
-            AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => {});
+            AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => { });
             CollectionAssert.Contains(AddressableAssetSettings.CustomAssetEntryCommands, "cmd1");
             AddressableAssetSettings.UnregisterCustomAssetEntryCommand("cmd1");
         }
@@ -1254,9 +1260,9 @@ namespace UnityEditor.AddressableAssets.Tests
         public void CustomEntryCommand_RegisterWithInvalidParameters_Fails()
         {
             LogAssert.Expect(LogType.Error, "RegisterCustomAssetEntryCommand - invalid command id.");
-            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand("", s => {}));
+            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand("", s => { }));
             LogAssert.Expect(LogType.Error, "RegisterCustomAssetEntryCommand - invalid command id.");
-            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand(null, s => {}));
+            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand(null, s => { }));
             LogAssert.Expect(LogType.Error, $"RegisterCustomAssetEntryCommand - command functor for id 'valid'.");
             Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand("valid", null));
             CollectionAssert.IsEmpty(AddressableAssetSettings.CustomAssetEntryCommands);
@@ -1267,7 +1273,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             string notSet = null;
             AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => notSet = "set");
-            AddressableAssetSettings.InvokeAssetGroupCommand("cmd1", new AddressableAssetGroup[] {});
+            AddressableAssetSettings.InvokeAssetGroupCommand("cmd1", new AddressableAssetGroup[] { });
             Assert.AreEqual("set", notSet);
             AddressableAssetSettings.UnregisterCustomAssetGroupCommand("cmd1");
         }
@@ -1275,7 +1281,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CustomGroupCommand_RegisterWithValidIdAndFunc_Succeeds()
         {
-            AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => {});
+            AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => { });
             CollectionAssert.Contains(AddressableAssetSettings.CustomAssetGroupCommands, "cmd1");
             AddressableAssetSettings.UnregisterCustomAssetGroupCommand("cmd1");
         }
@@ -1296,9 +1302,9 @@ namespace UnityEditor.AddressableAssets.Tests
         public void CustomGroupCommand_RegisterWithInvalidParameters_Fails()
         {
             LogAssert.Expect(LogType.Error, "RegisterCustomAssetGroupCommand - invalid command id.");
-            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand("", s => {}));
+            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand("", s => { }));
             LogAssert.Expect(LogType.Error, "RegisterCustomAssetGroupCommand - invalid command id.");
-            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand(null, s => {}));
+            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand(null, s => { }));
             LogAssert.Expect(LogType.Error, $"RegisterCustomAssetGroupCommand - command functor for id 'valid'.");
             Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand("valid", null));
             CollectionAssert.IsEmpty(AddressableAssetSettings.CustomAssetGroupCommands);
@@ -1311,7 +1317,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Encountered exception when running Asset Group Command 'cmd1': Exception of type 'System.Exception' was thrown.");
-                Assert.IsFalse(AddressableAssetSettings.InvokeAssetGroupCommand("cmd1", new AddressableAssetGroup[] {}));
+                Assert.IsFalse(AddressableAssetSettings.InvokeAssetGroupCommand("cmd1", new AddressableAssetGroup[] { }));
             });
             AddressableAssetSettings.UnregisterCustomAssetGroupCommand("cmd1");
         }
@@ -1319,7 +1325,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CustomGroupCommand_WhenCommandHasNullGroups_ReturnsFalseAndLogsError()
         {
-            AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => {});
+            AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => { });
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Asset Group Command 'cmd1' called with null group collection.");
@@ -1334,7 +1340,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Asset Group Command 'cmd' not found.  Ensure that it is registered by calling RegisterCustomAssetGroupCommand.");
-                Assert.IsFalse(AddressableAssetSettings.InvokeAssetGroupCommand("cmd", new AddressableAssetGroup[] {}));
+                Assert.IsFalse(AddressableAssetSettings.InvokeAssetGroupCommand("cmd", new AddressableAssetGroup[] { }));
             });
         }
 
@@ -1350,7 +1356,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsNotNull(testSchemaTemplate.GetTypes());
         }
 
-            [Test]
+        [Test]
         public void NullifyBundleFileIds_SetsBundleFileIdsToNull()
         {
             AddressableAssetSettings.NullifyBundleFileIds(Settings);

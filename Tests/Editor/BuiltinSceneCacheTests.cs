@@ -74,7 +74,7 @@ namespace UnityEditor.AddressableAssets.Settings.Tests
         [Test]
         public void WhenScenesChange_CallbackInvoked()
         {
-            int[] called = new int[] { 0 };
+            int[] called = new int[] {0};
             Action callback = () => called[0]++;
             EditorBuildSettingsScene[] scenes = BuiltinSceneCache.scenes;
             scenes[0].enabled = !scenes[0].enabled;

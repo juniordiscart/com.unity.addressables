@@ -14,8 +14,10 @@ namespace UnityEditor.AddressableAssets.Settings
     {
         [SerializeField]
         private List<AddressableAssetGroupSchema> m_SchemaObjects = new List<AddressableAssetGroupSchema>();
+
         [SerializeField]
         private string m_Description;
+
         [SerializeField]
         private AddressableAssetSettings m_Settings;
 
@@ -116,6 +118,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("Cannot remove schema with null type.");
                 return false;
             }
+
             if (!typeof(AddressableAssetGroupSchema).IsAssignableFrom(type))
             {
                 Debug.LogWarningFormat("Invalid Schema type {0}. Schemas must inherit from AddressableAssetGroupSchema.", type.FullName);
@@ -145,6 +148,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     Console.WriteLine(e);
                     throw;
                 }
+
                 m_SchemaObjects.Add(schemaInstance);
 
                 SetDirty(AddressableAssetSettings.ModificationEvent.GroupTemplateSchemaAdded, this, postEvent);
@@ -167,6 +171,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("Cannot remove schema with null type.");
                 return false;
             }
+
             if (!typeof(AddressableAssetGroupSchema).IsAssignableFrom(type))
             {
                 Debug.LogWarningFormat("Invalid Schema type {0}. Schemas must inherit from AddressableAssetGroupSchema.", type.FullName);
@@ -217,6 +222,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     EditorUtility.SetDirty(this);
                     AddressableAssetUtility.OpenAssetIfUsingVCIntegration(this);
                 }
+
                 Settings.SetDirty(modificationEvent, eventData, postEvent, false);
             }
         }
@@ -245,6 +251,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     return schema;
                 }
             }
+
             return null;
         }
 
@@ -262,6 +269,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     return i;
                 }
             }
+
             return -1;
         }
     }

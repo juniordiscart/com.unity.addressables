@@ -22,6 +22,7 @@ namespace UnityEditor.AddressableAssets.Tests
     {
         string m_guid;
         AddressableAssetGroup m_testGroup;
+
         protected override void OnInit()
         {
             var path = GetAssetPath("subObjectTest.asset");
@@ -52,13 +53,13 @@ namespace UnityEditor.AddressableAssets.Tests
             var e = Settings.DefaultGroup.GetAssetEntry(m_guid);
             e.SetAddress("address");
             e.SetLabel("label", true, true, true);
-            CollectionAssert.AreEqual(new string[] { "address", m_guid, "label" }, e.CreateKeyList(true, true, true));
-            CollectionAssert.AreEqual(new string[] { m_guid, "label" }, e.CreateKeyList(false, true, true));
-            CollectionAssert.AreEqual(new string[] { "address", "label" }, e.CreateKeyList(true, false, true));
-            CollectionAssert.AreEqual(new string[] { "address", "label" }, e.CreateKeyList(true, false, true));
-            CollectionAssert.AreEqual(new string[] {"label" }, e.CreateKeyList(false, false, true));
-            CollectionAssert.AreEqual(new string[] { "address" }, e.CreateKeyList(true, false, false));
-            CollectionAssert.AreEqual(new string[] { m_guid }, e.CreateKeyList(false, true, false));
+            CollectionAssert.AreEqual(new string[] {"address", m_guid, "label"}, e.CreateKeyList(true, true, true));
+            CollectionAssert.AreEqual(new string[] {m_guid, "label"}, e.CreateKeyList(false, true, true));
+            CollectionAssert.AreEqual(new string[] {"address", "label"}, e.CreateKeyList(true, false, true));
+            CollectionAssert.AreEqual(new string[] {"address", "label"}, e.CreateKeyList(true, false, true));
+            CollectionAssert.AreEqual(new string[] {"label"}, e.CreateKeyList(false, false, true));
+            CollectionAssert.AreEqual(new string[] {"address"}, e.CreateKeyList(true, false, false));
+            CollectionAssert.AreEqual(new string[] {m_guid}, e.CreateKeyList(false, true, false));
         }
 
         [Test]
@@ -161,9 +162,9 @@ namespace UnityEditor.AddressableAssets.Tests
 
             //Test
             entry.CreateCatalogEntries(new List<ContentCatalogDataEntry>(), false, "fakeProvider", new List<object>(), null, new Dictionary<GUID, AssetLoadInfo>()
-            {
-                { new GUID(guid), new AssetLoadInfo() {includedObjects = new List<ObjectIdentifier>()} }
-            },
+                {
+                    {new GUID(guid), new AssetLoadInfo() {includedObjects = new List<ObjectIdentifier>()}}
+                },
                 new HashSet<Type>(), true, false, false, new HashSet<string>());
 
             //Assert
@@ -180,7 +181,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var entries = new List<ContentCatalogDataEntry>();
             var providerTypes = new HashSet<Type>();
             var savedType = e.m_cachedMainAssetType;
-            e.m_cachedMainAssetType = typeof(Texture2D);//something arbitrarily wrong.
+            e.m_cachedMainAssetType = typeof(Texture2D); //something arbitrarily wrong.
             e.CreateCatalogEntries(entries, false, "doesntMatter", null, null, providerTypes);
             e.m_cachedMainAssetType = savedType;
             Assert.AreEqual(2, entries.Count);
@@ -193,6 +194,7 @@ namespace UnityEditor.AddressableAssets.Tests
                     foundOnlyTestObjects = false;
                 }
             }
+
             Assert.IsTrue(foundOnlyTestObjects);
         }
 
@@ -208,7 +210,7 @@ namespace UnityEditor.AddressableAssets.Tests
             e.m_cachedMainAssetType = savedType;
             Assert.AreEqual(0, entries.Count);
         }
-        
+
         [Test]
         public void CreateCatalogEntries_NonUnityObjectsTypesAreStripped()
         {
@@ -223,7 +225,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             var e = Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(path), Settings.DefaultGroup);
             e.address = id;
-            
+
             // test
             try
             {
@@ -231,7 +233,8 @@ namespace UnityEditor.AddressableAssets.Tests
                 var providerTypes = new HashSet<Type>();
                 e.CreateCatalogEntries(entries, false, "doesntMatter", null, null, providerTypes);
                 var foundCatalogEntryForSerialisedClass = entries.Find(entry => entry.ResourceType == typeof(SerializableClass));
-                Assert.IsNull(foundCatalogEntryForSerialisedClass, "SerializableClass was found as a catalog entry type. Only Unity Objects are meant to be Assets not serialised objects internal to the type.");
+                Assert.IsNull(foundCatalogEntryForSerialisedClass,
+                    "SerializableClass was found as a catalog entry type. Only Unity Objects are meant to be Assets not serialised objects internal to the type.");
             }
             finally
             {
@@ -240,7 +243,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 UnityEngine.Object.DestroyImmediate(testObject);
             }
         }
-        
+
         [Test]
         public void CreateCatalogEntries_IncludesUnityObjectsOnly()
         {
@@ -255,7 +258,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             var e = Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(path), Settings.DefaultGroup);
             e.address = id;
-            
+
             // test
             try
             {
@@ -336,14 +339,14 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.IsTrue(subObjects.Contains(entry.TargetAsset));
             }
         }
-        
+
         [Test]
         public void WhenGettingFolderSubEntry_OnlyReturnsIfValidSubEntry()
         {
             AddressableAssetEntry mainFolderEntry = null;
             AddressableAssetEntry subFolderEntry = null;
             string testAssetFolder = GetAssetPath("TestFolder");
-            
+
             try
             {
                 //Setup
@@ -382,20 +385,20 @@ namespace UnityEditor.AddressableAssets.Tests
                 Directory.Delete(testAssetFolder, true);
             }
         }
-        
+
         [TestCase(true)]
         [TestCase(false)]
         public void WhenGatherFolderEntries_ReturnsCorrectAssetObjects(bool includeSubObjects)
         {
             AddressableAssetEntry addrFolderEntry = null;
             string addressableFolderPath = GetAssetPath("TestFolder");
-            
+
             try
             {
                 //Setup
                 string folderGuid = CreateFolderDeep(addressableFolderPath);
                 addrFolderEntry = Settings.CreateOrMoveEntry(folderGuid, m_testGroup, false);
-                
+
                 string testAssetPath = Path.Combine(addressableFolderPath, "testObject.asset").Replace('\\', '/');
                 var testAsset = TestObject.Create("testObject", testAssetPath);
                 testAsset.AddTestSubObject();
@@ -421,7 +424,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             AddressableAssetEntry mainFolderEntry = null;
             string testAssetFolder = GetAssetPath("TestFolder");
-            
+
             try
             {
                 //Setup
@@ -434,13 +437,12 @@ namespace UnityEditor.AddressableAssets.Tests
                 mainFolderEntry = Settings.CreateOrMoveEntry(mainFolderGuid, m_testGroup, false);
 
                 mainFolderEntry.SetLabel("testlabel", true);
-                
+
                 //Test
                 var entry = mainFolderEntry.GetFolderSubEntry(AssetDatabase.AssetPathToGUID(mainPrefabPath), mainPrefabPath);
                 Assert.IsNotNull(entry, "Prefab in main folder is expected to be valid subAsset of main folder.");
                 Assert.AreEqual(1, entry.labels.Count, "Labels should be correctly copied over when using GetFolderSubEntry");
                 Assert.AreEqual(testAssetFolder + "/mainFolder.prefab", entry.AssetPath, "Asset path should be correctly set when using GetFolderSubEntry");
-                
             }
             finally
             {
@@ -449,13 +451,13 @@ namespace UnityEditor.AddressableAssets.Tests
                 Directory.Delete(testAssetFolder, true);
             }
         }
-        
+
         [Test]
         public void GetFolderSubEntry_SetsLabelsCorrectlyOnLongPath()
         {
             AddressableAssetEntry mainFolderEntry = null;
             string testAssetFolder = GetAssetPath("TestFolder");
-            
+
             try
             {
                 //Setup
@@ -470,13 +472,12 @@ namespace UnityEditor.AddressableAssets.Tests
                 mainFolderEntry = Settings.CreateOrMoveEntry(mainFolderGuid, m_testGroup, false);
 
                 mainFolderEntry.SetLabel("testlabel", true);
-                
+
                 //Test
                 var entry = mainFolderEntry.GetFolderSubEntry(AssetDatabase.AssetPathToGUID(mainPrefabPath), mainPrefabPath);
                 Assert.IsNotNull(entry, "Prefab in main folder is expected to be valid subAsset of main folder.");
                 Assert.AreEqual(1, entry.labels.Count, "Labels should be correctly copied over when using GetFolderSubEntry");
                 Assert.AreEqual(extraFolderPath + "/mainFolder.prefab", entry.AssetPath, "Asset path should be correctly set when using GetFolderSubEntry");
-                
             }
             finally
             {
@@ -601,6 +602,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 foreach (AddressableAssetEntry assetEntry in entries)
                     csvEntries += assetEntry.AssetPath + ", ";
             }
+
             Assert.AreEqual(2, entries.Count, $"Expected 2 (testAsset1_gatherAllAssets and testAsset2_gatherAllAssets), but was {entries.Count}: ({csvEntries})");
             Assert.IsTrue(entries.Any(e => e.guid == a1GUID));
             Assert.IsFalse(entries.Any(e => e.guid == a2GUID));
@@ -660,7 +662,9 @@ namespace UnityEditor.AddressableAssets.Tests
 
             //Test
             List<IReferenceEntryData> results = new List<IReferenceEntryData>();
-            entry.GatherAllAssetReferenceDrawableEntries(results, Settings);
+            HashSet<string> processed = new HashSet<string>();
+            m_testGroup.GatherAllDirectAssetReferenceEntryData(results, processed);
+            m_testGroup.GatherAllFolderSubAssetReferenceEntryData(results, processed);
 
             //Assert
             Assert.AreEqual(0, results.Count);
@@ -685,7 +689,9 @@ namespace UnityEditor.AddressableAssets.Tests
 
             //Test
             List<IReferenceEntryData> results = new List<IReferenceEntryData>();
-            entry.GatherAllAssetReferenceDrawableEntries(results, Settings);
+            HashSet<string> processed = new HashSet<string>();
+            m_testGroup.GatherAllDirectAssetReferenceEntryData(results, processed);
+            m_testGroup.GatherAllFolderSubAssetReferenceEntryData(results, processed);
 
             //Assert
             Assert.AreEqual(0, results.Count);
@@ -713,10 +719,10 @@ namespace UnityEditor.AddressableAssets.Tests
 
             string guid = AssetDatabase.AssetPathToGUID(testAssetFolder);
             AddressableAssetEntry entry = Settings.CreateOrMoveEntry(guid, m_testGroup, false);
-            List<IReferenceEntryData> results = new List<IReferenceEntryData>();
 
             //Test
-            entry.GatherAllAssetReferenceDrawableEntries(results, Settings);
+            List<IReferenceEntryData> results = new List<IReferenceEntryData>();
+            m_testGroup.GatherAllFolderSubAssetReferenceEntryData(results, null);
 
             //Assert
             Assert.AreEqual(2, results.Count);
@@ -756,10 +762,12 @@ namespace UnityEditor.AddressableAssets.Tests
 
             string guid = AssetDatabase.AssetPathToGUID(testAssetFolder);
             AddressableAssetEntry entry = Settings.CreateOrMoveEntry(guid, m_testGroup, false);
-            List<IReferenceEntryData> results = new List<IReferenceEntryData>();
 
             //Test
-            entry.GatherAllAssetReferenceDrawableEntries(results, Settings);
+            List<IReferenceEntryData> results = new List<IReferenceEntryData>();
+            HashSet<string> processed = new HashSet<string>();
+            m_testGroup.GatherAllDirectAssetReferenceEntryData(results, processed);
+            m_testGroup.GatherAllFolderSubAssetReferenceEntryData(results, processed);
 
             //Assert
             Assert.AreEqual(2, results.Count);
@@ -767,7 +775,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(subPrefabPath, results[1].AssetPath);
 
             //Cleanup
-            Directory.Delete(testAssetFolder, true);
+            DirectoryUtility.DeleteDirectory(testAssetFolder, false);
             BuiltinSceneCache.scenes = savedCache;
             Settings.RemoveAssetEntry(guid, false);
         }
@@ -779,17 +787,22 @@ namespace UnityEditor.AddressableAssets.Tests
             string guid = "12345698655";
             AddressableAssetEntry entry = Settings.CreateOrMoveEntry(guid, m_testGroup, false);
             entry.m_cachedAssetPath = "TestPath";
-            List<IReferenceEntryData> results = new List<IReferenceEntryData>();
 
             //Test
-            entry.GatherAllAssetReferenceDrawableEntries(results, Settings);
+            try
+            {
+                List<IReferenceEntryData> results = new List<IReferenceEntryData>();
+                m_testGroup.GatherAllDirectAssetReferenceEntryData(results, null);
 
-            //Assert
-            Assert.AreEqual(1, results.Count);
-            Assert.AreEqual(entry.AssetPath, results[0].AssetPath);
-
-            //Cleanup
-            Settings.RemoveAssetEntry(guid, false);
+                //Assert
+                Assert.AreEqual(1, results.Count);
+                Assert.AreEqual(entry.AssetPath, results[0].AssetPath);
+            }
+            // cleanup
+            finally
+            {
+                Settings.RemoveAssetEntry(guid, false);
+            }
         }
 
         [Test]
@@ -798,10 +811,10 @@ namespace UnityEditor.AddressableAssets.Tests
             var resourcePath = GetAssetPath("Resources");
             string testAssetFolder = GetAssetPath("TestFolder");
             var subFolderPath = testAssetFolder + "/resources";
-            
+
             string r1GUID = null;
             string r2GUID = null;
-            
+
             try
             {
                 r1GUID = CreateAsset(resourcePath + "/testResourceupper.prefab", "testResourceupper");
@@ -970,8 +983,8 @@ namespace UnityEditor.AddressableAssets.Tests
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.SaveAndReimport();
 
-            SpriteAtlasExtensions.Add(spriteAtlas, new[] { AssetDatabase.LoadAssetAtPath<Texture>(texturePath) });
-            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { spriteAtlas }, EditorUserBuildSettings.activeBuildTarget, false);
+            SpriteAtlasExtensions.Add(spriteAtlas, new[] {AssetDatabase.LoadAssetAtPath<Texture>(texturePath)});
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {spriteAtlas}, EditorUserBuildSettings.activeBuildTarget, false);
 
             return spriteAtlasPath;
         }

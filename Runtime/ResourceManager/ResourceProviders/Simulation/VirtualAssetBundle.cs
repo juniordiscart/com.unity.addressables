@@ -54,13 +54,15 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 }
             }
 
-            remove
-            {
-                m_CompletedAction.Remove(value);
-            }
+            remove { m_CompletedAction.Remove(value); }
         }
 
-        public AsyncOperationStatus Status { get { return m_Status; } protected set { m_Status = value; } }
+        public AsyncOperationStatus Status
+        {
+            get { return m_Status; }
+            protected set { m_Status = value; }
+        }
+
         /// <inheritdoc />
         public Exception OperationException
         {
@@ -72,12 +74,29 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                     ResourceManager.ExceptionHandler(new AsyncOperationHandle(null), value);
             }
         }
-        public TObject Result { get { return m_Result; } }
-        public virtual bool IsDone { get { return Status == AsyncOperationStatus.Failed || Status == AsyncOperationStatus.Succeeded; } }
+
+        public TObject Result
+        {
+            get { return m_Result; }
+        }
+
+        public virtual bool IsDone
+        {
+            get { return Status == AsyncOperationStatus.Failed || Status == AsyncOperationStatus.Succeeded; }
+        }
+
         /// <inheritdoc />
-        public virtual float PercentComplete { get { return IsDone ? 1f : 0f; } }
+        public virtual float PercentComplete
+        {
+            get { return IsDone ? 1f : 0f; }
+        }
+
         /// <inheritdoc />
-        public object Context { get { return m_Context; } set { m_Context = value; } }
+        public object Context
+        {
+            get { return m_Context; }
+            set { m_Context = value; }
+        }
 
         public void InvokeCompletionEvent()
         {
@@ -116,24 +135,37 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         [FormerlySerializedAs("m_name")]
         [SerializeField]
         string m_Name;
+
         /// <summary>
         /// The name of the asset.
         /// </summary>
-        public string Name { get { return m_Name; } }
+        public string Name
+        {
+            get { return m_Name; }
+        }
+
         [FormerlySerializedAs("m_size")]
         [SerializeField]
         long m_Size;
+
         /// <summary>
         /// The file size of the asset, in bytes.
         /// </summary>
-        public long Size { get { return m_Size; } }
+        public long Size
+        {
+            get { return m_Size; }
+        }
 
         [SerializeField]
         internal string m_AssetPath;
+
         /// <summary>
         /// Construct a new VirtualAssetBundleEntry
         /// </summary>
-        public VirtualAssetBundleEntry() {}
+        public VirtualAssetBundleEntry()
+        {
+        }
+
         /// <summary>
         /// Construct a new VirtualAssetBundleEntry
         /// </summary>
@@ -155,20 +187,26 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         [FormerlySerializedAs("m_name")]
         [SerializeField]
         string m_Name;
+
         [FormerlySerializedAs("m_isLocal")]
         [SerializeField]
         bool m_IsLocal;
+
         [FormerlySerializedAs("m_dataSize")]
         [SerializeField]
         long m_DataSize;
+
         [FormerlySerializedAs("m_headerSize")]
         [SerializeField]
         long m_HeaderSize;
+
         [FormerlySerializedAs("m_latency")]
         [SerializeField]
         float m_Latency;
+
         [SerializeField]
         uint m_Crc;
+
         [SerializeField]
         string m_Hash;
 
@@ -182,16 +220,24 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         LoadAssetBundleOp m_BundleLoadOperation;
         List<IVirtualLoadable> m_AssetLoadOperations = new List<IVirtualLoadable>();
         Dictionary<string, VirtualAssetBundleEntry> m_AssetMap;
+
         /// <summary>
         /// The name of the bundle.
         /// </summary>
-        public string Name { get { return m_Name; } }
+        public string Name
+        {
+            get { return m_Name; }
+        }
+
         /// <summary>
         /// The assets contained in the bundle.
         /// </summary>
-        public List<VirtualAssetBundleEntry> Assets { get { return m_SerializedAssets; } }
-        
-        const long k_SynchronousBytesPerSecond = (long) 1024 * 1024 * 1024 * 10; // 10 Gb/s
+        public List<VirtualAssetBundleEntry> Assets
+        {
+            get { return m_SerializedAssets; }
+        }
+
+        const long k_SynchronousBytesPerSecond = (long)1024 * 1024 * 1024 * 10; // 10 Gb/s
 
         /// <summary>
         /// Construct a new VirtualAssetBundle object.
@@ -263,6 +309,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
             VirtualAssetBundle m_Bundle;
             float m_TimeInLoadingState;
             bool m_crcHashValidated;
+
             public LoadAssetBundleOp(IResourceLocation location, VirtualAssetBundle bundle)
             {
                 Context = location;
@@ -280,8 +327,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
             public override DownloadStatus GetDownloadStatus()
             {
                 if (m_Bundle.m_IsLocal)
-                    return new DownloadStatus() { IsDone = IsDone };
-                return new DownloadStatus() { DownloadedBytes = m_Bundle.m_DataBytesLoaded, TotalBytes = m_Bundle.m_DataSize, IsDone = IsDone };
+                    return new DownloadStatus() {IsDone = IsDone};
+                return new DownloadStatus() {DownloadedBytes = m_Bundle.m_DataBytesLoaded, TotalBytes = m_Bundle.m_DataSize, IsDone = IsDone};
             }
 
             public override float PercentComplete
@@ -307,11 +354,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                     {
                         if (reqOptions.Crc != 0 && m_Bundle.m_Crc != reqOptions.Crc)
                         {
-                            var err = string.Format("Error while downloading Asset Bundle: CRC Mismatch. Provided {0}, calculated {1} from data. Will not load Asset Bundle.", reqOptions.Crc, m_Bundle.m_Crc);
+                            var err = string.Format("Error while downloading Asset Bundle: CRC Mismatch. Provided {0}, calculated {1} from data. Will not load Asset Bundle.", reqOptions.Crc,
+                                m_Bundle.m_Crc);
                             SetResult(null);
                             OperationException = new Exception(err);
                             InvokeCompletionEvent();
                         }
+
                         if (!m_Bundle.m_IsLocal)
                         {
                             if (!string.IsNullOrEmpty(reqOptions.Hash))
@@ -326,6 +375,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                             }
                         }
                     }
+
                     m_crcHashValidated = true;
                 }
 
@@ -392,6 +442,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                     Debug.LogWarningFormat("Simulated assetbundle {0} is already loading.", m_Name);
                 return m_BundleLoadOperation;
             }
+
             m_HeaderBytesLoaded = 0;
             return (m_BundleLoadOperation = new LoadAssetBundleOp(location, this));
         }
@@ -418,7 +469,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
 
             //this needs to use the non translated internal id since that was how the table was built.
             if (!m_AssetMap.TryGetValue(assetPath, out assetInfo))
-                return new VBAsyncOperation<object>().StartCompleted(location, location, null, new ResourceManagerException(string.Format("Unable to load asset {0} from simulated bundle {1}.", location.InternalId, Name)));
+                return new VBAsyncOperation<object>().StartCompleted(location, location, null,
+                    new ResourceManagerException(string.Format("Unable to load asset {0} from simulated bundle {1}.", location.InternalId, Name)));
 
             var op = new LoadAssetOp(location, assetInfo, provideHandle);
             m_AssetLoadOperations.Add(op);
@@ -458,6 +510,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
             float m_LastUpdateTime;
             VirtualAssetBundleEntry m_AssetInfo;
             ProvideHandle m_provideHandle;
+
             public LoadAssetOp(IResourceLocation location, VirtualAssetBundleEntry assetInfo, ProvideHandle ph)
             {
                 m_provideHandle = ph;
@@ -474,10 +527,15 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                     Load(k_SynchronousBytesPerSecond, k_SynchronousBytesPerSecond, .1f);
                     System.Threading.Thread.Sleep(100);
                 }
+
                 return true;
             }
 
-            public override float PercentComplete { get { return Mathf.Clamp01(m_BytesLoaded / (float)m_AssetInfo.Size); } }
+            public override float PercentComplete
+            {
+                get { return Mathf.Clamp01(m_BytesLoaded / (float)m_AssetInfo.Size); }
+            }
+
             public bool Load(long localBandwidth, long remoteBandwidth, float unscaledDeltaTime)
             {
                 if (IsDone)
@@ -488,6 +546,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                     m_BytesLoaded += (long)Math.Ceiling((now - m_LastUpdateTime) * localBandwidth);
                     m_LastUpdateTime = now;
                 }
+
                 if (m_BytesLoaded < m_AssetInfo.Size)
                     return true;
                 if (!(Context is IResourceLocation))
@@ -508,6 +567,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                     else
                         result = AssetDatabaseProvider.LoadAssetAtPath(assetPath, m_provideHandle);
                 }
+
                 SetResult(result);
                 InvokeCompletionEvent();
                 return false;
@@ -534,6 +594,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                     break;
                 }
             }
+
             return m_AssetLoadOperations.Count > 0;
         }
 

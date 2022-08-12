@@ -74,9 +74,21 @@ namespace BuiltInDataTests
     }
 
 #if UNITY_EDITOR
-    class BuiltInDataTests_VirtualMode : BuiltInDataTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
+    class BuiltInDataTests_VirtualMode : BuiltInDataTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
 
-    class BuiltInDataTests_PackedPlaymodeMode : BuiltInDataTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class BuiltInDataTests_PackedPlaymodeMode : BuiltInDataTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
     //[Bug: https://jira.unity3d.com/browse/ADDR-1215]
     //[UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]

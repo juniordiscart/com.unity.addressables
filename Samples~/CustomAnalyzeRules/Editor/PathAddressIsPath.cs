@@ -18,7 +18,7 @@ public class PathAddressIsPath : UnityEditor.AddressableAssets.Build.AnalyzeRule
 {
     public override bool CanFix
     {
-        get { return true;}
+        get { return true; }
         set { }
     }
 
@@ -43,15 +43,15 @@ public class PathAddressIsPath : UnityEditor.AddressableAssets.Build.AnalyzeRule
                 if (e.address.Contains("Assets") && e.address.Contains("/") && e.address != e.AssetPath)
                 {
                     m_MisnamedEntries.Add(e);
-                    results.Add(new AnalyzeResult { resultName = group.Name + kDelimiter + e.address, severity = MessageType.Error });
+                    results.Add(new AnalyzeResult {resultName = group.Name + kDelimiter + e.address, severity = MessageType.Error});
                 }
             }
         }
 
         if (results.Count == 0)
-            results.Add(new AnalyzeResult{resultName = "No issues found."});
+            results.Add(new AnalyzeResult {resultName = "No issues found."});
 
-    return results;
+        return results;
     }
 
     public override void FixIssues(AddressableAssetSettings settings)
@@ -60,6 +60,7 @@ public class PathAddressIsPath : UnityEditor.AddressableAssets.Build.AnalyzeRule
         {
             e.address = e.AssetPath;
         }
+
         m_MisnamedEntries = new List<AddressableAssetEntry>();
     }
 

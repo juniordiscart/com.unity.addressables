@@ -33,6 +33,7 @@ namespace UnityEngine.AddressableAssets.Utility
             data[offset + 3] = (byte)((val >> 24) & 0xFF);
             return offset + 4;
         }
+
         /*
         internal static ushort ReadUInt16FromByteArray(byte[] data, int offset)
         {
@@ -98,6 +99,7 @@ namespace UnityEngine.AddressableAssets.Utility
             {
                 Debug.LogException(ex);
             }
+
             return null;
         }
 

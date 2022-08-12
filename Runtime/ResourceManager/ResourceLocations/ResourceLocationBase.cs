@@ -21,23 +21,43 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         /// <summary>
         /// Internal id.
         /// </summary>
-        public string InternalId { get { return m_Id; } }
+        public string InternalId
+        {
+            get { return m_Id; }
+        }
+
         /// <summary>
         /// Provider Id.  This is usually set to the FullName property of the type of the provider class.
         /// </summary>
-        public string ProviderId { get { return m_ProviderId; } }
+        public string ProviderId
+        {
+            get { return m_ProviderId; }
+        }
+
         /// <summary>
         /// List of dependencies that must be loaded before this location.  This value may be null.
         /// </summary>
-        public IList<IResourceLocation> Dependencies { get { return m_Dependencies; } }
+        public IList<IResourceLocation> Dependencies
+        {
+            get { return m_Dependencies; }
+        }
+
         /// <summary>
         /// Convenience method to see if there are any dependencies.
         /// </summary>
-        public bool HasDependencies { get { return m_Dependencies != null && m_Dependencies.Count > 0; } }
+        public bool HasDependencies
+        {
+            get { return m_Dependencies != null && m_Dependencies.Count > 0; }
+        }
+
         /// <summary>
         /// Data that is intended for the provider.  Objects can be serialized during the build process to be used by the provider.  An example of usage is cache usage data for AssetBundleProvider.
         /// </summary>
-        public object Data { get { return m_Data; } set { m_Data = value; } }
+        public object Data
+        {
+            get { return m_Data; }
+            set { m_Data = value; }
+        }
 
         /// <inheritdoc/>
         public string PrimaryKey
@@ -49,12 +69,18 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         /// <summary>
         /// Precomputed hash code of dependencies.
         /// </summary>
-        public int DependencyHashCode { get { return m_DependencyHashCode; } }
+        public int DependencyHashCode
+        {
+            get { return m_DependencyHashCode; }
+        }
 
         /// <summary>
         /// The type of the resource for th location.
         /// </summary>
-        public Type ResourceType { get { return m_Type; } }
+        public Type ResourceType
+        {
+            get { return m_Type; }
+        }
 
         /// <summary>
         /// Compute the hash of this location for the specified type.
@@ -113,10 +139,12 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
     internal class LocationWrapper : IResourceLocation
     {
         IResourceLocation m_InternalLocation;
+
         public LocationWrapper(IResourceLocation location)
         {
             m_InternalLocation = location;
         }
+
         public string InternalId => m_InternalLocation.InternalId;
 
         public string ProviderId => m_InternalLocation.ProviderId;

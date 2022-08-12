@@ -121,7 +121,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             var rule = new CheckBundleDupeDependencies();
             rule.m_BundleToAssetGroup.Add(bundleName, assetGroup);
 
-            AssetBundleBuild build = new AssetBundleBuild { assetBundleName = bundleName };
+            AssetBundleBuild build = new AssetBundleBuild {assetBundleName = bundleName};
 
             for (int i = 1; i < 500; i++)
             {
@@ -290,6 +290,17 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
 
             //Cleanup
             Settings.RemoveGroup(group);
+        }
+
+        [Test]
+        public void CheckForDuplicateDependencies_WorksWithNoAddressableAssets()
+        {
+            //Setup
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_NoAssets", false, false);
+            //Test
+            var rule = new CheckBundleDupeDependencies();
+            //Assert
+            Assert.DoesNotThrow(() => rule.FixIssues(settings));
         }
 
 #if CI_TESTRUNNER_PROJECT

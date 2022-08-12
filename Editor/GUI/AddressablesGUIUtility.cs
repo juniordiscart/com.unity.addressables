@@ -22,7 +22,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 if (string.IsNullOrEmpty(m_Key))
                     throw new NullReferenceException("FoldoutSessionStateValue does not have a valid key set");
-                
+
                 if (m_Value.HasValue == false)
                     m_Value = SessionState.GetBool(m_Key, true);
                 return m_Value.Value;
@@ -34,11 +34,11 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
     }
-    
+
     internal class AddressablesGUIUtility
     {
         private static Dictionary<string, FoldoutSessionStateValue> m_CachedSessionStates = new Dictionary<string, FoldoutSessionStateValue>();
-        
+
         internal static GUIStyle GetStyle(string styleName)
         {
             GUIStyle s = UnityEngine.GUI.skin.FindStyle(styleName);
@@ -49,6 +49,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 Debug.LogError("Missing built-in guistyle " + styleName);
                 s = new GUIStyle();
             }
+
             return s;
         }
 
@@ -60,7 +61,7 @@ namespace UnityEditor.AddressableAssets.GUI
             m_CachedSessionStates.Add(stateKey, foldoutState);
             return foldoutState.IsActive;
         }
-        
+
         internal static void SetFoldoutValue(string stateKey, bool isActive)
         {
             if (m_CachedSessionStates.TryGetValue(stateKey, out var val))
@@ -68,6 +69,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 val.IsActive = isActive;
                 return;
             }
+
             var foldoutState = new FoldoutSessionStateValue(stateKey);
             foldoutState.IsActive = isActive;
             m_CachedSessionStates.Add(stateKey, foldoutState);
@@ -81,25 +83,25 @@ namespace UnityEditor.AddressableAssets.GUI
                 return new Color(shade, shade, shade, 1);
             }
         }
-        
+
         static Color HeaderNormalColor
         {
             get
             {
-                float shade = EditorGUIUtility.isProSkin ? 62f/255f : 205f/255f;
+                float shade = EditorGUIUtility.isProSkin ? 62f / 255f : 205f / 255f;
                 return new Color(shade, shade, shade, 1);
             }
         }
-        
+
         static Color HeaderHoverColor
         {
             get
             {
-                float shade = EditorGUIUtility.isProSkin ? 70f/255f : 215f/255f;
+                float shade = EditorGUIUtility.isProSkin ? 70f / 255f : 215f / 255f;
                 return new Color(shade, shade, shade, 1);
             }
         }
-        
+
         public static bool FoldoutWithHelp(bool isActive, GUIContent content, Action helpAction = null)
         {
             Rect controlRect = EditorGUILayout.GetControlRect();
@@ -113,8 +115,8 @@ namespace UnityEditor.AddressableAssets.GUI
                     helpAction.Invoke();
             }
 
-            bool isPressedDown = controlRect.Contains(UnityEngine.Event.current.mousePosition) 
-                                 && UnityEngine.Event.current.type == UnityEngine.EventType.MouseDown 
+            bool isPressedDown = controlRect.Contains(UnityEngine.Event.current.mousePosition)
+                                 && UnityEngine.Event.current.type == UnityEngine.EventType.MouseDown
                                  && UnityEngine.Event.current.button == 0;
             if (isPressedDown)
             {
@@ -136,7 +138,7 @@ namespace UnityEditor.AddressableAssets.GUI
             bgRect.width = EditorGUIUtility.currentViewWidth;
             bool isHover = bgRect.Contains(UnityEngine.Event.current.mousePosition);
             EditorGUI.DrawRect(bgRect, isHover ? HeaderHoverColor : HeaderNormalColor);
-            
+
             bgRect.y = headerRect.y - 1;
             bgRect.height = 1;
             Color color = HeaderBorderColor;
@@ -145,7 +147,7 @@ namespace UnityEditor.AddressableAssets.GUI
             bgRect.height = 0.5f;
             EditorGUI.DrawRect(bgRect, color);
             headerRect.y += 1;
-            
+
             if (indent > 0)
             {
                 headerRect.x += indent;
@@ -161,6 +163,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (UnityEngine.GUI.Button(menuButtonRect, EditorGUIUtility.IconContent("_Popup"), iconStyle))
                     menuAction.Invoke(menuButtonRect);
             }
+
             if (helpAction != null)
             {
                 Rect helpRect = headerRect;

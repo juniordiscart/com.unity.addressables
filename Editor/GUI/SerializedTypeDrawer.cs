@@ -13,6 +13,7 @@ namespace UnityEditor.AddressableAssets.GUI
         List<Type> m_Types;
         FieldInfo m_SerializedFieldInfo;
         SerializedProperty m_Property;
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             OnGUIMultiple(position, property, label, EditorGUI.showMixedValue);

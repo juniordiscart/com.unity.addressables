@@ -29,6 +29,7 @@ public class BuildScriptPackedIntegrationTests
             if (b.GetType() == modeType)
                 return b as IDataBuilder;
         }
+
         throw new Exception("DataBuilder not found");
     }
 
@@ -46,6 +47,7 @@ public class BuildScriptPackedIntegrationTests
 
     string m_SettingsPath;
     AddressableAssetSettings m_Settings;
+
     AddressableAssetSettings Settings
     {
         get

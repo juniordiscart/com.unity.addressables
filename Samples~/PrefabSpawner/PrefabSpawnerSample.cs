@@ -13,14 +13,17 @@ public class PrefabSpawnerSample : MonoBehaviour
     /// The prefab to spawn.
     /// </summary>
     public AssetReference SpawnablePrefab;
+
     /// <summary>
     /// The time, in seconds, to delay before spawning prefabs.
     /// </summary>
     public float DelayBetweenSpawns = 2.0f;
+
     /// <summary>
     /// The time, in seconds, to delay before destroying the spawned prefabs.
     /// </summary>
     public float DealyBeforeDestroying = 1.0f;
+
     /// <summary>
     /// The number of prefabs to spawn.
     /// </summary>
@@ -34,7 +37,7 @@ public class PrefabSpawnerSample : MonoBehaviour
 
     IEnumerator StartSpawner()
     {
-        while(true)
+        while (true)
         {
             yield return new WaitForSeconds(DelayBetweenSpawns);
             StartCoroutine(SpawnTemporaryCube());

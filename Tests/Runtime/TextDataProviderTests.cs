@@ -58,8 +58,20 @@ public abstract class TextDataProviderTests : AddressablesTestFixture
 }
 
 #if UNITY_EDITOR
-class TextDataProviderTests_PackedPlaymodeMode : TextDataProviderTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+class TextDataProviderTests_PackedPlaymodeMode : TextDataProviderTests
+{
+    protected override TestBuildScriptMode BuildScriptMode
+    {
+        get { return TestBuildScriptMode.PackedPlaymode; }
+    }
+}
 #endif
 
-[UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
-class TextDataProviderTests_PackedMode : TextDataProviderTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } } }
+[UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
+class TextDataProviderTests_PackedMode : TextDataProviderTests
+{
+    protected override TestBuildScriptMode BuildScriptMode
+    {
+        get { return TestBuildScriptMode.Packed; }
+    }
+}

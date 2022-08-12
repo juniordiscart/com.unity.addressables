@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(assetPath, entry.address);
 
             AddressableAssetEntryTreeView treeView = new AddressableAssetEntryTreeView(Settings);
-            treeView.SimplifyAddressesImpl(new List<AssetEntryTreeViewItem>() { new AssetEntryTreeViewItem(entry, 1) });
+            treeView.SimplifyAddressesImpl(new List<AssetEntryTreeViewItem>() {new AssetEntryTreeViewItem(entry, 1)});
 
             Assert.AreEqual(Path.GetFileNameWithoutExtension(assetPath), entry.address);
         }
@@ -38,7 +38,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var entry = Settings.CreateOrMoveEntry(m_AssetGUID, Settings.DefaultGroup);
 
             AddressableAssetEntryTreeView treeView = new AddressableAssetEntryTreeView(Settings);
-            treeView.RemoveEntryImpl(new List<AssetEntryTreeViewItem>() { new AssetEntryTreeViewItem(entry, 1) }, true);
+            treeView.RemoveEntryImpl(new List<AssetEntryTreeViewItem>() {new AssetEntryTreeViewItem(entry, 1)}, true);
 
             Assert.IsNull(Settings.FindAssetEntry(m_AssetGUID));
         }
@@ -48,7 +48,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             var group = Settings.CreateGroup("RemoveMeGroup", false, false, true, new List<AddressableAssetGroupSchema>());
             AddressableAssetEntryTreeView treeView = new AddressableAssetEntryTreeView(Settings);
-            treeView.RemoveGroupImpl(new List<AssetEntryTreeViewItem>() { new AssetEntryTreeViewItem(group, 1) }, true);
+            treeView.RemoveGroupImpl(new List<AssetEntryTreeViewItem>() {new AssetEntryTreeViewItem(group, 1)}, true);
             Assert.IsNull(Settings.FindGroup("RemoveMeGroup"));
         }
 
@@ -57,10 +57,10 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             Settings.groups.Add(null);
             Settings.groups.Add(null);
-            
+
             AddressableAssetEntryTreeView treeView = new AddressableAssetEntryTreeView(Settings);
             treeView.RemoveMissingReferencesImpl();
-            foreach(var group in Settings.groups)
+            foreach (var group in Settings.groups)
                 Assert.IsNotNull(group);
         }
 
@@ -70,9 +70,9 @@ namespace UnityEditor.AddressableAssets.Tests
             var savedDefaultGroup = Settings.DefaultGroup;
             var newDefaultGroup = Settings.CreateGroup("NewDefaultGroup", false, false, true, new List<AddressableAssetGroupSchema>());
             AddressableAssetEntryTreeView treeView = new AddressableAssetEntryTreeView(Settings);
-            
-            treeView.SetGroupAsDefault(new List<AssetEntryTreeViewItem>() { new AssetEntryTreeViewItem(newDefaultGroup, 1) });
-            
+
+            treeView.SetGroupAsDefault(new List<AssetEntryTreeViewItem>() {new AssetEntryTreeViewItem(newDefaultGroup, 1)});
+
             Assert.AreEqual(newDefaultGroup, Settings.DefaultGroup);
 
             Settings.DefaultGroup = savedDefaultGroup;
@@ -86,7 +86,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var defaultGroup = Settings.DefaultGroup;
             Assert.IsNotNull(defaultGroup, "Default Group is not found");
             ProjectConfigData.ShowSubObjectsInGroupView = true;
-            
+
             string path0 = GetAssetPath("test.prefab");
             string p0 = AssetDatabase.AssetPathToGUID(path0);
             Assert.IsFalse(string.IsNullOrEmpty(p0), "Could not setup for Asset \"test.prefab\"");
@@ -98,12 +98,12 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsFalse(string.IsNullOrEmpty(p1), "Could not setup for Asset \"test 1.prefab\"");
             string p2 = AssetDatabase.AssetPathToGUID(GetAssetPath("test 2.prefab"));
             Assert.IsFalse(string.IsNullOrEmpty(p2), "Could not setup for Asset \"test 2.prefab\"");
-            
+
             var e0 = Settings.CreateOrMoveEntry(p0, defaultGroup);
             List<AddressableAssetEntry> gathered = new List<AddressableAssetEntry>();
             e0.GatherAllAssets(gathered, false, true, true);
-            Assert.AreEqual(1, gathered.Count, "Incorrect subObject count for Asset at " + path0 );
-            
+            Assert.AreEqual(1, gathered.Count, "Incorrect subObject count for Asset at " + path0);
+
             var e1 = Settings.CreateOrMoveEntry(p1, defaultGroup);
             var e2 = Settings.CreateOrMoveEntry(p2, defaultGroup);
 
@@ -112,18 +112,18 @@ namespace UnityEditor.AddressableAssets.Tests
             aaWindow.m_GroupEditor.OnDisable();
             aaWindow.m_GroupEditor.settings = Settings;
             var entryTree = aaWindow.m_GroupEditor.InitialiseEntryTree();
-            
+
             //Test
             Assert.AreEqual(0, entryTree.GetSelection().Count, "entryTree is not expected to have anything select at creation");
-            aaWindow.SelectAssetsInGroupEditor(new List<AddressableAssetEntry>(){e1});
+            aaWindow.SelectAssetsInGroupEditor(new List<AddressableAssetEntry>() {e1});
             Assert.AreEqual(1, entryTree.GetSelection().Count, "Expecting to have \"test 1.prefab\" selected.");
-            aaWindow.SelectAssetsInGroupEditor(new List<AddressableAssetEntry>(){e2});
+            aaWindow.SelectAssetsInGroupEditor(new List<AddressableAssetEntry>() {e2});
             Assert.AreEqual(1, entryTree.GetSelection().Count, "Expecting to have \"test 2.prefab\" selected.");
-            aaWindow.SelectAssetsInGroupEditor(new List<AddressableAssetEntry>(){e1, e2});
+            aaWindow.SelectAssetsInGroupEditor(new List<AddressableAssetEntry>() {e1, e2});
             Assert.AreEqual(2, entryTree.GetSelection().Count, "Expecting to have \"test 1.prefab\" and \"test 2.prefab\" selected.");
 
             Assert.IsTrue(ProjectConfigData.ShowSubObjectsInGroupView, "Need to display subObjects to test that they are being shown");
-            aaWindow.SelectAssetsInGroupEditor(new List<AddressableAssetEntry>(){gathered[0]});
+            aaWindow.SelectAssetsInGroupEditor(new List<AddressableAssetEntry>() {gathered[0]});
             Assert.AreEqual(1, entryTree.GetSelection().Count, "Expecting to have \"test.prefab[SubObject]\" selected.");
 
             //Cleanup

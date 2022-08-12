@@ -87,7 +87,5 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             testStream.AddSample(2, 1);
             Assert.AreEqual(true, testStream.HasDataAfterFrame(1), "HasDataAfterFrame returned false when there should be a sample with data following frame 1.");
         }
-        
-        
     }
 }

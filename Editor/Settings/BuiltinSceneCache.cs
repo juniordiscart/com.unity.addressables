@@ -20,6 +20,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 EditorBuildSettings.sceneListChanged -= EditorBuildSettings_sceneListChanged;
                 s_IsListening = false;
             }
+
             if (clearCallbacks)
                 sceneListChanged = null;
         }
@@ -35,15 +36,14 @@ namespace UnityEditor.AddressableAssets.Settings
                         s_IsListening = true;
                         EditorBuildSettings.sceneListChanged += EditorBuildSettings_sceneListChanged;
                     }
+
                     InvalidateCache();
                     m_Scenes = EditorBuildSettings.scenes;
                 }
+
                 return m_Scenes;
             }
-            set
-            {
-                EditorBuildSettings.scenes = value;
-            }
+            set { EditorBuildSettings.scenes = value; }
         }
 
         public static Dictionary<GUID, int> GUIDSceneIndexLookup
@@ -61,6 +61,7 @@ namespace UnityEditor.AddressableAssets.Settings
                             s_GUIDSceneIndexLookup[localScenes[i].guid] = enabledIndex++;
                     }
                 }
+
                 return s_GUIDSceneIndexLookup;
             }
         }
@@ -80,6 +81,7 @@ namespace UnityEditor.AddressableAssets.Settings
                             s_PathSceneIndexLookup[localScenes[i].path] = enabledIndex++;
                     }
                 }
+
                 return s_PathSceneIndexLookup;
             }
         }
@@ -115,6 +117,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 outScene = null;
                 return false;
             }
+
             outScene = scenes[index];
             return true;
         }

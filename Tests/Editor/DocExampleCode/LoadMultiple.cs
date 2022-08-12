@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_Load
+
     using System.Collections;
     using System.Collections.Generic;
     using UnityEngine;
@@ -10,24 +11,27 @@ namespace AddressableAssets.DocExampleCode
     internal class LoadMultiple : MonoBehaviour
     {
         // Label strings to load
-        public List<string> keys = new List<string>() { "characters", "animals" };
+        public List<string> keys = new List<string>() {"characters", "animals"};
 
         // Operation handle used to load and release assets
         AsyncOperationHandle<IList<GameObject>> loadHandle;
 
         // Load Addressables by Label
-        public IEnumerator Start() {
+        public IEnumerator Start()
+        {
             float x = 0, z = 0;
             loadHandle = Addressables.LoadAssetsAsync<GameObject>(
                 keys,
-                addressable => {
-            //Gets called for every loaded asset
-            Instantiate<GameObject>(addressable,
+                addressable =>
+                {
+                    //Gets called for every loaded asset
+                    Instantiate<GameObject>(addressable,
                         new Vector3(x++ * 2.0f, 0, z * 2.0f),
                         Quaternion.identity,
                         transform);
 
-                    if (x > 9) {
+                    if (x > 9)
+                    {
                         x = 0;
                         z++;
                     }
@@ -37,7 +41,8 @@ namespace AddressableAssets.DocExampleCode
             yield return loadHandle;
         }
 
-        private void OnDestroy() {
+        private void OnDestroy()
+        {
             Addressables.Release(loadHandle);
             // Release all the loaded assets associated with loadHandle
             // Note that if you do not make loaded addressables a child of this object,
@@ -45,5 +50,6 @@ namespace AddressableAssets.DocExampleCode
             // all the individual addressables are destroyed.
         }
     }
+
     #endregion
 }

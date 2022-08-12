@@ -60,8 +60,8 @@ namespace UnityEditor.AddressableAssets.Tests
         public void SerializeComplexType()
         {
             var store = new KeyDataStore();
-            var obj = new CustomTestClass2 { floatValue = 3.14f, intValue = 7, name = "test object", objectValue = new CustomTestClass1 { name = "sub object", intValue = 14, floatValue = .99999f } };
-            obj.listValue = new List<CustomTestClass1> { new CustomTestClass1 { name = "list item 1", intValue = 33, floatValue = .234534f } };
+            var obj = new CustomTestClass2 {floatValue = 3.14f, intValue = 7, name = "test object", objectValue = new CustomTestClass1 {name = "sub object", intValue = 14, floatValue = .99999f}};
+            obj.listValue = new List<CustomTestClass1> {new CustomTestClass1 {name = "list item 1", intValue = 33, floatValue = .234534f}};
             store.SetData("obj", obj);
             store.OnBeforeSerialize();
             store.OnAfterDeserialize();

@@ -29,10 +29,7 @@ namespace UnityEngine.AddressableAssets
 
         public IInstanceProvider InstanceProvider
         {
-            get
-            {
-                return m_InstanceProvider;
-            }
+            get { return m_InstanceProvider; }
             set
             {
                 m_InstanceProvider = value;
@@ -41,7 +38,9 @@ namespace UnityEngine.AddressableAssets
                     m_ResourceManager.AddUpdateReceiver(rec);
             }
         }
+
         public ISceneProvider SceneProvider;
+
         public ResourceManager ResourceManager
         {
             get
@@ -51,16 +50,11 @@ namespace UnityEngine.AddressableAssets
                 return m_ResourceManager;
             }
         }
+
         public int CatalogRequestsTimeout
         {
-            get
-            {
-                return m_CatalogRequestsTimeout;
-            }
-            set
-            {
-                m_CatalogRequestsTimeout = value;
-            }
+            get { return m_CatalogRequestsTimeout; }
+            set { m_CatalogRequestsTimeout = value; }
         }
 
         internal List<ResourceLocatorInfo> m_ResourceLocators = new List<ResourceLocatorInfo>();
@@ -77,9 +71,18 @@ namespace UnityEngine.AddressableAssets
 
         AsyncOperationHandle<bool> m_ActiveCleanBundleCacheOperation;
 
-        internal int SceneOperationCount { get { return m_SceneInstances.Count; } }
-        internal int TrackedHandleCount { get { return m_resultToHandle.Count; } }
+        internal int SceneOperationCount
+        {
+            get { return m_SceneInstances.Count; }
+        }
+
+        internal int TrackedHandleCount
+        {
+            get { return m_resultToHandle.Count; }
+        }
+
         internal bool hasStartedInitialization = false;
+
         public AddressablesImpl(IAllocationStrategy alloc)
         {
             m_ResourceManager = new ResourceManager(alloc);
@@ -153,15 +156,13 @@ namespace UnityEngine.AddressableAssets
                     break;
                 }
             }
+
             m_ResourceManager.CleanupSceneInstances(scene);
         }
 
         public string StreamingAssetsSubFolder
         {
-            get
-            {
-                return "aa";
-            }
+            get { return "aa"; }
         }
 
         public string BuildPath
@@ -171,10 +172,7 @@ namespace UnityEngine.AddressableAssets
 
         public string PlayerBuildDataPath
         {
-            get
-            {
-                return Application.streamingAssetsPath + "/" + StreamingAssetsSubFolder;
-            }
+            get { return Application.streamingAssetsPath + "/" + StreamingAssetsSubFolder; }
         }
 
         public string RuntimePath
@@ -238,7 +236,7 @@ namespace UnityEngine.AddressableAssets
         public string ResolveInternalId(string id)
         {
             var path = AddressablesRuntimeProperties.EvaluateString(id);
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_WSA || UNITY_XBOXONE || UNITY_GAMECORE
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_WSA || UNITY_XBOXONE || UNITY_GAMECORE || UNITY_PS5 || UNITY_PS4
             if (path.Length >= 260 && path.StartsWith(Application.dataPath))
                 path = path.Substring(Application.dataPath.Length + 1);
 #endif
@@ -247,10 +245,7 @@ namespace UnityEngine.AddressableAssets
 
         public IEnumerable<IResourceLocator> ResourceLocators
         {
-            get
-            {
-                return m_ResourceLocators.Select(l => l.Locator);
-            }
+            get { return m_ResourceLocators.Select(l => l.Locator); }
         }
 
         public void AddResourceLocator(IResourceLocator loc, string localCatalogHash = null, IResourceLocation remoteCatalogLocation = null)
@@ -356,6 +351,7 @@ namespace UnityEngine.AddressableAssets
                 locations = null;
                 return false;
             }
+
             locations = new List<IResourceLocation>(current);
             return true;
         }
@@ -376,6 +372,7 @@ namespace UnityEngine.AddressableAssets
             {
                 ResourceManager.ExceptionHandler = LogException;
             }
+
             hasStartedInitialization = true;
             if (m_InitializationOperation.IsValid())
                 return m_InitializationOperation;
@@ -402,7 +399,7 @@ namespace UnityEngine.AddressableAssets
             if (string.IsNullOrEmpty(settingsPath) && !UnityEditor.EditorApplication.isPlaying)
             {
                 var rtp = runtimeDataPath.StartsWith("file://") ? runtimeDataPath.Substring("file://".Length) : runtimeDataPath;
-                if(!File.Exists(rtp))
+                if (!File.Exists(rtp))
                 {
                     var defaultSettingsObjectType = assembly.GetType("UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject");
                     var prop = defaultSettingsObjectType.GetProperty("DefaultAssetPath", BindingFlags.Public | BindingFlags.Static);
@@ -418,11 +415,11 @@ namespace UnityEngine.AddressableAssets
                 if (settingsObject != null)
                 {
                     var settingsSetupMethod = settingsType.GetMethod("CreatePlayModeInitializationOperation", BindingFlags.Instance | BindingFlags.NonPublic);
-                    m_InitializationOperation = (AsyncOperationHandle<IResourceLocator>)settingsSetupMethod.Invoke(settingsObject, new object[] { this });
+                    m_InitializationOperation = (AsyncOperationHandle<IResourceLocator>)settingsSetupMethod.Invoke(settingsObject, new object[] {this});
                 }
             }
 #endif
-            if(!m_InitializationOperation.IsValid())
+            if (!m_InitializationOperation.IsValid())
                 m_InitializationOperation = Initialization.InitializationOperation.CreateInitializationOperation(this, runtimeDataPath, providerSuffix);
             if (autoReleaseHandle)
                 AutoReleaseHandleOnCompletion(m_InitializationOperation);
@@ -527,10 +524,7 @@ namespace UnityEngine.AddressableAssets
 
         AsyncOperationHandle<SceneInstance> TrackHandle(AsyncOperationHandle<SceneInstance> handle)
         {
-            handle.Completed += (sceneHandle) =>
-            {
-                m_OnSceneHandleCompleteAction(sceneHandle);
-            };
+            handle.Completed += (sceneHandle) => { m_OnSceneHandleCompleteAction(sceneHandle); };
             return handle;
         }
 
@@ -596,6 +590,7 @@ namespace UnityEngine.AddressableAssets
                     }
                 }
             }
+
             return ResourceManager.CreateCompletedOperationWithException<TObject>(default(TObject), new InvalidKeyException(key, t, this));
         }
 
@@ -605,7 +600,11 @@ namespace UnityEngine.AddressableAssets
             IList<IResourceLocation> m_locations;
             AddressablesImpl m_Addressables;
             Type m_ResourceType;
-            protected override string DebugName { get { return m_Keys.ToString(); } }
+
+            protected override string DebugName
+            {
+                get { return m_Keys.ToString(); }
+            }
 
             public void Init(AddressablesImpl aa, Type t, object keys)
             {
@@ -640,7 +639,11 @@ namespace UnityEngine.AddressableAssets
             AddressablesImpl m_Addressables;
             Type m_ResourceType;
 
-            protected override string DebugName { get { return "LoadResourceLocationKeysOp"; } }
+            protected override string DebugName
+            {
+                get { return "LoadResourceLocationKeysOp"; }
+            }
+
             public void Init(AddressablesImpl aa, Type t, IEnumerable key, Addressables.MergeMode mergeMode)
             {
                 m_Key = key;
@@ -713,7 +716,9 @@ namespace UnityEngine.AddressableAssets
         {
             return ResourceManager.CreateChainOperation(dep, op => LoadAssetsAsync(locations, callback, releaseDependenciesOnFailure));
         }
-        AsyncOperationHandle<IList<TObject>> LoadAssetsWithChain<TObject>(AsyncOperationHandle dep, IEnumerable keys, Action<TObject> callback, Addressables.MergeMode mode, bool releaseDependenciesOnFailure)
+
+        AsyncOperationHandle<IList<TObject>> LoadAssetsWithChain<TObject>(AsyncOperationHandle dep, IEnumerable keys, Action<TObject> callback, Addressables.MergeMode mode,
+            bool releaseDependenciesOnFailure)
         {
             return ResourceManager.CreateChainOperation(dep, op => LoadAssetsAsync(keys, callback, mode, releaseDependenciesOnFailure));
         }
@@ -817,6 +822,7 @@ namespace UnityEngine.AddressableAssets
                     AutoReleaseHandleOnCompletion(handle);
                 }
             }
+
             m_ResourceManager.Release(handle);
         }
 
@@ -834,8 +840,8 @@ namespace UnityEngine.AddressableAssets
         {
             if (!catalogLoc.HasDependencies)
                 return ResourceManager.CreateCompletedOperation<long>(0, "Attempting to get the remote header size of a content catalog, " +
-                    $"but no dependencies pointing to a remote location could be found for location {catalogLoc.InternalId}. Catalog location dependencies can " +
-                    $"be setup using CreateCatalogLocationWithHashDependencies");
+                                                                         $"but no dependencies pointing to a remote location could be found for location {catalogLoc.InternalId}. Catalog location dependencies can " +
+                                                                         $"be setup using CreateCatalogLocationWithHashDependencies");
 
             AsyncOperationHandle dep = ResourceManager.ProvideResource<string>(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote]);
             return ResourceManager.CreateChainOperation(dep, op =>
@@ -847,10 +853,10 @@ namespace UnityEngine.AddressableAssets
                         return GetRemoteCatalogHeaderSize(catalogLoc);
                 }
                 catch (Exception e)
-                { 
+                {
                     return ResourceManager.CreateCompletedOperation<long>(0, $"Fetching the remote catalog size failed. {e}");
                 }
-                
+
                 return ResourceManager.CreateCompletedOperation<long>(0, string.Empty);
             });
         }
@@ -858,10 +864,10 @@ namespace UnityEngine.AddressableAssets
         internal bool IsCatalogCached(IResourceLocation catalogLoc, Hash128 remoteHash)
         {
             //If local hash exists, check if they're equal or not
-            if (!catalogLoc.HasDependencies 
-                    || catalogLoc.Dependencies.Count != 2
-                    || !File.Exists(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache].InternalId)
-                    || remoteHash != Hash128.Parse(File.ReadAllText(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache].InternalId)))
+            if (!catalogLoc.HasDependencies
+                || catalogLoc.Dependencies.Count != 2
+                || !File.Exists(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache].InternalId)
+                || remoteHash != Hash128.Parse(File.ReadAllText(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache].InternalId)))
                 return false;
 
             return true;
@@ -871,21 +877,21 @@ namespace UnityEngine.AddressableAssets
         {
             if (!catalogLoc.HasDependencies)
                 return ResourceManager.CreateCompletedOperation<long>(0, "Attempting to get the remote header size of a content catalog, " +
-                    $"but no dependencies pointing to a remote location could be found for location {catalogLoc.InternalId}. Catalog location dependencies can " +
-                    $"be setup using CreateCatalogLocationWithHashDependencies");
+                                                                         $"but no dependencies pointing to a remote location could be found for location {catalogLoc.InternalId}. Catalog location dependencies can " +
+                                                                         $"be setup using CreateCatalogLocationWithHashDependencies");
 
             var uwr = new UnityWebRequest(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote].InternalId.Replace(".hash", ".json"), UnityWebRequest.kHttpVerbHEAD);
             AsyncOperationBase<UnityWebRequest> uwrAsyncOp = new UnityWebRequestOperation(uwr);
 
             return ResourceManager.CreateChainOperation(ResourceManager.StartOperation(uwrAsyncOp, default(AsyncOperationHandle))
                 , getOp =>
-            {
-                var response = (getOp.Result as UnityWebRequest)?.GetResponseHeader("Content-Length");
-                if (response != null && long.TryParse(response, out long result))
-                    return ResourceManager.CreateCompletedOperation(result, "");
-                else
-                    return ResourceManager.CreateCompletedOperation<long>(0, "Attempting to get the remote header of a catalog failed.");
-            });
+                {
+                    var response = (getOp.Result as UnityWebRequest)?.GetResponseHeader("Content-Length");
+                    if (response != null && long.TryParse(response, out long result))
+                        return ResourceManager.CreateCompletedOperation(result, "");
+                    else
+                        return ResourceManager.CreateCompletedOperation<long>(0, "Attempting to get the remote header of a catalog failed.");
+                });
         }
 
         AsyncOperationHandle<long> GetDownloadSizeWithChain(AsyncOperationHandle dep, IEnumerable keys)
@@ -897,7 +903,7 @@ namespace UnityEngine.AddressableAssets
         {
             QueueEditorUpdateIfNeeded();
 
-            return GetDownloadSizeAsync(new object[] { key });
+            return GetDownloadSizeAsync(new object[] {key});
         }
 
         public AsyncOperationHandle<long> GetDownloadSizeAsync(IEnumerable keys)
@@ -943,6 +949,7 @@ namespace UnityEngine.AddressableAssets
                 if (sizeData != null)
                     size += sizeData.ComputeSize(location, ResourceManager);
             }
+
             return ResourceManager.CreateCompletedOperation<long>(size, string.Empty);
         }
 
@@ -969,6 +976,7 @@ namespace UnityEngine.AddressableAssets
                 {
                     locHash.Add(loc);
                 }
+
                 if (loc.HasDependencies)
                 {
                     foreach (var dep in loc.Dependencies)
@@ -976,6 +984,7 @@ namespace UnityEngine.AddressableAssets
                             locHash.Add(dep);
                 }
             }
+
             return new List<IResourceLocation>(locHash);
         }
 
@@ -1064,23 +1073,39 @@ namespace UnityEngine.AddressableAssets
         {
             bool result = true;
 #if ENABLE_CACHING
-            IList<IResourceLocation> locations;
+            IList<IResourceLocation> bundleLocations = null;
+
             if (key is IResourceLocation && (key as IResourceLocation).HasDependencies)
             {
-                foreach (var dep in GatherDependenciesFromLocations((key as IResourceLocation).Dependencies))
-                {
-                    //This should never be false when we get here, if it is there's likely a deeper problem.
-                    if (dep.Data is AssetBundleRequestOptions)
-                        result = result && Caching.ClearAllCachedVersions((dep.Data as AssetBundleRequestOptions).BundleName);
-                }
+                bundleLocations = GatherDependenciesFromLocations((key as IResourceLocation).Dependencies);
             }
-            else if (GetResourceLocations(key, typeof(object), out locations))
+            else if (GetResourceLocations(key, typeof(object), out IList<IResourceLocation> locations))
             {
-                foreach (var dep in GatherDependenciesFromLocations(locations))
+                bundleLocations = GatherDependenciesFromLocations(locations);
+            }
+
+            if (bundleLocations != null)
+            {
+                foreach (var dep in bundleLocations)
                 {
+                    AssetBundleRequestOptions bundleData = dep.Data as AssetBundleRequestOptions;
                     //This should never be false when we get here, if it is there's likely a deeper problem.
-                    if (dep.Data is AssetBundleRequestOptions)
-                        result = result && Caching.ClearAllCachedVersions((dep.Data as AssetBundleRequestOptions).BundleName);
+                    if (bundleData != null)
+                    {
+                        string bundleName = bundleData.BundleName;
+                        var cachedBundleOp = m_ResourceManager.GetOperationFromCache(dep, typeof(IAssetBundleResource));
+                        if (cachedBundleOp != null)
+                        {
+                            Debug.LogWarning($"Attempting to clear cached version including {bundleName}, while {bundleName} is currently loaded.");
+                            if (!string.IsNullOrEmpty(bundleData.Hash))
+                            {
+                                Hash128 currentVersion = Hash128.Parse(bundleData.Hash);
+                                Caching.ClearOtherCachedVersions(bundleName, currentVersion);
+                            }
+                        }
+                        else
+                            result = result && Caching.ClearAllCachedVersions(bundleName);
+                    }
                 }
             }
 #endif
@@ -1218,6 +1243,7 @@ namespace UnityEngine.AddressableAssets
                 if (locator.Locate(key, typeof(GameObject), out locs))
                     return InstantiateAsync(locs[0], instantiateParameters, trackHandle);
             }
+
             return ResourceManager.CreateCompletedOperationWithException<GameObject>(null, new InvalidKeyException(key, typeof(GameObject), this));
         }
 
@@ -1263,7 +1289,9 @@ namespace UnityEngine.AddressableAssets
         {
             return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadSceneParameters, activateOnLoad, priority, false)));
         }
-        internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, IResourceLocation key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
+
+        internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, IResourceLocation key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true,
+            int priority = 100)
         {
             return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadMode, activateOnLoad, priority, false)));
         }
@@ -1272,6 +1300,7 @@ namespace UnityEngine.AddressableAssets
         {
             return LoadSceneAsync(key, new LoadSceneParameters(LoadSceneMode.Single));
         }
+
         public AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100, bool trackHandle = true)
         {
             QueueEditorUpdateIfNeeded();
@@ -1290,12 +1319,14 @@ namespace UnityEngine.AddressableAssets
             return LoadSceneAsync(location, new LoadSceneParameters(LoadSceneMode.Single));
         }
 
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100, bool trackHandle = true)
+        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100,
+            bool trackHandle = true)
         {
             return LoadSceneAsync(location, new LoadSceneParameters(loadMode), activateOnLoad, priority, trackHandle);
         }
 
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100, bool trackHandle = true)
+        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100,
+            bool trackHandle = true)
         {
             QueueEditorUpdateIfNeeded();
             if (ShouldChainRequest)
@@ -1333,7 +1364,8 @@ namespace UnityEngine.AddressableAssets
             return UnloadSceneAsync(handle.Convert<SceneInstance>(), unloadOptions, autoReleaseHandle);
         }
 
-        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle<SceneInstance> handle, UnloadSceneOptions unloadOptions = UnloadSceneOptions.None, bool autoReleaseHandle = true)
+        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle<SceneInstance> handle, UnloadSceneOptions unloadOptions = UnloadSceneOptions.None,
+            bool autoReleaseHandle = true)
         {
             if (handle.m_InternalOp.IsRunning)
                 return CreateUnloadSceneWithChain(handle, unloadOptions, autoReleaseHandle);
@@ -1395,6 +1427,7 @@ namespace UnityEngine.AddressableAssets
         }
 
         internal IEnumerable<string> CatalogsWithAvailableUpdates => m_ResourceLocators.Where(s => s.ContentUpdateAvailable).Select(s => s.Locator.LocatorId);
+
         internal AsyncOperationHandle<List<IResourceLocator>> UpdateCatalogs(IEnumerable<string> catalogIds = null, bool autoReleaseHandle = true, bool autoCleanBundleCache = false)
         {
             if (m_ActiveUpdateOperation.IsValid())
@@ -1441,8 +1474,10 @@ namespace UnityEngine.AddressableAssets
                     continue;
                 locations.Add(loc.CatalogLocation);
             }
+
             if (locations.Count == 0)
-                return ResourceManager.CreateCompletedOperation(false, "Provided catalogs do not load data from a catalog file. This can occur when using the \"Use Asset Database (fastest)\" playmode script. Bundle cache was not modified.");
+                return ResourceManager.CreateCompletedOperation(false,
+                    "Provided catalogs do not load data from a catalog file. This can occur when using the \"Use Asset Database (fastest)\" playmode script. Bundle cache was not modified.");
 
             return CleanBundleCache(ResourceManager.CreateGroupOperation<object>(locations), forceSingleThreading);
 #endif

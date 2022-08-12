@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_BatchBuild
+
 #if UNITY_EDITOR
     using System;
     using UnityEditor;
@@ -12,10 +13,13 @@ namespace AddressableAssets.DocExampleCode
 
     internal class BatchBuild
     {
-        public static string build_script 
+        public static string build_script
             = "Assets/AddressableAssetsData/DataBuilders/BuildScriptPackedMode.asset";
+
         public static string profile_name = "Default";
-        public static void ChangeSettings() {
+
+        public static void ChangeSettings()
+        {
             string defines = "";
             string[] args = Environment.GetCommandLineArgs();
 
@@ -27,7 +31,8 @@ namespace AddressableAssets.DocExampleCode
             PlayerSettings.SetScriptingDefineSymbolsForGroup(buildSettings, defines);
         }
 
-        public static void BuildContentAndPlayer() {
+        public static void BuildContentAndPlayer()
+        {
             AddressableAssetSettings settings
                 = AddressableAssetSettingsDefaultObject.Settings;
 
@@ -47,13 +52,14 @@ namespace AddressableAssets.DocExampleCode
 
             BuildReport buildReport
                 = BuildPipeline.BuildPlayer(EditorBuildSettings.scenes,
-                "d:/build/winApp.exe", EditorUserBuildSettings.activeBuildTarget,
-                BuildOptions.None);
+                    "d:/build/winApp.exe", EditorUserBuildSettings.activeBuildTarget,
+                    BuildOptions.None);
 
             if (buildReport.summary.result != BuildResult.Succeeded)
                 throw new Exception(buildReport.summary.ToString());
         }
     }
 #endif
+
     #endregion
 }

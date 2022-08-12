@@ -12,6 +12,7 @@ namespace UnityEditor.AddressableAssets.GUI
     public class AnalyzeWindow : EditorWindow
     {
         private static AnalyzeWindow s_Instance = null;
+
         private static AnalyzeWindow instance
         {
             get
@@ -29,10 +30,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private Rect displayAreaRect
         {
-            get
-            {
-                return new Rect(0, 0, position.width, position.height);
-            }
+            get { return new Rect(0, 0, position.width, position.height); }
         }
 
         [MenuItem("Window/Asset Management/Addressables/Analyze", priority = 2052)]
@@ -41,9 +39,11 @@ namespace UnityEditor.AddressableAssets.GUI
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (settings == null)
             {
-                EditorUtility.DisplayDialog("Error", "Attempting to open Addressables Analyze window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
+                EditorUtility.DisplayDialog("Error",
+                    "Attempting to open Addressables Analyze window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
                 return;
             }
+
             AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenAnalyzeWindow);
 
             instance.titleContent = new GUIContent("Addressables Analyze");

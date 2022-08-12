@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_InstantiateReference
+
     using UnityEngine;
     using UnityEngine.AddressableAssets;
 
@@ -9,15 +10,18 @@ namespace AddressableAssets.DocExampleCode
         [SerializeField]
         private AssetReferenceGameObject reference;
 
-        void Start() {
+        void Start()
+        {
             if (reference != null)
                 reference.InstantiateAsync(this.transform);
         }
 
-        private void OnDestroy() {
+        private void OnDestroy()
+        {
             if (reference != null && reference.IsValid())
                 reference.ReleaseAsset();
         }
     }
+
     #endregion
 }

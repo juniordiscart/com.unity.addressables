@@ -15,10 +15,16 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     {
         Scene m_Scene;
         internal AsyncOperation m_Operation;
+
         /// <summary>
         /// The scene instance.
         /// </summary>
-        public Scene Scene { get { return m_Scene; } internal set { m_Scene = value; } }
+        public Scene Scene
+        {
+            get { return m_Scene; }
+            internal set { m_Scene = value; }
+        }
+
         /// <summary>
         /// Activate the scene via the AsyncOperation.
         /// </summary>
@@ -69,7 +75,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <param name="priority">The loading priority for the load.</param>
         /// <returns>An operation handle for the loading of the scene.  The scene is wrapped in a SceneInstance object to support delayed activation.</returns>
         AsyncOperationHandle<SceneInstance> ProvideScene(ResourceManager resourceManager, IResourceLocation location, LoadSceneMode loadMode, bool activateOnLoad, int priority);
-        
+
         /// <summary>
         /// Load a scene at a specified resource location.
         /// </summary>
@@ -80,7 +86,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <param name="priority">The loading priority for the load.</param>
         /// <returns>An operation handle for the loading of the scene.  The scene is wrapped in a SceneInstance object to support delayed activation.</returns>
         AsyncOperationHandle<SceneInstance> ProvideScene(ResourceManager resourceManager, IResourceLocation location, LoadSceneParameters loadSceneParameters, bool activateOnLoad, int priority);
-        
+
         /// <summary>
         /// Release a scene.
         /// </summary>
@@ -103,7 +109,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
     static internal class SceneProviderExtensions
     {
-        public static AsyncOperationHandle<SceneInstance> ReleaseScene(this ISceneProvider provider, ResourceManager resourceManager, AsyncOperationHandle<SceneInstance> sceneLoadHandle, UnloadSceneOptions unloadOptions)
+        public static AsyncOperationHandle<SceneInstance> ReleaseScene(this ISceneProvider provider, ResourceManager resourceManager, AsyncOperationHandle<SceneInstance> sceneLoadHandle,
+            UnloadSceneOptions unloadOptions)
         {
             if (provider is ISceneProvider2)
                 return ((ISceneProvider2)provider).ReleaseScene(resourceManager, sceneLoadHandle, unloadOptions);

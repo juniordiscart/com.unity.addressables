@@ -61,6 +61,7 @@ namespace UnityEditor.AddressableAssets.GUI
         private Vector2 m_VariablesPaneScrollPosition;
 
         private int m_ProfileIndex = -1;
+
         public int ProfileIndex
         {
             get { return m_ProfileIndex; }
@@ -84,9 +85,11 @@ namespace UnityEditor.AddressableAssets.GUI
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (settings == null)
             {
-                EditorUtility.DisplayDialog("Error", "Attempting to open Addressables Profiles window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
+                EditorUtility.DisplayDialog("Error",
+                    "Attempting to open Addressables Profiles window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
                 return;
             }
+
             GetWindow<ProfileWindow>().Show();
         }
 
@@ -150,6 +153,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 Addressables.LogError("Missing built-in guistyle " + styleName);
                 s = new GUIStyle();
             }
+
             return s;
         }
 
@@ -172,6 +176,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     menu.AddItem(new GUIContent("Build and Load Path Variables (All Profiles)"), false, () => NewPathPair(rMode));
                     menu.DropDown(rMode);
                 }
+
                 GUILayout.FlexibleSpace();
             }
             GUILayout.EndHorizontal();
@@ -263,11 +268,13 @@ namespace UnityEditor.AddressableAssets.GUI
                 bool? foldout;
                 m_foldouts.TryGetValue(groupType.GroupTypePrefix, out foldout);
                 GUILayout.Space(5);
-                Rect pathPairRect = EditorGUILayout.BeginHorizontal(new GUILayoutOption[] { GUILayout.Width(fieldWidth + k_VariableItemPadding - k_SplitterThickness), GUILayout.MinWidth(fieldWidth + k_VariableItemPadding - k_SplitterThickness) });
-                m_foldouts[groupType.GroupTypePrefix] = EditorGUILayout.Foldout(foldout != null ? foldout.Value : true, new GUIContent(groupType.GroupTypePrefix, "A pair of profile variables used for AssetBundles Build and Load Paths"), true);
-                Rect dsDropdownRect = EditorGUILayout.BeginHorizontal(new GUILayoutOption[] { GUILayout.Width(fieldWidth - m_LabelWidth), GUILayout.MinWidth(fieldWidth - m_LabelWidth) });
+                Rect pathPairRect = EditorGUILayout.BeginHorizontal(new GUILayoutOption[]
+                    {GUILayout.Width(fieldWidth + k_VariableItemPadding - k_SplitterThickness), GUILayout.MinWidth(fieldWidth + k_VariableItemPadding - k_SplitterThickness)});
+                m_foldouts[groupType.GroupTypePrefix] = EditorGUILayout.Foldout(foldout != null ? foldout.Value : true,
+                    new GUIContent(groupType.GroupTypePrefix, "A pair of profile variables used for AssetBundles Build and Load Paths"), true);
+                Rect dsDropdownRect = EditorGUILayout.BeginHorizontal(new GUILayoutOption[] {GUILayout.Width(fieldWidth - m_LabelWidth), GUILayout.MinWidth(fieldWidth - m_LabelWidth)});
                 string dropdownText = DetermineOptionString(groupType);
-                bool dsDropdown = EditorGUILayout.DropdownButton(new GUIContent(dropdownText, "Location type"), FocusType.Keyboard, new GUILayoutOption[] { GUILayout.Width(fieldWidth - m_LabelWidth) });
+                bool dsDropdown = EditorGUILayout.DropdownButton(new GUIContent(dropdownText, "Location type"), FocusType.Keyboard, new GUILayoutOption[] {GUILayout.Width(fieldWidth - m_LabelWidth)});
                 if (evt.type == EventType.ContextClick)
                     CreatePairPrefixContextMenu(variablesPaneRect, pathPairRect, groupType, evt);
 
@@ -295,7 +302,8 @@ namespace UnityEditor.AddressableAssets.GUI
                     foreach (var variable in pathVariables)
                     {
                         Rect newPathRect = EditorGUILayout.BeginVertical();
-                        string newPath = EditorGUILayout.TextField(new GUIContent(groupType.GetName(variable), "Profile variable representing a file path or url"), variable.Value, new GUILayoutOption[] { GUILayout.Width(fieldWidth) });
+                        string newPath = EditorGUILayout.TextField(new GUIContent(groupType.GetName(variable), "Profile variable representing a file path or url"), variable.Value,
+                            new GUILayoutOption[] {GUILayout.Width(fieldWidth)});
                         EditorGUILayout.EndVertical();
                         if (newPath != variable.Value && ProfileIndex == m_ProfileTreeView.lastClickedProfile)
                         {
@@ -304,6 +312,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             AddressableAssetUtility.OpenAssetIfUsingVCIntegration(settings);
                         }
                     }
+
                     EditorGUI.indentLevel--;
 
                     EditorGUI.EndDisabledGroup();
@@ -318,7 +327,8 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     GUILayout.Space(5);
                     Rect newValueRect = EditorGUILayout.BeginVertical();
-                    string newValue = EditorGUILayout.TextField(new GUIContent(curVariable.ProfileName, "Profile variable"), selectedProfile.values[i].value, new GUILayoutOption[] { GUILayout.Width(fieldWidth) });
+                    string newValue = EditorGUILayout.TextField(new GUIContent(curVariable.ProfileName, "Profile variable"), selectedProfile.values[i].value,
+                        new GUILayoutOption[] {GUILayout.Width(fieldWidth)});
                     EditorGUILayout.EndVertical();
                     if (newValue != selectedProfile.values[i].value && ProfileIndex == m_ProfileTreeView.lastClickedProfile)
                     {
@@ -332,6 +342,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         CreateVariableContextMenu(variablesPaneRect, newValueRect, curVariable, evt);
                     }
                 }
+
                 maxLabelLen = Math.Max(maxLabelLen, curVariable.ProfileName.Length);
             }
 
@@ -488,6 +499,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 Debug.LogError("An error occured while getting one of the path pair variables.");
                 return;
             }
+
             Undo.RecordObject(settings, "Profile Variable Deleted");
             settings.profileSettings.RemoveValue(buildPathData.Id);
             settings.profileSettings.RemoveValue(loadPathData.Id);
@@ -562,6 +574,7 @@ namespace UnityEditor.AddressableAssets.GUI
             internal AddressableAssetSettings m_Settings;
             internal string m_NewName;
             internal float m_LabelWidth;
+
             public PathPairRenamePopup(float labelWidth, ProfileGroupType profileGroupType, AddressableAssetSettings settings)
             {
                 m_LabelWidth = labelWidth;
@@ -596,8 +609,10 @@ namespace UnityEditor.AddressableAssets.GUI
                         Debug.LogError("Path pair prefix cannot be only spaces");
                     else
                     {
-                        var loadPathVariableData = m_Settings.profileSettings.GetProfileDataByName(m_ProfileGroupType.GroupTypePrefix + ProfileGroupType.k_PrefixSeparator + AddressableAssetSettings.kLoadPath);
-                        var buildPathVariableData = m_Settings.profileSettings.GetProfileDataByName(m_ProfileGroupType.GroupTypePrefix + ProfileGroupType.k_PrefixSeparator + AddressableAssetSettings.kBuildPath);
+                        var loadPathVariableData =
+                            m_Settings.profileSettings.GetProfileDataByName(m_ProfileGroupType.GroupTypePrefix + ProfileGroupType.k_PrefixSeparator + AddressableAssetSettings.kLoadPath);
+                        var buildPathVariableData =
+                            m_Settings.profileSettings.GetProfileDataByName(m_ProfileGroupType.GroupTypePrefix + ProfileGroupType.k_PrefixSeparator + AddressableAssetSettings.kBuildPath);
                         if (loadPathVariableData == default(AddressableAssetProfileSettings.ProfileIdData) || buildPathVariableData == default(AddressableAssetProfileSettings.ProfileIdData))
                             Debug.LogError("Valid path pair to rename not found.");
                         else
@@ -611,15 +626,16 @@ namespace UnityEditor.AddressableAssets.GUI
                         }
                     }
                 }
+
                 GUILayout.EndArea();
             }
 
             bool VariableWithNewPrefixAlreadyExists()
             {
                 bool loadPathAlreadyExists = m_Settings.profileSettings.GetProfileDataByName(m_NewName + ProfileGroupType.k_PrefixSeparator + AddressableAssetSettings.kLoadPath)
-                    != default(AddressableAssetProfileSettings.ProfileIdData);
+                                             != default(AddressableAssetProfileSettings.ProfileIdData);
                 bool buildPathAlreadyExists = m_Settings.profileSettings.GetProfileDataByName(m_NewName + ProfileGroupType.k_PrefixSeparator + AddressableAssetSettings.kBuildPath)
-                    != default(AddressableAssetProfileSettings.ProfileIdData);
+                                              != default(AddressableAssetProfileSettings.ProfileIdData);
                 return loadPathAlreadyExists || buildPathAlreadyExists;
             }
         }
@@ -630,6 +646,7 @@ namespace UnityEditor.AddressableAssets.GUI
             internal AddressableAssetProfileSettings.ProfileIdData m_ProfileVariable;
             internal AddressableAssetSettings m_Settings;
             internal string m_NewName;
+
             public ProfileRenameVariablePopup(float labelWidth, AddressableAssetProfileSettings.ProfileIdData profileVariable, AddressableAssetSettings settings)
             {
                 m_LabelWidth = labelWidth;
@@ -670,6 +687,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         editorWindow.Close();
                     }
                 }
+
                 GUILayout.EndArea();
             }
         }

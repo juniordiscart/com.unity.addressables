@@ -49,11 +49,13 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     Addressables.LogErrorFormat("Address with id '{0}' does not have any valid keys, skipping...", rlData.InternalId);
                     continue;
                 }
+
                 if (locMap.ContainsKey(rlData.Keys[0]))
                 {
                     Addressables.LogErrorFormat("Duplicate address '{0}' with id '{1}' found, skipping...", rlData.Keys[0], rlData.InternalId);
                     continue;
                 }
+
                 var loc = new ResourceLocationBase(rlData.Keys[0], Addressables.ResolveInternalId(rlData.InternalId), rlData.Provider, rlData.ResourceType);
                 loc.Data = rlData.Data;
                 locMap.Add(rlData.Keys[0], loc);
@@ -71,6 +73,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     kvp.Value.ComputeDependencyHash();
                 }
             }
+
             foreach (KeyValuePair<string, ResourceLocationBase> kvp in locMap)
             {
                 ResourceLocationData rlData = dataMap[kvp.Key];
@@ -89,10 +92,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// </summary>
         public IEnumerable<object> Keys
         {
-            get
-            {
-                return Locations.Keys;
-            }
+            get { return Locations.Keys; }
         }
 
         /// <summary>
@@ -140,6 +140,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 if (type.IsAssignableFrom(l.ResourceType))
                     locations.Add(l);
             }
+
             return true;
         }
 

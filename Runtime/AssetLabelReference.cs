@@ -12,6 +12,7 @@ namespace UnityEngine.AddressableAssets
         [FormerlySerializedAs("m_labelString")]
         [SerializeField]
         string m_LabelString;
+
         /// <summary>
         /// The label string.
         /// </summary>
@@ -20,6 +21,7 @@ namespace UnityEngine.AddressableAssets
             get { return m_LabelString; }
             set { m_LabelString = value; }
         }
+
         /// <summary>
         /// The runtime key used for indexing values in the Addressables system.
         /// </summary>

@@ -20,10 +20,16 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         }
 
         /// <inheritdoc />
-        public override bool CanFix { get { return false; } }
+        public override bool CanFix
+        {
+            get { return false; }
+        }
 
         /// <inheritdoc />
-        public override string ruleName { get { return "Bundle Layout Preview"; } }
+        public override string ruleName
+        {
+            get { return "Bundle Layout Preview"; }
+        }
 
         private List<BuildBundleLayoutResultData> m_ResultData = null;
 
@@ -58,7 +64,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                     }
 
                     List<string> assets = new List<string>();
-                    foreach (KeyValuePair<string,string> fileToBundle in ExtractData.WriteData.FileToBundle)
+                    foreach (KeyValuePair<string, string> fileToBundle in ExtractData.WriteData.FileToBundle)
                     {
                         assets.Clear();
                         string assetBundleName = fileToBundle.Value;
@@ -67,7 +73,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                         foreach (GUID guid in implicitGuids)
                         {
                             string assetPath = AssetDatabase.GUIDToAssetPath(guid.ToString());
-                            if(AddressableAssetUtility.IsPathValidForEntry(assetPath))
+                            if (AddressableAssetUtility.IsPathValidForEntry(assetPath))
                                 m_ResultData.Add(new BuildBundleLayoutResultData()
                                 {
                                     AssetBundleName = assetBundleName,
@@ -77,6 +83,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                         }
                     }
                 }
+
                 return m_ResultData;
             }
         }
@@ -89,7 +96,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
             {
                 Debug.LogError("Cannot run Analyze with unsaved scenes");
-                m_Results.Add(new AnalyzeResult { resultName = ruleName + "Cannot run Analyze with unsaved scenes" });
+                m_Results.Add(new AnalyzeResult {resultName = ruleName + "Cannot run Analyze with unsaved scenes"});
                 return m_Results;
             }
 
@@ -99,8 +106,11 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             ConvertBundleNamesToGroupNames(context);
             foreach (BuildBundleLayoutResultData result in BuildBundleLayoutResults)
             {
-                m_Results.Add(new AnalyzeResult { resultName = result.AssetBundleName + kDelimiter
-                    + (result.Explicit ? "Explicit" : "Implicit") + kDelimiter + result.AssetPath });
+                m_Results.Add(new AnalyzeResult
+                {
+                    resultName = result.AssetBundleName + kDelimiter
+                                                        + (result.Explicit ? "Explicit" : "Implicit") + kDelimiter + result.AssetPath
+                });
             }
 
             if (m_Results.Count == 0)

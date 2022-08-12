@@ -41,22 +41,27 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// List of content roots for hosting service.
         /// </summary>
         public abstract List<string> HostingServiceContentRoots { get; }
+
         /// <summary>
         /// Dictionary of profile variables defined by the hosting service.
         /// </summary>
         public abstract Dictionary<string, string> ProfileVariables { get; }
+
         /// <summary>
         /// Gets the current running status of the hosting service.
         /// </summary>
         public abstract bool IsHostingServiceRunning { get; }
+
         /// <summary>
         /// Starts the hosting service.
         /// </summary>
         public abstract void StartHostingService();
+
         /// <summary>
         /// Stops the hosting service.
         /// </summary>
         public abstract void StopHostingService();
+
         /// <summary>
         /// Render the hosting service GUI.
         /// </summary>

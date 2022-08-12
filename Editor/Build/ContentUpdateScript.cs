@@ -26,15 +26,17 @@ namespace UnityEditor.AddressableAssets.Build
     /// </summary>
     public enum CheckForContentUpdateRestrictionsOptions
     {
+        /// <summary>
         /// If assets are modified that have been previously built in a Cannot Change Post Release group, 
         /// the build will be paused and the Update Restrictions Check window is opened
         /// </summary>
         ListUpdatedAssetsWithRestrictions = 0,
-         /// <summary>
+
+        /// <summary>
         /// If assets are modified that have been previously built in a Cannot Change Post Release group, the Content Update build will fail.
         /// </summary>
         FailBuild = 1,
-        /// <summary>
+
         /// <summary>
         /// Updating a previous build does not automatically run the Check for Update Restrictions rule.
         /// </summary>
@@ -133,6 +135,7 @@ namespace UnityEditor.AddressableAssets.Build
                 result &= dependencies[index].Equals(other.dependencies[index]);
                 index++;
             }
+
             return result;
         }
     }
@@ -147,6 +150,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// The name of the cached asset states bundle file.
         /// </summary>
         public string bundleFileId;
+
         /// <summary>
         /// The cached bundle state data.
         /// </summary>
@@ -259,7 +263,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// </summary>
         public static string PreviousContentStateFileCachePath
         {
-            get {return m_BinFileCachePath; }
+            get { return m_BinFileCachePath; }
             set { m_BinFileCachePath = value; }
         }
 
@@ -347,7 +351,8 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="playerVersion">The player version to save. This is usually set to AddressableAssetSettings.PlayerBuildVersion.</param>
         /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
         /// <returns>True if the file is saved, false otherwise.</returns>
-        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion, string remoteCatalogPath)
+        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
+            string remoteCatalogPath)
         {
             return SaveContentState(locations, path, entries, dependencyData, playerVersion, remoteCatalogPath, null);
         }
@@ -363,7 +368,8 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
         /// <param name="carryOverCacheState">Cached state that needs to carry over from the previous build.  This mainly affects Content Update.</param>
         /// <returns>True if the file is saved, false otherwise.</returns>
-        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion, string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
+        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
+            string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
         {
             try
             {
@@ -373,7 +379,7 @@ namespace UnityEditor.AddressableAssets.Build
                 foreach (ContentCatalogDataEntry ccEntry in locations)
                 {
                     if (typeof(IAssetBundleResource).IsAssignableFrom(ccEntry.ResourceType))
-                        cachedBundleInfos.Add(new CachedBundleState() { bundleFileId = ccEntry.InternalId, data = ccEntry.Data });
+                        cachedBundleInfos.Add(new CachedBundleState() {bundleFileId = ccEntry.InternalId, data = ccEntry.Data});
                 }
 
                 if (carryOverCacheState != null)
@@ -436,7 +442,8 @@ namespace UnityEditor.AddressableAssets.Build
                 guidToEntries.TryGetValue(assetData.Key.ToString(), out AddressableAssetEntry addressableAssetEntry);
                 key1ToCCEntries.TryGetValue(assetData.Key.ToString(), out ContentCatalogDataEntry catalogAssetEntry);
                 if (addressableAssetEntry != null && catalogAssetEntry != null &&
-                    GetCachedAssetStateForData(assetData.Key, addressableAssetEntry.BundleFileId, addressableAssetEntry.parentGroup.Guid, catalogAssetEntry.Data, assetData.Value.referencedObjects.Select(x => x.guid), out CachedAssetState cachedAssetState))
+                    GetCachedAssetStateForData(assetData.Key, addressableAssetEntry.BundleFileId, addressableAssetEntry.parentGroup.Guid, catalogAssetEntry.Data,
+                        assetData.Value.referencedObjects.Select(x => x.guid), out CachedAssetState cachedAssetState))
                     cachedInfos.Add(cachedAssetState);
             }
 
@@ -445,7 +452,8 @@ namespace UnityEditor.AddressableAssets.Build
                 guidToEntries.TryGetValue(sceneData.Key.ToString(), out AddressableAssetEntry addressableSceneEntry);
                 key1ToCCEntries.TryGetValue(sceneData.Key.ToString(), out ContentCatalogDataEntry catalogSceneEntry);
                 if (addressableSceneEntry != null && catalogSceneEntry != null &&
-                    GetCachedAssetStateForData(sceneData.Key, addressableSceneEntry.BundleFileId, addressableSceneEntry.parentGroup.Guid, catalogSceneEntry.Data, sceneData.Value.referencedObjects.Select(x => x.guid), out CachedAssetState cachedAssetState))
+                    GetCachedAssetStateForData(sceneData.Key, addressableSceneEntry.BundleFileId, addressableSceneEntry.parentGroup.Guid, catalogSceneEntry.Data,
+                        sceneData.Value.referencedObjects.Select(x => x.guid), out CachedAssetState cachedAssetState))
                     cachedInfos.Add(cachedAssetState);
             }
 
@@ -461,19 +469,19 @@ namespace UnityEditor.AddressableAssets.Build
         {
             return GetContentStateDataPath(browse, null);
         }
-        
+
         internal static string GetContentStateDataPath(bool browse, AddressableAssetSettings settings)
         {
             if (settings == null)
                 settings = AddressableAssetSettingsDefaultObject.Settings;
             var profileSettings = settings == null ? null : settings.profileSettings;
-            string assetPath = profileSettings != null ?
-                profileSettings.EvaluateString(settings.activeProfileId, settings.ContentStateBuildPath) : "";
+            string assetPath = profileSettings != null ? profileSettings.EvaluateString(settings.activeProfileId, settings.ContentStateBuildPath) : "";
 
             if (string.IsNullOrEmpty(assetPath))
             {
-                assetPath = settings != null ? settings.GetContentStateBuildPath() :
-                Path.Combine(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder, PlatformMappingService.GetPlatformPathSubFolder());
+                assetPath = settings != null
+                    ? settings.GetContentStateBuildPath()
+                    : Path.Combine(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder, PlatformMappingService.GetPlatformPathSubFolder());
             }
 
             if (browse)
@@ -489,7 +497,7 @@ namespace UnityEditor.AddressableAssets.Build
                 return assetPath;
             }
 
-            if(!ResourceManagerConfig.ShouldPathUseWebRequest(assetPath))
+            if (!ResourceManagerConfig.ShouldPathUseWebRequest(assetPath))
             {
                 try
                 {
@@ -503,7 +511,7 @@ namespace UnityEditor.AddressableAssets.Build
                     Directory.CreateDirectory(assetPath);
                 }
             }
-            
+
 #if ENABLE_CCD
             switch(settings.BuildAndReleaseBinFileOption)
             {
@@ -533,10 +541,9 @@ namespace UnityEditor.AddressableAssets.Build
                 File.Delete(ContentUpdateScript.PreviousContentStateFileCachePath);
 
             try
-            { 
+            {
                 var bytes = new WebClient().DownloadData(url);
                 File.WriteAllBytes(ContentUpdateScript.PreviousContentStateFileCachePath, bytes);
-
             }
             catch
             {
@@ -558,14 +565,17 @@ namespace UnityEditor.AddressableAssets.Build
                 Debug.LogErrorFormat("Unable to load cache data from {0}.", contentStateDataPath);
                 return null;
             }
+
             var stream = new FileStream(contentStateDataPath, FileMode.Open, FileAccess.Read);
             var formatter = new BinaryFormatter();
             var cacheData = formatter.Deserialize(stream) as AddressablesContentState;
             if (cacheData == null)
             {
-                Addressables.LogError("Invalid hash data file.  This file is usually named addressables_content_state.bin and is saved in the same folder as your source AddressableAssetsSettings.asset file.");
+                Addressables.LogError(
+                    "Invalid hash data file.  This file is usually named addressables_content_state.bin and is saved in the same folder as your source AddressableAssetsSettings.asset file.");
                 return null;
             }
+
             stream.Dispose();
             return cacheData;
         }
@@ -579,6 +589,7 @@ namespace UnityEditor.AddressableAssets.Build
             {
                 DirectoryUtility.DeleteDirectory(Addressables.BuildPath, onlyIfEmpty: false, recursiveDelete: true);
             }
+
             if (deleteStreamingAssetsFolderIfEmpty)
             {
                 DirectoryUtility.DeleteDirectory(kStreamingAssetsPath, onlyIfEmpty: true);
@@ -618,13 +629,15 @@ namespace UnityEditor.AddressableAssets.Build
                 return false;
 
             if (cacheData.editorVersion != Application.unityVersion)
-                Addressables.LogWarningFormat("Building content update with Unity editor version `{0}`, data was created with version `{1}`.  This may result in incompatible data.", Application.unityVersion, cacheData.editorVersion);
+                Addressables.LogWarningFormat("Building content update with Unity editor version `{0}`, data was created with version `{1}`.  This may result in incompatible data.",
+                    Application.unityVersion, cacheData.editorVersion);
 
             if (string.IsNullOrEmpty(cacheData.remoteCatalogLoadPath))
             {
                 Addressables.LogError("Previous build had 'Build Remote Catalog' disabled.  You cannot update a player that has no remote catalog specified");
                 return false;
             }
+
             if (!settings.BuildRemoteCatalog)
             {
                 Addressables.LogError("Current settings have 'Build Remote Catalog' disabled.  You cannot update a player that has no remote catalog to look to.");
@@ -633,7 +646,9 @@ namespace UnityEditor.AddressableAssets.Build
 
             if (cacheData.remoteCatalogLoadPath != settings.RemoteCatalogLoadPath.GetValue(settings))
             {
-                Addressables.LogErrorFormat("Current 'Remote Catalog Load Path' does not match load path of original player.  Player will only know to look up catalog at original location. Original: {0}  Current: {1}", cacheData.remoteCatalogLoadPath, settings.RemoteCatalogLoadPath.GetValue(settings));
+                Addressables.LogErrorFormat(
+                    "Current 'Remote Catalog Load Path' does not match load path of original player.  Player will only know to look up catalog at original location. Original: {0}  Current: {1}",
+                    cacheData.remoteCatalogLoadPath, settings.RemoteCatalogLoadPath.GetValue(settings));
                 return false;
             }
 
@@ -664,7 +679,8 @@ namespace UnityEditor.AddressableAssets.Build
             return retVal.ToList();
         }
 
-        internal static void GatherExplicitModifiedEntries(AddressableAssetSettings settings, ref Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap, AddressablesContentState cacheData)
+        internal static void GatherExplicitModifiedEntries(AddressableAssetSettings settings, ref Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap,
+            AddressablesContentState cacheData)
         {
             List<string> noBundledAssetGroupSchema = new List<string>();
             List<string> noStaticContent = new List<string>();
@@ -716,7 +732,7 @@ namespace UnityEditor.AddressableAssets.Build
             {
                 CachedAssetState cachedInfo;
                 if (!entryToCacheInfo.TryGetValue(entry.guid, out cachedInfo) || HasAssetOrDependencyChanged(cachedInfo))
-                { 
+                {
                     modifiedEntries.Add(entry);
                     entry.FlaggedDuringContentUpdateRestriction = true;
                     entry.parentGroup.FlaggedDuringContentUpdateRestriction = true;
@@ -794,17 +810,17 @@ namespace UnityEditor.AddressableAssets.Build
             }
 
             HashSet<AddressableAssetEntry> modifiedEntries = new HashSet<AddressableAssetEntry>();
-            foreach (KeyValuePair<AddressableAssetEntry,List<AddressableAssetEntry>> mappedEntry in dependencyMap)
+            foreach (KeyValuePair<AddressableAssetEntry, List<AddressableAssetEntry>> mappedEntry in dependencyMap)
             {
                 modifiedEntries.Add(mappedEntry.Key);
                 foreach (AddressableAssetEntry dependencyEntry in mappedEntry.Value)
                     modifiedEntries.Add(dependencyEntry);
             }
-            
+
             // if an entry is dependant on a modified entry, then it too should be modified to reference the moved asset
             foreach (AddressableAssetEntry modifiedEntry in modifiedEntries)
             {
-                foreach (KeyValuePair<AddressableAssetEntry,string[]> dependency in entryToDependencies)
+                foreach (KeyValuePair<AddressableAssetEntry, string[]> dependency in entryToDependencies)
                 {
                     if (dependency.Key != modifiedEntry &&
                         dependency.Value.Contains(modifiedEntry.AssetPath) &&
@@ -826,9 +842,9 @@ namespace UnityEditor.AddressableAssets.Build
                 if (staticSchema == null)
                     continue;
                 var bundleSchema = group.GetSchema<BundledAssetGroupSchema>();
-                if (bundleSchema == null )
+                if (bundleSchema == null)
                     continue;
-                
+
                 if (staticSchema.StaticContent)
                     staticGroups.Add(group);
             }
@@ -851,10 +867,12 @@ namespace UnityEditor.AddressableAssets.Build
                 if (cacheInfo != null && bundleIdToCacheInfo.TryGetValue(cacheInfo.bundleFileId, out string bundleName))
                     groupGuidToCacheBundleName[cacheInfo.groupGuid] = bundleName;
             }
+
             return groupGuidToCacheBundleName;
         }
 
-        internal static HashSet<string> GetGroupGuidsWithUnchangedBundleName(AddressableAssetSettings settings, Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap, Dictionary<string, string> groupGuidToCacheBundleName)
+        internal static HashSet<string> GetGroupGuidsWithUnchangedBundleName(AddressableAssetSettings settings, Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap,
+            Dictionary<string, string> groupGuidToCacheBundleName)
         {
             var result = new HashSet<string>();
             if (groupGuidToCacheBundleName == null || groupGuidToCacheBundleName.Count == 0)
@@ -884,14 +902,16 @@ namespace UnityEditor.AddressableAssets.Build
                         result.Add(group.Guid);
                 }
             }
+
             return result;
         }
 
-        internal static void GetStaticContentDependenciesForEntries(AddressableAssetSettings settings, ref Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap, Dictionary<string, string> groupGuidToCacheBundleName = null)
+        internal static void GetStaticContentDependenciesForEntries(AddressableAssetSettings settings, ref Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> dependencyMap,
+            Dictionary<string, string> groupGuidToCacheBundleName = null)
         {
             if (dependencyMap == null)
                 return;
-            
+
             Dictionary<AddressableAssetGroup, bool> groupHasStaticContentMap = new Dictionary<AddressableAssetGroup, bool>();
             HashSet<string> groupGuidsWithUnchangedBundleName = GetGroupGuidsWithUnchangedBundleName(settings, dependencyMap, groupGuidToCacheBundleName);
 
@@ -915,7 +935,7 @@ namespace UnityEditor.AddressableAssets.Build
                     if (!groupHasStaticContentMap.TryGetValue(depEntry.parentGroup, out bool groupHasStaticContentEnabled))
                     {
                         groupHasStaticContentEnabled = depEntry.parentGroup.HasSchema<ContentUpdateGroupSchema>() &&
-                            depEntry.parentGroup.GetSchema<ContentUpdateGroupSchema>().StaticContent;
+                                                       depEntry.parentGroup.GetSchema<ContentUpdateGroupSchema>().StaticContent;
 
                         groupHasStaticContentMap.Add(depEntry.parentGroup, groupHasStaticContentEnabled);
                     }
@@ -951,6 +971,7 @@ namespace UnityEditor.AddressableAssets.Build
                                     entriesToAdd.Add(sharedGroupEntry);
                                 }
                             }
+
                             break;
 
                         case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
@@ -963,12 +984,12 @@ namespace UnityEditor.AddressableAssets.Build
 
                                 //Only add if labels are shared
                                 if (sharedGroupEntry.IsScene && !modifiedEntries.Contains(sharedGroupEntry) && sharedGroupEntry.labels.Union(entry.labels).Any())
-                                { 
-                                 
+                                {
                                     sharedGroupEntry.FlaggedDuringContentUpdateRestriction = true;
                                     entriesToAdd.Add(sharedGroupEntry);
                                 }
                             }
+
                             break;
 
                         case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:

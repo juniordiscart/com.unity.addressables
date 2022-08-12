@@ -27,10 +27,10 @@ namespace UnityEngine.ResourceManagement.Util
                 {
                     s_Instance = FindInstance() ?? CreateNewSingleton();
                 }
+
                 return s_Instance;
             }
         }
-
 
 
         static T FindInstance()
@@ -42,6 +42,7 @@ namespace UnityEngine.ResourceManagement.Util
                 if (!EditorUtility.IsPersistent(go.transform.root.gameObject) && !(go.hideFlags == HideFlags.NotEditable || go.hideFlags == HideFlags.HideAndDontSave))
                     return cb;
             }
+
             return null;
 #else
             return FindObjectOfType<T>();
@@ -67,6 +68,7 @@ namespace UnityEngine.ResourceManagement.Util
             {
                 go.hideFlags = HideFlags.HideAndDontSave;
             }
+
             var instance = go.AddComponent<T>();
             go.name = instance.GetGameObjectName();
             return instance;
@@ -79,6 +81,7 @@ namespace UnityEngine.ResourceManagement.Util
                 DestroyImmediate(gameObject);
                 return;
             }
+
             s_Instance = this as T;
         }
 

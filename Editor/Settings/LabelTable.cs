@@ -11,9 +11,13 @@ namespace UnityEditor.AddressableAssets.Settings
     {
         [FormerlySerializedAs("m_labelNames")]
         [SerializeField]
-        List<string> m_LabelNames = new List<string>(new[] { "default" });
+        List<string> m_LabelNames = new List<string>(new[] {"default"});
 
-        internal List<string> labelNames { get { return m_LabelNames; } }
+        internal List<string> labelNames
+        {
+            get { return m_LabelNames; }
+        }
+
         const int k_KNameCountCap = 3;
 
         internal bool AddLabelName(string name)
@@ -25,6 +29,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogErrorFormat("Label name '{0}' cannot contain '[ ]'.", name);
                 return false;
             }
+
             m_LabelNames.Add(name);
             return true;
         }
@@ -38,6 +43,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogErrorFormat("Label name '{0}' cannot contain '[ ]'.", name);
                 return false;
             }
+
             m_LabelNames.Insert(index, name);
             return true;
         }
@@ -53,6 +59,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 newName = name + counter;
                 counter++;
             }
+
             return string.Empty;
         }
 
@@ -65,7 +72,7 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (val == null || val.Count == 0)
                 return "";
-            
+
             StringBuilder sb = new StringBuilder();
             int counter = 0;
             foreach (var v in m_LabelNames)
@@ -84,6 +91,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     counter++;
                 }
             }
+
             return sb.ToString();
         }
 

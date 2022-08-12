@@ -4,7 +4,22 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.20.3] - 2022-6-14
+## [1.20.5] - 2022-08-03
+- Fixed issue where object picker for the AssetReferenceDrawer would cut off longer asset names due to only being as wide as the property drawer.
+- Improved performance of gathering assets for an AssetReference.
+- Fixed issue where settings hash was not included in settings.json for runtime settings.
+- Fixed issue where CheckBundleDupeDependencies() would cause a null reference when no addressable assets are in a project.
+- Fixed issue where WebRequestQueue would throw a NullReferenceException when given an aborted web request as a parameter.
+- Fixed issue where renaming a label does not dirty and save settings and serialise to file.
+- Fixed an issue where an updating catalogs operation would return a 'Succeeded' status even if its load operation failed.
+- Fixed issue where hosting service roots would not change to correct platform when switching platforms in editor.
+- Fixed issue where ProfileDataSourceSettings was generating wrong LoadPath url for CCD integration
+- Fixed issue where ClearDependencyCacheAsync could try and clear a bundle that is actively loading.
+- Fixed issue where web request is not disposed when downloading a file using TextDataProvider
+- Fixed issue where DisableAssetImportOnBuild sample does not disable asset imports
+- Fixed issue where retrying a download after a CRC mismatch would not occur.
+
+## [1.20.3] - 2022-06-14
 - Added documentation to several areas (Build, Settings, Profiles, Catalogs, Runtime loading).
 - Fixed issue where GatherAllAssets filter would still return subObjects of filtered Assets.
 - Fixed issue where content update entries dependent on modified entries and not found as modified by check for content update restrictions
@@ -26,7 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed bug where WaitForCompletion could hang indefinitely under certain race conditions (primarily on Android)
 - Fixed a bug where calling WaitForCompletion on a LoadAssetAsync call that was loading from Resources would freeze the editor.
 
-## [1.20.0] - 2022-4-20
+## [1.20.0] - 2022-04-20
 - Added ability to get the download size of a given Content Catalog by its resource location
 - Add option to save the bundle build layout report as a json or txt file in the Preferences window.
 - Added sample for resolving duplicate dependencies to multiple groups.
@@ -73,7 +88,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed issue where multiple AssetReferences could not be dragged and dropped to a list or array.
 - Improved performance when deleting Addressable Asset Groups.
 
-## [1.19.19] - 2022-3-1
+## [1.19.19] - 2022-03-01
 - Improved message of InvalidKeyException errors.
 - Improved exception message of RemoteProviderExceptions
 - Fixed issue where Clear Cache Behavior setting was getting reverted when changed while multi-selecting schemas
@@ -86,7 +101,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed issue causing InvalidOperationException when loading Addressable Settings from OnPostProcessAllAsset during a project load without a cached AssetDatabase
 - Fixed an issue where calling LoadSceneAsync.WaitForCompletion immediately after loading a scene singly would cause a freeze
 
-## [1.19.18] - 2022-1-31
+## [1.19.18] - 2022-01-31
 - Fixed issue where WaitForCompletion would take too long when used in virtual mode.
 - Updated the documentation to include information on methods of waiting on asynchronous operations to complete.
 - Fixed issue where IOException occurs when autoCleanBundleCache has value of 'true' in Addressables.UpdateCatalogs.
@@ -100,7 +115,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed issue where "Unable to load assets of type" error occurs when loading asset with classes referenced by value in "Use Asset Database" mode.
 - Add more documentation about the "Non-Recursive Dependency Calculation" and "MonoScript Bundle Naming Prefix" options in AddressableAssetSettings.
 
-## [1.19.17] - 2022-1-6
+## [1.19.17] - 2022-01-06
 - New Projects use hierarchical search mode as the default option for Group search.
 - Group referenced by Addressable Schema can now be viewed, but not edited, in the inspector
 - Fixed issue where calling Addressables.CleanBundleCache freezes the WebGL player.
@@ -116,7 +131,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated the docs to use the correct name for the Analyze rule "Bundle Layout Preview"
 - Fixed issue where Addressable Asset Entry cached data is not cleared during external changes in some editor versions.
 
-## [1.19.15] - 2021-12-2
+## [1.19.15] - 2021-12-02
 - Fix issue where opening the Analyze window logs null exceptions after running the "Check Duplicate Bundle Dependencies" rule.
 
 ## [1.19.13] - 2021-11-29
@@ -1181,6 +1196,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.0.8-preview] - 2018-02-08
 - Initial submission for package distribution
+
 
 
 

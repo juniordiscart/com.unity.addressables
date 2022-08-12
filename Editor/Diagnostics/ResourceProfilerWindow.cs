@@ -19,17 +19,26 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             var setting = AddressableAssetSettingsDefaultObject.Settings;
             if (setting == null)
             {
-                EditorUtility.DisplayDialog("Error", "Attempting to open Addressables Event Viewer window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
+                EditorUtility.DisplayDialog("Error",
+                    "Attempting to open Addressables Event Viewer window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
                 return;
             }
+
             AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenEventViewerWindow);
             var window = GetWindow<ResourceProfilerWindow>();
             window.titleContent = new GUIContent("Addressables Event Viewer", "Addressables Event Viewer");
             window.Show();
         }
 
-        protected override bool ShowEventDetailPanel { get { return false; } }
-        protected override bool ShowEventPanel { get { return true; } }
+        protected override bool ShowEventDetailPanel
+        {
+            get { return false; }
+        }
+
+        protected override bool ShowEventPanel
+        {
+            get { return true; }
+        }
 
         protected static string GetDataStreamName(int stream)
         {
@@ -54,6 +63,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                         return true;
                 }
             }
+
             return base.OnRecordEvent(evt);
         }
 
@@ -65,17 +75,21 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         {
             if (columnNames == null || columnSizes == null)
                 return;
-            columnNames.AddRange(new[] { "Event", "Key" });
-            tooltips.AddRange(new[] { "A diagnostic event sent by the ResourceManager", "Identifier for the event" });
-            columnSizes.AddRange(new float[] { 150, 400 });
+            columnNames.AddRange(new[] {"Event", "Key"});
+            tooltips.AddRange(new[] {"A diagnostic event sent by the ResourceManager", "Identifier for the event"});
+            columnSizes.AddRange(new float[] {150, 400});
         }
 
         protected override bool OnDrawColumnCell(Rect cellRect, DiagnosticEvent evt, int column)
         {
             switch (column)
             {
-                case 0: EditorGUI.LabelField(cellRect, ((ResourceManager.DiagnosticEventType)evt.Stream).ToString()); break;
-                case 1: EditorGUI.LabelField(cellRect, evt.DisplayName); break;
+                case 0:
+                    EditorGUI.LabelField(cellRect, ((ResourceManager.DiagnosticEventType)evt.Stream).ToString());
+                    break;
+                case 1:
+                    EditorGUI.LabelField(cellRect, evt.DisplayName);
+                    break;
             }
 
             return true;
@@ -102,7 +116,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 new GraphLayerLabel(0, "InstantiationCount", "Number of instantiations on current frame", refCountColor, GraphColors.LabelGraphLabelBackground, v => v.ToString()));
 
             graphView.DefineGraph("ResourceManager", (int)ResourceManager.DiagnosticEventType.AsyncOperationReferenceCount,
-                new GraphLayerBackgroundGraph((int)ResourceManager.DiagnosticEventType.AsyncOperationReferenceCount, refCountBgColor, (int)ResourceManager.DiagnosticEventType.AsyncOperationPercentComplete, loadingBgColor, "LoadPercent", "Loaded"),
+                new GraphLayerBackgroundGraph((int)ResourceManager.DiagnosticEventType.AsyncOperationReferenceCount, refCountBgColor,
+                    (int)ResourceManager.DiagnosticEventType.AsyncOperationPercentComplete, loadingBgColor, "LoadPercent", "Loaded"),
                 new GraphLayerBarChartMesh((int)ResourceManager.DiagnosticEventType.AsyncOperationReferenceCount, "RefCount", "Reference Count", refCountColor),
                 new GraphLayerEventMarker((int)ResourceManager.DiagnosticEventType.AsyncOperationCreate, "", "", Color.grey, Color.grey),
                 new GraphLayerEventMarker((int)ResourceManager.DiagnosticEventType.AsyncOperationComplete, "", "", Color.white, Color.white),

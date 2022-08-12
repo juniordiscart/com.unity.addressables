@@ -95,14 +95,14 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
                 }
             }
         }
-        
+
         [Test]
         public void HttpServiceCompletesWithUploadSpeedWhenExpected()
         {
             string subdir1 = "subdir";
             //string subdir2 = "subdir1"; // Remove comment when Mono limit Fixed
             //string subdir3 = "subdir3";
-            
+
             var fileNames = new[]
             {
                 Path.GetRandomFileName(),
@@ -119,7 +119,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
                 File.WriteAllBytes(filePath, bytes);
                 m_Service.StartHostingService();
                 m_Service.UploadSpeed = 1024 * 1024 * 10;
-                
+
                 Assert.IsTrue(m_Service.IsHostingServiceRunning);
                 var url = string.Format("http://127.0.0.1:{0}/{1}", m_Service.HostingServicePort, fileName);
                 try
@@ -192,7 +192,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             m_Service.OnBeforeSerialize(data);
             Assert.AreEqual(port, data.GetData("HostingServicePort", 0));
         }
-        
+
         [Test]
         public void OnBeforeSerializeShould_WasEnableCorrectToKeyDataStore()
         {

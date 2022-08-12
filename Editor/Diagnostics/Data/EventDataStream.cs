@@ -9,7 +9,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
     {
         internal int maxValue;
         internal List<EventDataSample> samples = new List<EventDataSample>();
-        
+
         internal void AddSample(int frame, int val)
         {
             bool streamHasSamples = samples.Count > 0;
@@ -22,7 +22,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
             else
                 samples.Add(new EventDataSample(frame, val));
         }
-        
+
         internal int GetValue(int f)
         {
             if (samples.Count == 0 || f < samples[0].frame)
@@ -34,6 +34,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
                 if (samples[i].frame > f)
                     return samples[i - 1].data;
             }
+
             return samples[0].data;
         }
 

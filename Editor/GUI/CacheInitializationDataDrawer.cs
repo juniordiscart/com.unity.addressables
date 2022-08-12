@@ -34,6 +34,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 var prop = property.FindPropertyRelative("m_CompressionEnabled");
                 prop.boolValue = EditorGUI.Toggle(rectForGUIRow, new GUIContent("Compress Bundles", "Bundles are recompressed into LZ4 format to optimize load times."), prop.boolValue);
             }
+
             return rectStartYPos + rectForGUIRow.height + EditorGUIUtility.standardVerticalSpacing;
         }
 
@@ -45,6 +46,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 var prop = property.FindPropertyRelative("m_CacheDirectoryOverride");
                 prop.stringValue = EditorGUI.TextField(rectForGUIRow, new GUIContent("Cache Directory Override", "Specify custom directory for cache.  Leave blank for default."), prop.stringValue);
             }
+
             return rectStartYPos + rectForGUIRow.height + EditorGUIUtility.standardVerticalSpacing;
         }
 
@@ -54,11 +56,13 @@ namespace UnityEditor.AddressableAssets.GUI
             if (!isPreview)
             {
                 var prop = property.FindPropertyRelative("m_ExpirationDelay");
-                prop.intValue = EditorGUI.IntSlider(rectForGUIRow, new GUIContent("[Obsolete] Expiration Delay (in seconds)", "Controls how long items are left in the cache before deleting."), prop.intValue, 0, 12960000);
+                prop.intValue = EditorGUI.IntSlider(rectForGUIRow, new GUIContent("[Obsolete] Expiration Delay (in seconds)", "Controls how long items are left in the cache before deleting."),
+                    prop.intValue, 0, 12960000);
                 rectForGUIRow.y += rectForGUIRow.height + EditorGUIUtility.standardVerticalSpacing;
                 var ts = new TimeSpan(0, 0, prop.intValue);
                 EditorGUI.LabelField(new Rect(rectForGUIRow.x + 16, rectForGUIRow.y, rectForGUIRow.width - 16, rectForGUIRow.height), new GUIContent(NicifyTimeSpan(ts)));
             }
+
             return rectStartYPos + (rectForGUIRow.height + EditorGUIUtility.standardVerticalSpacing) * 2;
         }
 
@@ -76,10 +80,11 @@ namespace UnityEditor.AddressableAssets.GUI
 
                     var prop = property.FindPropertyRelative("m_MaximumCacheSize");
                     if (prop.longValue == long.MaxValue)
-                        prop.longValue = (1024 * 1024 * 1024);//default to 1GB
+                        prop.longValue = (1024 * 1024 * 1024); //default to 1GB
 
                     var mb = (prop.longValue / (1024 * 1024));
-                    var val = EditorGUI.LongField(new Rect(rectForGUIRow.x + 16, rectForGUIRow.y, rectForGUIRow.width - 16, rectForGUIRow.height), new GUIContent("Maximum Cache Size (in MB)", "Controls how large the cache can get before deleting."), mb);
+                    var val = EditorGUI.LongField(new Rect(rectForGUIRow.x + 16, rectForGUIRow.y, rectForGUIRow.width - 16, rectForGUIRow.height),
+                        new GUIContent("Maximum Cache Size (in MB)", "Controls how large the cache can get before deleting."), mb);
                     if (val != mb)
                         prop.longValue = val * (1024 * 1024);
 

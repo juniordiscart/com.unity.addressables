@@ -40,6 +40,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("ProfileValueReference: AddressableAssetSettings object is null.");
                 return null;
             }
+
             return GetValue(settings.profileSettings, settings.activeProfileId);
         }
 
@@ -56,11 +57,13 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("ProfileValueReference: AddressableAssetProfileSettings object is null.");
                 return null;
             }
+
             if (string.IsNullOrEmpty(profileId))
             {
                 Debug.LogWarning("ProfileValueReference: GetValue called with invalid profileId.");
                 return null;
             }
+
             return profileSettings.EvaluateString(profileId, profileSettings.GetValueById(profileId, m_Id));
         }
 
@@ -76,6 +79,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("ProfileValueReference: GetName() - AddressableAssetSettings object is null.");
                 return null;
             }
+
             var pid = settings.profileSettings.GetProfileDataById(m_Id);
             if (pid == null)
                 Debug.LogWarningFormat("ProfileValueReference: GetName() - Unable to find variable id {0} in settings object.", m_Id);
@@ -90,7 +94,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("ProfileValueReference: HasValue() - AddressableAssetSettings object is null.");
                 return false;
             }
-            
+
             return !string.IsNullOrEmpty(settings.profileSettings.GetValueById(settings.activeProfileId, m_Id));
         }
 
@@ -107,16 +111,19 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("ProfileValueReference: SetVariableById() - AddressableAssetSettings object is null.");
                 return false;
             }
+
             if (string.IsNullOrEmpty(id))
             {
                 Debug.LogWarning("ProfileValueReference: SetVariableById() - invalid parameter id.");
                 return false;
             }
+
             if (settings.profileSettings.GetProfileDataById(id) == null)
             {
                 Debug.LogWarningFormat("ProfileValueReference: SetVariableById() - Unable to find variable id {0} in settings object.", id);
                 return false;
             }
+
             m_Id = id;
             if (OnValueChanged != null)
                 OnValueChanged(this);
@@ -136,6 +143,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("ProfileValueReference: SetVariableByName() - AddressableAssetSettings object is null.");
                 return false;
             }
+
             if (string.IsNullOrEmpty(name))
             {
                 Debug.LogWarning("ProfileValueReference: SetVariableByName() - invalid parameter name.");
@@ -148,6 +156,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarningFormat("ProfileValueReference: SetVariableByName() - Unable to find variable name {0} in settings object.", name);
                 return false;
             }
+
             m_Id = idData.Id;
             if (OnValueChanged != null)
                 OnValueChanged(this);

@@ -15,6 +15,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     {
         Dictionary<string, string> m_bundleToAssetGroup;
         AddressableAssetSettings m_settings;
+
         /// <summary>
         /// Create a AddressableAssetsBundleBuildParameters with data needed to determine the correct compression per bundle.
         /// </summary>
@@ -23,7 +24,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <param name="target">The build target.  This is used by the BundleBuildParameters base class.</param>
         /// <param name="group">The build target group. This is used by the BundleBuildParameters base class.</param>
         /// <param name="outputFolder">The path for the output folder. This is used by the BundleBuildParameters base class.</param>
-        public AddressableAssetsBundleBuildParameters(AddressableAssetSettings aaSettings, Dictionary<string, string> bundleToAssetGroup, BuildTarget target, BuildTargetGroup group, string outputFolder) : base(target, group, outputFolder)
+        public AddressableAssetsBundleBuildParameters(AddressableAssetSettings aaSettings, Dictionary<string, string> bundleToAssetGroup, BuildTarget target, BuildTargetGroup group,
+            string outputFolder) : base(target, group, outputFolder)
         {
             UseCache = true;
             ContiguousBundles = aaSettings.ContiguousBundles;
@@ -88,6 +90,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     Debug.LogWarningFormat("Unable to find group with guid {0}", groupGuid);
                 }
             }
+
             return base.GetCompressionForIdentifier(identifier);
         }
     }

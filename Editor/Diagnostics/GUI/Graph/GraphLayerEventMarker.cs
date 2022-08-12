@@ -7,7 +7,12 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI.Graph
     class GraphLayerEventMarker : GraphLayerBase
     {
         Color m_EndColor;
-        internal GraphLayerEventMarker(int stream, string name, string desc, Color startColor, Color endColor) : base(stream, name, desc, startColor) { m_EndColor = endColor; }
+
+        internal GraphLayerEventMarker(int stream, string name, string desc, Color startColor, Color endColor) : base(stream, name, desc, startColor)
+        {
+            m_EndColor = endColor;
+        }
+
         public override void Draw(EventDataSet dataSet, Rect rect, int startFrame, int frameCount, int inspectFrame, bool expanded, Material material, int maxValue)
         {
             if (dataSet == null)
@@ -22,7 +27,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI.Graph
                     var frame = stream.samples[i].frame;
                     if (frame < startFrame)
                         break;
-                    EditorGUI.DrawRect(new Rect(rect.xMin + GraphUtility.ValueToPixel(frame, startFrame, endTime, rect.width), rect.yMin, 2, rect.height), stream.samples[i].data == 0 ? m_EndColor : GraphColor);
+                    EditorGUI.DrawRect(new Rect(rect.xMin + GraphUtility.ValueToPixel(frame, startFrame, endTime, rect.width), rect.yMin, 2, rect.height),
+                        stream.samples[i].data == 0 ? m_EndColor : GraphColor);
                 }
             }
         }
@@ -30,7 +36,10 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI.Graph
 
     class GraphLayerVertValueLine : GraphLayerBase
     {
-        internal GraphLayerVertValueLine(int stream, string name, string desc, Color color) : base(stream, name, desc, color) {}
+        internal GraphLayerVertValueLine(int stream, string name, string desc, Color color) : base(stream, name, desc, color)
+        {
+        }
+
         public override void Draw(EventDataSet dataSet, Rect rect, int startFrame, int frameCount, int inspectFrame, bool expanded, Material material, int maxValue)
         {
             if (dataSet == null)

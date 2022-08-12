@@ -17,7 +17,7 @@ public class AddressHasC : UnityEditor.AddressableAssets.Build.AnalyzeRules.Anal
 {
     public override bool CanFix
     {
-        get { return false;}
+        get { return false; }
         set { }
     }
 
@@ -33,16 +33,16 @@ public class AddressHasC : UnityEditor.AddressableAssets.Build.AnalyzeRules.Anal
         {
             if (group.HasSchema<PlayerDataGroupSchema>())
                 continue;
-            
+
             foreach (var e in group.entries)
             {
-                if(!e.address.Contains("C"))
-                    results.Add(new AnalyzeResult{resultName = group.Name + kDelimiter + e.address, severity = MessageType.Error});
+                if (!e.address.Contains("C"))
+                    results.Add(new AnalyzeResult {resultName = group.Name + kDelimiter + e.address, severity = MessageType.Error});
             }
         }
-        
+
         if (results.Count == 0)
-            results.Add(new AnalyzeResult{resultName = ruleName + " - No issues found."});
+            results.Add(new AnalyzeResult {resultName = ruleName + " - No issues found."});
 
         return results;
     }

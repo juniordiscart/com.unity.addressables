@@ -1,7 +1,9 @@
 namespace AddressableAssets.DocExampleCode
 {
     using MenuItem = Dummy;
+
     #region doc_BuildLauncher
+
 #if UNITY_EDITOR
     using UnityEditor;
     using UnityEditor.AddressableAssets.Build;
@@ -11,15 +13,19 @@ namespace AddressableAssets.DocExampleCode
 
     internal class BuildLauncher
     {
-        public static string build_script 
+        public static string build_script
             = "Assets/AddressableAssetsData/DataBuilders/BuildScriptPackedMode.asset";
-        public static string settings_asset 
+
+        public static string settings_asset
             = "Assets/AddressableAssetsData/AddressableAssetSettings.asset";
+
         public static string profile_name = "Default";
         private static AddressableAssetSettings settings;
 
         #region getSettingsObject
-        static void getSettingsObject(string settingsAsset) {
+
+        static void getSettingsObject(string settingsAsset)
+        {
             // This step is optional, you can also use the default settings:
             //settings = AddressableAssetSettingsDefaultObject.Settings;
 
@@ -31,10 +37,13 @@ namespace AddressableAssets.DocExampleCode
                 Debug.LogError($"{settingsAsset} couldn't be found or isn't " +
                                $"a settings object.");
         }
+
         #endregion
 
         #region setProfile
-        static void setProfile(string profile) {
+
+        static void setProfile(string profile)
+        {
             string profileId = settings.profileSettings.GetProfileId(profile);
             if (String.IsNullOrEmpty(profileId))
                 Debug.LogWarning($"Couldn't find a profile named, {profile}, " +
@@ -42,10 +51,13 @@ namespace AddressableAssets.DocExampleCode
             else
                 settings.activeProfileId = profileId;
         }
+
         #endregion
 
         #region setBuilder
-        static void setBuilder(IDataBuilder builder) {
+
+        static void setBuilder(IDataBuilder builder)
+        {
             int index = settings.DataBuilders.IndexOf((ScriptableObject)builder);
 
             if (index > 0)
@@ -55,29 +67,37 @@ namespace AddressableAssets.DocExampleCode
                                  $"DataBuilders list before it can be made " +
                                  $"active. Using last run builder instead.");
         }
+
         #endregion
 
         #region buildAddressableContent
-        static bool buildAddressableContent() {
+
+        static bool buildAddressableContent()
+        {
             AddressableAssetSettings
                 .BuildPlayerContent(out AddressablesPlayerBuildResult result);
             bool success = string.IsNullOrEmpty(result.Error);
 
-            if (!success) {
+            if (!success)
+            {
                 Debug.LogError("Addressables build error encountered: " + result.Error);
             }
+
             return success;
         }
+
         #endregion
 
         [MenuItem("Window/Asset Management/Addressables/Build Addressables only")]
-        public static bool BuildAddressables() {
+        public static bool BuildAddressables()
+        {
             getSettingsObject(settings_asset);
             setProfile(profile_name);
             IDataBuilder builderScript
-              = AssetDatabase.LoadAssetAtPath<ScriptableObject>(build_script) as IDataBuilder;
+                = AssetDatabase.LoadAssetAtPath<ScriptableObject>(build_script) as IDataBuilder;
 
-            if (builderScript == null) {
+            if (builderScript == null)
+            {
                 Debug.LogError(build_script + " couldn't be found or isn't a build script.");
                 return false;
             }
@@ -88,10 +108,12 @@ namespace AddressableAssets.DocExampleCode
         }
 
         [MenuItem("Window/Asset Management/Addressables/Build Addressables and Player")]
-        public static void BuildAddressablesAndPlayer() {
+        public static void BuildAddressablesAndPlayer()
+        {
             bool contentBuildSucceeded = BuildAddressables();
 
-            if (contentBuildSucceeded) {
+            if (contentBuildSucceeded)
+            {
                 var options = new BuildPlayerOptions();
                 BuildPlayerOptions playerSettings
                     = BuildPlayerWindow.DefaultBuildMethods.GetBuildPlayerOptions(options);
@@ -101,5 +123,6 @@ namespace AddressableAssets.DocExampleCode
         }
     }
 #endif
+
     #endregion
 }

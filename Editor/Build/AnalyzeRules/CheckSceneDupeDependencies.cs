@@ -37,7 +37,8 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             ClearAnalysis();
 
             string[] scenePaths = (from editorScene in EditorBuildSettings.scenes
-                 where editorScene.enabled select editorScene.path).ToArray();
+                where editorScene.enabled
+                select editorScene.path).ToArray();
             AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.RunCheckSceneDupeDependenciesRule);
             return CalculateBuiltInResourceDependenciesToBundleDependecies(settings, scenePaths);
         }
@@ -51,6 +52,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 if (settingsScene.enabled)
                     scenes.Add(settingsScene.path);
             }
+
             return scenes.ToArray();
         }
     }

@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_LoadSynchronously
+
     using UnityEngine;
     using UnityEngine.AddressableAssets;
     using UnityEngine.ResourceManagement.AsyncOperations;
@@ -10,20 +11,26 @@ namespace AddressableAssets.DocExampleCode
         public string address;
         AsyncOperationHandle<GameObject> opHandle;
 
-        void Start() {
+        void Start()
+        {
             opHandle = Addressables.LoadAssetAsync<GameObject>(address);
             opHandle.WaitForCompletion(); // Returns when operation is complete
 
-            if (opHandle.Status == AsyncOperationStatus.Succeeded) {
+            if (opHandle.Status == AsyncOperationStatus.Succeeded)
+            {
                 Instantiate(opHandle.Result, transform);
-            } else {
+            }
+            else
+            {
                 Addressables.Release(opHandle);
             }
         }
 
-        void OnDestroy() {
+        void OnDestroy()
+        {
             Addressables.Release(opHandle);
         }
     }
+
     #endregion
 }

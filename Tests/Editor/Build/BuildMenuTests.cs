@@ -14,13 +14,26 @@ namespace UnityEditor.AddressableAssets.Tests
         [HideBuildMenuInUI]
         public class BaseTestBuildMenu : AddressableAssetsSettingsGroupEditor.IAddressablesBuildMenu
         {
-            public virtual string BuildMenuPath { get => ""; }
-            public virtual bool SelectableBuildScript { get => true; }
-            public virtual int Order { get => 0; }
+            public virtual string BuildMenuPath
+            {
+                get => "";
+            }
+
+            public virtual bool SelectableBuildScript
+            {
+                get => true;
+            }
+
+            public virtual int Order
+            {
+                get => 0;
+            }
+
             public virtual bool OnPrebuild(AddressablesDataBuilderInput input)
             {
                 return true;
             }
+
             public virtual bool OnPostbuild(AddressablesDataBuilderInput input, AddressablesPlayerBuildResult result)
             {
                 return true;
@@ -47,11 +60,13 @@ namespace UnityEditor.AddressableAssets.Tests
             public override string BuildMenuPath => "Zero";
             public override int Order => 0;
         }
+
         public class TestBuildMenuOrderMinusOne : BaseTestBuildMenu
         {
             public override string BuildMenuPath => "MinusOne";
             public override int Order => -1;
         }
+
         public class TestBuildMenuOrderOne : BaseTestBuildMenu
         {
             public override string BuildMenuPath => "One";
@@ -62,6 +77,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             public override string BuildMenuPath => "Test";
         }
+
         public class TestBuildMenu2_BuildPathTest : BaseTestBuildMenu
         {
             public override string BuildMenuPath => "Test";
@@ -105,7 +121,8 @@ namespace UnityEditor.AddressableAssets.Tests
             List<Type> menuTypes = new List<Type>();
             menuTypes.Add(typeof(TestBuildMenu1_BuildPathTest));
             menuTypes.Add(typeof(TestBuildMenu2_BuildPathTest));
-            LogAssert.Expect(LogType.Warning, "Trying to new build menu [UnityEditor.AddressableAssets.Tests.BuildMenuTests+TestBuildMenu2_BuildPathTest] with path \"Test\". But an existing type already exists with that path, [UnityEditor.AddressableAssets.Tests.BuildMenuTests+TestBuildMenu1_BuildPathTest].");
+            LogAssert.Expect(LogType.Warning,
+                "Trying to new build menu [UnityEditor.AddressableAssets.Tests.BuildMenuTests+TestBuildMenu2_BuildPathTest] with path \"Test\". But an existing type already exists with that path, [UnityEditor.AddressableAssets.Tests.BuildMenuTests+TestBuildMenu1_BuildPathTest].");
             var menus = AddressableAssetsSettingsGroupEditor.CreateBuildMenus(menuTypes, true);
 
             Assert.AreEqual(1, menus.Count, "Failed to get the correct number of build menus");

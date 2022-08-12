@@ -35,9 +35,15 @@ internal class ListWithEvents<T> : IList<T>
         }
     }
 
-    public int Count { get { return m_List.Count; } }
+    public int Count
+    {
+        get { return m_List.Count; }
+    }
 
-    public bool IsReadOnly { get { return ((IList<T>)m_List).IsReadOnly; } }
+    public bool IsReadOnly
+    {
+        get { return ((IList<T>)m_List).IsReadOnly; }
+    }
 
     public void Add(T item)
     {

@@ -98,7 +98,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             m_Service.DescriptiveName = "Testing 123";
             m_Service.InstanceId = 123;
             m_Service.HostingServiceContentRoots.Clear();
-            m_Service.HostingServiceContentRoots.AddRange(new[] { "/test123", "/test456" });
+            m_Service.HostingServiceContentRoots.AddRange(new[] {"/test123", "/test456"});
             m_Service.OnBeforeSerialize(data);
             Assert.AreEqual("Testing 123", data.GetData("DescriptiveName", string.Empty));
             Assert.AreEqual(123, data.GetData("InstanceId", 0));

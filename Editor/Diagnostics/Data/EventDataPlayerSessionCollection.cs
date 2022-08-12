@@ -54,6 +54,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
                 m_PlayerSessions.Add(c);
                 return c;
             }
+
             return null;
         }
 
@@ -61,7 +62,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
         {
             m_PlayerSessions.RemoveAll(edps => edps.PlayerId == playerId);
         }
-        
+
         public string[] GetConnectionNames()
         {
             string[] names = new string[m_PlayerSessions.Count];

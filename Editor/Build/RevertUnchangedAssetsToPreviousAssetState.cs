@@ -41,7 +41,8 @@ public class RevertUnchangedAssetsToPreviousAssetState
         var aaContext = aaBuildContext as AddressableAssetsBuildContext;
         var groups = aaContext.Settings.groups.Where(group => group != null && group.HasSchema<BundledAssetGroupSchema>());
         if (updateContext.ContentState.cachedBundles == null)
-            UnityEngine.Debug.LogWarning($"ContentUpdateContext does not contain previous asset bundle info, remote static bundles that are updated will not be cacheable.  If this is needed, rebuild the shipped application state with the current version of addressables to update the addressables_content_state.bin file.  The updated addressables_content_state.bin file can be used to create the content update.");
+            UnityEngine.Debug.LogWarning(
+                $"ContentUpdateContext does not contain previous asset bundle info, remote static bundles that are updated will not be cacheable.  If this is needed, rebuild the shipped application state with the current version of addressables to update the addressables_content_state.bin file.  The updated addressables_content_state.bin file can be used to create the content update.");
 
         foreach (var assetGroup in groups)
         {
@@ -49,13 +50,13 @@ public class RevertUnchangedAssetsToPreviousAssetState
             if (operations != null && operations.Count > 0)
                 ApplyAssetEntryUpdates(operations, updateContext);
         }
-        
+
         var defaultContentUpdateSchema = aaContext.Settings.DefaultGroup.GetSchema<ContentUpdateGroupSchema>();
-        if(defaultContentUpdateSchema == null)
+        if (defaultContentUpdateSchema == null)
         {
             Debug.LogWarning($"Default group {aaContext.Settings.DefaultGroup.Name} does not contain a {nameof(ContentUpdateGroupSchema)}, so we're unable to determine if " +
-                $"the built in shader bundle and monoscript bundles need to be reverting to their previous paths.  We will not revert the paths for these bundles in the catalog, " +
-                $"if that is not the desired behavior, please add a {nameof(ContentUpdateGroupSchema)} to the Default group and set the Prevent Updates toggle to the correct setting.");
+                             $"the built in shader bundle and monoscript bundles need to be reverting to their previous paths.  We will not revert the paths for these bundles in the catalog, " +
+                             $"if that is not the desired behavior, please add a {nameof(ContentUpdateGroupSchema)} to the Default group and set the Prevent Updates toggle to the correct setting.");
         }
         else if (defaultContentUpdateSchema.StaticContent)
         {
@@ -82,7 +83,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
                 break;
             }
         }
-        
+
         ContentCatalogDataEntry currentLocation = null;
         // find current location with it
         foreach (ContentCatalogDataEntry catalogEntry in aaContext.locations)
@@ -105,9 +106,10 @@ public class RevertUnchangedAssetsToPreviousAssetState
             UnityEngine.Debug.LogError($"Matching cached update state for {currentLocation.InternalId} failed. Content not found in original build.");
             return false; // bundle was in update build, but not original
         }
+
         if (currentLocation == null)
             return true; // bundle not in update build but was in original is ok
-        
+
         currentLocation.InternalId = previousBundleCache.bundleFileId;
         var currentOptions = currentLocation.Data as AssetBundleRequestOptions;
         var prevOptions = previousBundleCache.data as AssetBundleRequestOptions;
@@ -180,8 +182,8 @@ public class RevertUnchangedAssetsToPreviousAssetState
             {
                 //Logging this as a warning because users may choose to delete their bundles on disk which will trigger this state.
                 Addressables.LogWarning($"CachedAssetState found for {entry.AssetPath} but the previous bundle at {previousBundlePath} cannot be found. " +
-                    $"This will not affect loading the bundle in previously built players, but loading the missing bundle in Play Mode using the play mode script " +
-                    $"\"Use Existing Build (requires built groups)\" will fail.");
+                                        $"This will not affect loading the bundle in previously built players, but loading the missing bundle in Play Mode using the play mode script " +
+                                        $"\"Use Existing Build (requires built groups)\" will fail.");
             }
 
             string builtBundlePath = BundleIdToBuildPath(contentUpdateContext.BundleToInternalBundleIdMap[fullInternalBundleName], loadPath, buildPath);
@@ -197,6 +199,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
 
             operations.Add(operation);
         }
+
         return operations;
     }
 
@@ -216,6 +219,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
             if (state.bundleFileId == bundleFileId)
                 return true;
         }
+
         return false;
     }
 
@@ -228,7 +232,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
             if (contentUpdateContext.Registry.ReplaceBundleEntry(Path.GetFileNameWithoutExtension(operation.PreviousBuildPath), operation.PreviousAssetState.bundleFileId))
             {
                 File.Delete(operation.CurrentBuildPath);
-                
+
                 //sync the internal ids of the catalog entry and asset entry to the cached state
                 operation.BundleCatalogEntry.InternalId = operation.AssetEntry.BundleFileId = operation.PreviousAssetState.bundleFileId;
                 var bundleState = contentUpdateContext.ContentState.cachedBundles.FirstOrDefault(s => s.bundleFileId == operation.PreviousAssetState.bundleFileId);

@@ -14,23 +14,52 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
         internal const int k_EventCountSortOrder = -98;
         internal const int k_InstanceCountSortOrder = -97;
         internal const int k_RefCountIndex = (int)ResourceManager.DiagnosticEventType.AsyncOperationReferenceCount;
-        
+
         [SerializeField]
         internal List<EventDataSetStream> m_Streams = new List<EventDataSetStream>();
+
         int m_FirstSampleFrame = int.MaxValue;
         int m_ObjectId;
         string m_DisplayName;
         string m_Graph;
         int m_SortOrder = 0;
-        public int ObjectId { get { return m_ObjectId; } }
-        public string DisplayName { get { return m_DisplayName; } set { m_DisplayName = value; } }
-        public string Graph { get { return m_Graph; } }
-        public IEnumerable<EventDataSet> Children { get { return m_Children.Values; } }
-        internal bool HasChildren { get { return m_Children != null && m_Children.Count > 0; } }
-        internal int FirstSampleFrame { get { return m_FirstSampleFrame; } }
-      
+
+        public int ObjectId
+        {
+            get { return m_ObjectId; }
+        }
+
+        public string DisplayName
+        {
+            get { return m_DisplayName; }
+            set { m_DisplayName = value; }
+        }
+
+        public string Graph
+        {
+            get { return m_Graph; }
+        }
+
+        public IEnumerable<EventDataSet> Children
+        {
+            get { return m_Children.Values; }
+        }
+
+        internal bool HasChildren
+        {
+            get { return m_Children != null && m_Children.Count > 0; }
+        }
+
+        internal int FirstSampleFrame
+        {
+            get { return m_FirstSampleFrame; }
+        }
+
         internal Dictionary<int, EventDataSet> m_Children;
-        internal EventDataSet() { }
+
+        internal EventDataSet()
+        {
+        }
 
         internal EventDataSet(int id, string graph, string displayName, int sortOrder)
         {
@@ -55,7 +84,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
             else if (m_DisplayName == "FPS")
                 m_SortOrder = k_FPSSortOrder;
         }
-        
+
         internal bool HasDataAfterFrame(int frame)
         {
             foreach (var s in m_Streams)
@@ -67,6 +96,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
                     if (c.Value.HasDataAfterFrame(frame))
                         return true;
             }
+
             return false;
         }
 
@@ -74,7 +104,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
         {
             var refCountStream = m_Streams[k_RefCountIndex];
             if (refCountStream != null)
-                if (refCountStream.HasDataAfterFrame(frame)) 
+                if (refCountStream.HasDataAfterFrame(frame))
                     return true;
             if (m_Children != null && checkChildren)
                 foreach (var c in m_Children)
@@ -105,10 +135,10 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
         {
             if (m_Children == null)
                 m_Children = new Dictionary<int, EventDataSet>();
-            if (!m_Children.ContainsKey(eventDataSet.ObjectId)) 
+            if (!m_Children.ContainsKey(eventDataSet.ObjectId))
                 m_Children.Add(eventDataSet.ObjectId, eventDataSet);
         }
-        
+
 
         internal void RemoveChild(int d)
         {

@@ -22,6 +22,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         bool m_UnloadSceneOpExcludeReleaseCallback;
+
         internal bool UnloadSceneOpExcludeReleaseCallback
         {
             get { return m_UnloadSceneOpExcludeReleaseCallback; }
@@ -60,7 +61,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             if (visited == null)
                 visited = new HashSet<object>();
-            return visited.Add(InternalOp) ? InternalOp.GetDownloadStatus(visited) : new DownloadStatus() { IsDone = IsDone };
+            return visited.Add(InternalOp) ? InternalOp.GetDownloadStatus(visited) : new DownloadStatus() {IsDone = IsDone};
         }
 
         internal AsyncOperationHandle(IAsyncOperation op)
@@ -310,7 +311,9 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// Overload for <see cref="IEnumerator.Reset"/>.
         /// </summary>
-        void IEnumerator.Reset() {}
+        void IEnumerator.Reset()
+        {
+        }
     }
 
     /// <summary>
@@ -510,7 +513,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             if (visited == null)
                 visited = new HashSet<object>();
-            return visited.Add(InternalOp) ? InternalOp.GetDownloadStatus(visited) : new DownloadStatus() { IsDone = IsDone };
+            return visited.Add(InternalOp) ? InternalOp.GetDownloadStatus(visited) : new DownloadStatus() {IsDone = IsDone};
         }
 
         /// <summary>
@@ -571,7 +574,9 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// Overload for <see cref="IEnumerator.Reset"/>.
         /// </summary>
-        void IEnumerator.Reset() {}
+        void IEnumerator.Reset()
+        {
+        }
 
         /// <summary>
         /// Synchronously complete the async operation.

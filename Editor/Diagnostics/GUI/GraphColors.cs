@@ -11,7 +11,14 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         static Color s_KWindowBackgroundPro = new Color(0.15f, 0.15f, 0.15f, 1.0f);
         static Color s_KLabelGraphLabelBackgroundPro = new Color(0, 0, 0, .75f);
 
-        internal static Color WindowBackground { get { return EditorGUIUtility.isProSkin ? s_KWindowBackgroundPro : s_KWindowBackground; } }
-        internal static Color LabelGraphLabelBackground { get { return EditorGUIUtility.isProSkin ? s_KLabelGraphLabelBackgroundPro : s_KLabelGraphLabelBackground; } }
+        internal static Color WindowBackground
+        {
+            get { return EditorGUIUtility.isProSkin ? s_KWindowBackgroundPro : s_KWindowBackground; }
+        }
+
+        internal static Color LabelGraphLabelBackground
+        {
+            get { return EditorGUIUtility.isProSkin ? s_KLabelGraphLabelBackgroundPro : s_KLabelGraphLabelBackground; }
+        }
     }
 }

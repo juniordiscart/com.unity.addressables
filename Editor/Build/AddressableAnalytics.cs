@@ -20,6 +20,7 @@ namespace UnityEditor.AddressableAssets
 
         private const string UsageEvent = "addressablesUsageEvent";
         private const string BuildEvent = "addressablesBuildEvent";
+
         [Serializable]
         internal struct BuildData
         {
@@ -122,6 +123,7 @@ namespace UnityEditor.AddressableAssets
             Custom = 3,
             Automatic = 4
         }
+
         internal enum BuildType
         {
             Inconclusive = -1,
@@ -411,7 +413,6 @@ namespace UnityEditor.AddressableAssets
 
         internal static UsageData GenerateUsageData(UsageEventType eventType, AnalyticsContentUpdateRestriction restriction = AnalyticsContentUpdateRestriction.NotApplicable)
         {
-
             bool usingCCD = false;
 
 #if ENABLE_CCD

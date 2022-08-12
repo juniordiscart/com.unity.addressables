@@ -16,9 +16,11 @@ namespace UnityEditor.AddressableAssets.Settings
         [FormerlySerializedAs("m_displayName")]
         [SerializeField]
         string m_DisplayName;
+
         [FormerlySerializedAs("m_description")]
         [SerializeField]
         string m_Description;
+
         [FormerlySerializedAs("m_schemaTypes")]
         [SerializeField]
         List<SerializedType> m_SchemaTypes;
@@ -60,10 +62,10 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>The newly created schema template.</returns>
         public static AddressableAssetGroupSchemaTemplate Create(string name, string descr, params Type[] types)
         {
-            var st = new AddressableAssetGroupSchemaTemplate { m_DisplayName = name, m_Description = descr };
+            var st = new AddressableAssetGroupSchemaTemplate {m_DisplayName = name, m_Description = descr};
             st.m_SchemaTypes = new List<SerializedType>(types.Length);
             for (int i = 0; i < types.Length; i++)
-                st.m_SchemaTypes.Add(new SerializedType { Value = types[i] });
+                st.m_SchemaTypes.Add(new SerializedType {Value = types[i]});
             return st;
         }
     }

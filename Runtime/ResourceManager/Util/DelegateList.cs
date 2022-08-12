@@ -8,6 +8,7 @@ internal class DelegateList<T>
     Action<LinkedListNode<Action<T>>> m_releaseFunc;
     LinkedList<Action<T>> m_callbacks;
     bool m_invoking = false;
+
     public DelegateList(Func<Action<T>, LinkedListNode<Action<T>>> acquireFunc, Action<LinkedListNode<Action<T>>> releaseFunc)
     {
         if (acquireFunc == null)
@@ -18,7 +19,10 @@ internal class DelegateList<T>
         m_releaseFunc = releaseFunc;
     }
 
-    public int Count { get { return m_callbacks == null ? 0 : m_callbacks.Count; } }
+    public int Count
+    {
+        get { return m_callbacks == null ? 0 : m_callbacks.Count; }
+    }
 
     public void Add(Action<T> action)
     {
@@ -47,8 +51,10 @@ internal class DelegateList<T>
                     m_callbacks.Remove(node);
                     m_releaseFunc(node);
                 }
+
                 return;
             }
+
             node = node.Next;
         }
     }
@@ -73,8 +79,10 @@ internal class DelegateList<T>
                     UnityEngine.Debug.LogException(ex);
                 }
             }
+
             node = node.Next;
         }
+
         m_invoking = false;
         var r = m_callbacks.First;
         while (r != null)
@@ -85,6 +93,7 @@ internal class DelegateList<T>
                 m_callbacks.Remove(r);
                 m_releaseFunc(r);
             }
+
             r = next;
         }
     }

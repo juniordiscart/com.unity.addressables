@@ -24,7 +24,7 @@ namespace UnityEditor.AddressableAssets.GUI
         const string k_HintCreateNewLabel = "<b>Return</b> to add '{0}'";
         const string k_HintSearchFoundIsEnabled = "<b>Return</b> to disable '{0}'";
         const string k_HintSearchFoundIsDisabled = "<b>Return</b> to enable '{0}'";
-        
+
         SearchField m_SearchField;
         string m_SearchValue;
         List<GUIStyle> m_SearchStyles;
@@ -35,7 +35,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         int m_LastItemCount = -1;
         Vector2 m_Rect;
-        
+
         public LabelMaskPopupContent(Rect activatorRect, AddressableAssetSettings settings, List<AddressableAssetEntry> e, Dictionary<string, int> count)
         {
             m_Settings = settings;
@@ -47,19 +47,19 @@ namespace UnityEditor.AddressableAssets.GUI
             m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachTextField"));
             m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachCancelButton"));
             m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachCancelButtonEmpty"));
-            
+
             m_HintLabelStyle = new GUIStyle(UnityEngine.GUI.skin.label);
             m_HintLabelStyle.fontSize = 10;
             m_HintLabelStyle.fontStyle = FontStyle.Italic;
             m_HintLabelStyle.richText = true;
         }
-        
+
 
         public override Vector2 GetWindowSize()
         {
             if (m_Labels == null)
                 m_Labels = GetLabelNamesOrderedSelectedFirst();
-            
+
             if (m_LastItemCount != m_Labels.Count)
             {
                 int maxLen = 0;
@@ -73,12 +73,13 @@ namespace UnityEditor.AddressableAssets.GUI
                         maxStr = m_Labels[i];
                     }
                 }
+
                 var content = new GUIContent(maxStr);
                 var size = UnityEngine.GUI.skin.toggle.CalcSize(content);
                 m_LabelToggleControlRectHeight = Mathf.Ceil(size.y + UnityEngine.GUI.skin.toggle.margin.top);
                 m_LabelToggleControlRectWidth = size.x + 16;
-                
-                float width = Mathf.Clamp(Mathf.Max(size.x,m_ActivatorRect.width), 170, 500);
+
+                float width = Mathf.Clamp(Mathf.Max(size.x, m_ActivatorRect.width), 170, 500);
                 float labelAreaHeight = m_Labels.Count * (m_LabelToggleControlRectHeight + UnityEngine.GUI.skin.toggle.margin.bottom);
                 float toolbarAreaHeight = 30 + m_HintLabelStyle.CalcHeight(new GUIContent(maxStr), width);
                 float paddingHeight = 6;
@@ -87,7 +88,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 m_Rect = new Vector2(width, height);
                 m_LastItemCount = m_Labels.Count;
             }
-            
+
             return m_Rect;
         }
 
@@ -108,37 +109,38 @@ namespace UnityEditor.AddressableAssets.GUI
                     m_LabelCount.TryGetValue(m_Settings.labelTable.labelNames[i], out count);
                 else
                     count = m_Entries[0].labels.Contains(m_Settings.labelTable.labelNames[i]) ? m_Entries.Count : 0;
-                
+
                 if (count > 0)
                     labels.Add(m_Settings.labelTable.labelNames[i]);
                 else
                     disabledLabels.Add(m_Settings.labelTable.labelNames[i]);
             }
-            
+
             labels.AddRange(disabledLabels);
             return labels;
         }
-        
+
         Vector2 m_ScrollPosition;
+
         public override void OnGUI(Rect fullRect)
         {
             if (m_Entries.Count == 0)
                 return;
             int count = -1;
-            
+
             if (m_Labels == null)
                 m_Labels = GetLabelNamesOrderedSelectedFirst();
 
             var areaRect = new Rect(fullRect.xMin + 3, fullRect.yMin + 3, fullRect.width - 6, fullRect.height - 6);
             GUILayout.BeginArea(areaRect);
-            
+
             GUILayoutUtility.GetRect(areaRect.width, 1);
             Rect barRect = EditorGUILayout.GetControlRect();
             var marginDown = GUILayoutUtility.GetRect(areaRect.width, 1);
 
             Rect plusRect = barRect;
             plusRect.width = plusRect.height;
-            plusRect.x = (barRect.width - plusRect.width)+4;
+            plusRect.x = (barRect.width - plusRect.width) + 4;
             if (UnityEngine.GUI.Button(plusRect, m_ManageLabelsButtonContent, m_ToolbarButtonStyle))
             {
                 EditorWindow.GetWindow<LabelWindow>(true).Intialize(m_Settings);
@@ -149,7 +151,7 @@ namespace UnityEditor.AddressableAssets.GUI
             float plusOffset = plusRect.width + 2;
             searchRect.width = searchRect.width - plusOffset;
             m_SearchValue = m_SearchField.OnGUI(searchRect, m_SearchValue, m_SearchStyles[0], m_SearchStyles[1], m_SearchStyles[2]);
-            
+
             EditorGUI.BeginDisabledGroup(true);
             string labelText;
             int searchLabelIndex = m_Labels.IndexOf(m_SearchValue);
@@ -162,15 +164,15 @@ namespace UnityEditor.AddressableAssets.GUI
                 labelText = string.Format(count == m_Entries.Count ? k_HintSearchFoundIsEnabled : k_HintSearchFoundIsDisabled, m_SearchValue);
             }
             else
-                labelText = !string.IsNullOrEmpty(m_SearchValue) ? string.Format(k_HintCreateNewLabel, m_SearchValue) : k_HintIdle; 
-            
+                labelText = !string.IsNullOrEmpty(m_SearchValue) ? string.Format(k_HintCreateNewLabel, m_SearchValue) : k_HintIdle;
+
             Rect hintRect = EditorGUILayout.GetControlRect(true, m_HintLabelStyle.CalcHeight(new GUIContent(labelText), fullRect.width), m_HintLabelStyle);
             hintRect.x -= 3;
             hintRect.width += 6;
             hintRect.y -= 3;
             EditorGUI.LabelField(hintRect, new GUIContent(labelText), m_HintLabelStyle);
             EditorGUI.EndDisabledGroup();
-            
+
             if (Event.current.isKey && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter) && m_SearchField.HasFocus())
             {
                 if (!string.IsNullOrEmpty(m_SearchValue))
@@ -189,18 +191,18 @@ namespace UnityEditor.AddressableAssets.GUI
                         SetLabelForEntries(m_SearchValue, true);
                         m_Labels.Insert(0, m_SearchValue);
                     }
-                    
+
                     m_ControlToFocus = m_SearchValue;
-                    UnityEngine.GUI.ScrollTo(new Rect(0,searchLabelIndex*19,0,0));
+                    UnityEngine.GUI.ScrollTo(new Rect(0, searchLabelIndex * 19, 0, 0));
                     m_SearchValue = "";
                     m_LastItemCount = -1;
-            
+
                     Event.current.Use();
                     GUIUtility.ExitGUI();
                     editorWindow.Repaint();
                 }
             }
-            
+
             var scrollViewHeight = areaRect.height - (hintRect.y + hintRect.height + 2);
             m_ScrollPosition = EditorGUILayout.BeginScrollView(m_ScrollPosition, false, false);
             Vector2 yPositionDrawRange = new Vector2(m_ScrollPosition.y - 19, m_ScrollPosition.y + scrollViewHeight);
@@ -235,15 +237,15 @@ namespace UnityEditor.AddressableAssets.GUI
                 UnityEngine.GUI.SetNextControlName(labelName);
                 newState = EditorGUI.ToggleLeft(toggleRect, new GUIContent(labelName), oldState);
                 EditorGUI.showMixedValue = false;
-                
+
                 if (oldState != newState)
                     SetLabelForEntries(labelName, newState);
             }
 
             EditorGUILayout.EndScrollView();
             GUILayout.EndArea();
-            
-            if ( Event.current.type == EventType.Repaint &&
+
+            if (Event.current.type == EventType.Repaint &&
                 m_Labels != null && m_ControlToFocus != null)
             {
                 UnityEngine.GUI.FocusControl(m_ControlToFocus);

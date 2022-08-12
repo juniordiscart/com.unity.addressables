@@ -13,6 +13,7 @@ namespace UnityEditor.AddressableAssets.Build
     public class BuildUtility
     {
         static HashSet<string> s_EditorAssemblies = null;
+
         static HashSet<string> editorAssemblies
         {
             get
@@ -91,8 +92,8 @@ namespace UnityEditor.AddressableAssets.Build
             if (dirtyScenes.Count > 0)
             {
                 if (EditorUtility.DisplayDialog(
-                    "Unsaved Scenes", "Modified Scenes must be saved to continue.",
-                    "Save and Continue", "Cancel"))
+                        "Unsaved Scenes", "Modified Scenes must be saved to continue.",
+                        "Save and Continue", "Cancel"))
                 {
                     EditorSceneManager.SaveScenes(dirtyScenes.ToArray());
                 }

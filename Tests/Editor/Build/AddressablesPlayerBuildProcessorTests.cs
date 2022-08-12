@@ -11,8 +11,8 @@ using UnityEngine.AddressableAssets;
 public class AddressablesPlayerBuildProcessorTests
 {
     protected static string TestFolder => $"Assets/AddressablesPlayerBuildProcessor_Tests";
-    protected static string ConfigFolder => TestFolder +"/Config";
-    
+    protected static string ConfigFolder => TestFolder + "/Config";
+
     AddressableAssetSettings m_Settings;
 
     [SetUp]
@@ -32,7 +32,7 @@ public class AddressablesPlayerBuildProcessorTests
         DirectoryUtility.DeleteDirectory(TestFolder, false);
         AssetDatabase.Refresh();
     }
-    
+
     AddressableAssetEntry CreateAddressablePrefab(string name, AddressableAssetGroup group = null)
     {
         string guid = CreateAsset(name);
@@ -44,7 +44,7 @@ public class AddressablesPlayerBuildProcessorTests
         string assetPath = $"{TestFolder}/{name}.prefab";
         return CreateAsset(assetPath, name);
     }
-    
+
     static string CreateAsset(string assetPath, string objectName)
     {
         GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -55,7 +55,7 @@ public class AddressablesPlayerBuildProcessorTests
         UnityEngine.Object.DestroyImmediate(go, false);
         return AssetDatabase.AssetPathToGUID(assetPath);
     }
-    
+
     AddressableAssetEntry MakeAddressable(string guid, string address = null, AddressableAssetGroup group = null)
     {
         if (group == null)
@@ -64,22 +64,22 @@ public class AddressablesPlayerBuildProcessorTests
                 throw new System.Exception("No DefaultGroup to assign Addressable to");
             group = m_Settings.DefaultGroup;
         }
+
         var entry = m_Settings.CreateOrMoveEntry(guid, group, false, false);
         entry.address = address == null ? entry.AssetPath : address;
         return entry;
     }
 
-    
-    
+
     [Test]
-    [TestCase( AddressableAssetSettings.PlayerBuildOption.DoNotBuildWithPlayer, false)]
-    [TestCase( AddressableAssetSettings.PlayerBuildOption.BuildWithPlayer, false)]
-    [TestCase( AddressableAssetSettings.PlayerBuildOption.PreferencesValue, false)]
-    [TestCase( AddressableAssetSettings.PlayerBuildOption.PreferencesValue, true)]
+    [TestCase(AddressableAssetSettings.PlayerBuildOption.DoNotBuildWithPlayer, false)]
+    [TestCase(AddressableAssetSettings.PlayerBuildOption.BuildWithPlayer, false)]
+    [TestCase(AddressableAssetSettings.PlayerBuildOption.PreferencesValue, false)]
+    [TestCase(AddressableAssetSettings.PlayerBuildOption.PreferencesValue, true)]
     public void PrepareAddressableBuildForPlayerBuild_ShouldBuildAddressables_CorrectForSettings(int settingValue, bool preferencesValue)
     {
         // Setup
-        m_Settings.BuildAddressablesWithPlayerBuild = (AddressableAssetSettings.PlayerBuildOption) settingValue;
+        m_Settings.BuildAddressablesWithPlayerBuild = (AddressableAssetSettings.PlayerBuildOption)settingValue;
         bool deleteKey = !EditorPrefs.HasKey(AddressablesPreferences.kBuildAddressablesWithPlayerBuildKey);
         bool previousPrefValue = EditorPrefs.GetBool(AddressablesPreferences.kBuildAddressablesWithPlayerBuildKey, true);
         EditorPrefs.SetBool(AddressablesPreferences.kBuildAddressablesWithPlayerBuildKey, preferencesValue);
@@ -118,14 +118,14 @@ public class AddressablesPlayerBuildProcessorTests
         string buildPath = Addressables.BuildPath + "/AddressablesLink/link.xml";
         Directory.CreateDirectory(Addressables.BuildPath + "/AddressablesLink");
         bool preexistingFile = File.Exists(buildPath);
-        
+
         if (!preexistingFile)
         {
             var textStream = File.CreateText(buildPath);
             textStream.Write("link test file");
             textStream.Close();
         }
-        
+
         // do the test
         string projectPath = Path.Combine(m_Settings.ConfigFolder, "link.xml");
         try

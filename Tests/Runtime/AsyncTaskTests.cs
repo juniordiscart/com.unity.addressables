@@ -42,13 +42,37 @@ namespace AddressableTests.AsyncTask
         }
     }
 #if UNITY_EDITOR
-    class AsyncTaskTests_FastMode : AsyncTaskTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
+    class AsyncTaskTests_FastMode : AsyncTaskTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
 
-    class AsyncTaskTests_VirtualMode : AsyncTaskTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
+    class AsyncTaskTests_VirtualMode : AsyncTaskTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
 
-    class AsyncTaskTests_PackedPlaymodeMode : AsyncTaskTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class AsyncTaskTests_PackedPlaymodeMode : AsyncTaskTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
-    class AsyncTaskTests_PackedMode : AsyncTaskTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } } }
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
+    class AsyncTaskTests_PackedMode : AsyncTaskTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
+    }
 }

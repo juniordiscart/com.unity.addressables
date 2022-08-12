@@ -33,6 +33,7 @@ namespace UnityEngine.ResourceManagement.Tests
         }
 
         ResourceManager m_ResourceManager;
+
         [SetUp]
         public void Setup()
         {
@@ -50,6 +51,7 @@ namespace UnityEngine.ResourceManagement.Tests
         class TestUpdateReceiver : IUpdateReceiver
         {
             public bool invoked = false;
+
             public void Update(float unscaledDeltaTime)
             {
                 invoked = true;
@@ -84,14 +86,17 @@ namespace UnityEngine.ResourceManagement.Tests
                 return true;
             }
         }
+
         class RMTestUpdateReceiver : IUpdateReceiver
         {
             public int UpdateCount = 0;
+
             public void Update(float unscaledDeltaTime)
             {
                 UpdateCount++;
             }
         }
+
         [Test]
         public void Reentering_UpdateMethod_ThrowsException()
         {
@@ -115,6 +120,7 @@ namespace UnityEngine.ResourceManagement.Tests
             public ResourceManager rm;
             public bool removeSelf;
             public int updateCount = 0;
+
             public void Update(float unscaledDeltaTime)
             {
                 updateCount++;
@@ -129,9 +135,9 @@ namespace UnityEngine.ResourceManagement.Tests
             var prevCBHooks = m_ResourceManager.CallbackHooksEnabled;
             m_ResourceManager.CallbackHooksEnabled = true;
             var startingCBCount = MonoBehaviourCallbackHooks.Instance.m_OnUpdateDelegate == null ? 0 : MonoBehaviourCallbackHooks.Instance.m_OnUpdateDelegate.GetInvocationList().Length;
-            m_ResourceManager.AddUpdateReceiver(new TestUpdateReceiverThatRemovesSelfDuringUpdate() { rm = m_ResourceManager, removeSelf = true });
+            m_ResourceManager.AddUpdateReceiver(new TestUpdateReceiverThatRemovesSelfDuringUpdate() {rm = m_ResourceManager, removeSelf = true});
             Assert.AreEqual(startingCBCount + 1, MonoBehaviourCallbackHooks.Instance.m_OnUpdateDelegate.GetInvocationList().Length);
-            m_ResourceManager.AddUpdateReceiver(new TestUpdateReceiverThatRemovesSelfDuringUpdate() { rm = m_ResourceManager, removeSelf = true });
+            m_ResourceManager.AddUpdateReceiver(new TestUpdateReceiverThatRemovesSelfDuringUpdate() {rm = m_ResourceManager, removeSelf = true});
             Assert.AreEqual(startingCBCount + 1, MonoBehaviourCallbackHooks.Instance.m_OnUpdateDelegate.GetInvocationList().Length);
             MonoBehaviourCallbackHooks.Instance.Update();
             m_ResourceManager.CallbackHooksEnabled = prevCBHooks;
@@ -140,9 +146,9 @@ namespace UnityEngine.ResourceManagement.Tests
         [Test]
         public void WhenIUpdateReceiverRemovesSelfDuringCallback_ListIsMaintained()
         {
-            var ur1 = new TestUpdateReceiverThatRemovesSelfDuringUpdate() { rm = m_ResourceManager, removeSelf = false };
-            var ur2 = new TestUpdateReceiverThatRemovesSelfDuringUpdate() { rm = m_ResourceManager, removeSelf = true };
-            var ur3 = new TestUpdateReceiverThatRemovesSelfDuringUpdate() { rm = m_ResourceManager, removeSelf = false };
+            var ur1 = new TestUpdateReceiverThatRemovesSelfDuringUpdate() {rm = m_ResourceManager, removeSelf = false};
+            var ur2 = new TestUpdateReceiverThatRemovesSelfDuringUpdate() {rm = m_ResourceManager, removeSelf = true};
+            var ur3 = new TestUpdateReceiverThatRemovesSelfDuringUpdate() {rm = m_ResourceManager, removeSelf = false};
             m_ResourceManager.AddUpdateReceiver(ur1);
             m_ResourceManager.AddUpdateReceiver(ur2);
             m_ResourceManager.AddUpdateReceiver(ur3);
@@ -195,6 +201,7 @@ namespace UnityEngine.ResourceManagement.Tests
         {
             public Func<ResourceManager, AsyncOperationHandle<GameObject>, InstantiationParameters, GameObject> ProvideInstanceCallback;
             public Action<ResourceManager, GameObject> ReleaseInstanceCallback;
+
             public GameObject ProvideInstance(ResourceManager rm, AsyncOperationHandle<GameObject> prefabHandle, InstantiationParameters instantiateParameters)
             {
                 return ProvideInstanceCallback(rm, prefabHandle, instantiateParameters);
@@ -208,9 +215,15 @@ namespace UnityEngine.ResourceManagement.Tests
 
         class GameObjectProvider : IResourceProvider
         {
-            public string ProviderId { get { return "GOPRovider"; } }
+            public string ProviderId
+            {
+                get { return "GOPRovider"; }
+            }
 
-            public ProviderBehaviourFlags BehaviourFlags { get { return ProviderBehaviourFlags.None; } }
+            public ProviderBehaviourFlags BehaviourFlags
+            {
+                get { return ProviderBehaviourFlags.None; }
+            }
 
             public bool CanProvide(Type t, IResourceLocation location)
             {
@@ -222,7 +235,10 @@ namespace UnityEngine.ResourceManagement.Tests
                 return typeof(GameObject);
             }
 
-            public bool Initialize(string id, string data) { return true; }
+            public bool Initialize(string id, string data)
+            {
+                return true;
+            }
 
             public void Provide(ProvideHandle provideHandle)
             {
@@ -255,10 +271,7 @@ namespace UnityEngine.ResourceManagement.Tests
                 prefabHandle.Release();
                 return null;
             };
-            iProvider.ReleaseInstanceCallback = (rm, go) =>
-            {
-                releaseCalled = true;
-            };
+            iProvider.ReleaseInstanceCallback = (rm, go) => { releaseCalled = true; };
             var instHandle = m_ResourceManager.ProvideInstance(iProvider, locDep, default(InstantiationParameters));
             Assert.IsFalse(instHandle.IsDone);
             m_ResourceManager.Release(instHandle);
@@ -289,7 +302,11 @@ namespace UnityEngine.ResourceManagement.Tests
                 Assert.AreEqual("prefab1", prefabHandle.Result.name);
                 return new GameObject("instance1");
             };
-            iProvider.ReleaseInstanceCallback = (rm, go) => { rm.Release(refResource[0]); GameObject.Destroy(go); };
+            iProvider.ReleaseInstanceCallback = (rm, go) =>
+            {
+                rm.Release(refResource[0]);
+                GameObject.Destroy(go);
+            };
 
             AsyncOperationHandle<GameObject> obj = m_ResourceManager.ProvideInstance(iProvider, locDep, instantiationParameters);
             m_ResourceManager.Update(0.0f);
@@ -315,10 +332,7 @@ namespace UnityEngine.ResourceManagement.Tests
             var prevHandler = ResourceManager.ExceptionHandler;
 
             bool exceptionWithRequestResultReceived = false;
-            ResourceManager.ExceptionHandler += (h, ex) =>
-            {
-                exceptionWithRequestResultReceived |= ex is RemoteProviderException pEx && pEx.WebRequestResult != null;
-            };
+            ResourceManager.ExceptionHandler += (h, ex) => { exceptionWithRequestResultReceived |= ex is RemoteProviderException pEx && pEx.WebRequestResult != null; };
 
             AsyncOperationHandle<IAssetBundleResource> handle;
 
@@ -409,7 +423,17 @@ namespace UnityEngine.ResourceManagement.Tests
             Assert.IsFalse(cacheKey is IdCacheKey);
         }
 
-        class AssetBundleProviderDerived : AssetBundleProvider { }
+        [Test]
+        public void WebRequestQueue_BeginsWithAbortedOperation()
+        {
+            UnityWebRequest webRequest = UnityWebRequestAssetBundle.GetAssetBundle("fake");
+            webRequest.Abort();
+            Assert.DoesNotThrow(() => WebRequestQueue.QueueRequest(webRequest));
+        }
+
+        class AssetBundleProviderDerived : AssetBundleProvider
+        {
+        }
 
 
 #if UNITY_EDITOR

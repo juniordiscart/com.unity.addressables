@@ -114,6 +114,7 @@ namespace UnityEngine.AddressableAssets
                 string bundlename = Path.GetFileName(cacheDir);
                 Caching.ClearAllCachedVersions(bundlename);
             }
+
             CompleteInternal(true, true, null);
         }
 
@@ -163,6 +164,7 @@ namespace UnityEngine.AddressableAssets
                     }
                 }
             }
+
             return cacheDirsInUse;
         }
     }

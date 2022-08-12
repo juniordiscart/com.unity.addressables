@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_Load
+
     using System.Collections;
     using UnityEngine;
     using UnityEngine.AddressableAssets;
@@ -11,19 +12,23 @@ namespace AddressableAssets.DocExampleCode
         public string key;
         AsyncOperationHandle<GameObject> opHandle;
 
-        public IEnumerator Start() {
+        public IEnumerator Start()
+        {
             opHandle = Addressables.LoadAssetAsync<GameObject>(key);
             yield return opHandle;
 
-            if (opHandle.Status == AsyncOperationStatus.Succeeded) {
+            if (opHandle.Status == AsyncOperationStatus.Succeeded)
+            {
                 GameObject obj = opHandle.Result;
                 Instantiate(obj, transform);
             }
         }
 
-        void OnDestroy() {
+        void OnDestroy()
+        {
             Addressables.Release(opHandle);
         }
     }
+
     #endregion
 }

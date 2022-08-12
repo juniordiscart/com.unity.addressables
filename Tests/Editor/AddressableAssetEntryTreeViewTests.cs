@@ -53,6 +53,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 item = item.children.FirstOrDefault(c => c.displayName == parts[i]);
                 Assert.NotNull(item);
             }
+
             // Last child is the complete name of the group
             Assert.NotNull(item.children.FirstOrDefault(c => c.displayName == nameWithDashes));
         }
@@ -185,7 +186,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var searchStr = "matchingStr";
             MakeAddressable(m_Settings.DefaultGroup, CreateAsset(k_TreeViewTestFolderPath + "/testAsset1.prefab"));
             var entry = MakeAddressable(m_Settings.DefaultGroup, CreateAsset(k_TreeViewTestFolderPath + "/testPrefab2.prefab"));
-            m_Settings.SetLabelValueForEntries(new List<AddressableAssetEntry>(){entry}, "label-" + searchStr, true, true);
+            m_Settings.SetLabelValueForEntries(new List<AddressableAssetEntry>() {entry}, "label-" + searchStr, true, true);
 
             var tree = CreateExpandedTree();
             ProjectConfigData.HierarchicalSearch = false;
@@ -252,7 +253,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var searchStr = "matchingStr";
             MakeAddressable(m_Settings.DefaultGroup, CreateAsset(k_TreeViewTestFolderPath + "/testAsset1.prefab"));
             var entry = MakeAddressable(m_Settings.DefaultGroup, CreateAsset(k_TreeViewTestFolderPath + "/testPrefab2.prefab"));
-            m_Settings.SetLabelValueForEntries(new List<AddressableAssetEntry>(){entry}, "label-" + searchStr, true, true);
+            m_Settings.SetLabelValueForEntries(new List<AddressableAssetEntry>() {entry}, "label-" + searchStr, true, true);
 
             ProjectConfigData.HierarchicalSearch = true;
             var tree = CreateExpandedTree();
@@ -284,51 +285,52 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 Assert.NotNull(result.FirstOrDefault(c => c.displayName == parts[i]));
             }
+
             // Last child is the full name of the group
             Assert.NotNull(result.FirstOrDefault(c => c.displayName == nameWithDashes));
         }
-        
+
         [Test]
         public void CopyAddressesToClipboard_Simple()
         {
             List<AssetEntryTreeViewItem> nodesToSelect = new List<AssetEntryTreeViewItem>();
-            
+
             AddressableAssetEntry entry1 = new AddressableAssetEntry("0001", "address1", null, false);
-            
+
             nodesToSelect.Add(new AssetEntryTreeViewItem(entry1, 0));
 
             //Save users previous clipboard so it doesn't get eaten during test
             string previousClipboard = GUIUtility.systemCopyBuffer;
-            
+
             AddressableAssetEntryTreeView.CopyAddressesToClipboard(nodesToSelect);
-            
+
             string result = GUIUtility.systemCopyBuffer;
             GUIUtility.systemCopyBuffer = previousClipboard;
-            
+
             Assert.AreEqual("address1", result, "Entry's address was incorrectly copied.");
         }
-        
+
         [Test]
         public void CopyAddressesToClipboard_Multiple()
         {
             List<AssetEntryTreeViewItem> nodesToSelect = new List<AssetEntryTreeViewItem>();
-            
+
             AddressableAssetEntry entry1 = new AddressableAssetEntry("0001", "address1", null, false);
             AddressableAssetEntry entry2 = new AddressableAssetEntry("0002", "address2", null, false);
             AddressableAssetEntry entry3 = new AddressableAssetEntry("0003", "address3", null, false);
-            
+
             nodesToSelect.Add(new AssetEntryTreeViewItem(entry1, 0));
             nodesToSelect.Add(new AssetEntryTreeViewItem(entry2, 0));
             nodesToSelect.Add(new AssetEntryTreeViewItem(entry3, 0));
 
             //Save users previous clipboard so it doesn't get eaten during test
             string previousClipboard = GUIUtility.systemCopyBuffer;
-            
+
             AddressableAssetEntryTreeView.CopyAddressesToClipboard(nodesToSelect);
-            
+
             string result = GUIUtility.systemCopyBuffer;
             GUIUtility.systemCopyBuffer = previousClipboard;
-            
+
             Assert.AreEqual("address1,address2,address3", result, "Entry's address was incorrectly copied.");
         }
 
@@ -336,26 +338,26 @@ namespace UnityEditor.AddressableAssets.Tests
         public void CopyAddressesToClipboard_MaintainsOrder()
         {
             List<AssetEntryTreeViewItem> nodesToSelect = new List<AssetEntryTreeViewItem>();
-            
+
             AddressableAssetEntry entry1 = new AddressableAssetEntry("0001", "address1", null, false);
             AddressableAssetEntry entry2 = new AddressableAssetEntry("0002", "address2", null, false);
             AddressableAssetEntry entry3 = new AddressableAssetEntry("0003", "address3", null, false);
-            
+
             nodesToSelect.Add(new AssetEntryTreeViewItem(entry2, 0));
             nodesToSelect.Add(new AssetEntryTreeViewItem(entry3, 0));
             nodesToSelect.Add(new AssetEntryTreeViewItem(entry1, 0));
 
             //Save users previous clipboard so it doesn't get eaten during test
             string previousClipboard = GUIUtility.systemCopyBuffer;
-            
+
             AddressableAssetEntryTreeView.CopyAddressesToClipboard(nodesToSelect);
-            
+
             string result = GUIUtility.systemCopyBuffer;
             GUIUtility.systemCopyBuffer = previousClipboard;
-            
+
             Assert.AreEqual("address2,address3,address1", result, "Entry's address was incorrectly copied.");
         }
-        
+
 
         List<AddressableAssetEntry> GetAllEntries(bool includeSubObjects = false)
         {

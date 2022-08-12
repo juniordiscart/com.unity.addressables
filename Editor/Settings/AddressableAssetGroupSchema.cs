@@ -13,10 +13,13 @@ namespace UnityEditor.AddressableAssets.Settings
     /// </summary>
     public class AddressableAssetGroupSchema : ScriptableObject
     {
-        [FormerlySerializedAs("m_group")] [AddressableReadOnly] [SerializeField]
+        [FormerlySerializedAs("m_group")]
+        [AddressableReadOnly]
+        [SerializeField]
         AddressableAssetGroup m_Group;
 
         SerializedObject m_SchemaSerializedObject = null;
+
         internal SerializedObject SchemaSerializedObject
         {
             get
@@ -27,7 +30,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
             set { m_SchemaSerializedObject = value; }
         }
-        
+
         /// <summary>
         /// Get the group that the schema belongs to.
         /// </summary>
@@ -55,9 +58,8 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal virtual void Validate()
         {
-            
         }
-        
+
         /// <summary>
         /// Used to display the GUI of the schema.
         /// </summary>
@@ -72,6 +74,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (prop != null)
                     EditorGUILayout.PropertyField(p, true);
             }
+
             SchemaSerializedObject.ApplyModifiedProperties();
         }
 

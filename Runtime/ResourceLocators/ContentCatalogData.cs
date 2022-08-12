@@ -19,18 +19,22 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// Internl id.
         /// </summary>
         public string InternalId { get; set; }
+
         /// <summary>
         /// IResourceProvider identifier.
         /// </summary>
         public string Provider { get; private set; }
+
         /// <summary>
         /// Keys for this location.
         /// </summary>
         public List<object> Keys { get; private set; }
+
         /// <summary>
         /// Dependency keys.
         /// </summary>
         public List<object> Dependencies { get; private set; }
+
         /// <summary>
         /// Serializable data for the provider.
         /// </summary>
@@ -69,8 +73,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
     {
         [NonSerialized]
         internal string localHash;
+
         [NonSerialized]
         internal IResourceLocation location;
+
         [SerializeField]
         internal string m_LocatorId;
 
@@ -85,38 +91,31 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
         [SerializeField]
         ObjectInitializationData m_InstanceProviderData;
+
         /// <summary>
         /// Data for the Addressables.ResourceManager.InstanceProvider initialization;
         /// </summary>
         public ObjectInitializationData InstanceProviderData
         {
-            get
-            {
-                return m_InstanceProviderData;
-            }
-            set
-            {
-                m_InstanceProviderData = value;
-            }
+            get { return m_InstanceProviderData; }
+            set { m_InstanceProviderData = value; }
         }
+
         [SerializeField]
         ObjectInitializationData m_SceneProviderData;
+
         /// <summary>
         /// Data for the Addressables.ResourceManager.InstanceProvider initialization;
         /// </summary>
         public ObjectInitializationData SceneProviderData
         {
-            get
-            {
-                return m_SceneProviderData;
-            }
-            set
-            {
-                m_SceneProviderData = value;
-            }
+            get { return m_SceneProviderData; }
+            set { m_SceneProviderData = value; }
         }
+
         [SerializeField]
         internal List<ObjectInitializationData> m_ResourceProviderData = new List<ObjectInitializationData>();
+
         /// <summary>
         /// The list of resource provider data.  Each entry will add an IResourceProvider to the Addressables.ResourceManager.ResourceProviders list.
         /// </summary>
@@ -145,15 +144,19 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         [FormerlySerializedAs("m_providerIds")]
         [SerializeField]
         internal string[] m_ProviderIds = null;
+
         [FormerlySerializedAs("m_internalIds")]
         [SerializeField]
         internal string[] m_InternalIds = null;
+
         [FormerlySerializedAs("m_keyDataString")]
         [SerializeField]
         internal string m_KeyDataString = null;
+
         [FormerlySerializedAs("m_bucketDataString")]
         [SerializeField]
         internal string m_BucketDataString = null;
+
         [FormerlySerializedAs("m_entryDataString")]
         [SerializeField]
         internal string m_EntryDataString = null;
@@ -189,8 +192,16 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             string m_PrimaryKey;
             Type m_Type;
 
-            public string InternalId { get { return m_InternalId; } }
-            public string ProviderId { get { return m_ProviderId; } }
+            public string InternalId
+            {
+                get { return m_InternalId; }
+            }
+
+            public string ProviderId
+            {
+                get { return m_ProviderId; }
+            }
+
             public IList<IResourceLocation> Dependencies
             {
                 get
@@ -202,11 +213,21 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     return results;
                 }
             }
-            public bool HasDependencies { get { return m_Dependency != null; } }
 
-            public int DependencyHashCode { get { return m_DependencyHashCode; } }
+            public bool HasDependencies
+            {
+                get { return m_Dependency != null; }
+            }
 
-            public object Data { get { return m_Data; } }
+            public int DependencyHashCode
+            {
+                get { return m_DependencyHashCode; }
+            }
+
+            public object Data
+            {
+                get { return m_Data; }
+            }
 
             public string PrimaryKey
             {
@@ -214,7 +235,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 set { m_PrimaryKey = value; }
             }
 
-            public Type ResourceType { get { return m_Type; } }
+            public Type ResourceType
+            {
+                get { return m_Type; }
+            }
 
             public override string ToString()
             {
@@ -282,8 +306,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     entryArray[c] = SerializationUtilities.ReadInt32FromByteArray(bucketData, bi);
                     bi += 4;
                 }
-                buckets[i] = new Bucket { entries = entryArray, dataOffset = index };
+
+                buckets[i] = new Bucket {entries = entryArray, dataOffset = index};
             }
+
             if (!string.IsNullOrEmpty(providerSuffix))
             {
                 for (int i = 0; i < m_ProviderIds.Length; i++)
@@ -292,6 +318,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                         m_ProviderIds[i] = m_ProviderIds[i] + providerSuffix;
                 }
             }
+
             var extraData = Convert.FromBase64String(m_ExtraDataString);
 
             var keyData = Convert.FromBase64String(m_KeyDataString);
@@ -338,7 +365,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
             return locator;
         }
-        
+
         internal static string ExpandInternalId(string[] internalIdPrefixes, string v)
         {
             if (internalIdPrefixes == null || internalIdPrefixes.Length == 0)
@@ -352,7 +379,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 return v;
             return internalIdPrefixes[index] + v.Substring(nextHash + 1);
         }
-        
+
         /// <summary>
         /// Create a new ContentCatalogData object without any data.
         /// </summary>
@@ -385,6 +412,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         {
             public List<T> values;
             public Dictionary<T, int> map;
+
             public KeyIndexer(IEnumerable<T> keyCollection, int capacity)
             {
                 values = new List<T>(capacity);
@@ -441,7 +469,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 }
             }
 
-            public TVal this[TKey key] { get { return values[map[key]]; } }
+            public TVal this[TKey key]
+            {
+                get { return values[map[key]]; }
+            }
         }
 
         /// <summary>
@@ -452,7 +483,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         {
             SetData(data, false);
         }
-        
+
         /// <summary>
         /// Sets the catalog data before serialization.
         /// </summary>
@@ -470,7 +501,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             keys.Add(data.SelectMany(s => s.Dependencies));
             var keyIndexToEntries = new KeyIndexer<List<ContentCatalogDataEntry>, object>(keys.values, s => new List<ContentCatalogDataEntry>(), keys.values.Count);
             var entryToIndex = new Dictionary<ContentCatalogDataEntry, int>(data.Count);
-            var extraDataList = new List<byte>(8*1024);
+            var extraDataList = new List<byte>(8 * 1024);
             var entryIndexToExtraDataIndex = new Dictionary<int, int>();
 
             int extraDataIndex = 0;
@@ -488,11 +519,13 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                         extraDataIndex += len;
                     }
                 }
+
                 entryIndexToExtraDataIndex.Add(i, extraDataOffset);
                 entryToIndex.Add(e, i);
                 foreach (var k in e.Keys)
                     keyIndexToEntries[k].Add(e);
             }
+
             m_ExtraDataString = Convert.ToBase64String(extraDataList.ToArray());
 
             //create extra entries for dependency sets
@@ -525,7 +558,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             //serialize internal ids and providers
             m_InternalIds = internalIds.values.ToArray();
             m_ProviderIds = providers.values.ToArray();
-            m_resourceTypes = types.values.Select(t => new SerializedType() { Value = t }).ToArray();
+            m_resourceTypes = types.values.Select(t => new SerializedType() {Value = t}).ToArray();
 
             if (optimizeSize)
             {
@@ -551,6 +584,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     entryDataOffset = SerializationUtilities.WriteInt32ToByteArray(entryData, keys.map[e.Keys.First()], entryDataOffset);
                     entryDataOffset = SerializationUtilities.WriteInt32ToByteArray(entryData, (ushort)types.map[e.ResourceType], entryDataOffset);
                 }
+
                 m_EntryDataString = Convert.ToBase64String(entryData);
             }
 
@@ -572,6 +606,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     foreach (var e in entries)
                         bucketDataOffset = SerializationUtilities.WriteInt32ToByteArray(bucketData, entryToIndex[e], bucketDataOffset);
                 }
+
                 m_BucketDataString = Convert.ToBase64String(bucketData);
                 m_KeyDataString = Convert.ToBase64String(keyData.ToArray());
             }
@@ -589,6 +624,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 prefixIndices.Add(prefix, index = internalIdPrefixes.Count);
                 internalIdPrefixes.Add(prefix);
             }
+
             return string.Format("{0}#{1}", index, v.Substring(s));
         }
 

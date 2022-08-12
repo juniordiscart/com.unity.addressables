@@ -1,14 +1,17 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_LoadSynchronously
+
     using UnityEngine;
     using UnityEngine.AddressableAssets;
     using UnityEngine.ResourceManagement.AsyncOperations;
 
     internal class OperationHandleTypes
     {
-        void Snippet() {
+        void Snippet()
+        {
             #region doc_ConvertTypes
+
             // Load asset using typed handle:
             AsyncOperationHandle<Texture2D> textureHandle = Addressables.LoadAssetAsync<Texture2D>("mytexture");
 
@@ -20,8 +23,10 @@ namespace AddressableAssets.DocExampleCode
 
             // This will throw and exception because Texture2D is required:
             AsyncOperationHandle<Texture> textureHandle3 = nonGenericHandle.Convert<Texture>();
+
             #endregion
         }
     }
+
     #endregion
 }

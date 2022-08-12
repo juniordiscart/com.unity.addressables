@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEditor;
-using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace UnityEngine.AddressableAssets
 {
@@ -78,22 +76,23 @@ namespace UnityEngine.AddressableAssets
         public override bool ValidateAsset(string mainAssetPath)
         {
 #if UNITY_EDITOR
-            if (typeof(TObject).IsAssignableFrom(AssetDatabase.GetMainAssetTypeAtPath(mainAssetPath)))
+            Type objType = typeof(TObject);
+            if (objType.IsAssignableFrom(AssetDatabase.GetMainAssetTypeAtPath(mainAssetPath)))
                 return true;
-            
-            var repr = AssetDatabase.LoadAllAssetRepresentationsAtPath(mainAssetPath);
-            return repr != null && repr.Any(o => o is TObject);
+
+            var types = AssetPathToTypes.GetTypesForAssetPath(mainAssetPath);
+            return types.Contains(objType);
 #else
             return false;
 #endif
         }
-        
+
 #if UNITY_EDITOR
         internal TObject FetchAsset()
         {
             var assetPath = AssetDatabase.GUIDToAssetPath(AssetGUID);
             var asset = AssetDatabase.LoadAssetAtPath(assetPath, typeof(TObject));
-            return (TObject) asset;
+            return (TObject)asset;
         }
 #endif
 
@@ -127,8 +126,11 @@ namespace UnityEngine.AddressableAssets
         /// Constructs a new reference to a GameObject.
         /// </summary>
         /// <param name="guid">The object guid.</param>
-        public AssetReferenceGameObject(string guid) : base(guid) {}
+        public AssetReferenceGameObject(string guid) : base(guid)
+        {
+        }
     }
+
     /// <summary>
     /// Texture only asset reference.
     /// </summary>
@@ -139,8 +141,11 @@ namespace UnityEngine.AddressableAssets
         /// Constructs a new reference to a Texture.
         /// </summary>
         /// <param name="guid">The object guid.</param>
-        public AssetReferenceTexture(string guid) : base(guid) {}
+        public AssetReferenceTexture(string guid) : base(guid)
+        {
+        }
     }
+
     /// <summary>
     /// Texture2D only asset reference.
     /// </summary>
@@ -151,8 +156,11 @@ namespace UnityEngine.AddressableAssets
         /// Constructs a new reference to a Texture2D.
         /// </summary>
         /// <param name="guid">The object guid.</param>
-        public AssetReferenceTexture2D(string guid) : base(guid) {}
+        public AssetReferenceTexture2D(string guid) : base(guid)
+        {
+        }
     }
+
     /// <summary>
     /// Texture3D only asset reference
     /// </summary>
@@ -163,7 +171,9 @@ namespace UnityEngine.AddressableAssets
         /// Constructs a new reference to a Texture3D.
         /// </summary>
         /// <param name="guid">The object guid.</param>
-        public AssetReferenceTexture3D(string guid) : base(guid) {}
+        public AssetReferenceTexture3D(string guid) : base(guid)
+        {
+        }
     }
 
     /// <summary>
@@ -176,7 +186,9 @@ namespace UnityEngine.AddressableAssets
         /// Constructs a new reference to a AssetReferenceSprite.
         /// </summary>
         /// <param name="guid">The object guid.</param>
-        public AssetReferenceSprite(string guid) : base(guid) {}
+        public AssetReferenceSprite(string guid) : base(guid)
+        {
+        }
 
         /// <inheritdoc/>
         public override bool ValidateAsset(string path)
@@ -219,9 +231,7 @@ namespace UnityEngine.AddressableAssets
 
             var assetPath = AssetDatabase.GUIDToAssetPath(m_AssetGUID);
             Type mainAssetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-            Object asset = mainAssetType == typeof(SpriteAtlas) ?
-                AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAtlas)) :
-                AssetDatabase.LoadAssetAtPath(assetPath, m_DerivedClassType ?? AssetDatabase.GetMainAssetTypeAtPath(assetPath));
+            Object asset = mainAssetType == typeof(SpriteAtlas) ? AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAtlas)) : AssetDatabase.LoadAssetAtPath(assetPath, m_DerivedClassType);
 
             if (m_DerivedClassType == null)
                 return CachedAsset = asset;
@@ -250,7 +260,9 @@ namespace UnityEngine.AddressableAssets
         /// Constructs a new reference to a AssetReferenceAtlasedSprite.
         /// </summary>
         /// <param name="guid">The object guid.</param>
-        public AssetReferenceAtlasedSprite(string guid) : base(guid) {}
+        public AssetReferenceAtlasedSprite(string guid) : base(guid)
+        {
+        }
 
         /// <inheritdoc/>
         public override bool ValidateAsset(Object obj)
@@ -299,22 +311,22 @@ namespace UnityEngine.AddressableAssets
         [FormerlySerializedAs("m_assetGUID")]
         [SerializeField]
         protected internal string m_AssetGUID = "";
+
         [SerializeField]
         string m_SubObjectName;
+
         [SerializeField]
         string m_SubObjectType = null;
 
         AsyncOperationHandle m_Operation;
+
         /// <summary>
         /// The AsyncOperationHandle currently being used by the AssetReference.
         /// For example, if you call AssetReference.LoadAssetAsync, this property will return a handle to that operation.
         /// </summary>
         public AsyncOperationHandle OperationHandle
         {
-            get
-            {
-                return m_Operation;
-            }
+            get { return m_Operation; }
             internal set
             {
                 m_Operation = value;
@@ -343,12 +355,20 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Stores the guid of the asset.
         /// </summary>
-        public virtual string AssetGUID { get { return m_AssetGUID; } }
+        public virtual string AssetGUID
+        {
+            get { return m_AssetGUID; }
+        }
 
         /// <summary>
         /// Stores the name of the sub object.
         /// </summary>
-        public virtual string SubObjectName { get { return m_SubObjectName; } set { m_SubObjectName = value; } }
+        public virtual string SubObjectName
+        {
+            get { return m_SubObjectName; }
+            set { m_SubObjectName = value; }
+        }
+
         internal virtual Type SubOjbectType
         {
             get
@@ -358,6 +378,7 @@ namespace UnityEngine.AddressableAssets
                 return null;
             }
         }
+
         /// <summary>
         /// Returns the state of the internal operation.
         /// </summary>
@@ -372,12 +393,9 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public bool IsDone
         {
-            get
-            {
-                return m_Operation.IsDone;
-            }
+            get { return m_Operation.IsDone; }
         }
-        
+
 #if UNITY_EDITOR
         [InitializeOnLoadMethod]
         static void RegisterForPlaymodeChange()
@@ -398,7 +416,7 @@ namespace UnityEngine.AddressableAssets
                 }
             }
         }
-        
+
         void ReleaseHandleWhenPlaymodeStateChanged(PlayModeStateChange state)
         {
             if (m_Operation.IsValid())
@@ -419,7 +437,7 @@ namespace UnityEngine.AddressableAssets
             m_ActiveAssetReferences.Remove(this);
         }
 #endif
-        
+
         /// <summary>
         /// Construct a new AssetReference object.
         /// </summary>
@@ -428,7 +446,7 @@ namespace UnityEngine.AddressableAssets
         {
             m_AssetGUID = guid;
         }
-        
+
         //Special constructor only used when constructing in a derived class
         internal AssetReference(string guid, Type type)
         {
@@ -469,6 +487,7 @@ namespace UnityEngine.AddressableAssets
                     m_CachedAsset = null;
                     m_CachedGUID = "";
                 }
+
                 return m_CachedAsset;
             }
             set
@@ -580,6 +599,7 @@ namespace UnityEngine.AddressableAssets
                 result = Addressables.LoadAssetAsync<TObject>(RuntimeKey);
                 OperationHandle = result;
             }
+
             return result;
         }
 
@@ -603,6 +623,7 @@ namespace UnityEngine.AddressableAssets
                 result = Addressables.LoadSceneAsync(RuntimeKey, loadMode, activateOnLoad, priority);
                 OperationHandle = result;
             }
+
             return result;
         }
 
@@ -665,6 +686,7 @@ namespace UnityEngine.AddressableAssets
                 Debug.LogWarning("Cannot release a null or unloaded asset.");
                 return;
             }
+
             Addressables.Release(m_Operation);
             m_Operation = default(AsyncOperationHandle);
         }
@@ -701,22 +723,20 @@ namespace UnityEngine.AddressableAssets
 #if UNITY_EDITOR
 
         [SerializeField]
-        #pragma warning disable CS0414
-        bool m_EditorAssetChanged; 
+#pragma warning disable CS0414
+        bool m_EditorAssetChanged;
+
         protected internal Type m_DerivedClassType;
 #pragma warning restore CS0414
-        
+
         /// <summary>
         /// Used by the editor to represent the main asset referenced.
         /// </summary>
         public virtual Object editorAsset
         {
-            get
-            {
-                return GetEditorAssetInternal();
-            }
+            get { return GetEditorAssetInternal(); }
         }
-        
+
         /// <summary>
         /// Helper function that can be used to override the base class editorAsset accessor.
         /// </summary>
@@ -725,12 +745,12 @@ namespace UnityEngine.AddressableAssets
         {
             if (CachedAsset != null || string.IsNullOrEmpty(m_AssetGUID))
                 return CachedAsset;
-                
+
             var asset = FetchEditorAsset();
-                
+
             if (m_DerivedClassType == null)
                 return CachedAsset = asset;
-                
+
             if (asset == null)
                 Debug.LogWarning("Assigned editorAsset does not match type " + m_DerivedClassType + ". EditorAsset will be null.");
             return CachedAsset = asset;
@@ -742,7 +762,7 @@ namespace UnityEngine.AddressableAssets
             var asset = AssetDatabase.LoadAssetAtPath(assetPath, m_DerivedClassType ?? AssetDatabase.GetMainAssetTypeAtPath(assetPath));
             return asset;
         }
-        
+
         /// <summary>
         /// Sets the main asset on the AssetReference.  Only valid in the editor, this sets both the editorAsset attribute,
         ///   and the internal asset GUID, which drives the RuntimeKey attribute. If the reference uses a sub object,
@@ -761,7 +781,7 @@ namespace UnityEngine.AddressableAssets
         {
             return OnSetEditorAsset(value, m_DerivedClassType);
         }
-        
+
         internal bool OnSetEditorAsset(Object value, Type derivedType)
         {
             if (value == null)
@@ -782,6 +802,7 @@ namespace UnityEngine.AddressableAssets
                     Addressables.LogWarningFormat("Invalid object for AssetReference {0}.", value);
                     return false;
                 }
+
                 if (!ValidateAsset(path))
                 {
                     Addressables.LogWarningFormat("Invalid asset for AssetReference path = '{0}'.", path);
@@ -799,6 +820,7 @@ namespace UnityEngine.AddressableAssets
                         if (value != mainAsset)
                             SetEditorSubObject(value);
                     }
+
                     CachedAsset = mainAsset;
                 }
             }
@@ -831,12 +853,13 @@ namespace UnityEngine.AddressableAssets
                     }
                 }
             }
+
             if (mainAsset == null)
-                Debug.LogWarning( "Assigned editorAsset does not match type " + type + ". EditorAsset will be null.");
+                Debug.LogWarning("Assigned editorAsset does not match type " + type + ". EditorAsset will be null.");
 
             return mainAsset;
         }
-            
+
 
         /// <summary>
         /// Sets the sub object for this asset reference.
@@ -865,6 +888,7 @@ namespace UnityEngine.AddressableAssets
                     Debug.LogWarningFormat("Unable to find sprite {0} in atlas {1}.", spriteName, editorAsset.name);
                     return false;
                 }
+
                 m_SubObjectName = spriteName;
                 m_SubObjectType = typeof(Sprite).AssemblyQualifiedName;
                 m_EditorAssetChanged = true;
@@ -882,9 +906,50 @@ namespace UnityEngine.AddressableAssets
                     return true;
                 }
             }
+
             return false;
         }
 
 #endif
     }
+
+#if UNITY_EDITOR
+    class AssetPathToTypes : AssetPostprocessor
+    {
+        private static Dictionary<string, HashSet<Type>> s_PathToTypes = new Dictionary<string, HashSet<Type>>();
+
+        public static HashSet<Type> GetTypesForAssetPath(string path)
+        {
+#if UNITY_2020_1_OR_NEWER
+            AssetDatabase.SaveAssetIfDirty(AssetDatabase.GUIDFromAssetPath(path));
+#endif
+            if (s_PathToTypes.TryGetValue(path, out HashSet<Type> value))
+                return value;
+
+            var objectsForAsset = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
+            value = new HashSet<Type>();
+            foreach (Object o in objectsForAsset)
+                value.Add(o.GetType());
+            s_PathToTypes.Add(path, value);
+            return value;
+        }
+
+        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+        {
+            foreach (string str in importedAssets)
+                s_PathToTypes.Remove(str);
+            foreach (string str in deletedAssets)
+                s_PathToTypes.Remove(str);
+
+            for (int i = 0; i < movedFromAssetPaths.Length; ++i)
+            {
+                if (s_PathToTypes.TryGetValue(movedFromAssetPaths[i], out var values))
+                {
+                    s_PathToTypes.Remove(movedFromAssetPaths[i]);
+                    s_PathToTypes.Add(movedAssets[i], values);
+                }
+            }
+        }
+    }
+#endif
 }

@@ -14,9 +14,15 @@ namespace UnityEngine.ResourceManagement.Tests
 
         public int UpdateCount = 0;
 
-        public string ProviderId { get { return _ProviderId; } }
+        public string ProviderId
+        {
+            get { return _ProviderId; }
+        }
 
-        public ProviderBehaviourFlags BehaviourFlags { get { return _BehaviourFlags; } }
+        public ProviderBehaviourFlags BehaviourFlags
+        {
+            get { return _BehaviourFlags; }
+        }
 
         public Action<ProvideHandle> ProvideCallback;
         public Type DefaultType = typeof(object);
@@ -41,6 +47,7 @@ namespace UnityEngine.ResourceManagement.Tests
                 ProvideCallback(provideHandle);
                 return;
             }
+
             throw new NotImplementedException();
         }
 

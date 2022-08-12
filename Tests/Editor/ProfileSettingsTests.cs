@@ -29,6 +29,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 if (prof.profileName == "TestProfile")
                     foundIt = true;
             }
+
             Assert.IsTrue(foundIt);
             Assert.IsNotEmpty(secondId);
 
@@ -42,6 +43,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 if (prof.profileName == "TestProfile")
                     foundIt = true;
             }
+
             Assert.IsFalse(foundIt);
         }
 

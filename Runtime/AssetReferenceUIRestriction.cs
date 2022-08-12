@@ -30,6 +30,7 @@ namespace UnityEngine
             return true;
         }
     }
+
     /// <summary>
     /// Used to restrict an AssetReference field or property to only allow items wil specific labels.  This is only enforced through the UI.
     /// </summary>
@@ -84,8 +85,10 @@ namespace UnityEngine
                     first = false;
                     sb.Append(t);
                 }
+
                 m_CachedToString = sb.ToString();
             }
+
             return m_CachedToString;
         }
     }

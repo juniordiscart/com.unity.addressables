@@ -11,12 +11,13 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 #endif
 using UnityEngine;
 using UnityEngine.TestTools;
+
 namespace AssetReferenceDrawerTests
 {
     public abstract class AssetReferenceDrawerTests : AddressablesTestFixture
     {
         const string textureName = "testTexture";
-        readonly string[] allowedLabels = new string[] { "label1", "label2" };
+        readonly string[] allowedLabels = new string[] {"label1", "label2"};
 
 #if UNITY_EDITOR
         internal override void Setup(AddressableAssetSettings settings, string tempAssetFolder)
@@ -50,6 +51,7 @@ namespace AssetReferenceDrawerTests
                 first = false;
                 sb.Append(t);
             }
+
             return sb.ToString();
         }
 
@@ -128,27 +130,56 @@ namespace AssetReferenceDrawerTests
 
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
     class TestAssetReferenceUICustomRestriction : AssetReferenceUIRestriction
-    {}
+    {
+    }
 
     class TestAssetReferenceUICustomRestrictionSurrogate : AssetReferenceUIRestrictionSurrogate
-    {}
+    {
+    }
 
     class TestAssetReferenceUIRestrictionSurrogate1 : TestAssetReferenceUICustomRestrictionSurrogate
-    {}
+    {
+    }
 
     class TestAssetReferenceUIRestrictionSurrogate2 : TestAssetReferenceUIRestrictionSurrogate1
-    {}
+    {
+    }
 
     class TestAssetReferenceUIRestrictionSurrogate3 : TestAssetReferenceUIRestrictionSurrogate2
-    {}
+    {
+    }
 
-    class AssetReferenceDrawerTests_FastMode : AssetReferenceDrawerTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
+    class AssetReferenceDrawerTests_FastMode : AssetReferenceDrawerTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
 
-    class AssetReferenceDrawerTests_VirtualMode : AssetReferenceDrawerTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
+    class AssetReferenceDrawerTests_VirtualMode : AssetReferenceDrawerTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
 
-    class AssetReferenceDrawerTests_PackedPlaymodeMode : AssetReferenceDrawerTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class AssetReferenceDrawerTests_PackedPlaymodeMode : AssetReferenceDrawerTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
-    class AssetReferenceDrawerTests_PackedMode : AssetReferenceDrawerTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } } }
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
+    class AssetReferenceDrawerTests_PackedMode : AssetReferenceDrawerTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
+    }
 }

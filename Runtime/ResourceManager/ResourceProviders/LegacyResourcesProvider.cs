@@ -36,6 +36,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     AsyncOperationCompleted(m_RequestOperation);
                     return true;
                 }
+
                 return m_RequestOperation != null && m_RequestOperation.isDone;
             }
 
@@ -44,10 +45,14 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 var request = op as ResourceRequest;
                 object result = request != null ? request.asset : null;
                 result = result != null && m_ProvideHandle.Type.IsAssignableFrom(result.GetType()) ? result : null;
-                m_ProvideHandle.Complete(result, result != null, result == null ? new Exception($"Unable to load asset of type {m_ProvideHandle.Type} from location {m_ProvideHandle.Location}.") : null);
+                m_ProvideHandle.Complete(result, result != null,
+                    result == null ? new Exception($"Unable to load asset of type {m_ProvideHandle.Type} from location {m_ProvideHandle.Location}.") : null);
             }
 
-            public float PercentComplete() { return m_RequestOperation != null ? m_RequestOperation.progress : 0.0f; }
+            public float PercentComplete()
+            {
+                return m_RequestOperation != null ? m_RequestOperation.progress : 0.0f;
+            }
         }
 
         /// <inheritdoc/>
@@ -83,6 +88,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                             }
                         }
                     }
+
                     pi.Complete(result, result != null, result == null ? new Exception($"Unable to load asset of type {pi.Type} from location {pi.Location}.") : null);
                 }
                 else

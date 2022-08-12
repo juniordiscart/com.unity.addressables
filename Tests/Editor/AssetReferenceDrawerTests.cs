@@ -41,17 +41,18 @@ namespace UnityEditor.AddressableAssets.Tests
             [SerializeField]
             public AssetReference Reference = new AssetReference();
         }
+
         internal class TestObjectWithRestrictedRef : TestObject
         {
             [SerializeField]
-            [AssetReferenceUILabelRestriction(new[] { "HD" })]
+            [AssetReferenceUILabelRestriction(new[] {"HD"})]
             private AssetReference Reference = new AssetReference();
         }
 
         internal class TestObjectWithRestrictedRefByMultipleLabels : TestObject
         {
             [SerializeField]
-            [AssetReferenceUILabelRestriction(new[] { "HDR", "test", "default" })]
+            [AssetReferenceUILabelRestriction(new[] {"HDR", "test", "default"})]
             private AssetReference ReferenceMultiple = new AssetReference();
         }
 
@@ -74,7 +75,7 @@ namespace UnityEditor.AddressableAssets.Tests
             class NestedClass
             {
                 [SerializeField]
-                [AssetReferenceUILabelRestriction(new[] { "HD" })]
+                [AssetReferenceUILabelRestriction(new[] {"HD"})]
                 AssetReference ReferenceInNestedClass = new AssetReference();
             }
         }
@@ -94,6 +95,7 @@ namespace UnityEditor.AddressableAssets.Tests
         internal class TestAssetReferenceDrawer : AssetReferenceDrawer
         {
             TestAssetReferencePopup _popup;
+
             internal void SetAssetReference(AssetReference ar)
             {
                 m_AssetRefObject = ar;
@@ -101,7 +103,8 @@ namespace UnityEditor.AddressableAssets.Tests
 
             internal void TreeSetup(TreeViewState treeState)
             {
-                _popup = new TestAssetReferencePopup(this, "testpopup", "");
+                _popup = ScriptableObject.CreateInstance<TestAssetReferencePopup>();
+                _popup.Initialize(this, "testpopup", "", false, Vector2.zero);
                 _popup.TreeSetup(treeState, this, _popup);
             }
 
@@ -113,8 +116,6 @@ namespace UnityEditor.AddressableAssets.Tests
             class TestAssetReferencePopup : AssetReferencePopup
             {
                 TestSelectionTree _testTree;
-                internal TestAssetReferencePopup(AssetReferenceDrawer drawer, string guid, string nonAddressedAsset)
-                    : base(drawer, guid, nonAddressedAsset, false) {}
 
                 internal void TreeSetup(TreeViewState treeState, AssetReferenceDrawer testARD, AssetReferencePopup popup)
                 {
@@ -130,8 +131,10 @@ namespace UnityEditor.AddressableAssets.Tests
                 class TestSelectionTree : AssetReferencePopup.AssetReferenceTreeView
                 {
                     internal TestSelectionTree(TreeViewState state, AssetReferenceDrawer drawer,
-                                               AssetReferencePopup popup, string guid, string nonAddressedAsset)
-                        : base(state, drawer, popup, guid, nonAddressedAsset) {}
+                        AssetReferencePopup popup, string guid, string nonAddressedAsset)
+                        : base(state, drawer, popup, guid, nonAddressedAsset)
+                    {
+                    }
 
                     internal void SelectionChangedHelper(IList<int> selectedIds)
                     {
@@ -143,18 +146,14 @@ namespace UnityEditor.AddressableAssets.Tests
 
         internal class TestAssetReference : AssetReference
         {
-            internal TestAssetReference(string guid) : base(guid) {}
+            internal TestAssetReference(string guid) : base(guid)
+            {
+            }
 
             internal Object CachedAssetProperty
             {
-                get
-                {
-                    return CachedAsset;
-                }
-                set
-                {
-                    CachedAsset = value;
-                }
+                get { return CachedAsset; }
+                set { CachedAsset = value; }
             }
         }
 
@@ -228,6 +227,7 @@ namespace UnityEditor.AddressableAssets.Tests
                     testScriptable.testSpriteReference = ar;
                 targetObjects[i] = testScriptable;
             }
+
             var so = new SerializedObject(targetObjects);
             var property = so.FindProperty("testSpriteReference");
             m_AssetReferenceDrawer.m_AssetRefObject = ar;
@@ -326,8 +326,11 @@ namespace UnityEditor.AddressableAssets.Tests
             var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Multiple;
-            importer.spritesheet = new SpriteMetaData[] { new SpriteMetaData() { name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16) },
-                                                          new SpriteMetaData() { name = "testSprite", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16) }};
+            importer.spritesheet = new SpriteMetaData[]
+            {
+                new SpriteMetaData() {name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16)},
+                new SpriteMetaData() {name = "testSprite", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16)}
+            };
             importer.SaveAndReimport();
 
             // Add sprite to subassets
@@ -340,7 +343,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.CreateAsset(newAtlas, atlasPath);
             AssetDatabase.Refresh();
             SpriteAtlasExtensions.Add(newAtlas, spriteList);
-            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { newAtlas }, EditorUserBuildSettings.activeBuildTarget, false);
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {newAtlas}, EditorUserBuildSettings.activeBuildTarget, false);
 
             var spriteGuid = AssetDatabase.AssetPathToGUID(spritePath);
             Settings.CreateOrMoveEntry(spriteGuid, Settings.groups[0]);
@@ -374,8 +377,11 @@ namespace UnityEditor.AddressableAssets.Tests
                 var importer = (TextureImporter)AssetImporter.GetAtPath(newSpritePath);
                 importer.textureType = TextureImporterType.Sprite;
                 importer.spriteImportMode = SpriteImportMode.Multiple;
-                importer.spritesheet = new SpriteMetaData[] { new SpriteMetaData() { name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16) },
-                                                              new SpriteMetaData() { name = "testSprite" + i, pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16) }};
+                importer.spritesheet = new SpriteMetaData[]
+                {
+                    new SpriteMetaData() {name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16)},
+                    new SpriteMetaData() {name = "testSprite" + i, pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16)}
+                };
                 importer.SaveAndReimport();
 
                 // Add sprite to subassets
@@ -384,12 +390,13 @@ namespace UnityEditor.AddressableAssets.Tests
                 sprites[i] = spr;
                 subAssets.Add(spr);
             }
+
             // Setup Atlas
             newAtlas.Add(sprites);
             AssetDatabase.CreateAsset(newAtlas, atlasPath);
             AssetDatabase.Refresh();
             SpriteAtlasExtensions.Add(newAtlas, sprites);
-            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { newAtlas }, EditorUserBuildSettings.activeBuildTarget, false);
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {newAtlas}, EditorUserBuildSettings.activeBuildTarget, false);
 
             var atlasGuid = AssetDatabase.AssetPathToGUID(atlasPath);
             Settings.CreateOrMoveEntry(atlasGuid, Settings.groups[0]);
@@ -421,7 +428,8 @@ namespace UnityEditor.AddressableAssets.Tests
         public void SetObjectForPerformanceTests()
         {
             FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, _property, _atlas, propertyFieldInfo, m_AssetReferenceDrawer.m_label.text, out string guid);
+            AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, _property, _atlas, propertyFieldInfo,
+                m_AssetReferenceDrawer.m_label.text, out string guid);
         }
 
         public void SetMainAssetsForPerformanceTests()
@@ -450,7 +458,8 @@ namespace UnityEditor.AddressableAssets.Tests
         public void CheckTargetObjectsSubassetsAreDifferentForPerformanceTests()
         {
             FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            AssetReferenceDrawerUtilities.CheckTargetObjectsSubassetsAreDifferent(_property, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName, propertyFieldInfo, m_AssetReferenceDrawer.m_label.text);
+            AssetReferenceDrawerUtilities.CheckTargetObjectsSubassetsAreDifferent(_property, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName, propertyFieldInfo,
+                m_AssetReferenceDrawer.m_label.text);
         }
     }
 
@@ -530,7 +539,8 @@ namespace UnityEditor.AddressableAssets.Tests
             string guid;
 
             FieldInfo propertyFieldInfo = typeof(TestObjectWithRestrictedRef).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            Assert.IsTrue(AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, testObject, propertyFieldInfo, "", out guid));
+            Assert.IsTrue(AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, testObject, propertyFieldInfo, "",
+                out guid));
             Assert.False(AssetReferenceDrawerUtilities.ValidateAsset(m_AssetReferenceDrawer.m_AssetRefObject, restrictions, assetPath));
             TearDownTestDir();
             m_AssetReferenceDrawer = null;
@@ -553,7 +563,8 @@ namespace UnityEditor.AddressableAssets.Tests
             string guid;
 
             FieldInfo propertyFieldInfo = typeof(TestObjectWithRestrictedRef).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            Assert.IsTrue(AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, testObject, propertyFieldInfo, "", out guid));
+            Assert.IsTrue(AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, testObject, propertyFieldInfo, "",
+                out guid));
             Assert.IsTrue(AssetReferenceDrawerUtilities.ValidateAsset(m_AssetReferenceDrawer.m_AssetRefObject, restrictions, assetPath));
             TearDownTestDir();
             m_AssetReferenceDrawer = null;
@@ -645,7 +656,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             // Tree setup
             var testId = testEntry.AssetPath.GetHashCode();
-            List<int> selectedIds = new List<int>() { testId };
+            List<int> selectedIds = new List<int>() {testId};
             var treeState = new TreeViewState();
             treeState.selectedIDs = selectedIds;
             Directory.CreateDirectory("Assets/AddressableAssetsData");
@@ -696,7 +707,7 @@ namespace UnityEditor.AddressableAssets.Tests
             SetupDefaultSettings();
 
             // Test
-            m_AssetReferenceDrawer.DragAndDropNotFromAddressableGroupWindow(new string[] { newEntryPath }, newAssetGuid, property, Settings);
+            m_AssetReferenceDrawer.DragAndDropNotFromAddressableGroupWindow(new string[] {newEntryPath}, newAssetGuid, property, Settings);
             var newentry = Settings.FindAssetEntry(newAssetGuid);
             Assert.IsNull(newentry);
             Assert.AreEqual(m_AssetReferenceDrawer.m_AssetRefObject.Asset.name, newAssetGuid);
@@ -725,7 +736,8 @@ namespace UnityEditor.AddressableAssets.Tests
             string guid;
 
             FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            Assert.IsTrue(AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, testObject, propertyFieldInfo, "", out guid));
+            Assert.IsTrue(AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, testObject, propertyFieldInfo, "",
+                out guid));
             Assert.AreEqual(m_AssetGUID, m_AssetReferenceDrawer.m_AssetRefObject.AssetGUID);
             Assert.AreEqual(m_AssetGUID, guid);
             Assert.AreEqual(testObject.name, m_AssetReferenceDrawer.m_AssetRefObject.editorAsset.name);
@@ -753,7 +765,8 @@ namespace UnityEditor.AddressableAssets.Tests
 
             FieldInfo propertyFieldInfo = typeof(TestObjectWithRef).GetField("Reference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             SetupDefaultSettings();
-            Assert.IsTrue(AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, testObject, propertyFieldInfo, "", out guid));
+            Assert.IsTrue(AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, testObject, propertyFieldInfo, "",
+                out guid));
             Assert.AreEqual(assetGuid, m_AssetReferenceDrawer.m_AssetRefObject.AssetGUID);
             Assert.AreEqual("testAtlas", m_AssetReferenceDrawer.m_AssetRefObject.editorAsset.name);
             Assert.AreEqual("testSprite", m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
@@ -800,7 +813,8 @@ namespace UnityEditor.AddressableAssets.Tests
             m_AssetReferenceDrawer.m_AssetRefObject = ar;
             AssetReferenceDrawerUtilities.GatherFilters(property);
             FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            var success = AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, meshSubAsset, propertyFieldInfo, "", out guid);
+            var success = AssetReferenceDrawerUtilities.SetObject(ref m_AssetReferenceDrawer.m_AssetRefObject, ref m_AssetReferenceDrawer.m_ReferencesSame, property, meshSubAsset, propertyFieldInfo,
+                "", out guid);
 
             // Assert
             Assert.IsTrue(success);
@@ -1024,6 +1038,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 if (objName.Contains(obj.name))
                     return true;
             }
+
             return false;
         }
 

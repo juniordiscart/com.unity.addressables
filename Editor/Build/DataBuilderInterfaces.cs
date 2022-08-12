@@ -12,18 +12,22 @@ namespace UnityEditor.AddressableAssets.Build
         /// Duration of the build in seconds.
         /// </summary>
         double Duration { get; set; }
+
         /// <summary>
         /// The number of addressable assets contained in the build.
         /// </summary>
         int LocationCount { get; set; }
+
         /// <summary>
         /// Error string, if any.  If Succeeded is true, this may be null.
         /// </summary>
         string Error { get; set; }
+
         /// <summary>
         /// Path of runtime settings file
         /// </summary>
         string OutputPath { get; set; }
+
         /// <summary>
         /// Registry of files created during the build
         /// </summary>
@@ -39,12 +43,14 @@ namespace UnityEditor.AddressableAssets.Build
         /// The name of the builder, used for GUI.
         /// </summary>
         string Name { get; }
+
         /// <summary>
         /// Can this builder build the type of data requested.
         /// </summary>
         /// <typeparam name="T">The data type.</typeparam>
         /// <returns>True if the build can build it.</returns>
         bool CanBuildData<T>() where T : IDataBuilderResult;
+
         /// <summary>
         /// Build the data of a specific type.
         /// </summary>

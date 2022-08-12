@@ -71,7 +71,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
 
             DownloadStatus GetDownloadStatus()
             {
-                return m_RequestOperation != null ? m_RequestOperation.GetDownloadStatus() : new DownloadStatus() { IsDone = GetPercentComplete() >= 1f };
+                return m_RequestOperation != null ? m_RequestOperation.GetDownloadStatus() : new DownloadStatus() {IsDone = GetPercentComplete() >= 1f};
             }
 
             public void Start(ProvideHandle provideHandle, VirtualAssetBundleProvider provider)
@@ -110,6 +110,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 Debug.LogWarningFormat("Releasing null asset bundle from location {0}.  This is an indication that the bundle failed to load.", location);
                 return;
             }
+
             Unload(location);
         }
 
@@ -129,6 +130,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 Debug.LogWarningFormat("Unable to unload virtual bundle {0}.", location);
                 return false;
             }
+
             if (m_UpdatingActiveBundles)
                 m_PendingOperations.Add(location.InternalId, null);
             else
@@ -142,7 +144,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 throw new ArgumentException("IResourceLocation location cannot be null.");
             VirtualAssetBundle bundle;
             if (!m_AllBundles.TryGetValue(location.InternalId, out bundle))
-                return new VBAsyncOperation<VirtualAssetBundle>().StartCompleted(location, location, default(VirtualAssetBundle), new ResourceManagerException(string.Format("Unable to unload virtual bundle {0}.", location)));
+                return new VBAsyncOperation<VirtualAssetBundle>().StartCompleted(location, location, default(VirtualAssetBundle),
+                    new ResourceManagerException(string.Format("Unable to unload virtual bundle {0}.", location)));
 
             try
             {
@@ -155,6 +158,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
             {
                 Debug.LogException(ex);
             }
+
             return bundle.StartLoad(location);
         }
 
@@ -180,6 +184,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                     else
                         m_ActiveBundles.Add(o.Key, o.Value);
                 }
+
                 m_PendingOperations.Clear();
             }
         }

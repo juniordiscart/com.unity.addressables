@@ -20,6 +20,7 @@ namespace UnityEngine.AddressableAssets.DynamicResourceLocators
             {
                 public object key;
                 public Type type;
+
                 public override int GetHashCode()
                 {
                     return type.GetHashCode() * 31 + key.GetHashCode();
@@ -32,15 +33,16 @@ namespace UnityEngine.AddressableAssets.DynamicResourceLocators
             }
 
             Dictionary<KeyType, IList<IResourceLocation>> m_Locations = new Dictionary<KeyType, IList<IResourceLocation>>();
+
             public TestLocator()
             {
-                m_Locations.Add(new KeyType() { key = kGoKey, type = typeof(GameObject) }, new List<IResourceLocation>(new IResourceLocation[]
+                m_Locations.Add(new KeyType() {key = kGoKey, type = typeof(GameObject)}, new List<IResourceLocation>(new IResourceLocation[]
                 {
                     new ResourceLocationBase("go1", "internalId1", "provider", typeof(GameObject)),
                     new ResourceLocationBase("go2", "internalId2", "provider", typeof(GameObject)),
                 }));
 
-                m_Locations.Add(new KeyType() { key = kSpriteKey, type = typeof(SpriteAtlas) }, new List<IResourceLocation>(new IResourceLocation[]
+                m_Locations.Add(new KeyType() {key = kSpriteKey, type = typeof(SpriteAtlas)}, new List<IResourceLocation>(new IResourceLocation[]
                 {
                     new ResourceLocationBase("spriteAtlas1", "internalId1", "provider", typeof(SpriteAtlas)),
                     new ResourceLocationBase("spriteAtlas2", "internalId2", "provider", typeof(SpriteAtlas)),
@@ -49,9 +51,10 @@ namespace UnityEngine.AddressableAssets.DynamicResourceLocators
 
             public string LocatorId => "";
             public IEnumerable<object> Keys => null;
+
             public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
             {
-                return m_Locations.TryGetValue(new KeyType() { key = key, type = type }, out locations);
+                return m_Locations.TryGetValue(new KeyType() {key = key, type = type}, out locations);
             }
         }
 
@@ -173,13 +176,37 @@ namespace UnityEngine.AddressableAssets.DynamicResourceLocators
     }
 
 #if UNITY_EDITOR
-    class DynamicLocatorTests_FastMode : DynamicLocatorTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
+    class DynamicLocatorTests_FastMode : DynamicLocatorTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
 
-    class DynamicLocatorTests_VirtualMode : DynamicLocatorTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
+    class DynamicLocatorTests_VirtualMode : DynamicLocatorTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
 
-    class DynamicLocatorTests_PackedPlaymodeMode : DynamicLocatorTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class DynamicLocatorTests_PackedPlaymodeMode : DynamicLocatorTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
-    class DynamicLocatorTests_PackedMode : DynamicLocatorTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } } }
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
+    class DynamicLocatorTests_PackedMode : DynamicLocatorTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
+    }
 }

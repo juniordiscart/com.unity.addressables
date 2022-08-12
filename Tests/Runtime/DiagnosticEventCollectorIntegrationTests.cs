@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 
 namespace DiagnosticEventCollectorIntegrationTests
 {
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
     abstract class DiagnosticEventCollectorIntegrationTests : AddressablesTestFixture
     {
         protected abstract bool PostProfilerEvents();
@@ -51,7 +51,7 @@ namespace DiagnosticEventCollectorIntegrationTests
 
         private DiagnosticEvent createGenericDiagnosticEvent(int id, int stream, int frame)
         {
-            return new DiagnosticEvent("N/A", "DummyEvent" + id, id, stream, frame, 1, new int[]{});
+            return new DiagnosticEvent("N/A", "DummyEvent" + id, id, stream, frame, 1, new int[] { });
         }
 
         int opCreate = (int)ResourceManager.DiagnosticEventType.AsyncOperationCreate;
@@ -67,7 +67,8 @@ namespace DiagnosticEventCollectorIntegrationTests
 
             //Act/Assert
             Assert.AreEqual(false, DiagnosticEventCollectorSingleton.Exists, "Singleton exists when it should not have been initialized.");
-            Assert.AreEqual(true, DiagnosticEventCollectorSingleton.RegisterEventHandler(DummyHandler, true, true), "RegisterEventHandler returning false, not registering handler when registration was expected. ");
+            Assert.AreEqual(true, DiagnosticEventCollectorSingleton.RegisterEventHandler(DummyHandler, true, true),
+                "RegisterEventHandler returning false, not registering handler when registration was expected. ");
 
             //Cleanup
             DiagnosticEventCollectorSingleton.DestroySingleton();
@@ -81,7 +82,8 @@ namespace DiagnosticEventCollectorIntegrationTests
 
             //Act/Assert
             Assert.AreEqual(false, DiagnosticEventCollectorSingleton.Exists, "Singleton exists when it should not have been initialized.");
-            Assert.AreEqual(false, DiagnosticEventCollectorSingleton.RegisterEventHandler(DummyHandler, true, false), "RegisterEventHandler returning true when Exists and create should both be false. ");
+            Assert.AreEqual(false, DiagnosticEventCollectorSingleton.RegisterEventHandler(DummyHandler, true, false),
+                "RegisterEventHandler returning true when Exists and create should both be false. ");
 
             //Cleanup
             DiagnosticEventCollectorSingleton.DestroySingleton();
@@ -131,7 +133,8 @@ namespace DiagnosticEventCollectorIntegrationTests
             var handlerCount = DiagnosticEventCollectorSingleton.Instance.s_EventHandlers.Count;
             //Act/Assert
 
-            Assert.AreEqual(true, DiagnosticEventCollectorSingleton.RegisterEventHandler(DummyHandler, true, false), "Handler was not registered despite register being true and the Singleton being intitalized.");
+            Assert.AreEqual(true, DiagnosticEventCollectorSingleton.RegisterEventHandler(DummyHandler, true, false),
+                "Handler was not registered despite register being true and the Singleton being intitalized.");
             Assert.AreEqual(handlerCount + 1, DiagnosticEventCollectorSingleton.Instance.s_EventHandlers.Count, "Event Handler was not properly assigned in s_EventHandlers.");
 
             //cleanup
@@ -162,7 +165,7 @@ namespace DiagnosticEventCollectorIntegrationTests
             //cleanup
             DiagnosticEventCollectorSingleton.DestroySingleton();
         }
-        
+
         [Test]
         public void HandleUnhandledEvents_EventsHandledInProperOrder()
         {
@@ -173,19 +176,19 @@ namespace DiagnosticEventCollectorIntegrationTests
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents = new List<DiagnosticEvent>();
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Add(createGenericDiagnosticEvent(0, opCreate, 0));
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Add(createGenericDiagnosticEvent(0, opCreate, 1));
-            
+
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents = new Dictionary<int, DiagnosticEvent>();
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Add(0, createGenericDiagnosticEvent(0, opCreate, 0));
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Add(1, createGenericDiagnosticEvent(1, opCreate, 1));
-            
+
             DiagnosticEventCollectorSingleton.Instance.RegisterEventHandler(TrackingHandler);
-            
+
             //This is ensuring that the events are handled in the proper order
             LogAssert.Expect(UnityEngine.LogType.Log, "0");
             LogAssert.Expect(UnityEngine.LogType.Log, "0");
             LogAssert.Expect(UnityEngine.LogType.Log, "1");
             LogAssert.Expect(UnityEngine.LogType.Log, "1");
-            
+
             Assert.AreEqual(0, DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Count, "Unhandled event queue should be completely emptied after HandleUnhandledEvents is called.");
             Assert.AreEqual(2, DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Count, "Number of events in CreatedEvents should not be affected. ");
             //cleanup
@@ -206,13 +209,13 @@ namespace DiagnosticEventCollectorIntegrationTests
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Add(createGenericDiagnosticEvent(1, opRefcount, 3));
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Add(createGenericDiagnosticEvent(1, opRefcount, 4));
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Add(createGenericDiagnosticEvent(1, opRefcount, 5));
-            
+
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents = new Dictionary<int, DiagnosticEvent>();
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Add(0, createGenericDiagnosticEvent(0, opCreate, 0));
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Add(1, createGenericDiagnosticEvent(1, opCreate, 1));
 
             DiagnosticEventCollectorSingleton.Instance.RegisterEventHandler(TrackingHandler);
-            
+
             //This is ensuring that the events are handled in the proper order
             LogAssert.Expect(UnityEngine.LogType.Log, "0");
             LogAssert.Expect(UnityEngine.LogType.Log, "0");
@@ -222,13 +225,13 @@ namespace DiagnosticEventCollectorIntegrationTests
             LogAssert.Expect(UnityEngine.LogType.Log, "3");
             LogAssert.Expect(UnityEngine.LogType.Log, "4");
             LogAssert.Expect(UnityEngine.LogType.Log, "5");
-            
+
             Assert.AreEqual(0, DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Count, "Unhandled event queue should be completely emptied after HandleUnhandledEvents is called.");
             Assert.AreEqual(2, DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Count, "Number of events in CreatedEvents should not be affected. ");
             //cleanup
             DiagnosticEventCollectorSingleton.DestroySingleton();
         }
-        
+
         [Test]
         public void HandleUnhandledEvents_UnaffectedByIncorrectEventOrder()
         {
@@ -243,14 +246,14 @@ namespace DiagnosticEventCollectorIntegrationTests
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Add(createGenericDiagnosticEvent(1, opRefcount, 5));
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Add(createGenericDiagnosticEvent(1, opRefcount, 3));
             DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Add(createGenericDiagnosticEvent(0, opCreate, 0));
-            
+
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents = new Dictionary<int, DiagnosticEvent>();
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Add(1, createGenericDiagnosticEvent(1, opCreate, 1));
             DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Add(0, createGenericDiagnosticEvent(0, opCreate, 0));
-            
-            
+
+
             DiagnosticEventCollectorSingleton.Instance.RegisterEventHandler(TrackingHandler);
-            
+
             //This is ensuring that the events are handled in the proper order
             LogAssert.Expect(UnityEngine.LogType.Log, "0");
             LogAssert.Expect(UnityEngine.LogType.Log, "0");
@@ -260,7 +263,7 @@ namespace DiagnosticEventCollectorIntegrationTests
             LogAssert.Expect(UnityEngine.LogType.Log, "3");
             LogAssert.Expect(UnityEngine.LogType.Log, "4");
             LogAssert.Expect(UnityEngine.LogType.Log, "5");
-            
+
             Assert.AreEqual(0, DiagnosticEventCollectorSingleton.Instance.m_UnhandledEvents.Count, "Unhandled event queue should be completely emptied after HandleUnhandledEvents is called.");
             Assert.AreEqual(2, DiagnosticEventCollectorSingleton.Instance.m_CreatedEvents.Count, "Number of events in CreatedEvents should not be affected. ");
             //cleanup

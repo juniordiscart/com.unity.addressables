@@ -11,7 +11,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
     {
         static public string GetFriendlySize(ulong byteSize)
         {
-            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            string[] sizes = {"B", "KB", "MB", "GB", "TB"};
             int order = 0;
             ulong prevOrderRemainder = 0;
             while (byteSize >= 1024 && order < sizes.Length - 1)
@@ -31,6 +31,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         {
             public StreamWriter Writer;
             private int Indentation;
+
             public TabWriter(StreamWriter writer)
             {
                 Writer = writer;
@@ -39,6 +40,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             class TabWriterIdentScope : IDisposable
             {
                 TabWriter m_Writer;
+
                 public TabWriterIdentScope(TabWriter writer)
                 {
                     m_Writer = writer;
@@ -67,8 +69,17 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         class AttrBuilder
         {
             List<Tuple<string, string>> m_Items = new List<Tuple<string, string>>();
-            public void Add(string k, string v) { m_Items.Add(new Tuple<string, string>(k, v)); }
-            public void AddSize(string k, ulong size) { m_Items.Add(new Tuple<string, string>(k, GetFriendlySize(size))); }
+
+            public void Add(string k, string v)
+            {
+                m_Items.Add(new Tuple<string, string>(k, v));
+            }
+
+            public void AddSize(string k, ulong size)
+            {
+                m_Items.Add(new Tuple<string, string>(k, GetFriendlySize(size)));
+            }
+
             public override string ToString()
             {
                 return "(" + string.Join(", ", m_Items.Select(x => $"{x.Item1}: {x.Item2}")) + ")";
@@ -90,6 +101,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 {
                     writer.WriteLine("External References: " + string.Join(", ", asset.ExternallyReferencedAssets.Select(x => x.AssetPath)));
                 }
+
                 if (asset.InternalReferencedOtherAssets.Count > 0)
                 {
                     writer.WriteLine("Internal References: " + string.Join(", ", asset.InternalReferencedOtherAssets.Select(x => x.AssetPath)));
@@ -184,6 +196,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 sd.KvpDetails.ForEach(x => attr.Add(x.Item1, x.Item2));
                 text += " " + attr;
             }
+
             writer.WriteLine(text);
         }
 
@@ -224,6 +237,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 {
                     PrintGroup(writer, grp);
                 }
+
                 using (writer.IndentScope("BuiltIn Bundles"))
                     foreach (BuildLayout.Bundle b in layout.BuiltInBundles)
                         PrintArchive(writer, b);
@@ -259,7 +273,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             {
                 writer.WriteLine($"Addressable Groups: {layout.Groups.Count}");
                 writer.WriteLine($"Explicit Assets Addressed: {ExplicitAssetCount}");
-                writer.WriteLine($"Total Bundle: {SceneBundleCount+AssetBundleCount} ({SceneBundleCount} Scene Bundles, {AssetBundleCount} Non-Scene Bundles)");
+                writer.WriteLine($"Total Bundle: {SceneBundleCount + AssetBundleCount} ({SceneBundleCount} Scene Bundles, {AssetBundleCount} Non-Scene Bundles)");
                 writer.WriteLine($"Total Build Size: {GetFriendlySize(TotalBuildSize)}");
                 writer.WriteLine($"Total MonoScript Size: {GetFriendlySize(MonoScriptSize)}");
                 writer.WriteLine($"Total AssetBundle Object Size: {GetFriendlySize(BundleOverheadSize)}");

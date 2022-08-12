@@ -26,18 +26,22 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         [FormerlySerializedAs("m_InstanceProviderType")]
         [SerializedTypeRestrictionAttribute(type = typeof(IInstanceProvider))]
-        public SerializedType instanceProviderType = new SerializedType() { Value = typeof(InstanceProvider) };
+        public SerializedType instanceProviderType = new SerializedType() {Value = typeof(InstanceProvider)};
+
         /// <summary>
         /// The type of scene provider to create for the addressables system.
         /// </summary>
         [FormerlySerializedAs("m_SceneProviderType")]
         [SerializedTypeRestrictionAttribute(type = typeof(ISceneProvider))]
-        public SerializedType sceneProviderType = new SerializedType() { Value = typeof(SceneProvider) };
+        public SerializedType sceneProviderType = new SerializedType() {Value = typeof(SceneProvider)};
 
         /// <summary>
         /// Stores the logged information of all the build tasks.
         /// </summary>
-        public IBuildLogger Log { get { return m_Log; } }
+        public IBuildLogger Log
+        {
+            get { return m_Log; }
+        }
 
         [NonSerialized]
         internal IBuildLogger m_Log;
@@ -47,11 +51,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         public virtual string Name
         {
-            get
-            {
-                return "Undefined";
-            }
+            get { return "Undefined"; }
         }
+
         internal static void WriteBuildLog(BuildLog log, string directory)
         {
             Directory.CreateDirectory(directory);
@@ -75,7 +77,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 Debug.LogError(message);
                 return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, message);
             }
-            
+
             AddressableAnalytics.BuildType buildType = AddressableAnalytics.DetermineBuildType();
             m_Log = (builderInput.Logger != null) ? builderInput.Logger : new BuildLog();
 
@@ -96,10 +98,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         errMessage = "Invalid path detected during build. Check for unmatched brackets in your active profile's variables.";
                     else
                         errMessage = e.Message;
-                    
+
                     Debug.LogError(errMessage);
                     return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, errMessage);
                 }
+
                 if (result != null)
                     result.FileRegistry = builderInput.Registry;
             }
@@ -112,7 +115,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 bool isPlayModeBuild = result.GetType() == typeof(AddressablesPlayModeBuildResult);
                 AddressableAnalytics.ReportBuildEvent(builderInput, result.Duration, result.Error, isPlayModeBuild, buildType);
             }
-            
+
             return result;
         }
 
@@ -141,6 +144,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 return "No groups found to process in build script " + Name;
             }
+
             //intentionally for not foreach so groups can be added mid-loop.
             for (int index = 0; index < aaContext.Settings.groups.Count; index++)
             {
@@ -215,6 +219,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         needsLegacyProvider = true;
                 }
             }
+
             return needsLegacyProvider;
         }
 

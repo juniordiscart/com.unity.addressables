@@ -63,7 +63,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var settingsPath = Addressables.BuildPath + "/settings.json";
             var rtd = JsonUtility.FromJson<ResourceManagerRuntimeData>(File.ReadAllText(settingsPath));
             var buildLogPath = Addressables.BuildPath + "/buildLogs.json";
-            
+
             string storedBuildTarget = rtd.BuildTarget;
             string invalidTarget = rtd.BuildTarget = "NotAValidBuildTarget";
             File.WriteAllText(settingsPath, JsonUtility.ToJson(rtd));

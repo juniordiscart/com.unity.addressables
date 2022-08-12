@@ -17,10 +17,12 @@ namespace UnityEditor.AddressableAssets
 		/// Default name for the addressable assets settings
 		/// </summary>
 		public const string kDefaultConfigAssetName = "AddressableAssetSettings";
+
 		/// <summary>
 		/// The default folder for the serialized version of this class.
 		/// </summary>
 		public const string kDefaultConfigFolder = "Assets/AddressableAssetsData";
+
 		/// <summary>
 		/// The name of the default config object
 		/// </summary>
@@ -31,15 +33,13 @@ namespace UnityEditor.AddressableAssets
 		/// </summary>
 		public static string DefaultAssetPath
 		{
-			get
-			{
-				return kDefaultConfigFolder + "/" + kDefaultConfigAssetName + ".asset";
-			}
+            get { return kDefaultConfigFolder + "/" + kDefaultConfigAssetName + ".asset"; }
 		}
 
 		[FormerlySerializedAs("m_addressableAssetSettingsGuid")]
 		[SerializeField, HideInInspector]
 		internal string m_AddressableAssetSettingsGuid;
+
 		bool m_LoadingSettingsObject = false;
 
 		internal AddressableAssetSettings LoadSettingsObject()
@@ -50,17 +50,20 @@ namespace UnityEditor.AddressableAssets
 				Debug.LogWarning("Detected stack overflow when accessing AddressableAssetSettingsDefaultObject.Settings object.");
 				return null;
 			}
+
 			if (string.IsNullOrEmpty(m_AddressableAssetSettingsGuid))
 			{
 				Debug.LogError("Invalid guid for default AddressableAssetSettings object.");
 				return null;
 			}
+
 			var path = AssetDatabase.GUIDToAssetPath(m_AddressableAssetSettingsGuid);
 			if (string.IsNullOrEmpty(path))
 			{
 				Debug.LogErrorFormat("Unable to determine path for default AddressableAssetSettings object with guid {0}.", m_AddressableAssetSettingsGuid);
 				return null;
 			}
+
 			m_LoadingSettingsObject = true;
 			var settings = AssetDatabase.LoadAssetAtPath<AddressableAssetSettings>(path);
 			if (settings != null)
@@ -76,12 +79,14 @@ namespace UnityEditor.AddressableAssets
 				m_AddressableAssetSettingsGuid = null;
 				return;
 			}
+
 			var path = AssetDatabase.GetAssetPath(settings);
 			if (string.IsNullOrEmpty(path))
 			{
 				Debug.LogErrorFormat("Unable to determine path for default AddressableAssetSettings object with guid {0}.", m_AddressableAssetSettingsGuid);
 				return;
 			}
+
 			AddressablesAssetPostProcessor.OnPostProcess.Register(settings.OnPostprocessAllAssets, 0);
 			m_AddressableAssetSettingsGuid = AssetDatabase.AssetPathToGUID(path);
 		}
@@ -135,6 +140,7 @@ namespace UnityEditor.AddressableAssets
 					}
 
 				}
+
 				return s_DefaultSettingsObject;
 			}
 			set
@@ -158,6 +164,7 @@ namespace UnityEditor.AddressableAssets
 					AssetDatabase.SaveAssets();
 					EditorBuildSettings.AddConfigObject(kDefaultConfigObjectName, so, true);
 				}
+
 				so.SetSettingsObject(s_DefaultSettingsObject);
 				EditorUtility.SetDirty(so);
 				AddressableAssetUtility.OpenAssetIfUsingVCIntegration(kDefaultConfigFolder + "/DefaultObject.asset");

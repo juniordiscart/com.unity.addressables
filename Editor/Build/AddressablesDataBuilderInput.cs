@@ -90,6 +90,7 @@ namespace UnityEditor.AddressableAssets.Build
             {
                 Debug.LogError("Attempting to set up AddressablesDataBuilderInput with null settings.");
             }
+
             SetAllValues(settings,
                 BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget),
                 EditorUserBuildSettings.activeBuildTarget,

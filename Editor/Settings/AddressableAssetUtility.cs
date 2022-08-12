@@ -41,27 +41,45 @@ namespace UnityEditor.AddressableAssets.Settings
             return true;
         }
 
+        private static string isEditorFolder = $"{Path.DirectorySeparatorChar}Editor";
+        private static string insideEditorFolder = $"{Path.DirectorySeparatorChar}Editor{Path.DirectorySeparatorChar}";
         static HashSet<string> excludedExtensions = new HashSet<string>(new string[] { ".cs", ".js", ".boo", ".exe", ".dll", ".meta", ".preset", ".asmdef" });
         internal static bool IsPathValidForEntry(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return false;
             path = path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
-            if (!path.StartsWith("assets", StringComparison.OrdinalIgnoreCase) && !IsPathValidPackageAsset(path))
+
+            if (!path.StartsWith("Assets", StringComparison.Ordinal) && !IsPathValidPackageAsset(path))
                 return false;
-            if (path == CommonStrings.UnityEditorResourcePath ||
-                path == CommonStrings.UnityDefaultResourcePath ||
-                path == CommonStrings.UnityBuiltInExtraPath)
-                return false;
-            if (path.EndsWith($"{Path.DirectorySeparatorChar}Editor") || path.Contains($"{Path.DirectorySeparatorChar}Editor{Path.DirectorySeparatorChar}")
-                || path.EndsWith("/Editor") || path.Contains("/Editor/"))
-                return false;
-            if (path == "Assets")
-                return false;
+
+            string ext = Path.GetExtension(path);
+            if (string.IsNullOrEmpty(ext))
+            {
+                // is folder
+                if (path == "Assets")
+                    return false;
+                if (path.EndsWith(isEditorFolder, StringComparison.Ordinal) || path.Contains(insideEditorFolder))
+                    return false;
+                if (path == CommonStrings.UnityEditorResourcePath ||
+                    path == CommonStrings.UnityDefaultResourcePath ||
+                    path == CommonStrings.UnityBuiltInExtraPath)
+                    return false;
+            }
+            else
+            {
+                // asset type
+                if (path.Contains(insideEditorFolder))
+                    return false;
+                if (excludedExtensions.Contains(ext))
+                    return false;
+            }
+
             var settings = AddressableAssetSettingsDefaultObject.SettingsExists ? AddressableAssetSettingsDefaultObject.Settings : null;
-            if (settings != null && path.StartsWith(settings.ConfigFolder) || path.StartsWith(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder))
+            if (settings != null && path.StartsWith(settings.ConfigFolder, StringComparison.Ordinal))
                 return false;
-            return !excludedExtensions.Contains(Path.GetExtension(path));
+
+            return true;
         }
 
         internal static bool IsPathValidPackageAsset(string path)
@@ -78,6 +96,7 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         static HashSet<Type> validTypes = new HashSet<Type>();
+
         internal static Type MapEditorTypeToRuntimeType(Type t, bool allowFolders)
         {
             //type is valid and already seen (most common)
@@ -205,6 +224,7 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             // ReSharper disable once StaticMemberInGenericType
             static List<Type> s_Types;
+
             public static List<Type> Types
             {
                 get
@@ -252,16 +272,19 @@ namespace UnityEditor.AddressableAssets.Settings
                 guidToNewPath.Add(guids[i], newName);
                 message += newName + "\n";
             }
+
             message += "\nAre you sure you want to proceed?";
             if (!showDialog || EditorUtility.DisplayDialog("Move From Resources", message, "Yes", "No"))
             {
                 settings.MoveAssetsFromResources(guidToNewPath, targetGroup);
                 return true;
             }
+
             return false;
         }
 
         static Dictionary<Type, string> s_CachedDisplayNames = new Dictionary<Type, string>();
+
         internal static string GetCachedTypeDisplayName(Type type)
         {
             string result = "<none>";
@@ -288,7 +311,9 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             public string version;
         }
+
         private static string m_Version = null;
+
         internal static string GetVersionFromPackageData()
         {
             if (string.IsNullOrEmpty(m_Version))
@@ -300,6 +325,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     throw new Exception("Could not get correct version data for Addressables package");
                 m_Version = $"{split[0]}.{split[1]}";
             }
+
             return m_Version;
         }
 
@@ -321,6 +347,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (vcAsset.path == path)
                     return Provider.IsOpenForEdit(vcAsset);
             }
+
             return false;
         }
 
@@ -385,7 +412,9 @@ namespace UnityEditor.AddressableAssets.Settings
         internal static bool InstallCCDPackage()
         {
 #if !ENABLE_CCD
-            var confirm = EditorUtility.DisplayDialog("Install CCD Management SDK Package", "Are you sure you want to install the CCD Management SDK package and enable experimental CCD features within Addressables?\nTo remove this package and its related features, please use the Package manager.  Alternatively, uncheck the Addressable Asset Settings > Cloud Content Delivery > Enable Experimental CCD Features toggle to remove the package.", "Yes", "No");
+            var confirm = EditorUtility.DisplayDialog("Install CCD Management SDK Package",
+                "Are you sure you want to install the CCD Management SDK package and enable experimental CCD features within Addressables?\nTo remove this package and its related features, please use the Package manager.  Alternatively, uncheck the Addressable Asset Settings > Cloud Content Delivery > Enable Experimental CCD Features toggle to remove the package.",
+                "Yes", "No");
             if (confirm)
             {
                 AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.InstallCCDManagementPackage);
@@ -406,6 +435,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 AddressableAssetSettingsDefaultObject.Settings.CCDEnabled = false;
 #endif
             }
+
             return AddressableAssetSettingsDefaultObject.Settings.CCDEnabled;
         }
 
@@ -418,12 +448,11 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     var hash = md5.ComputeHash(stream);
                     hashString = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-
                 }
             }
+
             return hashString;
         }
-
 
 
         internal static System.Threading.Tasks.Task ParallelForEachAsync<T>(this IEnumerable<T> source, int dop, Func<T, System.Threading.Tasks.Task> body)
@@ -433,9 +462,12 @@ namespace UnityEditor.AddressableAssets.Settings
                 using (partition)
                 {
                     while (partition.MoveNext())
-                    { await body(partition.Current); }
+                    {
+                        await body(partition.Current);
+                    }
                 }
             }
+
             return System.Threading.Tasks.Task.WhenAll(
                 Partitioner
                     .Create(source)
@@ -455,6 +487,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             public delegate void Delegate(T1 arg1, T2 arg2, T3 arg3, T4 arg4);
+
             private SortedList<int, Delegate> m_SortedInvocationList = new SortedList<int, Delegate>();
 
             private List<QueuedValues> m_InvokeQueue;
@@ -543,6 +576,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     invocationList.Value?.Invoke(arg1, arg2, arg3, arg4);
                 }
+
                 m_IsInvoking = false;
             }
 
@@ -569,6 +603,7 @@ namespace UnityEditor.AddressableAssets.Settings
                             m_InvokeQueue.RemoveAt(i);
                         }
                     }
+
                     m_InvokeQueue = null;
                 }
             }
@@ -587,7 +622,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     if (m_InvokeQueue == null)
                         m_InvokeQueue = new List<QueuedValues>();
-                    m_InvokeQueue.Add(new QueuedValues { arg1 = arg1, arg2 = arg2, arg3 = arg3, arg4 = arg4 });
+                    m_InvokeQueue.Add(new QueuedValues {arg1 = arg1, arg2 = arg2, arg3 = arg3, arg4 = arg4});
                 }
                 else
                 {

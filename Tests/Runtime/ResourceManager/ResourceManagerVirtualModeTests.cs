@@ -43,6 +43,7 @@ namespace UnityEngine.ResourceManagement.Tests
                 b.SetSize(2048, 1024);
                 b.OnAfterDeserialize();
             }
+
             m_ResourceManager.ResourceProviders.Insert(0, new VirtualAssetBundleProvider(virtualBundleData));
             m_ResourceManager.ResourceProviders.Insert(0, new VirtualBundledAssetProvider());
             return locs;

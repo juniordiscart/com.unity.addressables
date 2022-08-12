@@ -10,11 +10,10 @@ using UnityEngine;
 public class AddressableBuildTaskTestBase
 {
     protected AddressableAssetSettings m_Settings;
-    protected string TempPath {
-        get
-        {
-            return $"Assets/{GetType().Name}TestData";
-        }
+
+    protected string TempPath
+    {
+        get { return $"Assets/{GetType().Name}TestData"; }
     }
 
     [SetUp]

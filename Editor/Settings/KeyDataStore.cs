@@ -18,17 +18,44 @@ namespace UnityEditor.AddressableAssets.Settings
         internal struct Entry
         {
             [FormerlySerializedAs("m_assemblyName")]
-            [SerializeField] string m_AssemblyName;
-            internal string AssemblyName { get { return m_AssemblyName; } set { m_AssemblyName = value; } }
+            [SerializeField]
+            string m_AssemblyName;
+
+            internal string AssemblyName
+            {
+                get { return m_AssemblyName; }
+                set { m_AssemblyName = value; }
+            }
+
             [FormerlySerializedAs("m_className")]
-            [SerializeField] string m_ClassName;
-            internal string ClassName { get { return m_ClassName; } set { m_ClassName = value; } }
+            [SerializeField]
+            string m_ClassName;
+
+            internal string ClassName
+            {
+                get { return m_ClassName; }
+                set { m_ClassName = value; }
+            }
+
             [FormerlySerializedAs("m_data")]
-            [SerializeField] string m_Data;
-            internal string Data { get { return m_Data; } set { m_Data = value; } }
+            [SerializeField]
+            string m_Data;
+
+            internal string Data
+            {
+                get { return m_Data; }
+                set { m_Data = value; }
+            }
+
             [FormerlySerializedAs("m_key")]
-            [SerializeField] string m_Key;
-            internal string Key { get { return m_Key; } set { m_Key = value; } }
+            [SerializeField]
+            string m_Key;
+
+            internal string Key
+            {
+                get { return m_Key; }
+                set { m_Key = value; }
+            }
 
             /// <inheritdoc/>
             public override string ToString()
@@ -46,7 +73,9 @@ namespace UnityEditor.AddressableAssets.Settings
         [FormerlySerializedAs("m_serializedData")]
         [SerializeField]
         List<Entry> m_SerializedData;
+
         Dictionary<string, object> m_EntryMap = new Dictionary<string, object>();
+
         /// <summary>
         /// Delegate that is invoked when data is modified.
         /// </summary>
@@ -81,7 +110,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
                 else
                 {
-                    var parseMethod = objType.GetMethod("Parse", BindingFlags.Static | BindingFlags.Public, null, CallingConventions.Any, new[] { typeof(string) }, null);
+                    var parseMethod = objType.GetMethod("Parse", BindingFlags.Static | BindingFlags.Public, null, CallingConventions.Any, new[] {typeof(string)}, null);
                     if (parseMethod == null || parseMethod.ReturnType != objType)
                         entry.Data = JsonUtility.ToJson(value);
                     else
@@ -92,6 +121,7 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 Addressables.LogWarningFormat("KeyDataStore unable to serizalize entry {0} with value {1}, exception: {2}", key, value, ex);
             }
+
             return entry;
         }
 
@@ -105,10 +135,10 @@ namespace UnityEditor.AddressableAssets.Settings
                     return e.Data;
                 if (objType.IsEnum)
                     return Enum.Parse(objType, e.Data);
-                var parseMethod = objType.GetMethod("Parse", BindingFlags.Static | BindingFlags.Public, null, CallingConventions.Any, new[] { typeof(string) }, null);
+                var parseMethod = objType.GetMethod("Parse", BindingFlags.Static | BindingFlags.Public, null, CallingConventions.Any, new[] {typeof(string)}, null);
                 if (parseMethod == null || parseMethod.ReturnType != objType)
                     return JsonUtility.FromJson(e.Data, objType);
-                return parseMethod.Invoke(null, new object[] { e.Data });
+                return parseMethod.Invoke(null, new object[] {e.Data});
             }
             catch (Exception ex)
             {
@@ -131,7 +161,10 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// The collection of keys stored.
         /// </summary>
-        public IEnumerable<string> Keys { get { return m_EntryMap.Keys; } }
+        public IEnumerable<string> Keys
+        {
+            get { return m_EntryMap.Keys; }
+        }
 
         /// <summary>
         /// Set the value of a specified key.
@@ -157,7 +190,7 @@ namespace UnityEditor.AddressableAssets.Settings
             if (existingType == null)
                 SetData(key, data);
             else
-                SetData(key, CreateObject(new Entry { AssemblyName = existingType.Assembly.FullName, ClassName = existingType.FullName, Data = data, Key = key }));
+                SetData(key, CreateObject(new Entry {AssemblyName = existingType.Assembly.FullName, ClassName = existingType.FullName, Data = data, Key = key}));
         }
 
         internal Type GetDataType(string key)

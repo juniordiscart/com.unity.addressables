@@ -21,7 +21,8 @@ namespace UnityEditor.AddressableAssets.GUI
         static AddressableAssetInspectorGUI()
         {
             s_ToggleMixed = null;
-            s_AddressableAssetToggleText = new GUIContent("Addressable", "Check this to mark this asset as an Addressable Asset, which includes it in the bundled data and makes it loadable via script by its address.");
+            s_AddressableAssetToggleText = new GUIContent("Addressable",
+                "Check this to mark this asset as an Addressable Asset, which includes it in the bundled data and makes it loadable via script by its address.");
             Editor.finishedDefaultHeaderGUI += OnPostHeaderGUI;
         }
 
@@ -45,6 +46,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     removedEntries.Add(e);
                     aaSettings.RemoveAssetEntry(removedEntries[i], false);
                 }
+
                 if (removedEntries.Count > 0)
                     aaSettings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, removedEntries, true, false);
             }
@@ -84,7 +86,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
             }
         }
-        
+
         [UnityEngine.TestTools.ExcludeFromCoverage]
         static void OnPostHeaderGUI(Editor editor)
         {
@@ -95,14 +97,14 @@ namespace UnityEditor.AddressableAssets.GUI
                 // only display for the Prefab/Model importer not the displayed GameObjects
                 if (editor.targets[0].GetType() == typeof(GameObject))
                     return;
-                
+
                 foreach (var t in editor.targets)
                 {
                     if (t is AddressableAssetGroupSchema)
                     {
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label("Profile: " + AddressableAssetSettingsDefaultObject.GetSettings(true).profileSettings.
-                            GetProfileName(AddressableAssetSettingsDefaultObject.GetSettings(true).activeProfileId));
+                        GUILayout.Label("Profile: " + AddressableAssetSettingsDefaultObject.GetSettings(true).profileSettings
+                            .GetProfileName(AddressableAssetSettingsDefaultObject.GetSettings(true).activeProfileId));
 
                         GUILayout.FlexibleSpace();
                         if (GUILayout.Button(s_SystemSettingsGUIContent, "MiniButton"))
@@ -110,6 +112,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             EditorGUIUtility.PingObject(AddressableAssetSettingsDefaultObject.Settings);
                             Selection.activeObject = AddressableAssetSettingsDefaultObject.Settings;
                         }
+
                         GUILayout.EndHorizontal();
                         return;
                     }
@@ -230,13 +233,14 @@ namespace UnityEditor.AddressableAssets.GUI
                     DrawSelectEntriesButton(targetInfos);
                     GUILayout.EndHorizontal();
                 }
+
                 UnityEngine.GUI.enabled = prevEnabledState;
             }
         }
 
         // Caching due to Gathering TargetInfos is an expensive operation
         // The InspectorGUI needs to call this multiple times per layout and paint
-        private static AddressableAssetSettings.Cache<int, List<TargetInfo>> s_Cache = null; 
+        private static AddressableAssetSettings.Cache<int, List<TargetInfo>> s_Cache = null;
 
         internal static List<TargetInfo> GatherTargetInfos(Object[] targets, AddressableAssetSettings aaSettings)
         {
@@ -244,15 +248,15 @@ namespace UnityEditor.AddressableAssets.GUI
                 return new List<TargetInfo>();
 
             int selectionHashCode = targets[0].GetHashCode();
-            for (int i=1; i<targets.Length; ++i)
+            for (int i = 1; i < targets.Length; ++i)
                 selectionHashCode = selectionHashCode * 31 ^ targets[i].GetHashCode();
-            
+
             List<TargetInfo> targetInfos = null;
             if (s_Cache == null)
                 s_Cache = new AddressableAssetSettings.Cache<int, List<TargetInfo>>(aaSettings);
             if (s_Cache.TryGetCached(selectionHashCode, out targetInfos))
                 return targetInfos;
-            
+
             targetInfos = new List<TargetInfo>(targets.Length);
             AddressableAssetEntry entry;
             foreach (var t in targets)
@@ -271,6 +275,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             if (entry != null)
                                 info.MainAssetEntry = entry;
                         }
+
                         targetInfos.Add(info);
                     }
                 }
@@ -328,6 +333,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (entries.Count > 0)
                     window.SelectAssetsInGroupEditor(entries);
             }
+
             UnityEngine.GUI.enabled = prevGuiEnabled;
         }
 

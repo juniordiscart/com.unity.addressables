@@ -12,6 +12,7 @@ namespace UnityEditor.AddressableAssets.GUI
     class ContentUpdatePreviewWindow : EditorWindow
     {
         private GUIContent m_ApplyChangesGUIContent = new GUIContent("Apply Changes", "Move assets to a new remote group in preparation for the content update build");
+
         internal static bool PrepareForContentUpdate(AddressableAssetSettings settings, string buildPath, Action applyChangesCallback = null)
         {
             var modifiedEntries = ContentUpdateScript.GatherModifiedEntriesWithDependencies(settings, buildPath);
@@ -20,7 +21,8 @@ namespace UnityEditor.AddressableAssets.GUI
             return true;
         }
 
-        internal static void ShowUpdatePreviewWindow(AddressableAssetSettings settings, Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> modifiedEntries, Action applyChangesCallback = null)
+        internal static void ShowUpdatePreviewWindow(AddressableAssetSettings settings, Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> modifiedEntries,
+            Action applyChangesCallback = null)
         {
             var previewWindow = GetWindow<ContentUpdatePreviewWindow>();
             previewWindow.Show(settings, modifiedEntries, applyChangesCallback, true);
@@ -37,6 +39,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 internal AddressableAssetEntry entry;
                 internal bool enabled;
+
                 public Item(AddressableAssetEntry entry, int itemDepth = 1) : base(entry.guid.GetHashCode(), itemDepth)
                 {
                     this.entry = entry;
@@ -45,6 +48,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             ContentUpdatePreviewWindow m_Preview;
+
             public ContentUpdateTreeView(ContentUpdatePreviewWindow preview, TreeViewState state, MultiColumnHeaderState mchs) : base(state, new MultiColumnHeader(mchs))
             {
                 m_Preview = preview;
@@ -70,6 +74,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         }
                     }
                 }
+
                 return result.ToList();
             }
 
@@ -99,6 +104,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     base.RowGUI(args);
                     return;
                 }
+
                 for (int i = 0; i < args.GetNumVisibleColumns(); ++i)
                 {
                     CellGUI(args.GetCellRect(i), item, args.GetColumn(i));
@@ -108,6 +114,7 @@ namespace UnityEditor.AddressableAssets.GUI
             private const int kToggleOffset = 5;
             private const int kMainAssetXOffset = 20;
             private const int kDependencyAssetXOffset = 40;
+
             void CellGUI(Rect cellRect, Item item, int column)
             {
                 if (column == 0)
@@ -200,15 +207,19 @@ namespace UnityEditor.AddressableAssets.GUI
         Action m_ApplyChangesCallback;
         Vector2 m_ScrollPosition;
         ContentUpdateTreeView m_Tree;
+
         [FormerlySerializedAs("treeState")]
         [SerializeField]
         TreeViewState m_TreeState;
+
         [FormerlySerializedAs("mchs")]
         [SerializeField]
         MultiColumnHeaderState m_Mchs;
+
         bool m_LogOutcomeAnalytics = false;
 
-        public void Show(AddressableAssetSettings settings, Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> entryDependencies, Action applyChangesCallback = null, bool logAnalytics = false)
+        public void Show(AddressableAssetSettings settings, Dictionary<AddressableAssetEntry, List<AddressableAssetEntry>> entryDependencies, Action applyChangesCallback = null,
+            bool logAnalytics = false)
         {
             m_Settings = settings;
             m_DepEntriesMap = entryDependencies;
@@ -255,19 +266,19 @@ namespace UnityEditor.AddressableAssets.GUI
                 GUILayout.BeginArea(toolbarRect);
                 GUILayout.BeginVertical();
                 EditorGUILayout.HelpBox("Modified assets that are part of a group with Prevent Update enabled have been detected during this content update build. " +
-                    "Applying the changes moves all selected items into a new group that has Prevent Updates disabled.", MessageType.Info);
-                
+                                        "Applying the changes moves all selected items into a new group that has Prevent Updates disabled.", MessageType.Info);
+
                 GUILayout.Space(12f);
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(new GUIContent("New Group Name: ", "This value is used to set the name of the new group that is created as part of applying the changes from " +
-                    "this tool. If the group already exists, a number is appended to the group name."));
-                
+                                                                   "this tool. If the group already exists, a number is appended to the group name."));
+
                 m_GroupName = GUILayout.TextArea(m_GroupName, GUILayout.MinWidth(400f));
                 GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
                 GUILayout.EndArea();
-                
+
                 m_Tree.OnGUI(contentRect);
             }
 
@@ -284,7 +295,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             bool showApplyChanges = m_Tree.GetEnabledEntries().Count != 0;
-            if(showApplyChanges)
+            if (showApplyChanges)
             {
                 string buttonName = hasPostApplyCallback ? "Apply and Continue" : "Apply Changes";
                 m_ApplyChangesGUIContent.text = buttonName;
@@ -323,7 +334,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     }
                 }
             }
-                        
+
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
         }

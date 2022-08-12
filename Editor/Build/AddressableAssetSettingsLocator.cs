@@ -51,8 +51,10 @@ namespace UnityEditor.AddressableAssets.Settings
                                             m_Keys.Add(f.Replace(e.AssetPath, e.address));
                                             m_Keys.Add(AssetDatabase.AssetPathToGUID(f));
                                         }
+
                                         visitedFolders.Add(e.AssetPath);
                                     }
+
                                     foreach (var l in e.labels)
                                         m_Keys.Add(l);
                                 }
@@ -61,9 +63,11 @@ namespace UnityEditor.AddressableAssets.Settings
                                     hasNonFolder = true;
                                 }
                             }
+
                             if (hasNonFolder)
                                 m_Keys.Add(kvp.Key);
                         }
+
                         if (m_includeResourcesFolders)
                         {
                             var resourcesEntry = m_Settings.FindAssetEntry(AddressableAssetEntry.ResourcesName);
@@ -76,13 +80,16 @@ namespace UnityEditor.AddressableAssets.Settings
                         }
                     }
                 }
+
                 return m_Keys;
             }
         }
+
         public struct CacheKey : IEquatable<CacheKey>
         {
             public object m_key;
             public Type m_type;
+
             public bool Equals(CacheKey other)
             {
                 if (!m_key.Equals(other.m_key))
@@ -138,6 +145,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     }
                 }
             }
+
             m_dirty = false;
         }
 
@@ -176,6 +184,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (index != -1)
                     AddEntry(e, index, keyToEntries);
             }
+
             if (e.labels != null)
             {
                 foreach (string l in e.labels)
@@ -192,6 +201,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogErrorFormat("Address '{0}' cannot contain '[ ]'.", entry.address);
                 return;
             }
+
             using (new AddressablesFileEnumerationScope(assetTree))
             {
                 entry.GatherAllAssets(null, true, true, false, e =>
@@ -214,11 +224,14 @@ namespace UnityEditor.AddressableAssets.Settings
                             foreach (var t in AddressableAssetEntry.GatherMainAndReferencedSerializedTypes(ids))
                             {
                                 if (type.IsAssignableFrom(t))
-                                    locations.Add(new ResourceLocationBase(e.address, e.AssetPath, typeof(AssetDatabaseProvider).FullName, AddressableAssetUtility.MapEditorTypeToRuntimeType(t, false)));
+                                    locations.Add(
+                                        new ResourceLocationBase(e.address, e.AssetPath, typeof(AssetDatabaseProvider).FullName, AddressableAssetUtility.MapEditorTypeToRuntimeType(t, false)));
                             }
+
                             return true;
                         }
                     }
+
                     return false;
                 });
             }
@@ -228,7 +241,7 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (m_dirty)
                 RebuildInternalData();
-            CacheKey cacheKey = new CacheKey() { m_key = key, m_type = type };
+            CacheKey cacheKey = new CacheKey() {m_key = key, m_type = type};
             if (m_Cache.TryGetValue(cacheKey, out locations))
                 return locations != null;
 
@@ -297,6 +310,7 @@ namespace UnityEditor.AddressableAssets.Settings
                                 AddLocations(locations, type, keyPath, AssetDatabase.GUIDToAssetPath(keyStr));
                                 break;
                             }
+
                             slash = keyPath.LastIndexOf('/');
                         }
                     }
@@ -315,6 +329,7 @@ namespace UnityEditor.AddressableAssets.Settings
                                 AddLocations(locations, type, keyStr, GetInternalIdFromFolderEntry(keyStr, e));
                             break;
                         }
+
                         slash = keyPath.LastIndexOf('/');
                     }
                 }
@@ -342,6 +357,7 @@ namespace UnityEditor.AddressableAssets.Settings
                             }
                         }
                     }
+
                     if (obj != null)
                         locations.Add(new ResourceLocationBase(keyStr, resPath, typeof(LegacyResourcesProvider).FullName, type));
                 }
@@ -386,6 +402,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (keyStr.StartsWith(l + "/"))
                     return entryPath + keyStr.Substring(l.Length);
             }
+
             return string.Empty;
         }
     }

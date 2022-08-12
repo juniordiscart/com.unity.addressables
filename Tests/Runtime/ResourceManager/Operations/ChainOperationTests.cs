@@ -15,7 +15,7 @@ public class ChainOperationTests
         ChainOperation<object, object> chainOp = new ChainOperation<object, object>();
         AsyncOperationHandle<object> chainOpHandle = new AsyncOperationHandle<object>(new ProviderOperation<object>());
         chainOp.Init(chainOpHandle, null, false);
-        
+
         //Test
         List<AsyncOperationHandle> dependencies = new List<AsyncOperationHandle>();
         AsyncOperationHandle handle = new AsyncOperationHandle(chainOp);

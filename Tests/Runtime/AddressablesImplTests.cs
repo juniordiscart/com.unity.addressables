@@ -208,6 +208,7 @@ namespace AddressableAssetsIntegrationTests
             public bool done = false;
             public AsyncOperationHandle<IResourceLocator> operation;
             public string errorMsg;
+
             async void Start()
             {
                 try
@@ -376,7 +377,7 @@ namespace AddressableAssetsIntegrationTests
             }
 
             IList<IResourceLocation> locations;
-            var ret = m_Addressables.GetResourceLocations(new object[] { "prefabs_evenBASE" }, typeof(GameObject), Addressables.MergeMode.Intersection, out locations);
+            var ret = m_Addressables.GetResourceLocations(new object[] {"prefabs_evenBASE"}, typeof(GameObject), Addressables.MergeMode.Intersection, out locations);
 
             Assert.IsTrue(ret);
             AsyncOperationHandle op = m_Addressables.DownloadDependenciesAsync(locations);
@@ -394,7 +395,7 @@ namespace AddressableAssetsIntegrationTests
         {
             yield return Init();
             IList<IResourceLocation> locations;
-            m_Addressables.GetResourceLocations(new object[] { "prefabs_evenBASE" }, typeof(GameObject), Addressables.MergeMode.Intersection, out locations);
+            m_Addressables.GetResourceLocations(new object[] {"prefabs_evenBASE"}, typeof(GameObject), Addressables.MergeMode.Intersection, out locations);
 
             AsyncOperationHandle op = m_Addressables.DownloadDependenciesAsync(locations, true);
             yield return op;
@@ -414,7 +415,7 @@ namespace AddressableAssetsIntegrationTests
             }
 
             IList<IResourceLocation> locations;
-            var ret = m_Addressables.GetResourceLocations(new object[] { "prefabs_evenBASE" }, typeof(GameObject), Addressables.MergeMode.Intersection, out locations);
+            var ret = m_Addressables.GetResourceLocations(new object[] {"prefabs_evenBASE"}, typeof(GameObject), Addressables.MergeMode.Intersection, out locations);
 
             Assert.IsTrue(ret);
             m_Addressables.hasStartedInitialization = false;

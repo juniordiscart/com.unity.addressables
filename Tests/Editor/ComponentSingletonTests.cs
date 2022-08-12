@@ -9,12 +9,15 @@ namespace UnityEditor.AddressableAssets.Tests
     public class ComponentSingletonTests
     {
         const string kTestSingletonName = "Test Singleton";
+
         public class TestSingletonWithName : ComponentSingleton<TestSingletonWithName>
         {
             protected override string GetGameObjectName() => kTestSingletonName;
         }
 
-        public class TestSingletonWithDefaultName : ComponentSingleton<TestSingletonWithDefaultName> {}
+        public class TestSingletonWithDefaultName : ComponentSingleton<TestSingletonWithDefaultName>
+        {
+        }
 
         [TearDown]
         public void Teardown()

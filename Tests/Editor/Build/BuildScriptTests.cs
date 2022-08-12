@@ -272,15 +272,12 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsFalse(buildScript.CanBuildData<AddressablesPlayModeBuildResult>());
             Assert.IsFalse(buildScript.CanBuildData<AddressablesPlayerBuildResult>());
         }
-        
+
         internal class BuildScriptTestClass : BuildScriptBase
         {
             public override string Name
             {
-                get
-                {
-                    return "Test Script";
-                }
+                get { return "Test Script"; }
             }
 
             public override bool CanBuildData<T>()
@@ -402,7 +399,7 @@ namespace UnityEditor.AddressableAssets.Tests
         public void Build_GroupWithPlayerDataGroupSchemaAndBundledAssetGroupSchema_LogsError()
         {
             const string groupName = "NewGroup";
-            var schemas = new List<AddressableAssetGroupSchema> { ScriptableObject.CreateInstance<PlayerDataGroupSchema>(), ScriptableObject.CreateInstance<BundledAssetGroupSchema>() };
+            var schemas = new List<AddressableAssetGroupSchema> {ScriptableObject.CreateInstance<PlayerDataGroupSchema>(), ScriptableObject.CreateInstance<BundledAssetGroupSchema>()};
             AddressableAssetGroup group = Settings.CreateGroup(groupName, false, false, false, schemas);
 
             var context = new AddressablesDataBuilderInput(Settings);
@@ -515,8 +512,10 @@ namespace UnityEditor.AddressableAssets.Tests
                     db.BuildData<AddressablesPlayerBuildResult>(context);
                 else if (db.CanBuildData<AddressablesPlayModeBuildResult>())
                     db.BuildData<AddressablesPlayModeBuildResult>(context);
-                LogAssert.Expect(LogType.Error, "Cannot recognize file type for entry located at 'Assets/UnityEditor.AddressableAssets.Tests.BuildScriptTests_Tests/fake.file'. Asset import failed for using an unsupported file type.");
+                LogAssert.Expect(LogType.Error,
+                    "Cannot recognize file type for entry located at 'Assets/UnityEditor.AddressableAssets.Tests.BuildScriptTests_Tests/fake.file'. Asset import failed for using an unsupported file type.");
             }
+
             Settings.RemoveAssetEntry(guid, false);
             AssetDatabase.DeleteAsset(path);
         }

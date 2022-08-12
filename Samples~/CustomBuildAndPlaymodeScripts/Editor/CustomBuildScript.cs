@@ -27,7 +27,6 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.SceneManagement;
 using static UnityEditor.AddressableAssets.Build.ContentUpdateScript;
-
 using Debug = UnityEngine.Debug;
 
 /// <summary>
@@ -39,10 +38,7 @@ public class CustomBuildScript : BuildScriptBase
     /// <inheritdoc />
     public override string Name
     {
-        get
-        {
-            return "Custom Build Script";
-        }
+        get { return "Custom Build Script"; }
     }
 
     internal List<ObjectInitializationData> m_ResourceProviderData;
@@ -114,7 +110,7 @@ public class CustomBuildScript : BuildScriptBase
             CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout
         };
         m_Linker = UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator.CreateDefault();
-        m_Linker.AddAssemblies(new[] { typeof(Addressables).Assembly, typeof(UnityEngine.ResourceManagement.ResourceManager).Assembly });
+        m_Linker.AddAssemblies(new[] {typeof(Addressables).Assembly, typeof(UnityEngine.ResourceManagement.ResourceManager).Assembly});
         m_Linker.AddTypes(runtimeData.CertificateHandlerType);
 
         m_ResourceProviderData = new List<ObjectInitializationData>();
@@ -134,6 +130,7 @@ public class CustomBuildScript : BuildScriptBase
     struct SBPSettingsOverwriterScope : IDisposable
     {
         bool m_PrevSlimResults;
+
         public SBPSettingsOverwriterScope(bool forceFullWriteResults)
         {
             m_PrevSlimResults = ScriptableBuildPipeline.slimWriteResults;
@@ -231,11 +228,11 @@ public class CustomBuildScript : BuildScriptBase
             var buildTargetGroup = builderInput.TargetGroup;
 
             var buildParams = new AddressableAssetsBundleBuildParameters(
-                    aaContext.Settings,
-                    aaContext.bundleToAssetGroup,
-                    buildTarget,
-                    buildTargetGroup,
-                    aaContext.Settings.buildSettings.bundleBuildPath);
+                aaContext.Settings,
+                aaContext.bundleToAssetGroup,
+                buildTarget,
+                buildTargetGroup,
+                aaContext.Settings.buildSettings.bundleBuildPath);
 
             var builtinShaderBundleName = GetBuiltInShaderBundleNamePrefix(aaContext) + "_unitybuiltinshaders.bundle";
 
@@ -280,11 +277,12 @@ public class CustomBuildScript : BuildScriptBase
                         for (int i = 0; i < buildBundles.Count; ++i)
                         {
                             var b = m_AllBundleInputDefs.FindIndex(inputDef =>
-                                    buildBundles[i].StartsWith(inputDef.assetBundleName));
+                                buildBundles[i].StartsWith(inputDef.assetBundleName));
                             outputBundles.Add(b >= 0 ? m_OutputAssetBundleNames[b] : buildBundles[i]);
                         }
 
-                        PostProcessBundles(assetGroup, buildBundles, outputBundles, results, aaContext.runtimeData, aaContext.locations, builderInput.Registry, primaryKeyToCatalogEntry, bundleRenameMap, postCatalogUpdateCallbacks);
+                        PostProcessBundles(assetGroup, buildBundles, outputBundles, results, aaContext.runtimeData, aaContext.locations, builderInput.Registry, primaryKeyToCatalogEntry,
+                            bundleRenameMap, postCatalogUpdateCallbacks);
                     }
                 }
             }
@@ -298,7 +296,7 @@ public class CustomBuildScript : BuildScriptBase
                 var resultValue = r.Value;
                 m_Linker.AddTypes(resultValue.includedTypes);
 #if UNITY_2021_1_OR_NEWER
-                    m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
+                m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
 #else
                 if (resultValue.GetType().GetProperty("includedSerializeReferenceFQN") != null)
                     m_Linker.AddSerializedClass(resultValue.GetType().GetProperty("includedSerializeReferenceFQN").GetValue(resultValue) as System.Collections.Generic.IEnumerable<string>);
@@ -339,6 +337,7 @@ public class CustomBuildScript : BuildScriptBase
             m_Linker.AddTypes(pd.ObjectType.Value);
             m_Linker.AddTypes(pd.GetRuntimeTypes());
         }
+
         m_Linker.AddTypes(contentCatalog.InstanceProviderData.ObjectType.Value);
         m_Linker.AddTypes(contentCatalog.InstanceProviderData.GetRuntimeTypes());
         m_Linker.AddTypes(contentCatalog.SceneProviderData.ObjectType.Value);
@@ -392,6 +391,7 @@ public class CustomBuildScript : BuildScriptBase
 
     Dictionary<AddressableAssetGroup, bool> m_SavedIncludeInBuildState = new Dictionary<AddressableAssetGroup, bool>();
     AddressableAssetGroup m_CurrentSceneGroup;
+
     void CreateCurrentSceneOnlyBuildSetup(AddressableAssetSettings settings)
     {
         foreach (var group in settings.groups)
@@ -428,6 +428,7 @@ public class CustomBuildScript : BuildScriptBase
                 continue;
             schema.IncludeInBuild = m_SavedIncludeInBuildState[group];
         }
+
         m_SavedIncludeInBuildState.Clear();
         settings.RemoveGroup(m_CurrentSceneGroup);
         m_CurrentSceneGroup = null;
@@ -516,11 +517,11 @@ public class CustomBuildScript : BuildScriptBase
         string[] dependencyHashes = null;
         if (aaContext.Settings.BuildRemoteCatalog)
         {
-            dependencyHashes = CreateRemoteCatalog(jsonText, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() { IgnoreFailures = true });
+            dependencyHashes = CreateRemoteCatalog(jsonText, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() {IgnoreFailures = true});
         }
 
         aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
-            new[] { ResourceManagerRuntimeData.kCatalogAddress },
+            new[] {ResourceManagerRuntimeData.kCatalogAddress},
             localLoadPath,
             typeof(ContentCatalogProvider),
             typeof(ContentCatalogData),
@@ -558,23 +559,23 @@ public class CustomBuildScript : BuildScriptBase
         AssetDatabase.Refresh();
 
         var bundleBuildContent = new BundleBuildContent(new[]
+        {
+            new AssetBundleBuild()
             {
-                new AssetBundleBuild()
-                {
-                    assetBundleName = Path.GetFileName(filepath),
-                    assetNames = new[] {tempFilePath},
-                    addressableNames = new string[0]
-                }
-            });
+                assetBundleName = Path.GetFileName(filepath),
+                assetNames = new[] {tempFilePath},
+                addressableNames = new string[0]
+            }
+        });
 
         var buildTasks = new List<IBuildTask>
-            {
-                new CalculateAssetDependencyData(),
-                new GenerateBundlePacking(),
-                new GenerateBundleCommands(),
-                new WriteSerializedFiles(),
-                new ArchiveAndCompressBundles()
-            };
+        {
+            new CalculateAssetDependencyData(),
+            new GenerateBundlePacking(),
+            new GenerateBundleCommands(),
+            new WriteSerializedFiles(),
+            new ArchiveAndCompressBundles()
+        };
 
         var buildParams = new BundleBuildParameters(builderInput.Target, builderInput.TargetGroup, Path.GetDirectoryName(filepath));
         if (builderInput.Target == BuildTarget.WebGL)
@@ -619,7 +620,7 @@ public class CustomBuildScript : BuildScriptBase
                 string convertedLocation = bundleNameToInternalBundleIdMap[fullBundleName];
 
                 if (locationIdToCatalogEntryMap.TryGetValue(convertedLocation,
-                    out ContentCatalogDataEntry catalogEntry))
+                        out ContentCatalogDataEntry catalogEntry))
                 {
                     loc.BundleFileId = catalogEntry.InternalId;
 
@@ -648,8 +649,8 @@ public class CustomBuildScript : BuildScriptBase
         if (assetGroup.Schemas.Count == 0)
         {
             Addressables.LogWarning($"{assetGroup.Name} does not have any associated AddressableAssetGroupSchemas. " +
-                $"Data from this group will not be included in the build. " +
-                $"If this is unexpected the AddressableGroup may have become corrupted.");
+                                    $"Data from this group will not be included in the build. " +
+                                    $"If this is unexpected the AddressableGroup may have become corrupted.");
             return string.Empty;
         }
 
@@ -775,6 +776,7 @@ public class CustomBuildScript : BuildScriptBase
             if (bundleToAssetGroup != null)
                 bundleToAssetGroup.Add(hashedAssetBundleName, assetGroupGuid);
         }
+
         return generatedUniqueNames;
     }
 
@@ -794,7 +796,8 @@ public class CustomBuildScript : BuildScriptBase
         }
         else if (!buildLocal && loadLocal)
         {
-            message = "LoadPath for group " + assetGroup.Name + " is set to the dynamic-lookup version of StreamingAssets, but BuildPath is not. These paths must both use the dynamic-lookup, or both not use it. \n";
+            message = "LoadPath for group " + assetGroup.Name +
+                      " is set to the dynamic-lookup version of StreamingAssets, but BuildPath is not. These paths must both use the dynamic-lookup, or both not use it. \n";
         }
 
         if (!string.IsNullOrEmpty(message))
@@ -802,10 +805,12 @@ public class CustomBuildScript : BuildScriptBase
             message += "BuildPath: '" + buildPath + "'\n";
             message += "LoadPath: '" + loadPath + "'";
         }
+
         if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && (buildLocal || loadLocal))
         {
             Debug.LogWarningFormat("Bundle compression is set to LZMA, but group {0} uses local content.", assetGroup.Name);
         }
+
         return message;
     }
 
@@ -820,6 +825,7 @@ public class CustomBuildScript : BuildScriptBase
             case BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdEntriesHash:
                 return HashingMethods.Calculate(assetGroup.Guid, Application.cloudProjectId, new HashSet<string>(entries.Select(e => e.guid))).ToString();
         }
+
         throw new Exception("Invalid naming mode.");
     }
 
@@ -831,7 +837,8 @@ public class CustomBuildScript : BuildScriptBase
     /// <param name="schema">The BundledAssetGroupSchema of used to process the assetGroup.</param>
     /// <param name="entryFilter">A filter to remove AddressableAssetEntries from being processed in the build.</param>
     /// <returns>The total list of AddressableAssetEntries that were processed.</returns>
-    public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> bundleInputDefs, BundledAssetGroupSchema schema, Func<AddressableAssetEntry, bool> entryFilter = null)
+    public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> bundleInputDefs, BundledAssetGroupSchema schema,
+        Func<AddressableAssetEntry, bool> entryFilter = null)
     {
         var combinedEntries = new List<AddressableAssetEntry>();
         var packingMode = schema.BundleMode;
@@ -841,69 +848,73 @@ public class CustomBuildScript : BuildScriptBase
         switch (packingMode)
         {
             case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
+            {
+                var allEntries = new List<AddressableAssetEntry>();
+                foreach (AddressableAssetEntry a in assetGroup.entries)
                 {
-                    var allEntries = new List<AddressableAssetEntry>();
-                    foreach (AddressableAssetEntry a in assetGroup.entries)
-                    {
-                        if (entryFilter != null && !entryFilter(a))
-                            continue;
-                        a.GatherAllAssets(allEntries, true, true, false, entryFilter);
-                    }
-                    combinedEntries.AddRange(allEntries);
-                    GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), "all", ignoreUnsupportedFilesInBuild);
+                    if (entryFilter != null && !entryFilter(a))
+                        continue;
+                    a.GatherAllAssets(allEntries, true, true, false, entryFilter);
                 }
+
+                combinedEntries.AddRange(allEntries);
+                GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), "all", ignoreUnsupportedFilesInBuild);
+            }
                 break;
             case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
+            {
+                foreach (AddressableAssetEntry a in assetGroup.entries)
                 {
-                    foreach (AddressableAssetEntry a in assetGroup.entries)
-                    {
-                        if (entryFilter != null && !entryFilter(a))
-                            continue;
-                        var allEntries = new List<AddressableAssetEntry>();
-                        a.GatherAllAssets(allEntries, true, true, false, entryFilter);
-                        combinedEntries.AddRange(allEntries);
-                        GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), a.address, ignoreUnsupportedFilesInBuild);
-                    }
+                    if (entryFilter != null && !entryFilter(a))
+                        continue;
+                    var allEntries = new List<AddressableAssetEntry>();
+                    a.GatherAllAssets(allEntries, true, true, false, entryFilter);
+                    combinedEntries.AddRange(allEntries);
+                    GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), a.address, ignoreUnsupportedFilesInBuild);
                 }
+            }
                 break;
             case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
+            {
+                var labelTable = new Dictionary<string, List<AddressableAssetEntry>>();
+                foreach (AddressableAssetEntry a in assetGroup.entries)
                 {
-                    var labelTable = new Dictionary<string, List<AddressableAssetEntry>>();
-                    foreach (AddressableAssetEntry a in assetGroup.entries)
+                    if (entryFilter != null && !entryFilter(a))
+                        continue;
+                    var sb = new StringBuilder();
+                    foreach (var l in a.labels)
+                        sb.Append(l);
+                    var key = sb.ToString();
+                    List<AddressableAssetEntry> entries;
+                    if (!labelTable.TryGetValue(key, out entries))
+                        labelTable.Add(key, entries = new List<AddressableAssetEntry>());
+                    entries.Add(a);
+                }
+
+                foreach (var entryGroup in labelTable)
+                {
+                    var allEntries = new List<AddressableAssetEntry>();
+                    foreach (var a in entryGroup.Value)
                     {
                         if (entryFilter != null && !entryFilter(a))
                             continue;
-                        var sb = new StringBuilder();
-                        foreach (var l in a.labels)
-                            sb.Append(l);
-                        var key = sb.ToString();
-                        List<AddressableAssetEntry> entries;
-                        if (!labelTable.TryGetValue(key, out entries))
-                            labelTable.Add(key, entries = new List<AddressableAssetEntry>());
-                        entries.Add(a);
+                        a.GatherAllAssets(allEntries, true, true, false, entryFilter);
                     }
 
-                    foreach (var entryGroup in labelTable)
-                    {
-                        var allEntries = new List<AddressableAssetEntry>();
-                        foreach (var a in entryGroup.Value)
-                        {
-                            if (entryFilter != null && !entryFilter(a))
-                                continue;
-                            a.GatherAllAssets(allEntries, true, true, false, entryFilter);
-                        }
-                        combinedEntries.AddRange(allEntries);
-                        GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), entryGroup.Key, ignoreUnsupportedFilesInBuild);
-                    }
+                    combinedEntries.AddRange(allEntries);
+                    GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), entryGroup.Key, ignoreUnsupportedFilesInBuild);
                 }
+            }
                 break;
             default:
                 throw new Exception("Unknown Packing Mode");
         }
+
         return combinedEntries;
     }
 
-    internal static void GenerateBuildInputDefinitions(List<AddressableAssetEntry> allEntries, List<AssetBundleBuild> buildInputDefs, string groupGuid, string address, bool ignoreUnsupportedFilesInBuild)
+    internal static void GenerateBuildInputDefinitions(List<AddressableAssetEntry> allEntries, List<AssetBundleBuild> buildInputDefs, string groupGuid, string address,
+        bool ignoreUnsupportedFilesInBuild)
     {
         var scenes = new List<AddressableAssetEntry>();
         var assets = new List<AddressableAssetEntry>();
@@ -917,6 +928,7 @@ public class CustomBuildScript : BuildScriptBase
             else
                 assets.Add(e);
         }
+
         if (assets.Count > 0)
             buildInputDefs.Add(GenerateBuildInputDefinition(assets, groupGuid + "_assets_" + address + ".bundle"));
         if (scenes.Count > 0)
@@ -946,7 +958,8 @@ public class CustomBuildScript : BuildScriptBase
         return assetsInputDef;
     }
 
-    static string[] CreateRemoteCatalog(string jsonText, List<ResourceLocationData> locations, AddressableAssetSettings aaSettings, AddressablesDataBuilderInput builderInput, ProviderLoadRequestOptions catalogLoadOptions)
+    static string[] CreateRemoteCatalog(string jsonText, List<ResourceLocationData> locations, AddressableAssetSettings aaSettings, AddressablesDataBuilderInput builderInput,
+        ProviderLoadRequestOptions catalogLoadOptions)
     {
         string[] dependencyHashes = null;
 
@@ -961,7 +974,9 @@ public class CustomBuildScript : BuildScriptBase
             remoteBuildFolder == AddressableAssetProfileSettings.undefinedEntryValue ||
             remoteLoadFolder == AddressableAssetProfileSettings.undefinedEntryValue)
         {
-            Addressables.LogWarning("Remote Build and/or Load paths are not set on the main AddressableAssetSettings asset, but 'Build Remote Catalog' is true.  Cannot create remote catalog.  In the inspector for any group, double click the 'Addressable Asset Settings' object to begin inspecting it. '" + remoteBuildFolder + "', '" + remoteLoadFolder + "'");
+            Addressables.LogWarning(
+                "Remote Build and/or Load paths are not set on the main AddressableAssetSettings asset, but 'Build Remote Catalog' is true.  Cannot create remote catalog.  In the inspector for any group, double click the 'Addressable Asset Settings' object to begin inspecting it. '" +
+                remoteBuildFolder + "', '" + remoteLoadFolder + "'");
         }
         else
         {
@@ -977,17 +992,17 @@ public class CustomBuildScript : BuildScriptBase
 
             var remoteHashLoadPath = remoteLoadFolder + versionedFileName + ".hash";
             var remoteHashLoadLocation = new ResourceLocationData(
-                    new[] {dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Remote]},
-                    remoteHashLoadPath,
-                    typeof(TextDataProvider), typeof(string));
+                new[] {dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Remote]},
+                remoteHashLoadPath,
+                typeof(TextDataProvider), typeof(string));
             remoteHashLoadLocation.Data = catalogLoadOptions.Copy();
             locations.Add(remoteHashLoadLocation);
 
             var cacheLoadPath = "{UnityEngine.Application.persistentDataPath}/com.unity.addressables" + versionedFileName + ".hash";
             var cacheLoadLocation = new ResourceLocationData(
-                    new[] {dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Cache]},
-                    cacheLoadPath,
-                    typeof(TextDataProvider), typeof(string));
+                new[] {dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Cache]},
+                cacheLoadPath,
+                typeof(TextDataProvider), typeof(string));
             cacheLoadLocation.Data = catalogLoadOptions.Copy();
             locations.Add(cacheLoadLocation);
         }
@@ -1061,7 +1076,9 @@ public class CustomBuildScript : BuildScriptBase
         }
     }
 
-    void PostProcessBundles(AddressableAssetGroup assetGroup, List<string> buildBundles, List<string> outputBundles, IBundleBuildResults buildResult, ResourceManagerRuntimeData runtimeData, List<ContentCatalogDataEntry> locations, FileRegistry registry, Dictionary<string, ContentCatalogDataEntry> primaryKeyToCatalogEntry, Dictionary<string, string> bundleRenameMap, List<Action> postCatalogUpdateCallbacks)
+    void PostProcessBundles(AddressableAssetGroup assetGroup, List<string> buildBundles, List<string> outputBundles, IBundleBuildResults buildResult, ResourceManagerRuntimeData runtimeData,
+        List<ContentCatalogDataEntry> locations, FileRegistry registry, Dictionary<string, ContentCatalogDataEntry> primaryKeyToCatalogEntry, Dictionary<string, string> bundleRenameMap,
+        List<Action> postCatalogUpdateCallbacks)
     {
         var schema = assetGroup.GetSchema<BundledAssetGroupSchema>();
         if (schema == null)
@@ -1093,7 +1110,8 @@ public class CustomBuildScript : BuildScriptBase
                 };
                 dataEntry.Data = requestOptions;
 
-                if (assetGroup == assetGroup.Settings.DefaultGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) && (info.FileName.EndsWith("_unitybuiltinshaders.bundle") || info.FileName.EndsWith("_monoscripts.bundle")))
+                if (assetGroup == assetGroup.Settings.DefaultGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) &&
+                    (info.FileName.EndsWith("_unitybuiltinshaders.bundle") || info.FileName.EndsWith("_monoscripts.bundle")))
                 {
                     outputBundles[i] = ConstructAssetBundleName(null, schema, info, outputBundles[i]);
                 }
@@ -1143,8 +1161,8 @@ public class CustomBuildScript : BuildScriptBase
         {
             postCatalogUpdates.Add(() =>
             {
-                    //This is where we strip out the temporary hash for the final bundle location and filename
-                    string bundlePathWithoutHash = StripHashFromBundleLocation(targetBundlePath);
+                //This is where we strip out the temporary hash for the final bundle location and filename
+                string bundlePathWithoutHash = StripHashFromBundleLocation(targetBundlePath);
                 if (File.Exists(targetBundlePath))
                 {
                     if (File.Exists(bundlePathWithoutHash))
@@ -1155,6 +1173,7 @@ public class CustomBuildScript : BuildScriptBase
 
                     File.Move(targetBundlePath, bundlePathWithoutHash);
                 }
+
                 if (registry != null)
                 {
                     if (!registry.ReplaceBundleEntry(targetBundlePath, bundlePathWithoutHash))
@@ -1257,8 +1276,8 @@ public class CustomBuildScript : BuildScriptBase
     {
         var settingsPath = Addressables.BuildPath + "/settings.json";
         return !String.IsNullOrEmpty(m_CatalogBuildPath) &&
-            File.Exists(m_CatalogBuildPath) &&
-            File.Exists(settingsPath);
+               File.Exists(m_CatalogBuildPath) &&
+               File.Exists(settingsPath);
     }
 }
 #endif

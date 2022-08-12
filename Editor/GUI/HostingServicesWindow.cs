@@ -14,6 +14,7 @@ namespace UnityEditor.AddressableAssets.GUI
     /// <summary>
     /// Configuration GUI for <see cref="T:UnityEditor.AddressableAssets.HostingServices.HostingServicesManager" />
     /// </summary>
+    [DefaultExecutionOrder(-1)]
     public class HostingServicesWindow : EditorWindow, ISerializationCallbackReceiver, ILogHandler
     {
         const float k_DefaultVerticalSplitterRatio = 0.67f;
@@ -29,16 +30,21 @@ namespace UnityEditor.AddressableAssets.GUI
         [FormerlySerializedAs("m_logText")]
         [SerializeField]
         string m_LogText;
+
         [FormerlySerializedAs("m_logScrollPos")]
         [SerializeField]
         Vector2 m_LogScrollPos;
+
         [FormerlySerializedAs("m_servicesScrollPos")]
         [SerializeField]
         Vector2 m_ServicesScrollPos;
+
         [FormerlySerializedAs("m_splitterRatio")]
         [SerializeField]
         float m_VerticalSplitterRatio = k_DefaultVerticalSplitterRatio;
+
         float m_HorizontalSplitterRatio = k_DefaultHorizontalSplitterRatio;
+
         [FormerlySerializedAs("m_settings")]
         [SerializeField]
         AddressableAssetSettings m_Settings;
@@ -51,10 +57,15 @@ namespace UnityEditor.AddressableAssets.GUI
         bool m_Reload = false;
 
         int m_serviceIndex = -1;
+
         /// <summary>
         /// Returns the index of the currently selected hosting service.
         /// </summary>
-        public int ServiceIndex { get { return m_serviceIndex; } set { m_serviceIndex = value; } }
+        public int ServiceIndex
+        {
+            get { return m_serviceIndex; }
+            set { m_serviceIndex = value; }
+        }
 
         readonly Dictionary<object, HostingServicesProfileVarsTreeView> m_ProfileVarTables =
             new Dictionary<object, HostingServicesProfileVarsTreeView>();
@@ -80,13 +91,17 @@ namespace UnityEditor.AddressableAssets.GUI
                 return m_ServiceTypes;
             }
         }
+
         string[] m_ServiceTypeNames;
 
         private GUIContent m_CreateServiceGUIContent = new GUIContent("Create", "Create a new hosting service");
         private GUIContent m_ServiceNameGUIContent = new GUIContent("Service Name", "Name of the hosting service");
         private GUIContent m_ServiceTypeAndIdGUIContent = new GUIContent("Service Type (ID)", "Type and identifier for the hosting service");
         private GUIContent m_EnableServiceGUIContent = new GUIContent("Enable", "Starts the hosting service");
-        private GUIContent m_HostingServiceVariablesGUIContent = new GUIContent("Hosting Service Variables", "Stores information about the actively running service. Hosting Service Variables can be referenced by a Profile variable");
+
+        private GUIContent m_HostingServiceVariablesGUIContent = new GUIContent("Hosting Service Variables",
+            "Stores information about the actively running service. Hosting Service Variables can be referenced by a Profile variable");
+
         private GUIContent m_RefreshVariablesGUIContent = new GUIContent("Refresh", "Reloads information about the service. Useful when the network changed");
 
         /// <summary>
@@ -113,6 +128,11 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnEnable()
         {
+            if (m_Settings == null)
+                Initialize(AddressableAssetSettingsDefaultObject.Settings);
+            else if (m_Logger == null)
+                Initialize(m_Settings);
+
             AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenHostingWindow, true);
             PopulateServiceTypes();
             m_ItemRectPadding = new GUIStyle();
@@ -128,7 +148,8 @@ namespace UnityEditor.AddressableAssets.GUI
             var defaultSettings = AddressableAssetSettingsDefaultObject.Settings;
             if (defaultSettings == null)
             {
-                EditorUtility.DisplayDialog("Error", "Attempting to open Addressables Hosting window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
+                EditorUtility.DisplayDialog("Error",
+                    "Attempting to open Addressables Hosting window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
                 return;
             }
 
@@ -175,7 +196,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             UnityEngine.GUI.color = orgColor;
         }
-        
+
         [UnityEngine.TestTools.ExcludeFromCoverage]
         void OnGUI()
         {
@@ -195,7 +216,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
             var toolbarRect = new Rect(0, 0, position.width, position.height);
             var servicesRect = new Rect(0, k_ToolbarHeight, (position.width * m_HorizontalSplitterRatio), position.height);
-            var itemRect = new Rect(servicesRect.width + k_SplitterThickness, k_ToolbarHeight, position.width - servicesRect.width - k_SplitterThickness, (position.height * m_VerticalSplitterRatio) - k_ToolbarHeight);
+            var itemRect = new Rect(servicesRect.width + k_SplitterThickness, k_ToolbarHeight, position.width - servicesRect.width - k_SplitterThickness,
+                (position.height * m_VerticalSplitterRatio) - k_ToolbarHeight);
             var logRect = new Rect(servicesRect.width + k_SplitterThickness, k_ToolbarHeight + itemRect.height + k_SplitterThickness, position.width - servicesRect.width - k_SplitterThickness,
                 position.height - itemRect.height - k_SplitterThickness);
             var verticalSplitterRect = new Rect(servicesRect.width + k_SplitterThickness, k_ToolbarHeight + itemRect.height, position.width, k_SplitterThickness);
@@ -227,6 +249,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     menu.AddItem(new GUIContent("Custom Service"), false, () => GetWindow<HostingServicesAddServiceWindow>(true, "Custom Service").Initialize(m_Settings));
                     menu.DropDown(rMode);
                 }
+
                 GUILayout.FlexibleSpace();
             }
             GUILayout.EndHorizontal();
@@ -289,6 +312,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (m_Reload)
                     m_Reload = false;
             }
+
             m_ServicesList.OnGUI(rect);
         }
 
@@ -310,6 +334,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 m_serviceIndex = lst.Count - 1;
             }
+
             DrawServiceElement(lst[m_serviceIndex], lst);
 
             GUILayout.EndScrollView();

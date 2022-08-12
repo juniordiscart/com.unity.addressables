@@ -59,12 +59,12 @@ namespace UnityEditor.AddressableAssets.GUI
                         Debug.LogError("Failed to convert AssetEntryCollection to AddressableAssetEntries at " + AssetDatabase.GetAssetPath(m_Collection));
                 }
             }
-            
-            
+
+
             EditorGUILayout.Space();
             EditorGUILayout.Separator();
             EditorGUILayout.Space();
-           
+
             m_EntriesList.DoLayoutList();
             serializedObject.ApplyModifiedProperties();
         }

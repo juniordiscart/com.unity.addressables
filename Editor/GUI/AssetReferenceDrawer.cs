@@ -33,10 +33,19 @@ namespace UnityEditor.AddressableAssets.GUI
         internal bool m_ReferencesSame = true;
         internal List<AssetReferenceUIRestrictionSurrogate> m_Restrictions = null;
         SubassetPopup m_SubassetPopup;
-        private Texture2D m_CaretTexture = null;
-        internal const string k_FieldControlName = "AssetReferenceField";
+        private Texture m_CaretTexture = null;
+        internal const string k_FieldControlPrefix = "AssetReferenceField";
+        internal const string k_SubFieldControlPrefix = "AssetReferenceSubField";
+        internal SerializedProperty assetProperty;
+        internal bool subassetPickerSelectionChanged;
 
         internal List<AssetReferenceUIRestrictionSurrogate> Restrictions => m_Restrictions;
+
+        private string GetControlName(string prefix, string name)
+        {
+            return $"{prefix}_{name}";
+        }
+
         /// <summary>
         /// Validates that the referenced asset allowable for this asset reference.
         /// </summary>
@@ -84,12 +93,14 @@ namespace UnityEditor.AddressableAssets.GUI
             string labelText = label.text;
             m_ReferencesSame = true;
             m_AssetRefObject = property.GetActualObjectForSerializedProperty<AssetReference>(fieldInfo, ref labelText);
+            assetProperty = property;
 
             labelText = ObjectNames.NicifyVariableName(labelText);
             if (labelText != label.text || string.IsNullOrEmpty(label.text))
             {
                 label = new GUIContent(labelText, label.tooltip);
             }
+
             m_label = label;
 
             if (m_AssetRefObject == null)
@@ -108,38 +119,37 @@ namespace UnityEditor.AddressableAssets.GUI
             assetDropDownRect = EditorGUI.PrefixLabel(position, label);
             var nameToUse = AssetReferenceDrawerUtilities.GetNameForAsset(ref m_ReferencesSame, property, isNotAddressable, fieldInfo, m_label.text);
 
-            DrawSubassets(property);
-
             bool isDragging = Event.current.type == EventType.DragUpdated && position.Contains(Event.current.mousePosition);
             bool isDropping = Event.current.type == EventType.DragPerform && position.Contains(Event.current.mousePosition);
 
-            DrawControl(property, nameToUse, isNotAddressable, guid);
+            bool shouldDrawSubAssetsControl = false;
+            List<Object> subAssetsList = PrepareForSubAssetsControl(ref shouldDrawSubAssetsControl);
+            if (shouldDrawSubAssetsControl)
+                assetDropDownRect = new Rect(assetDropDownRect.position, new Vector2(assetDropDownRect.width / 2, assetDropDownRect.height));
+
+            bool isEnterKeyPressed = Event.current.type == EventType.KeyDown && Event.current.isKey && (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return);
+            DrawControl(property, nameToUse, isNotAddressable, guid, isEnterKeyPressed);
+            if (shouldDrawSubAssetsControl)
+                DrawSubAssetsControl(property, subAssetsList, isEnterKeyPressed);
 
             HandleDragAndDrop(property, isDragging, isDropping, guid);
 
             EditorGUI.EndProperty();
         }
 
-        private void DrawSubassets(SerializedProperty property)
+        private List<Object> PrepareForSubAssetsControl(ref bool shouldDrawSubAssetsControl)
         {
-            if (m_AssetRefObject.editorAsset != null && m_ReferencesSame)
-            {
-                List<Object> subAssets = null;
-                bool hasSubAssets = !string.IsNullOrEmpty(m_AssetRefObject.SubObjectName);
-                if (!hasSubAssets)
-                {
-                    subAssets = AssetReferenceDrawerUtilities.GetSubAssetsList(m_AssetRefObject);
-                    hasSubAssets = subAssets.Count > 1;
-                }
+            List<Object> subAssets = null;
+            bool selectedSubObject = !string.IsNullOrEmpty(m_AssetRefObject.SubObjectName);
 
-                if (hasSubAssets)
-                {
-                    assetDropDownRect = DrawSubAssetsControl(property, subAssets);
-                }
-            }
+            if (m_AssetRefObject.editorAsset != null && m_ReferencesSame && !selectedSubObject)
+                subAssets = AssetReferenceDrawerUtilities.GetSubAssetsList(m_AssetRefObject);
+
+            shouldDrawSubAssetsControl = selectedSubObject || (subAssets != null && subAssets.Count > 1);
+            return subAssets;
         }
 
-        bool ApplySelectionChanges(SerializedProperty property, AddressableAssetSettings aaSettings, ref string guid)
+        internal bool ApplySelectionChanges(SerializedProperty property, AddressableAssetSettings aaSettings, ref string guid)
         {
             var checkToForceAddressable = string.Empty;
             if (!string.IsNullOrEmpty(newGuid) && newGuidPropertyPath == property.propertyPath)
@@ -157,11 +167,13 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
                 else if (guid != newGuid)
                 {
-                    if (AssetReferenceDrawerUtilities.SetObject(ref m_AssetRefObject, ref m_ReferencesSame, property, AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(newGuid)), fieldInfo, m_label.text, out guid))
+                    if (AssetReferenceDrawerUtilities.SetObject(ref m_AssetRefObject, ref m_ReferencesSame, property, AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(newGuid)),
+                            fieldInfo, m_label.text, out guid))
                     {
                         checkToForceAddressable = newGuid;
                         TriggerOnValidate(property);
                     }
+
                     newGuid = string.Empty;
                 }
             }
@@ -176,15 +188,15 @@ namespace UnityEditor.AddressableAssets.GUI
             return isNotAddressable;
         }
 
-        private void DrawControl(SerializedProperty property, string nameToUse, bool isNotAddressable, string guid)
+        private void DrawControl(SerializedProperty property, string nameToUse, bool isNotAddressable, string guid, bool isEnterKeyPressed)
         {
-            float pickerWidth = 20f;
+            float pickerWidth = 12f;
             Rect pickerRect = assetDropDownRect;
             pickerRect.width = pickerWidth;
-            pickerRect.x = assetDropDownRect.xMax - pickerWidth;
+            pickerRect.x = assetDropDownRect.xMax - pickerWidth * 1.33f;
+            string controlName = GetControlName(k_FieldControlPrefix, property.name);
 
             bool isPickerPressed = Event.current.type == EventType.MouseDown && Event.current.button == 0 && pickerRect.Contains(Event.current.mousePosition);
-            bool isEnterKeyPressed = Event.current.type == EventType.KeyDown && Event.current.isKey && (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return);
 
             var asset = m_AssetRefObject?.editorAsset;
             if (asset != null && m_ReferencesSame)
@@ -195,14 +207,15 @@ namespace UnityEditor.AddressableAssets.GUI
                 string assetPath = AssetDatabase.GUIDToAssetPath(m_AssetRefObject.AssetGUID);
                 Texture2D assetIcon = AssetDatabase.GetCachedIcon(assetPath) as Texture2D;
 
-                UnityEngine.GUI.SetNextControlName(k_FieldControlName);
+                UnityEngine.GUI.SetNextControlName(controlName);
                 if (EditorGUI.DropdownButton(assetDropDownRect, new GUIContent(nameToUse, assetIcon), FocusType.Keyboard, EditorStyles.objectField))
                 {
                     if (Event.current.clickCount == 1)
                     {
-                        UnityEngine.GUI.FocusControl(k_FieldControlName);
+                        UnityEngine.GUI.FocusControl(controlName);
                         EditorGUIUtility.PingObject(asset);
                     }
+
                     if (Event.current.clickCount == 2)
                     {
                         AssetDatabase.OpenAsset(asset);
@@ -214,19 +227,19 @@ namespace UnityEditor.AddressableAssets.GUI
             }
             else
             {
-                UnityEngine.GUI.SetNextControlName(k_FieldControlName);
+                UnityEngine.GUI.SetNextControlName(controlName);
                 if (EditorGUI.DropdownButton(assetDropDownRect, new GUIContent(nameToUse), FocusType.Keyboard, EditorStyles.objectField))
-                    UnityEngine.GUI.FocusControl(k_FieldControlName);
+                    UnityEngine.GUI.FocusControl(controlName);
             }
 
             DrawCaret(pickerRect);
 
-            bool enterKeyRequestsPopup = isEnterKeyPressed && (k_FieldControlName == UnityEngine.GUI.GetNameOfFocusedControl());
+            bool enterKeyRequestsPopup = isEnterKeyPressed && (controlName == UnityEngine.GUI.GetNameOfFocusedControl());
             if (isPickerPressed || enterKeyRequestsPopup)
             {
                 newGuidPropertyPath = property.propertyPath;
                 var nonAddressedOption = isNotAddressable ? m_AssetName : string.Empty;
-                PopupWindow.Show(assetDropDownRect, new AssetReferencePopup(this, guid, nonAddressedOption, enterKeyRequestsPopup));
+                EditorWindow.GetWindow<AssetReferencePopup>(true, "Select Addressable Asset").Initialize(this, guid, nonAddressedOption, enterKeyRequestsPopup, Event.current.mousePosition);
             }
         }
 
@@ -234,14 +247,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             if (m_CaretTexture == null)
             {
-                string caretIconPath = EditorGUIUtility.isProSkin
-                    ? @"Packages\com.unity.addressables\Editor\Icons\PickerDropArrow-Pro.png"
-                    : @"Packages\com.unity.addressables\Editor\Icons\PickerDropArrow-Personal.png";
-
-                if (File.Exists(caretIconPath))
-                {
-                    m_CaretTexture = (Texture2D)AssetDatabase.LoadAssetAtPath(caretIconPath, typeof(Texture2D));
-                }
+                m_CaretTexture = EditorGUIUtility.IconContent("d_pick").image;
             }
 
             if (m_CaretTexture != null)
@@ -264,6 +270,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     var aaEntries = DragAndDrop.GetGenericData("AssetEntryTreeViewItem") as List<AssetEntryTreeViewItem>;
                     rejectedDrag = AssetReferenceDrawerUtilities.ValidateDrag(m_AssetRefObject, Restrictions, aaEntries, DragAndDrop.objectReferences, DragAndDrop.paths);
                 }
+
                 DragAndDrop.visualMode = rejectedDrag ? DragAndDropVisualMode.Rejected : DragAndDropVisualMode.Copy;
             }
 
@@ -347,7 +354,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         obj = AssetDatabase.LoadAssetAtPath<Object>(path);
 
                     if (AssetReferenceDrawerUtilities.SetObject(ref m_AssetRefObject, ref m_ReferencesSame, property,
-                        obj, fieldInfo, m_label.text, out guid))
+                            obj, fieldInfo, m_label.text, out guid))
                     {
                         TriggerOnValidate(property);
                         aaSettings = AddressableAssetSettingsDefaultObject.GetSettings(true);
@@ -387,11 +394,10 @@ namespace UnityEditor.AddressableAssets.GUI
                         AssetReference assetRef = elementProperty.GetActualObjectForSerializedProperty<AssetReference>(fieldInfo, ref labelText);
 
                         bool referencesSame = false;
-                        Object obj = (DragAndDrop.objectReferences != null && i < DragAndDrop.objectReferences.Length) ?
-                            DragAndDrop.objectReferences[i] : AssetDatabase.LoadAssetAtPath<Object>(path);
+                        Object obj = (DragAndDrop.objectReferences != null && i < DragAndDrop.objectReferences.Length) ? DragAndDrop.objectReferences[i] : AssetDatabase.LoadAssetAtPath<Object>(path);
 
                         if (AssetReferenceDrawerUtilities.SetObject(ref assetRef, ref referencesSame, elementProperty,
-                            obj, fieldInfo, m_label.text, out guid))
+                                obj, fieldInfo, m_label.text, out guid))
                         {
                             TriggerOnValidate(elementProperty);
                             aaSettings = AddressableAssetSettingsDefaultObject.GetSettings(true);
@@ -410,33 +416,32 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        private Rect DrawSubAssetsControl(SerializedProperty property, List<Object> subAssets)
+        private void DrawSubAssetsControl(SerializedProperty property, List<Object> subAssets, bool isEnterKeyPressed)
         {
-            assetDropDownRect = new Rect(assetDropDownRect.position, new Vector2(assetDropDownRect.width / 2, assetDropDownRect.height));
             var objRect = new Rect(assetDropDownRect.xMax, assetDropDownRect.y, assetDropDownRect.width, assetDropDownRect.height);
-            float pickerWidth = 20f;
+            float pickerWidth = 12f;
             Rect pickerRect = objRect;
             pickerRect.width = pickerWidth;
-            pickerRect.x = objRect.xMax - pickerWidth;
+            pickerRect.x = objRect.xMax - pickerWidth * 1.33f;
             bool multipleSubassets = false;
+            string controlName = GetControlName(k_SubFieldControlPrefix, property.name);
 
             // Check if targetObjects have multiple different selected
             if (property.serializedObject.targetObjects.Length > 1)
                 multipleSubassets = AssetReferenceDrawerUtilities.CheckTargetObjectsSubassetsAreDifferent(property, m_AssetRefObject.SubObjectName, fieldInfo, m_label.text);
 
             bool isPickerPressed = Event.current.type == EventType.MouseDown && Event.current.button == 0 && pickerRect.Contains(Event.current.mousePosition);
-            if (isPickerPressed)
+            bool enterKeyRequestsPopup = isEnterKeyPressed && (controlName == UnityEngine.GUI.GetNameOfFocusedControl());
+            if (isPickerPressed || enterKeyRequestsPopup)
             {
                 // Do custom popup with scroll to pick subasset
                 if (m_SubassetPopup == null || m_SubassetPopup.m_property != property)
                 {
-                    m_SubassetPopup = CreateSubAssetPopup(property, subAssets ?? AssetReferenceDrawerUtilities.GetSubAssetsList(m_AssetRefObject));
+                    m_SubassetPopup = CreateSubAssetPopup(property, subAssets ?? AssetReferenceDrawerUtilities.GetSubAssetsList(m_AssetRefObject), Event.current.mousePosition);
                 }
-
-                PopupWindow.Show(objRect, m_SubassetPopup);
             }
 
-            if (m_SubassetPopup != null && m_SubassetPopup.SelectionChanged)
+            if (m_SubassetPopup != null && subassetPickerSelectionChanged)
             {
                 m_SubassetPopup.UpdateSubAssets();
             }
@@ -445,12 +450,13 @@ namespace UnityEditor.AddressableAssets.GUI
             GUIContent nameSelected = new GUIContent("--");
             if (!multipleSubassets)
                 nameSelected.text = AssetReferenceDrawerUtilities.FormatName(m_AssetRefObject.SubObjectName);
-            UnityEngine.GUI.Box(objRect, nameSelected, EditorStyles.objectField);
+
+            UnityEngine.GUI.SetNextControlName(controlName);
+            if (EditorGUI.DropdownButton(objRect, nameSelected, FocusType.Keyboard, EditorStyles.objectField))
+                UnityEngine.GUI.FocusControl(controlName);
 
             // Draw picker arrow
             DrawCaret(pickerRect);
-
-            return assetDropDownRect;
         }
 
         internal void GetSelectedSubassetIndex(List<Object> subAssets, out int selIndex, out string[] objNames)
@@ -463,14 +469,16 @@ namespace UnityEditor.AddressableAssets.GUI
                 selIndex = 0;
         }
 
-        SubassetPopup CreateSubAssetPopup(SerializedProperty property, List<Object> subAssets)
+        SubassetPopup CreateSubAssetPopup(SerializedProperty property, List<Object> subAssets, Vector2 mouseLocation)
         {
             GetSelectedSubassetIndex(subAssets, out int selIndex, out string[] objNames);
-            return new SubassetPopup(selIndex, objNames, subAssets, property, this);
+            var subassetPopupWindow = EditorWindow.GetWindow<SubassetPopup>(true, "Select Subasset");
+            subassetPopupWindow.Initialize(selIndex, objNames, subAssets, property, this, mouseLocation);
+            return subassetPopupWindow;
         }
     }
 
-    class SubassetPopup : PopupWindowContent
+    class SubassetPopup : EditorWindow
     {
         internal int SelectedIndex = 0;
         internal SerializedProperty m_property;
@@ -478,21 +486,29 @@ namespace UnityEditor.AddressableAssets.GUI
         private List<Object> m_subAssets;
         private AssetReferenceDrawer m_drawer;
         private Vector2 m_scrollPosition;
-        bool selectionChanged = false;
 
-        internal SubassetPopup(int selIndex, string[] objNames, List<Object> subAssets, SerializedProperty property, AssetReferenceDrawer drawer)
+        public void Initialize(int selIndex, string[] objNames, List<Object> subAssets, SerializedProperty property, AssetReferenceDrawer drawer, Vector2 mouseLocation)
         {
             SelectedIndex = selIndex;
             m_objNames = objNames;
             m_property = property;
             m_drawer = drawer;
             m_subAssets = subAssets;
+
+            Rect r = this.position;
+            mouseLocation = GUIUtility.GUIToScreenPoint(mouseLocation);
+            r.position = mouseLocation;
+            this.position = r;
         }
 
-        public bool SelectionChanged => selectionChanged;
+        private void OnLostFocus()
+        {
+            Close();
+        }
+
         public void UpdateSubAssets()
         {
-            if (selectionChanged)
+            if (m_drawer.subassetPickerSelectionChanged)
             {
                 if (!AssetReferenceDrawerUtilities.SetSubAssets(m_property, m_subAssets[SelectedIndex], m_drawer.fieldInfo, m_drawer.m_label.text))
                 {
@@ -504,36 +520,81 @@ namespace UnityEditor.AddressableAssets.GUI
                     m_property.serializedObject.Update();
                     m_property.FindPropertyRelative("m_EditorAssetChanged").boolValue = false;
                 }
-                selectionChanged = false;
+
+                m_drawer.subassetPickerSelectionChanged = false;
             }
         }
 
-        public override void OnGUI(Rect rect)
+        private void HandleKeyboardEvents()
         {
-            var buttonStyle = new GUIStyle(UnityEngine.GUI.skin.label);
-            buttonStyle.contentOffset = new Vector2(10, 0);
-            
+            if (Event.current.type == EventType.KeyDown && Event.current.isKey)
+            {
+                if (Event.current.keyCode == KeyCode.DownArrow && SelectedIndex < m_objNames.Length - 1)
+                {
+                    m_property.serializedObject.ApplyModifiedPropertiesWithoutUndo(); // quickly shifting between the selected assets prevents some modifications from being applied
+                    ChangeSelectedAsset(SelectedIndex + 1);
+                }
+                else if (Event.current.keyCode == KeyCode.UpArrow && SelectedIndex > 0)
+                {
+                    m_property.serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                    ChangeSelectedAsset(SelectedIndex - 1);
+                }
+                else if (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return)
+                {
+                    Close();
+                }
+            }
+        }
+
+        private void ChangeSelectedAsset(int newIndex)
+        {
+            if (SelectedIndex != newIndex)
+            {
+                SelectedIndex = newIndex;
+                m_drawer.subassetPickerSelectionChanged = true;
+                UpdateSubAssets();
+            }
+        }
+
+        private void OnGUI()
+        {
+            Rect rect = this.position;
+            var labelStyle = new GUIStyle(UnityEngine.GUI.skin.label);
+            labelStyle.contentOffset = new Vector2(10, 0);
+
+            var selectedLabelStyle = new GUIStyle(labelStyle);
+            Color selectionColor = new Color(0.3f, 0.5f, 0.7f);
+            selectedLabelStyle.normal.textColor = selectionColor;
+            selectedLabelStyle.hover.textColor = selectionColor;
+            selectedLabelStyle.active.textColor = selectionColor;
+
+            HandleKeyboardEvents();
+
             EditorGUILayout.BeginVertical();
             m_scrollPosition = EditorGUILayout.BeginScrollView(m_scrollPosition, GUILayout.Width(rect.width), GUILayout.Height(rect.height));
             for (int i = 0; i < m_objNames.Length; i++)
             {
-                if (GUILayout.Button(m_objNames[i], buttonStyle))
+                if (i == SelectedIndex)
+                    GUILayout.Label(m_objNames[i], selectedLabelStyle);
+                else
+                    GUILayout.Label(m_objNames[i], labelStyle);
+
+                if (GUILayoutUtility.GetLastRect().Contains(Event.current.mousePosition) && Event.current.clickCount > 0)
                 {
-                    if (SelectedIndex != i)
-                    {
-                        SelectedIndex = i;
-                        selectionChanged = true;
-                    }
-                    PopupWindow.focusedWindow.Close();
+                    if (Event.current.clickCount == 2)
+                        Close();
+                    else
+                        ChangeSelectedAsset(i);
                     break;
                 }
             }
+
             EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();
         }
     }
 
-    class AssetReferencePopup : PopupWindowContent
+    class AssetReferencePopup : EditorWindow
     {
         AssetReferenceTreeView m_Tree;
         TreeViewState m_TreeState;
@@ -550,41 +611,42 @@ namespace UnityEditor.AddressableAssets.GUI
         string m_NonAddressedAsset;
 
         SearchField m_SearchField;
-        bool m_OpenedByEnterKey;
 
-        internal AssetReferencePopup(AssetReferenceDrawer drawer, string guid, string nonAddressedAsset, bool openedByEnterKey)
+        public void Initialize(AssetReferenceDrawer drawer, string guid, string nonAddressedAsset, bool openedByEnterKey, Vector2 mouseLocation)
         {
             m_Drawer = drawer;
             m_GUID = guid;
             m_NonAddressedAsset = nonAddressedAsset;
             m_SearchField = new SearchField();
             m_ShouldClose = false;
-            m_OpenedByEnterKey = openedByEnterKey;
-        }
 
-        public override void OnOpen()
-        {
+            Rect r = this.position;
+            mouseLocation = GUIUtility.GUIToScreenPoint(mouseLocation);
+            r.position = mouseLocation;
+            this.position = r;
+
             m_SearchField.SetFocus();
-            base.OnOpen();
+            m_SearchField.downOrUpArrowKeyPressed += () => { m_Tree.SetFocus(); };
+
+            if (m_Tree != null)
+                m_Tree.SetInitialSelection(m_Drawer.m_AssetName);
         }
 
-        public override Vector2 GetWindowSize()
+        private void OnLostFocus()
         {
-            Vector2 result = base.GetWindowSize();
-            result.x = m_Drawer.assetDropDownRect.width;
-            return result;
+            ForceClose();
         }
 
-        public override void OnGUI(Rect rect)
+        private void OnGUI()
         {
+            Rect rect = this.position;
+
             int border = 4;
             int topPadding = 12;
             int searchHeight = 20;
             var searchRect = new Rect(border, topPadding, rect.width - border * 2, searchHeight);
             var remainTop = topPadding + searchHeight + border;
             var remainingRect = new Rect(border, topPadding + searchHeight + border, rect.width - border * 2, rect.height - remainTop - border);
-
-            bool isEnterKeyPressed = Event.current.type == EventType.KeyDown && Event.current.isKey && (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return);
 
             m_CurrentName = m_SearchField.OnGUI(searchRect, m_CurrentName);
 
@@ -594,15 +656,24 @@ namespace UnityEditor.AddressableAssets.GUI
                     m_TreeState = new TreeViewState();
                 m_Tree = new AssetReferenceTreeView(m_TreeState, m_Drawer, this, m_GUID, m_NonAddressedAsset);
                 m_Tree.Reload();
+                m_Tree.SetInitialSelection(m_Drawer.m_AssetName);
             }
 
+            bool isKeyPressed = Event.current.type == EventType.KeyDown && Event.current.isKey;
+            bool isEnterKeyPressed = isKeyPressed && (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return);
+            bool isUpOrDownArrowPressed = isKeyPressed && (Event.current.keyCode == KeyCode.UpArrow || Event.current.keyCode == KeyCode.DownArrow);
+
+            if (isUpOrDownArrowPressed)
+                m_Tree.SetFocus();
+
             m_Tree.searchString = m_CurrentName;
+            m_Tree.IsEnterKeyPressed = isEnterKeyPressed;
             m_Tree.OnGUI(remainingRect);
 
-            if (m_ShouldClose || (isEnterKeyPressed && m_OpenedByEnterKey))
+            if (m_ShouldClose || isEnterKeyPressed)
             {
                 GUIUtility.hotControl = 0;
-                editorWindow.Close();
+                Close();
             }
         }
 
@@ -611,6 +682,7 @@ namespace UnityEditor.AddressableAssets.GUI
             public string AssetPath;
 
             private string m_Guid;
+
             public string Guid
             {
                 get
@@ -637,6 +709,8 @@ namespace UnityEditor.AddressableAssets.GUI
             string m_NonAddressedAsset;
             Texture2D m_WarningIcon;
 
+            internal bool IsEnterKeyPressed { get; set; }
+
             public AssetReferenceTreeView(TreeViewState state, AssetReferenceDrawer drawer, AssetReferencePopup popup, string guid, string nonAddressedAsset)
                 : base(state)
             {
@@ -649,15 +723,42 @@ namespace UnityEditor.AddressableAssets.GUI
                 m_WarningIcon = EditorGUIUtility.FindTexture("console.warnicon");
             }
 
+            public override void OnGUI(Rect rect)
+            {
+                base.OnGUI(rect);
+                if (IsEnterKeyPressed && HasFocus())
+                {
+                    m_Popup.ForceClose();
+                }
+            }
+
             protected override bool CanMultiSelect(TreeViewItem item)
             {
                 return false;
+            }
+
+            protected override void DoubleClickedItem(int id)
+            {
+                var assetRefItem = FindItem(id, rootItem) as AssetRefTreeViewItem;
+                if (assetRefItem != null && !string.IsNullOrEmpty(assetRefItem.AssetPath))
+                {
+                    m_Drawer.newGuid = assetRefItem.Guid;
+                    if (string.IsNullOrEmpty(m_Drawer.newGuid))
+                        m_Drawer.newGuid = assetRefItem.AssetPath;
+                }
+                else
+                {
+                    m_Drawer.newGuid = AssetReferenceDrawer.noAssetString;
+                }
+
+                m_Popup.ForceClose();
             }
 
             protected override void SelectionChanged(IList<int> selectedIds)
             {
                 if (selectedIds != null && selectedIds.Count == 1)
                 {
+                    string oldGuid = m_Drawer.newGuid;
                     var assetRefItem = FindItem(selectedIds[0], rootItem) as AssetRefTreeViewItem;
                     if (assetRefItem != null && !string.IsNullOrEmpty(assetRefItem.AssetPath))
                     {
@@ -670,7 +771,9 @@ namespace UnityEditor.AddressableAssets.GUI
                         m_Drawer.newGuid = AssetReferenceDrawer.noAssetString;
                     }
 
-                    m_Popup.ForceClose();
+                    SetFocus();
+                    if (m_Drawer.assetProperty != null)
+                        m_Drawer.ApplySelectionChanges(m_Drawer.assetProperty, AddressableAssetSettingsDefaultObject.Settings, ref oldGuid);
                 }
             }
 
@@ -727,6 +830,18 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
 
                 return root;
+            }
+
+            internal void SetInitialSelection(string assetString)
+            {
+                foreach (var child in rootItem.children)
+                {
+                    if (child.displayName.IndexOf(assetString, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        SetSelection(new List<int> {child.id});
+                        return;
+                    }
+                }
             }
         }
     }
@@ -883,6 +998,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         return arrayString.Substring(0, arrayString.Length - 5); // remove ".data"
                 }
             }
+
             return string.Empty;
         }
     }
@@ -917,6 +1033,7 @@ namespace UnityEditor.AddressableAssets.GUI
     public class AssetReferenceUIRestrictionSurrogate : AssetReferenceUIRestriction
     {
         AssetReferenceUIRestriction data;
+
         /// <summary>
         /// Sets the AssetReferenceUIRestriction for this surrogate
         /// </summary>
@@ -941,6 +1058,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return data.ValidateAsset(entryData?.AssetPath);
         }
     }
+
     /// <summary>
     /// Surrogate to AssetReferenceUILabelRestriction
     /// This surrogate class provides the editor-side implementation of AssetReferenceUILabelRestriction attribute
@@ -950,6 +1068,7 @@ namespace UnityEditor.AddressableAssets.GUI
     public class AssetReferenceUILabelRestrictionSurrogate : AssetReferenceUIRestrictionSurrogate
     {
         AssetReferenceUILabelRestriction data;
+
         /// <summary>
         /// Sets the AssetReferenceUILabelRestriction for this surrogate
         /// </summary>
@@ -986,6 +1105,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         return true;
                 }
             }
+
             return false;
         }
 
@@ -1059,11 +1179,13 @@ namespace UnityEditor.AddressableAssets.GUI
                     concreteTypeFound = true;
                     return assignableTypesList;
                 }
+
                 if (customAttribute.TargetType.IsAssignableFrom(targetType))
                 {
                     assignableTypesList.Add(type);
                 }
             }
+
             concreteTypeFound = false;
             return assignableTypesList;
         }

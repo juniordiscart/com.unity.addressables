@@ -51,10 +51,11 @@ public class AddHashToBundleNameTaskTests : AddressableBuildTaskTestBase
         {
             AssetInfo =
             {
-                {guid1, new AssetLoadInfo(){referencedObjects = ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(guid1, EditorUserBuildSettings.activeBuildTarget).ToList()}},
-                {guid2, new AssetLoadInfo(){referencedObjects = ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(guid2, EditorUserBuildSettings.activeBuildTarget).ToList()}},
-                {guid3, new AssetLoadInfo(){referencedObjects = ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(guid3, EditorUserBuildSettings.activeBuildTarget).ToList()}
-}
+                {guid1, new AssetLoadInfo() {referencedObjects = ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(guid1, EditorUserBuildSettings.activeBuildTarget).ToList()}},
+                {guid2, new AssetLoadInfo() {referencedObjects = ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(guid2, EditorUserBuildSettings.activeBuildTarget).ToList()}},
+                {
+                    guid3, new AssetLoadInfo() {referencedObjects = ContentBuildInterface.GetPlayerObjectIdentifiersInAsset(guid3, EditorUserBuildSettings.activeBuildTarget).ToList()}
+                }
             }
         };
 

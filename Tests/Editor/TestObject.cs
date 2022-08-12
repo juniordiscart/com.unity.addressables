@@ -13,6 +13,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 AssetDatabase.CreateAsset(obj, assetPath);
                 AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             }
+
             return obj;
         }
 

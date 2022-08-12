@@ -17,6 +17,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         [FormerlySerializedAs("m_includeResourcesFolders")]
         [SerializeField]
         bool m_IncludeResourcesFolders = true;
+
         /// <summary>
         /// If enabled, all assets in resources folders will have addresses generated during the build.
         /// </summary>
@@ -32,10 +33,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 }
             }
         }
+
         [Tooltip("All scenes in the editor build settings will have addresses generated during the build")]
         [FormerlySerializedAs("m_includeBuildSettingsScenes")]
         [SerializeField]
         bool m_IncludeBuildSettingsScenes = true;
+
         /// <summary>
         /// If enabled, all scenes in the editor build settings will have addresses generated during the build.
         /// </summary>
@@ -63,7 +66,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             prop = SchemaSerializedObject.FindProperty(propertyName);
             ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
             EditorGUI.BeginChangeCheck();
-            bool newIncludeResourcesFolders = (bool)EditorGUILayout.Toggle(new GUIContent(prop.displayName, "Assets in resources folders will have addresses generated during the build"), IncludeResourcesFolders);
+            bool newIncludeResourcesFolders = (bool)EditorGUILayout.Toggle(new GUIContent(prop.displayName, "Assets in resources folders will have addresses generated during the build"),
+                IncludeResourcesFolders);
             if (EditorGUI.EndChangeCheck())
             {
                 prop.boolValue = newIncludeResourcesFolders;
@@ -75,6 +79,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                     applyModifications.Add(s.SchemaSerializedObject);
                 }
             }
+
             EditorGUI.showMixedValue = false;
 
             // IncludeBuildSettingsScenes
@@ -82,7 +87,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             prop = SchemaSerializedObject.FindProperty(propertyName);
             ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
             EditorGUI.BeginChangeCheck();
-            bool newIncludeBuildSettingsScenes = (bool)EditorGUILayout.Toggle(new GUIContent(prop.displayName, "All scenes in the editor build settings will have addresses generated during the build"), IncludeBuildSettingsScenes);
+            bool newIncludeBuildSettingsScenes =
+                (bool)EditorGUILayout.Toggle(new GUIContent(prop.displayName, "All scenes in the editor build settings will have addresses generated during the build"), IncludeBuildSettingsScenes);
             if (EditorGUI.EndChangeCheck())
             {
                 prop.boolValue = newIncludeBuildSettingsScenes;
@@ -94,6 +100,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                     applyModifications.Add(s.SchemaSerializedObject);
                 }
             }
+
             EditorGUI.showMixedValue = false;
 
             foreach (SerializedObject serializedObject in applyModifications)

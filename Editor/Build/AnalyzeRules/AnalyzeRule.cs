@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 ToggledOn = toggledOn;
             }
         }
-        
+
         /// <summary>
         /// True if this rule can fix itself.  If child class sets this to true, class must override FixIssues
         /// </summary>
@@ -40,7 +40,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// Represents a state where no errors were found after analyzing Addressables data.
         /// </summary>
         [NonSerialized]
-        protected AnalyzeResult noErrors = new AnalyzeResult { resultName = "No issues found" };
+        protected AnalyzeResult noErrors = new AnalyzeResult {resultName = "No issues found"};
 
         /// <summary>
         /// Delimiter character used in analyze rule string names.  This is used when a rule result needs to display
@@ -71,6 +71,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
             [SerializeField]
             MessageType m_Severity = MessageType.None;
+
             /// <summary>
             /// Severity of rule result
             /// </summary>
@@ -105,7 +106,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// not rerun RefreshAnalysis before fixing.
         /// </summary>
         /// <param name="settings">The settings object to analyze</param>
-        public virtual void FixIssues(AddressableAssetSettings settings) {}
+        public virtual void FixIssues(AddressableAssetSettings settings)
+        {
+        }
 
         /// <summary>
         /// Clears out the analysis results. When overriding, use to clear rule-specific data as well.
@@ -115,6 +118,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
             m_Results.Clear();
         }
 
-        internal virtual IList<CustomContextMenu> GetCustomContextMenuItems() { return new List<CustomContextMenu>(); }
+        internal virtual IList<CustomContextMenu> GetCustomContextMenuItems()
+        {
+            return new List<CustomContextMenu>();
+        }
     }
 }

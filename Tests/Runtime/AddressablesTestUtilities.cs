@@ -36,9 +36,21 @@ static class AddressablesTestUtility
 #endif
     }
 
-    static public string GetPrefabLabel(string suffix) { return "prefabs" + suffix; }
-    static public string GetPrefabAlternatingLabel(string suffix, int index) { return string.Format("prefabs_{0}{1}", ((index % 2) == 0) ? "even" : "odd", suffix); }
-    static public string GetPrefabUniqueLabel(string suffix, int index) { return string.Format("prefab_{0}{1}", index, suffix); }
+    static public string GetPrefabLabel(string suffix)
+    {
+        return "prefabs" + suffix;
+    }
+
+    static public string GetPrefabAlternatingLabel(string suffix, int index)
+    {
+        return string.Format("prefabs_{0}{1}", ((index % 2) == 0) ? "even" : "odd", suffix);
+    }
+
+    static public string GetPrefabUniqueLabel(string suffix, int index)
+    {
+        return string.Format("prefab_{0}{1}", index, suffix);
+    }
+
     public const int kPrefabCount = 10;
     public const int kMaxWebRequestCount = 5;
 
@@ -85,8 +97,11 @@ static class AddressablesTestUtility
         var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
         importer.textureType = TextureImporterType.Sprite;
         importer.spriteImportMode = SpriteImportMode.Multiple;
-        importer.spritesheet = new SpriteMetaData[] { new SpriteMetaData() { name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16) },
-                                                      new SpriteMetaData() { name = "botright", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16) }};
+        importer.spritesheet = new SpriteMetaData[]
+        {
+            new SpriteMetaData() {name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16)},
+            new SpriteMetaData() {name = "botright", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16)}
+        };
         importer.SaveAndReimport();
 
         var spriteEntry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(spritePath), group, false, false);
@@ -119,7 +134,7 @@ static class AddressablesTestUtility
         };
 
         string hasBehaviorPath = RootFolder + "/AssetReferenceBehavior.prefab";
-        
+
         //AssetDatabase.StopAssetEditing();
 
         ScriptableObject assetWithDifferentTypedSubAssets = ScriptableObject.CreateInstance<UnityEngine.AddressableAssets.Tests.TestObject>();
@@ -140,7 +155,7 @@ static class AddressablesTestUtility
 
         PrefabUtility.SaveAsPrefabAsset(go, hasBehaviorPath);
         settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(hasBehaviorPath), group, false, false);
-        
+
         CreateFolderEntryAssets(RootFolder, settings, group);
 
         AssetDatabase.SaveAssets();
@@ -153,58 +168,61 @@ static class AddressablesTestUtility
     }
 
 #if UNITY_EDITOR
-	static void CreateFolderEntryAssets(string RootFolder, AddressableAssetSettings settings, AddressableAssetGroup group)
-	{
-		AssetDatabase.CreateFolder(RootFolder, "folderEntry");
-		string folderPath = RootFolder + "/folderEntry";
+    static void CreateFolderEntryAssets(string RootFolder, AddressableAssetSettings settings, AddressableAssetGroup group)
+    {
+        AssetDatabase.CreateFolder(RootFolder, "folderEntry");
+        string folderPath = RootFolder + "/folderEntry";
 
-		{
-			var texture = new Texture2D(32, 32);
-			var data = ImageConversion.EncodeToPNG(texture);
-			UnityEngine.Object.DestroyImmediate(texture);
-			AssetDatabase.GenerateUniqueAssetPath(RootFolder);
-			var spritePath = folderPath + "/spritesheet.png";
-			File.WriteAllBytes(spritePath, data);
+        {
+            var texture = new Texture2D(32, 32);
+            var data = ImageConversion.EncodeToPNG(texture);
+            UnityEngine.Object.DestroyImmediate(texture);
+            AssetDatabase.GenerateUniqueAssetPath(RootFolder);
+            var spritePath = folderPath + "/spritesheet.png";
+            File.WriteAllBytes(spritePath, data);
 
-			AssetDatabase.ImportAsset(spritePath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(spritePath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
 
-			var spriteGuid = AssetDatabase.AssetPathToGUID(spritePath);
-			var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
-			importer.textureType = TextureImporterType.Sprite;
-			importer.spriteImportMode = SpriteImportMode.Multiple;
-			importer.spritesheet = new SpriteMetaData[] { new SpriteMetaData() { name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16) },
-				new SpriteMetaData() { name = "botright", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16) }};
-			importer.SaveAndReimport();
-		}
+            var spriteGuid = AssetDatabase.AssetPathToGUID(spritePath);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Multiple;
+            importer.spritesheet = new SpriteMetaData[]
+            {
+                new SpriteMetaData() {name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16)},
+                new SpriteMetaData() {name = "botright", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16)}
+            };
+            importer.SaveAndReimport();
+        }
 
-		{
-			var texture = new Texture2D(32, 32);
-			var data = ImageConversion.EncodeToPNG(texture);
-			UnityEngine.Object.DestroyImmediate(texture);
+        {
+            var texture = new Texture2D(32, 32);
+            var data = ImageConversion.EncodeToPNG(texture);
+            UnityEngine.Object.DestroyImmediate(texture);
 
-			var spritePath = folderPath + "/sprite.png";
-			File.WriteAllBytes(spritePath, data);
-			AssetDatabase.ImportAsset(spritePath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            var spritePath = folderPath + "/sprite.png";
+            File.WriteAllBytes(spritePath, data);
+            AssetDatabase.ImportAsset(spritePath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
 
-			var spriteGuid = AssetDatabase.AssetPathToGUID(spritePath);
-			var importer = (TextureImporter) AssetImporter.GetAtPath(spritePath);
-			importer.textureType = TextureImporterType.Sprite;
-			importer.SaveAndReimport();
+            var spriteGuid = AssetDatabase.AssetPathToGUID(spritePath);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.SaveAndReimport();
 
-			string atlasPath = folderPath + "/atlas.spriteatlas";
-			var sa = new SpriteAtlas();
-			AssetDatabase.CreateAsset(sa, atlasPath);
-			sa.Add(new UnityEngine.Object[]
-			{
-				AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(AssetDatabase.GUIDToAssetPath(spriteGuid))
-			});
-			SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {sa}, EditorUserBuildSettings.activeBuildTarget, false);
-		}
+            string atlasPath = folderPath + "/atlas.spriteatlas";
+            var sa = new SpriteAtlas();
+            AssetDatabase.CreateAsset(sa, atlasPath);
+            sa.Add(new UnityEngine.Object[]
+            {
+                AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(AssetDatabase.GUIDToAssetPath(spriteGuid))
+            });
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {sa}, EditorUserBuildSettings.activeBuildTarget, false);
+        }
 
-		var folderEntry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(folderPath), group, false, false);
-		folderEntry.address = "folderEntry";
-	}
-	
+        var folderEntry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(folderPath), group, false, false);
+        folderEntry.address = "folderEntry";
+    }
+
     static string CreateAsset(string assetPath, string objectName)
     {
         GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);

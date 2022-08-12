@@ -80,6 +80,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 color.g = 0.12f;
                 color.b = 0.12f;
             }
+
             EditorGUI.DrawRect(r, color);
         }
 
@@ -144,6 +145,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 m_GroupTarget.Settings.activeProfileId = null; //this will reset it to default.
                 activeProfileName = m_GroupTarget.Settings.profileSettings.GetProfileName(m_GroupTarget.Settings.activeProfileId);
             }
+
             EditorGUILayout.PrefixLabel("Active Profile: " + activeProfileName);
             if (GUILayout.Button(m_InspectAASettings))
             {
@@ -170,17 +172,15 @@ namespace UnityEditor.AddressableAssets.GUI
                     helpUrl = AddressableAssetUtility.GenerateDocsURL("GroupSettings.html#content-packing--loading-settings");
                 if (schemaType == typeof(ContentUpdateGroupSchema))
                     helpUrl = AddressableAssetUtility.GenerateDocsURL("GroupSettings.html#content-update-restriction");
-                Action helpAction = () =>
-                {
-                    Application.OpenURL(helpUrl);
-                };
+                Action helpAction = () => { Application.OpenURL(helpUrl); };
 
                 Action<Rect> menuAction = rect =>
                 {
                     var menu = new GenericMenu();
                     menu.AddItem(AddressableAssetGroup.RemoveSchemaContent, false, () =>
                     {
-                        if (EditorUtility.DisplayDialog("Remove selected schema?", "Are you sure you want to remove " + AddressableAssetUtility.GetCachedTypeDisplayName(schemaType) + " schema?\n\nYou cannot undo this action.", "Yes", "No"))
+                        if (EditorUtility.DisplayDialog("Remove selected schema?",
+                                "Are you sure you want to remove " + AddressableAssetUtility.GetCachedTypeDisplayName(schemaType) + " schema?\n\nYou cannot undo this action.", "Yes", "No"))
                         {
                             m_GroupTarget.RemoveSchema(schemaType);
                         }
@@ -209,6 +209,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             foldoutActive = true;
                             AddressablesGUIUtility.SetFoldoutValue(foldoutKey, foldoutActive);
                         }
+
                         foreach (var targetSchema in m_GroupTarget.Schemas)
                             targetSchema.ShowAllProperties();
                     });
@@ -237,6 +238,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     {
                         Debug.LogException(se);
                     }
+
                     GUILayout.Space(10);
                 }
 

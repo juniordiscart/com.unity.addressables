@@ -15,6 +15,7 @@ namespace UnityEngine.ResourceManagement.Tests
             public bool methodInvoked;
             public int frameInvoked;
             public float timeInvoked;
+
             public void Method()
             {
                 frameInvoked = Time.frameCount;
@@ -80,10 +81,7 @@ namespace UnityEngine.ResourceManagement.Tests
         void PopulateCache_AddRemove<T>()
         {
             var cache = CreateCache<T>(1);
-            Assert.That(() =>
-            {
-                cache.Release(cache.Acquire(default(T)));
-            }, TestTools.Constraints.Is.Not.AllocatingGCMemory(), "GC Allocation detected");
+            Assert.That(() => { cache.Release(cache.Acquire(default(T))); }, TestTools.Constraints.Is.Not.AllocatingGCMemory(), "GC Allocation detected");
             Assert.AreEqual(1, cache.CreatedNodeCount);
             Assert.AreEqual(1, cache.CachedNodeCount);
         }
@@ -171,11 +169,8 @@ namespace UnityEngine.ResourceManagement.Tests
         void InvokeAllocTest<T>(T p)
         {
             var delList = CreateDelegateList<T>();
-            delList.Add(s => {});
-            Assert.That(() =>
-            {
-                delList.Invoke(p);
-            }, TestTools.Constraints.Is.Not.AllocatingGCMemory(), "GC Allocation detected");
+            delList.Add(s => { });
+            Assert.That(() => { delList.Invoke(p); }, TestTools.Constraints.Is.Not.AllocatingGCMemory(), "GC Allocation detected");
         }
 
         [Test]
@@ -192,20 +187,20 @@ namespace UnityEngine.ResourceManagement.Tests
 
         static object[] KeyResultData =
         {
-            new object[] { null, false, null, null },
-            new object[] { "", false, null, null },
-            new object[] { 5, false, null, null },
-            new object[] { "k", false, null, null },
-            new object[] { "[k]", false, null, null },
-            new object[] { "k]s[", false, null, null },
-            new object[] { "k[s", false, null, null },
-            new object[] { "[s]k", false, null, null },
-            new object[] { "k]s", false, null, null },
-            new object[] { "k[s]", true, "k", "s" },
-            new object[] { "k[[s]", true, "k", "[s" },
-            new object[] { "k[s[]", true, "k", "s[" },
-            new object[] { "k[s]]", true, "k", "s]" },
-            new object[] { "k[]s]", true, "k", "]s" },
+            new object[] {null, false, null, null},
+            new object[] {"", false, null, null},
+            new object[] {5, false, null, null},
+            new object[] {"k", false, null, null},
+            new object[] {"[k]", false, null, null},
+            new object[] {"k]s[", false, null, null},
+            new object[] {"k[s", false, null, null},
+            new object[] {"[s]k", false, null, null},
+            new object[] {"k]s", false, null, null},
+            new object[] {"k[s]", true, "k", "s"},
+            new object[] {"k[[s]", true, "k", "[s"},
+            new object[] {"k[s[]", true, "k", "s["},
+            new object[] {"k[s]]", true, "k", "s]"},
+            new object[] {"k[]s]", true, "k", "]s"},
         };
 
         [TestCaseSource(nameof(KeyResultData))]

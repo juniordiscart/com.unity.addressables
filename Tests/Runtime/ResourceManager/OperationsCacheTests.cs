@@ -11,6 +11,7 @@ namespace UnityEngine.ResourceManagement.Tests
     public class OperationsCacheTests
     {
         ResourceManager m_ResourceManager;
+
         [SetUp]
         public void Setup()
         {
@@ -93,6 +94,7 @@ namespace UnityEngine.ResourceManagement.Tests
             var l2 = new ResourceLocationBase("x", "b", "c", typeof(Mesh));
             Assert.IsTrue(LocationUtils.LocationEquals(l1, l2));
         }
+
         [Test]
         public void Locations_WithDiffIds_LocationEquals_Returns_False()
         {
@@ -100,6 +102,7 @@ namespace UnityEngine.ResourceManagement.Tests
             var l2 = new ResourceLocationBase("a", "x", "c", typeof(Mesh));
             Assert.IsFalse(LocationUtils.LocationEquals(l1, l2));
         }
+
         [Test]
         public void Locations_WithDiffProvider_LocationEquals_Returns_False()
         {
@@ -107,6 +110,7 @@ namespace UnityEngine.ResourceManagement.Tests
             var l2 = new ResourceLocationBase("a", "b", "x", typeof(Mesh));
             Assert.IsFalse(LocationUtils.LocationEquals(l1, l2));
         }
+
         [Test]
         public void Locations_WithDiffResourceTypes_LocationEquals_Returns_True()
         {
@@ -117,8 +121,11 @@ namespace UnityEngine.ResourceManagement.Tests
 
         class ResourceLocatonTestSub : ResourceLocationBase
         {
-            public ResourceLocatonTestSub(string n, string id, string pr, Type t) : base(n, id, pr, t) { }
+            public ResourceLocatonTestSub(string n, string id, string pr, Type t) : base(n, id, pr, t)
+            {
+            }
         }
+
         [Test]
         public void Locations_WithDiffTypes_LocationEquals_Returns_True()
         {
@@ -126,6 +133,5 @@ namespace UnityEngine.ResourceManagement.Tests
             var l2 = new ResourceLocatonTestSub("a", "b", "c", typeof(Mesh));
             Assert.IsTrue(LocationUtils.LocationEquals(l1, l2));
         }
-
     }
 }

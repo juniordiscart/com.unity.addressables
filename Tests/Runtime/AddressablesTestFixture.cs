@@ -16,7 +16,6 @@ using System;
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
-
 using Object = UnityEngine.Object;
 
 public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanup
@@ -37,6 +36,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         PackedPlaymode,
         Packed
     }
+
     protected virtual TestBuildScriptMode BuildScriptMode { get; }
 
     protected string GetGeneratedAssetsPath()
@@ -103,7 +103,9 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
 
 #if UNITY_EDITOR
 
-    internal virtual void Setup(AddressableAssetSettings settings, string tempAssetFolder) {}
+    internal virtual void Setup(AddressableAssetSettings settings, string tempAssetFolder)
+    {
+    }
 
     protected AddressableAssetSettings CreateSettings(string name, string rootFolder)
     {
@@ -129,6 +131,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
             IDataBuilder packedModeBuilder = GetBuilderOfType(settings, typeof(BuildScriptPackedMode));
             packedModeBuilder.BuildData<AddressableAssetBuildResult>(buildContext);
         }
+
         IDataBuilder b = GetBuilderOfType(settings, GetBuildScriptTypeFromMode(BuildScriptMode));
         b.BuildData<AddressableAssetBuildResult>(buildContext);
         PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath + id, PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
@@ -142,6 +145,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
             if (b.GetType() == modeType)
                 return b as IDataBuilder;
         }
+
         throw new Exception("DataBuilder not found");
     }
 
@@ -154,6 +158,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
             case TestBuildScriptMode.Packed: return typeof(BuildScriptPackedMode);
             case TestBuildScriptMode.PackedPlaymode: return typeof(BuildScriptPackedPlayMode);
         }
+
         throw new Exception("Unknown script mode");
     }
 

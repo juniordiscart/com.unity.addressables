@@ -41,8 +41,16 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         {
             get { return m_EventData == null ? null : m_EventData.GetSessionByIndex(m_PlayerSessionIndex); }
         }
-        protected virtual bool ShowEventDetailPanel { get { return false; } }
-        protected virtual bool ShowEventPanel { get { return false; } }
+
+        protected virtual bool ShowEventDetailPanel
+        {
+            get { return false; }
+        }
+
+        protected virtual bool ShowEventPanel
+        {
+            get { return false; }
+        }
 
         void OnEnable()
         {
@@ -131,7 +139,10 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
             return OnCanHandleEvent(graph);
         }
 
-        protected virtual bool OnCanHandleEvent(string graph) { return true; }
+        protected virtual bool OnCanHandleEvent(string graph)
+        {
+            return true;
+        }
 
         void OnEditorPlayModeChanged(PlayModeStateChange state)
         {
@@ -146,6 +157,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
                 m_PlayerSessionIndex = 0;
                 RegisterEventHandler(true);
             }
+
             if (state == PlayModeStateChange.EnteredEditMode)
             {
                 RegisterEventHandler(false);
@@ -171,6 +183,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         }
 
         int m_LastRepaintedFrame = -1;
+
         void OnEventProcessed(DiagnosticEvent diagnosticEvent, bool entryCreated)
         {
             if (!CanHandleEvent(diagnosticEvent.Graph))
@@ -222,6 +235,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
                     SetInspectFrame(m_InspectFrame + 1);
                     return;
                 }
+
                 if (Event.current.keyCode == KeyCode.LeftArrow)
                 {
                     SetInspectFrame(m_InspectFrame - 1);
@@ -257,6 +271,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
                 {
                     m_EventList.OnGUI(bot);
                 }
+
                 if (resizingVer || resizingHor)
                     Repaint();
             }
@@ -308,7 +323,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         {
             if (m_InspectFrame != m_LatestFrame)
             {
-                var ix = graphPanelRect.xMin + GraphUtility.ValueToPixel(m_InspectFrame, m_GraphList.visibleStartTime, m_GraphList.visibleStartTime + m_GraphList.visibleDuration, graphPanelRect.width);
+                var ix = graphPanelRect.xMin +
+                         GraphUtility.ValueToPixel(m_InspectFrame, m_GraphList.visibleStartTime, m_GraphList.visibleStartTime + m_GraphList.visibleDuration, graphPanelRect.width);
                 EditorGUI.DrawRect(new Rect(ix - 1, graphPanelRect.yMin, 3, graphPanelRect.height), Color.white * .8f);
             }
         }
@@ -349,8 +365,12 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         {
             if (columnNames == null || columnSizes == null)
                 return;
-            columnNames.Add("Event"); tooltips.Add("A diagnostic event sent by the ResourceManager"); columnSizes.Add(50);
-            columnNames.Add("Id"); tooltips.Add("Identifier for the event"); columnSizes.Add(200);
+            columnNames.Add("Event");
+            tooltips.Add("A diagnostic event sent by the ResourceManager");
+            columnSizes.Add(50);
+            columnNames.Add("Id");
+            tooltips.Add("Identifier for the event");
+            columnSizes.Add(200);
             //        columnNames.Add("Data"); columnSizes.Add(400);
         }
 
@@ -365,9 +385,13 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
             {
                 switch (column)
                 {
-                    case 0: EditorGUI.LabelField(cellRect, diagnosticEvent.Stream.ToString()); break;
-                    case 1: EditorGUI.LabelField(cellRect, diagnosticEvent.DisplayName); break;
-                        //                    case 2: EditorGUI.LabelField(cellRect, diagnosticEvent. == null ? "null" : diagnosticEvent.Data.ToString()); break;
+                    case 0:
+                        EditorGUI.LabelField(cellRect, diagnosticEvent.Stream.ToString());
+                        break;
+                    case 1:
+                        EditorGUI.LabelField(cellRect, diagnosticEvent.DisplayName);
+                        break;
+                    //                    case 2: EditorGUI.LabelField(cellRect, diagnosticEvent. == null ? "null" : diagnosticEvent.Data.ToString()); break;
                 }
             }
         }
@@ -419,7 +443,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
             {
                 string warningText = string.Empty;
                 if (!ProjectConfigData.PostProfilerEvents)
-                    warningText = "Warning: 'Send Profiler events' must be enabled in your Addressable Asset settings to view profile data. Changes to 'Send Profiler Events' will be applied on the following build.";
+                    warningText =
+                        "Warning: 'Send Profiler events' must be enabled in your Addressable Asset settings to view profile data. Changes to 'Send Profiler Events' will be applied on the following build.";
                 m_GraphListMchs.columns[2].headerContent.text = warningText;
             }
         }
@@ -433,7 +458,9 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
             OnInitializeGraphView(graphView);
         }
 
-        protected virtual void OnInitializeGraphView(EventGraphListView graphView) {}
+        protected virtual void OnInitializeGraphView(EventGraphListView graphView)
+        {
+        }
     }
 
     [Serializable]
@@ -441,7 +468,12 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
     {
         [NonSerialized]
         Rect m_Rect = new Rect(0, 0, 0, 3);
-        public Rect SplitterRect { get { return m_Rect; } }
+
+        public Rect SplitterRect
+        {
+            get { return m_Rect; }
+        }
+
         [FormerlySerializedAs("m_currentPercent")]
         [SerializeField]
         float m_CurrentPercent;
@@ -449,6 +481,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         bool m_Resizing;
         float m_MinPercent;
         float m_MaxPercent;
+
         public VerticalSplitter(float percent = .8f, float minPer = .2f, float maxPer = .9f)
         {
             m_CurrentPercent = percent;
@@ -488,7 +521,12 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
     {
         [NonSerialized]
         Rect m_Rect = new Rect(0, 0, 3, 0);
-        public Rect SplitterRect { get { return m_Rect; } }
+
+        public Rect SplitterRect
+        {
+            get { return m_Rect; }
+        }
+
         [FormerlySerializedAs("m_currentPercent")]
         [SerializeField]
         float m_CurrentPercent;
@@ -496,6 +534,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         bool m_Resizing;
         float m_MinPercent;
         float m_MaxPercent;
+
         public HorizontalSplitter(float percent = .8f, float minPer = .2f, float maxPer = .9f)
         {
             m_CurrentPercent = percent;

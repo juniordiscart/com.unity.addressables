@@ -25,17 +25,17 @@ namespace UnityEditor.AddressableAssets.Settings
         static internal bool ValidateAsset(AssetReference assetRefObject, List<AssetReferenceUIRestrictionSurrogate> restrictions, Object obj)
         {
             return assetRefObject != null
-                && assetRefObject.ValidateAsset(obj)
-                && restrictions != null
-                && restrictions.All(r => r.ValidateAsset(obj));
+                   && assetRefObject.ValidateAsset(obj)
+                   && restrictions != null
+                   && restrictions.All(r => r.ValidateAsset(obj));
         }
 
         static internal bool ValidateAsset(AssetReference assetRefObject, List<AssetReferenceUIRestrictionSurrogate> restrictions, IReferenceEntryData entryData)
         {
             return assetRefObject != null
-                && assetRefObject.ValidateAsset(entryData?.AssetPath)
-                && restrictions != null
-                && restrictions.All(r => r.ValidateAsset(entryData));
+                   && assetRefObject.ValidateAsset(entryData?.AssetPath)
+                   && restrictions != null
+                   && restrictions.All(r => r.ValidateAsset(entryData));
         }
 
         static internal bool ValidateAsset(AssetReference assetRefObject, List<AssetReferenceUIRestrictionSurrogate> restrictions, string path)
@@ -47,6 +47,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     if (!restriction.ValidateAsset(path))
                         return false;
                 }
+
                 return true;
             }
 
@@ -201,6 +202,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     }
                 }
             }
+
             return valueChanged;
         }
 
@@ -337,9 +339,7 @@ namespace UnityEditor.AddressableAssets.Settings
             var currentRef =
                 property.GetActualObjectForSerializedProperty<AssetReference>(propertyField, ref labelText);
 
-            string nameToUse = currentRef.editorAsset != null ?
-                currentRef.editorAsset.name :
-                ConstructNoAssetLabel(propertyField.FieldType);
+            string nameToUse = currentRef.editorAsset != null ? currentRef.editorAsset.name : ConstructNoAssetLabel(propertyField.FieldType);
 
             if (property.serializedObject.targetObjects.Length > 1)
             {
@@ -398,7 +398,8 @@ namespace UnityEditor.AddressableAssets.Settings
             return formatted;
         }
 
-        static internal bool ValidateDrag(AssetReference assetReferenceObject, List<AssetReferenceUIRestrictionSurrogate> restrictions, List<AssetEntryTreeViewItem> aaEntries, Object[] dropObjReferences, string[] dropPaths)
+        static internal bool ValidateDrag(AssetReference assetReferenceObject, List<AssetReferenceUIRestrictionSurrogate> restrictions, List<AssetEntryTreeViewItem> aaEntries,
+            Object[] dropObjReferences, string[] dropPaths)
         {
             if (aaEntries != null)
             {

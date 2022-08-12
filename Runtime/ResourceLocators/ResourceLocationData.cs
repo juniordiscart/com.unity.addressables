@@ -13,45 +13,67 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         [FormerlySerializedAs("m_keys")]
         [SerializeField]
         string[] m_Keys;
+
         /// <summary>
         /// The collection of keys for this location.
         /// </summary>
-        public string[] Keys { get { return m_Keys; } }
+        public string[] Keys
+        {
+            get { return m_Keys; }
+        }
 
         [FormerlySerializedAs("m_internalId")]
         [SerializeField]
         string m_InternalId;
+
         /// <summary>
         /// The internal id.
         /// </summary>
-        public string InternalId { get { return m_InternalId; } }
+        public string InternalId
+        {
+            get { return m_InternalId; }
+        }
 
         [FormerlySerializedAs("m_provider")]
         [SerializeField]
         string m_Provider;
+
         /// <summary>
         /// The provider id.
         /// </summary>
-        public string Provider { get { return m_Provider; } }
+        public string Provider
+        {
+            get { return m_Provider; }
+        }
 
         [FormerlySerializedAs("m_dependencies")]
         [SerializeField]
         string[] m_Dependencies;
+
         /// <summary>
         /// The collection of dependencies for this location.
         /// </summary>
-        public string[] Dependencies { get { return m_Dependencies; } }
+        public string[] Dependencies
+        {
+            get { return m_Dependencies; }
+        }
 
         [SerializeField]
         SerializedType m_ResourceType;
+
         /// <summary>
         /// The type of the resource for the location.
         /// </summary>
-        public Type ResourceType { get { return m_ResourceType.Value; } }
+        public Type ResourceType
+        {
+            get { return m_ResourceType.Value; }
+        }
 
         [SerializeField]
         byte[] SerializedData;
+
         object _Data;
+
         /// <summary>
         /// The optional arbitrary data stored along with location
         /// </summary>
@@ -65,6 +87,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                         return null;
                     _Data = Utility.SerializationUtilities.ReadObjectFromByteArray(SerializedData, 0);
                 }
+
                 return _Data;
             }
             set
@@ -74,7 +97,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 SerializedData = tmp.ToArray();
             }
         }
-        
+
         /// <summary>
         /// Construct a new ResourceLocationData object.
         /// </summary>
@@ -89,7 +112,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             m_InternalId = id;
             m_Provider = provider == null ? "" : provider.FullName;
             m_Dependencies = dependencies == null ? new string[0] : dependencies;
-            m_ResourceType = new SerializedType() { Value = t };
+            m_ResourceType = new SerializedType() {Value = t};
         }
     }
 }

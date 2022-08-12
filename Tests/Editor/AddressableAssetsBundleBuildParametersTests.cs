@@ -13,7 +13,10 @@ namespace UnityEditor.AddressableAssets.Tests
 {
     public class AddressableAssetsBundleBuildParametersTests : AddressableAssetTestBase
     {
-        protected override bool PersistSettings { get { return false; } }
+        protected override bool PersistSettings
+        {
+            get { return false; }
+        }
 
         static IEnumerable<Enum> GetValues(Type t)
         {
@@ -45,7 +48,7 @@ namespace UnityEditor.AddressableAssets.Tests
         public void WhenCompressionSetForGroups_GetCompressionForIdentifier_ReturnsExpectedCompression()
         {
             var bundleToAssetGroup = new Dictionary<string, string>();
-            var expectedValues = new BuildCompression[] { BuildCompression.Uncompressed, BuildCompression.LZ4, BuildCompression.LZMA, BuildCompression.UncompressedRuntime, BuildCompression.LZ4Runtime };
+            var expectedValues = new BuildCompression[] {BuildCompression.Uncompressed, BuildCompression.LZ4, BuildCompression.LZMA, BuildCompression.UncompressedRuntime, BuildCompression.LZ4Runtime};
             var bundleNames = new List<string>();
 
             foreach (var en in GetValues(typeof(BundledAssetGroupSchema.BundleCompressionMode)))
@@ -56,6 +59,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 bundleToAssetGroup.Add(bName, g.Guid);
                 bundleNames.Add(bName);
             }
+
             var testParams = new AddressableAssetsBundleBuildParameters(Settings, bundleToAssetGroup, BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone, "Unused");
 
             for (int i = 0; i < bundleNames.Count; i++)

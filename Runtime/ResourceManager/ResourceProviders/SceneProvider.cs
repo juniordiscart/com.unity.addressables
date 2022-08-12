@@ -25,6 +25,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             int m_Priority;
             private AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
             ResourceManager m_ResourceManager;
+
             public SceneOp(ResourceManager rm)
             {
                 m_ResourceManager = rm;
@@ -32,14 +33,14 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
             {
-                return m_DepOp.IsValid() ? m_DepOp.InternalGetDownloadStatus(visited) : new DownloadStatus() { IsDone = IsDone };
+                return m_DepOp.IsValid() ? m_DepOp.InternalGetDownloadStatus(visited) : new DownloadStatus() {IsDone = IsDone};
             }
 
             public void Init(IResourceLocation location, LoadSceneMode loadSceneMode, bool activateOnLoad, int priority, AsyncOperationHandle<IList<AsyncOperationHandle>> depOp)
             {
                 Init(location, new LoadSceneParameters(loadSceneMode), activateOnLoad, priority, depOp);
             }
-            
+
             public void Init(IResourceLocation location, LoadSceneParameters loadSceneParameters, bool activateOnLoad, int priority, AsyncOperationHandle<IList<AsyncOperationHandle>> depOp)
             {
                 m_DepOp = depOp;
@@ -61,16 +62,17 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 m_RM?.Update(Time.unscaledDeltaTime);
                 if (!HasExecuted)
                     InvokeExecute();
-                
+
                 var timer = new Stopwatch();
                 timer.Start();
-                
+
                 while (!IsDone)
                 {
                     ((IUpdateReceiver)this).Update(Time.unscaledDeltaTime);
                     //We need the operation to complete but it'll take a frame to activate the scene (post 0.9 progress).
                     if (m_Inst.m_Operation.progress == 0 && timer.ElapsedMilliseconds > 5000)
-                        throw new Exception("Infinite loop detected within LoadSceneAsync.WaitForCompletion. For more information see the notes under the Scenes section of the \"Synchronous Addressables\" page of the Addressables documentation, or consider using asynchronous scene loading code.");
+                        throw new Exception(
+                            "Infinite loop detected within LoadSceneAsync.WaitForCompletion. For more information see the notes under the Scenes section of the \"Synchronous Addressables\" page of the Addressables documentation, or consider using asynchronous scene loading code.");
 
                     if (m_Inst.m_Operation.allowSceneActivation && Mathf.Approximately(m_Inst.m_Operation.progress, .9f))
                     {
@@ -78,7 +80,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         return true;
                     }
                 }
-                
+
                 return IsDone;
             }
 
@@ -89,7 +91,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     deps.Add(m_DepOp);
             }
 
-            protected override string DebugName { get { return string.Format("Scene({0})", m_Location == null ? "Invalid" : ShortenPath(m_ResourceManager.TransformInternalId(m_Location), false)); } }
+            protected override string DebugName
+            {
+                get { return string.Format("Scene({0})", m_Location == null ? "Invalid" : ShortenPath(m_ResourceManager.TransformInternalId(m_Location), false)); }
+            }
 
             protected override void Execute()
             {
@@ -103,7 +108,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                             loadingFromBundle = true;
                     }
                 }
-                
+
                 if (!m_DepOp.IsValid() || m_DepOp.OperationException == null)
                 {
                     m_Inst = InternalLoadScene(m_Location, loadingFromBundle, m_LoadSceneParameters, m_ActivateOnLoad, m_Priority);
@@ -116,6 +121,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     m_ResourceManager.RemoveUpdateReciever(this);
                     Complete(m_Inst, false, m_DepOp.OperationException);
                 }
+
                 HasExecuted = true;
             }
 
@@ -125,7 +131,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 var op = InternalLoad(internalId, loadingFromBundle, loadSceneParameters);
                 op.allowSceneActivation = activateOnLoad;
                 op.priority = priority;
-                return new SceneInstance() { m_Operation = op, Scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1) };
+                return new SceneInstance() {m_Operation = op, Scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1)};
             }
 
             AsyncOperation InternalLoad(string path, bool loadingFromBundle, LoadSceneParameters loadSceneParameters)
@@ -194,6 +200,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             SceneInstance m_Instance;
             AsyncOperationHandle<SceneInstance> m_sceneLoadHandle;
             UnloadSceneOptions m_UnloadOptions;
+
             public void Init(AsyncOperationHandle<SceneInstance> sceneLoadHandle, UnloadSceneOptions options)
             {
                 if (sceneLoadHandle.ReferenceCount > 0)
@@ -201,6 +208,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     m_sceneLoadHandle = sceneLoadHandle;
                     m_Instance = m_sceneLoadHandle.Result;
                 }
+
                 m_UnloadOptions = options;
             }
 
@@ -236,7 +244,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 if (m_sceneLoadHandle.IsValid())
                     m_sceneLoadHandle.Release();
             }
-            
+
             private void UnloadSceneCompletedNoRelease(AsyncOperation obj)
             {
                 Complete(m_Instance, true, "");

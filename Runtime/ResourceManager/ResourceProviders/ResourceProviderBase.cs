@@ -17,6 +17,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// The unique identifier of the provider.
         /// </summary>
         protected string m_ProviderId;
+
         /// <summary>
         /// The extra behavior of the provider.
         /// </summary>
@@ -89,7 +90,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             return rm.StartOperation(baseInitOp, default);
         }
 
-        ProviderBehaviourFlags IResourceProvider.BehaviourFlags { get { return m_BehaviourFlags; } }
+        ProviderBehaviourFlags IResourceProvider.BehaviourFlags
+        {
+            get { return m_BehaviourFlags; }
+        }
 
         class BaseInitAsyncOp : AsyncOperationBase<bool>
         {
@@ -101,7 +105,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             }
 
             ///<inheritdoc />
-            protected  override bool InvokeWaitForCompletion()
+            protected override bool InvokeWaitForCompletion()
             {
                 m_RM?.Update(Time.unscaledDeltaTime);
                 if (!HasExecuted)
@@ -126,7 +130,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     [Serializable]
     public class ProviderLoadRequestOptions
     {
-        [SerializeField] private bool m_IgnoreFailures = false;
+        [SerializeField]
+        private bool m_IgnoreFailures = false;
+
         private int m_WebRequestTimeout = 0;
 
         /// <summary>
@@ -135,7 +141,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <returns>The newly created ProviderLoadRequestOption object</returns>
         public ProviderLoadRequestOptions Copy()
         {
-            return (ProviderLoadRequestOptions) this.MemberwiseClone();
+            return (ProviderLoadRequestOptions)this.MemberwiseClone();
         }
 
         /// <summary>

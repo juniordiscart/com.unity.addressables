@@ -6,6 +6,7 @@ using UnityEngine.AddressableAssets;
 public class LoadSceneForCustomBuild : MonoBehaviour
 {
     public string SceneKey;
+
     // Start is called before the first frame update
     void Start()
     {

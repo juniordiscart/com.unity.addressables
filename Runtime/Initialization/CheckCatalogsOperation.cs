@@ -12,6 +12,7 @@ namespace UnityEngine.AddressableAssets
         List<string> m_LocalHashes;
         List<ResourceLocatorInfo> m_LocatorInfos;
         AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
+
         public CheckCatalogsOperation(AddressablesImpl aa)
         {
             m_Addressables = aa;
@@ -104,7 +105,7 @@ namespace UnityEngine.AddressableAssets
                 {
                     errorString = "Partial success in CheckCatalogsOperation with the following errors: ";
                 }
-                
+
                 foreach (string str in errorMsgList)
                     errorString = errorString + "\n" + str;
             }

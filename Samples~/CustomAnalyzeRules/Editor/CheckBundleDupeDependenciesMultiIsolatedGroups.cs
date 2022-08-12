@@ -17,6 +17,7 @@ public class CheckBundleDupeDependenciesMultiIsolatedGroups : CheckBundleDupeDep
                 if (y.Find(i => i.Guid == group.Guid) == null)
                     return false;
             }
+
             return true;
         }
 
@@ -30,7 +31,10 @@ public class CheckBundleDupeDependenciesMultiIsolatedGroups : CheckBundleDupeDep
     }
 
     /// <inheritdoc />
-    public override string ruleName { get { return "Check Duplicate Bundle Dependencies Multi-Isolated Groups"; } }
+    public override string ruleName
+    {
+        get { return "Check Duplicate Bundle Dependencies Multi-Isolated Groups"; }
+    }
 
     /// <summary>
     /// Fix duplicates by moving them to new groups.
@@ -52,6 +56,7 @@ public class CheckBundleDupeDependenciesMultiIsolatedGroups : CheckBundleDupeDep
                 assets = new List<GUID>();
                 groupsToAssets.Add(pair.Value, assets);
             }
+
             groupsToAssets[pair.Value].Add(pair.Key);
         }
 
@@ -77,8 +82,10 @@ public class CheckBundleDupeDependenciesMultiIsolatedGroups : CheckBundleDupeDep
                 groups = new List<AddressableAssetGroup>();
                 implicitAssetsToGroup.Add(assetGuid, groups);
             }
+
             implicitAssetsToGroup[assetGuid].Add(checkDupeResult.Group);
         }
+
         return implicitAssetsToGroup;
     }
 }

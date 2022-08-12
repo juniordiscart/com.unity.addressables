@@ -18,11 +18,21 @@ namespace UnityEngine.ResourceManagement.Tests
     public abstract class ResourceManagerBaseTests
     {
         const int kAssetCount = 25;
-        protected string RootFolder { get { return string.Format("Assets/{0}_AssetsToDelete", GetType().Name); } }
+
+        protected string RootFolder
+        {
+            get { return string.Format("Assets/{0}_AssetsToDelete", GetType().Name); }
+        }
+
         List<IResourceLocation> m_Locations = new List<IResourceLocation>();
-        protected virtual string AssetPathPrefix { get { return ""; } }
+
+        protected virtual string AssetPathPrefix
+        {
+            get { return ""; }
+        }
 
         protected abstract IResourceLocation[] SetupLocations(KeyValuePair<string, string>[] assets);
+
         string GetAssetPath(int i)
         {
             return RootFolder + "/" + AssetPathPrefix + "asset" + i + ".prefab";
@@ -55,7 +65,7 @@ namespace UnityEngine.ResourceManagement.Tests
                     Directory.CreateDirectory(Path.GetDirectoryName(assetPath));
 
                 PrefabUtility.SaveAsPrefabAsset(go, assetPath);
-     
+
                 Object.DestroyImmediate(go, false);
             }
 
@@ -84,10 +94,14 @@ namespace UnityEngine.ResourceManagement.Tests
         [UnityTest]
         public IEnumerator CanProvideWithCallback()
         {
-            GameObject[] goResult = new GameObject[] { null };
-            bool[] wasCallbackCalled = new bool[] { false };
+            GameObject[] goResult = new GameObject[] {null};
+            bool[] wasCallbackCalled = new bool[] {false};
             var op = m_ResourceManager.ProvideResource<GameObject>(m_Locations[0]);
-            op.Completed += (x) => { wasCallbackCalled[0] = true; goResult[0] = x.Result; };
+            op.Completed += (x) =>
+            {
+                wasCallbackCalled[0] = true;
+                goResult[0] = x.Result;
+            };
             yield return op;
             Assert.IsTrue(wasCallbackCalled[0]);
             op.Release();
@@ -108,6 +122,24 @@ namespace UnityEngine.ResourceManagement.Tests
         }
 
         [UnityTest]
+        public IEnumerator CanGetOperationFromCache()
+        {
+            AsyncOperationHandle<GameObject> op = m_ResourceManager.ProvideResource<GameObject>(m_Locations[0]);
+            try
+            {
+                var cachedOp = m_ResourceManager.GetOperationFromCache(m_Locations[0], typeof(GameObject));
+                Assert.IsNotNull(cachedOp);
+                yield return op;
+                Assert.IsNotNull(op.Result);
+                Assert.AreEqual(op.m_InternalOp, cachedOp);
+            }
+            finally
+            {
+                op.Release();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator CanProvideMultipleResources()
         {
             AsyncOperationHandle<IList<GameObject>> op = m_ResourceManager.ProvideResources<GameObject>(m_Locations);
@@ -123,6 +155,7 @@ namespace UnityEngine.ResourceManagement.Tests
             public GameObject result;
             public bool done = false;
             public AsyncOperationHandle<GameObject> operation;
+
             async void Start()
             {
                 operation = resourceManager.ProvideResource<GameObject>(location);
@@ -156,6 +189,7 @@ namespace UnityEngine.ResourceManagement.Tests
             public AsyncOperationHandle<GameObject> operation;
             public bool addCompletedCallback;
             public bool callbackDone = false;
+
             async void Start()
             {
                 operation = resourceManager.ProvideResource<GameObject>(location);
@@ -188,7 +222,7 @@ namespace UnityEngine.ResourceManagement.Tests
             comp.operation.Release();
             GameObject.Destroy(go);
         }
-        
+
         [UnityTest]
         public IEnumerator WhenAsyncOperationIsDone_TasksAndCallbackIsCompleted()
         {

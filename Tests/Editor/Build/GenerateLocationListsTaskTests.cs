@@ -33,6 +33,7 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
                 entry = e;
                 return true;
             }
+
         entry = null;
         return false;
     }
@@ -44,6 +45,7 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
             if (kvp.Value == value)
                 return kvp.Key;
         }
+
         throw new System.Exception("Couldn't find value");
     }
 
@@ -77,6 +79,7 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
         {
             group.GatherAllAssets(entries, true, true, false);
         }
+
         return entries;
     }
 
@@ -147,7 +150,7 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
 
         schema.IncludeLabelsInCatalog = false;
         foreach (var l in GenerateLocationListsTask.ProcessInput(input).Locations)
-            if(l.Provider == typeof(BundledAssetProvider).FullName)
+            if (l.Provider == typeof(BundledAssetProvider).FullName)
                 CollectionAssert.DoesNotContain(l.Keys, "LABEL1");
     }
 
@@ -164,7 +167,7 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
         CreateAddressablePrefab(input, "p2", group, "fileY");
         input.AddressableAssetEntries = BuildAddressableAssetEntryList(input.Settings);
         GenerateLocationListsTask.Output output = GenerateLocationListsTask.ProcessInput(input);
-        CollectionAssert.AreEquivalent(new string[] { "bundle1", "bundle2" }, output.AssetGroupToBundles[group]);
+        CollectionAssert.AreEquivalent(new string[] {"bundle1", "bundle2"}, output.AssetGroupToBundles[group]);
     }
 
     [Test]

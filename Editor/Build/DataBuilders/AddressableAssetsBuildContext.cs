@@ -11,7 +11,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// <summary>
     /// Interface for any Addressables specific context objects to be used in the Scriptable Build Pipeline context store
     /// </summary>
-    public interface IAddressableAssetsBuildContext : IContextObject {}
+    public interface IAddressableAssetsBuildContext : IContextObject
+    {
+    }
 
     /// <summary>
     /// Simple context object for passing data through SBP, between different sections of Addressables code.
@@ -19,11 +21,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     public class AddressableAssetsBuildContext : IAddressableAssetsBuildContext
     {
         private AddressableAssetSettings m_Settings;
+
         /// <summary>
         /// The settings object to use.
         /// </summary>
         [Obsolete("Use Settings property instead.")]
         public AddressableAssetSettings settings;
+
         /// <summary>
         /// The settings object to use.
         /// </summary>
@@ -45,23 +49,29 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     m_SettingsAssetPath = null;
             }
         }
+
         private string m_SettingsAssetPath;
+
         /// <summary>
         /// The current runtime data being built.
         /// </summary>
         public ResourceManagerRuntimeData runtimeData;
+
         /// <summary>
         /// The list of catalog locations.
         /// </summary>
         public List<ContentCatalogDataEntry> locations;
+
         /// <summary>
         /// Mapping of bundles to asset groups.
         /// </summary>
         public Dictionary<string, string> bundleToAssetGroup;
+
         /// <summary>
         /// Mapping of asset group to bundles.
         /// </summary>
         public Dictionary<AddressableAssetGroup, List<string>> assetGroupToBundles;
+
         /// <summary>
         /// Set of provider types needed in this build.
         /// </summary>
@@ -81,8 +91,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// A mapping of AssetBundle to the full dependency tree, flattened into a single list.
         /// </summary>
         public Dictionary<string, List<string>> bundleToExpandedBundleDependencies;
-        
+
         private Dictionary<string, List<ContentCatalogDataEntry>> m_PrimaryKeyToDependers = null;
+
         internal Dictionary<string, List<ContentCatalogDataEntry>> PrimaryKeyToDependerLocations
         {
             get
@@ -103,12 +114,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         string dependencyKey = location.Dependencies[i] as string;
                         if (string.IsNullOrEmpty(dependencyKey))
                             continue;
-                            
+
                         if (!m_PrimaryKeyToDependers.TryGetValue(dependencyKey, out var dependers))
                         {
                             dependers = new List<ContentCatalogDataEntry>();
                             m_PrimaryKeyToDependers.Add(dependencyKey, dependers);
                         }
+
                         dependers.Add(location);
                     }
                 }
@@ -116,8 +128,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 return m_PrimaryKeyToDependers;
             }
         }
-        
+
         private Dictionary<string, ContentCatalogDataEntry> m_PrimaryKeyToLocation = null;
+
         internal Dictionary<string, ContentCatalogDataEntry> PrimaryKeyToLocation
         {
             get
@@ -129,13 +142,14 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     Debug.LogError("Attempting to get Primary key to entries dependent on key, but currently no locations");
                     return new Dictionary<string, ContentCatalogDataEntry>();
                 }
-                
+
                 m_PrimaryKeyToLocation = new Dictionary<string, ContentCatalogDataEntry>();
                 foreach (var loc in locations)
                 {
-                    if (loc != null && loc.Keys[0] != null && loc.Keys[0] is string && !m_PrimaryKeyToLocation.ContainsKey((string) loc.Keys[0]))
-                        m_PrimaryKeyToLocation[(string) loc.Keys[0]] = loc;
+                    if (loc != null && loc.Keys[0] != null && loc.Keys[0] is string && !m_PrimaryKeyToLocation.ContainsKey((string)loc.Keys[0]))
+                        m_PrimaryKeyToLocation[(string)loc.Keys[0]] = loc;
                 }
+
                 return m_PrimaryKeyToLocation;
             }
         }

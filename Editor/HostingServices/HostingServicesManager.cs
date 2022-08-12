@@ -20,6 +20,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
     public class HostingServicesManager : ISerializationCallbackReceiver
     {
         internal const string KPrivateIpAddressKey = "PrivateIpAddress";
+
         internal string GetPrivateIpAddressKey(int id = 0)
         {
             if (id == 0)
@@ -32,6 +33,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         {
             [SerializeField]
             internal string classRef;
+
             [SerializeField]
             internal KeyDataStore dataStore;
         }
@@ -39,12 +41,15 @@ namespace UnityEditor.AddressableAssets.HostingServices
         [FormerlySerializedAs("m_hostingServiceInfos")]
         [SerializeField]
         List<HostingServiceInfo> m_HostingServiceInfos;
+
         [FormerlySerializedAs("m_settings")]
         [SerializeField]
         AddressableAssetSettings m_Settings;
+
         [FormerlySerializedAs("m_nextInstanceId")]
         [SerializeField]
         int m_NextInstanceId;
+
         [FormerlySerializedAs("m_registeredServiceTypeRefs")]
         [SerializeField]
         List<string> m_RegisteredServiceTypeRefs;
@@ -64,7 +69,11 @@ namespace UnityEditor.AddressableAssets.HostingServices
         public Dictionary<string, string> GlobalProfileVariables { get; private set; }
 
         internal static readonly string k_GlobalProfileVariablesCountKey = $"com.unity.addressables.{nameof(GlobalProfileVariables)}Count";
-        internal static string GetSessionStateKey(int id) { return $"com.unity.addressables.{nameof(GlobalProfileVariables)}{id}"; }
+
+        internal static string GetSessionStateKey(int id)
+        {
+            return $"com.unity.addressables.{nameof(GlobalProfileVariables)}{id}";
+        }
 
         /// <summary>
         /// Direct logging output of all managed services
@@ -267,7 +276,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
             m_Settings.SetDirty(AddressableAssetSettings.ModificationEvent.HostingServicesManagerModified, this, true, true);
             AddressableAssetUtility.OpenAssetIfUsingVCIntegration(m_Settings);
         }
-        
+
         /// <summary>
         /// Should be called by parent <see cref="ScriptableObject"/> instance Awake method
         /// </summary>
@@ -287,13 +296,17 @@ namespace UnityEditor.AddressableAssets.HostingServices
             m_Settings.OnModification += OnSettingsModification;
             m_Settings.profileSettings.RegisterProfileStringEvaluationFunc(EvaluateGlobalProfileVariableKey);
 
+            var contentRoots = GetAllContentRoots();
             foreach (var svc in HostingServices)
             {
                 svc.Logger = m_Logger;
                 m_Settings.profileSettings.RegisterProfileStringEvaluationFunc(svc.EvaluateProfileString);
                 var baseSvc = svc as BaseHostingService;
+                svc.HostingServiceContentRoots.Clear();
+                svc.HostingServiceContentRoots.AddRange(contentRoots);
                 baseSvc?.OnEnable();
             }
+
             LoadSessionStateKeysIfExists();
         }
 
@@ -313,6 +326,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
                 m_Settings.profileSettings.UnregisterProfileStringEvaluationFunc(svc.EvaluateProfileString);
                 (svc as BaseHostingService)?.OnDisable();
             }
+
             SaveSessionStateKeys();
         }
 
@@ -341,6 +355,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
                 SessionState.SetString(GetSessionStateKey(profileVarIdx), pair.Value);
                 profileVarIdx++;
             }
+
             EraseSessionStateKeys(profileVarIdx, prevNumKeys);
         }
 
@@ -469,6 +484,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
                 if (!svc.HostingServiceContentRoots.Contains(root))
                     return false;
             }
+
             return true;
         }
 
@@ -549,6 +565,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
                     validIpList.Add(address);
                 }
             }
+
             return validIpList;
         }
     }

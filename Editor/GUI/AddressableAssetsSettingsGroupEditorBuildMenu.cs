@@ -15,17 +15,29 @@ namespace UnityEditor.AddressableAssets.Build
     public class AddressablesBuildMenuNewBuild : AddressableAssetsSettingsGroupEditor.IAddressablesBuildMenu
     {
         /// <inheritdoc />
-        public virtual string BuildMenuPath { get => "New Build"; }
+        public virtual string BuildMenuPath
+        {
+            get => "New Build";
+        }
+
         /// <inheritdoc />
-        public virtual bool SelectableBuildScript { get => true; }
+        public virtual bool SelectableBuildScript
+        {
+            get => true;
+        }
+
         /// <inheritdoc />
-        public virtual int Order { get => -20; }
+        public virtual int Order
+        {
+            get => -20;
+        }
 
         /// <inheritdoc />
         public virtual bool OnPrebuild(AddressablesDataBuilderInput input)
         {
             return true;
         }
+
         /// <inheritdoc />
         public virtual bool OnPostbuild(AddressablesDataBuilderInput input, AddressablesPlayerBuildResult result)
         {
@@ -39,11 +51,22 @@ namespace UnityEditor.AddressableAssets.Build
     public class AddressablesBuildMenuUpdateAPreviousBuild : AddressableAssetsSettingsGroupEditor.IAddressablesBuildMenu
     {
         /// <inheritdoc />
-        public virtual string BuildMenuPath { get => "Update a Previous Build"; }
+        public virtual string BuildMenuPath
+        {
+            get => "Update a Previous Build";
+        }
+
         /// <inheritdoc />
-        public virtual bool SelectableBuildScript { get => false; }
+        public virtual bool SelectableBuildScript
+        {
+            get => false;
+        }
+
         /// <inheritdoc />
-        public virtual int Order { get => -10; }
+        public virtual int Order
+        {
+            get => -10;
+        }
 
         /// <inheritdoc />
         public virtual bool OnPrebuild(AddressablesDataBuilderInput input)
@@ -54,6 +77,7 @@ namespace UnityEditor.AddressableAssets.Build
 
             return OnUpdateBuild(input);
         }
+
         /// <inheritdoc />
         public virtual bool OnPostbuild(AddressablesDataBuilderInput input, AddressablesPlayerBuildResult result)
         {
@@ -70,12 +94,13 @@ namespace UnityEditor.AddressableAssets.Build
             bool continueWithoutPreviousState = false;
 
             bool hasUpdatedContentSinceUpdate = Convert.ToBoolean(EditorPrefs.GetInt(ContentUpdateScript.FirstTimeUpdatePreviousBuild, 0));
-            if(!hasUpdatedContentSinceUpdate)
+            if (!hasUpdatedContentSinceUpdate)
             {
-                int firstTimeSelection = EditorUtility.DisplayDialogComplex("New Content Update", "Starting in 1.20.0+ \"Update Previous Build\" now automatically checks the previous addressables_content_state.bin for update restrictions. " +
+                int firstTimeSelection = EditorUtility.DisplayDialogComplex("New Content Update",
+                    "Starting in 1.20.0+ \"Update Previous Build\" now automatically checks the previous addressables_content_state.bin for update restrictions. " +
                     "This automatic behavior, and the file location, can be adjusted in the Addressable Asset Settings.", "Continue", "Cancel build", "Open Settings");
                 EditorPrefs.SetInt(ContentUpdateScript.FirstTimeUpdatePreviousBuild, 1);
-                switch(firstTimeSelection)
+                switch (firstTimeSelection)
                 {
                     //continue
                     case 0:
@@ -112,13 +137,13 @@ namespace UnityEditor.AddressableAssets.Build
             {
                 if (!File.Exists(path))
                 {
-                    AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.CannotLocateBinFile, false, (int) settings.CheckForContentUpdateRestrictionsOption);
+                    AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.CannotLocateBinFile, false, (int)settings.CheckForContentUpdateRestrictionsOption);
 
                     //Unable to find Content Update .bin
                     bool selectBin = EditorUtility.DisplayDialog("Unable to Check for Update Restrictions", $"The addressable_content_state.bin file could " +
-                        $"not be found at {path}", "Select .bin file", "Cancel content update");
+                                                                                                            $"not be found at {path}", "Select .bin file", "Cancel content update");
 
-                    if(selectBin)
+                    if (selectBin)
                         path = ContentUpdateScript.GetContentStateDataPath(true);
                     else
                     {
@@ -129,12 +154,12 @@ namespace UnityEditor.AddressableAssets.Build
 
                 if (buildCancelled)
                     return false;
-          
+
                 if (doContentUpdate)
                 {
                     var checkForRestrictionsBehavior = settings.CheckForContentUpdateRestrictionsOption;
                     //If we're in batch mode and the setting is "list restrictions" we just need to fail the build.
-                    if (checkForRestrictionsBehavior == CheckForContentUpdateRestrictionsOptions.ListUpdatedAssetsWithRestrictions && 
+                    if (checkForRestrictionsBehavior == CheckForContentUpdateRestrictionsOptions.ListUpdatedAssetsWithRestrictions &&
                         UnityEditorInternal.InternalEditorUtility.inBatchMode)
                         checkForRestrictionsBehavior = CheckForContentUpdateRestrictionsOptions.FailBuild;
                     if (continueWithoutPreviousState)
@@ -148,9 +173,10 @@ namespace UnityEditor.AddressableAssets.Build
                             break;
                         case CheckForContentUpdateRestrictionsOptions.FailBuild:
                             var modifiedEntries = ContentUpdateScript.GatherModifiedEntriesWithDependencies(settings, path);
-                            if(modifiedEntries.Count > 0)
+                            if (modifiedEntries.Count > 0)
                             {
-                                AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildFailedDueToModifiedStaticEntries, false, (int) CheckForContentUpdateRestrictionsOptions.FailBuild);
+                                AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildFailedDueToModifiedStaticEntries, false,
+                                    (int)CheckForContentUpdateRestrictionsOptions.FailBuild);
                                 StringBuilder sb = new StringBuilder();
                                 sb.AppendLine("Modified entries in Cannot Change Post Release Groups were detected. The following changes were detected:");
                                 foreach (var entry in modifiedEntries)
@@ -158,10 +184,11 @@ namespace UnityEditor.AddressableAssets.Build
                                 doContentUpdate = false;
                                 Debug.LogError(sb.ToString());
                             }
+
                             break;
                         case CheckForContentUpdateRestrictionsOptions.ListUpdatedAssetsWithRestrictions:
                             var modifiedEntriesList = ContentUpdateScript.GatherModifiedEntriesWithDependencies(settings, path);
-                            if(modifiedEntriesList.Count > 0)
+                            if (modifiedEntriesList.Count > 0)
                             {
                                 eventType = AddressableAnalytics.UsageEventType.BuildInterruptedDueToStaticModifiedEntriesInUpdate;
                                 doContentUpdate = false;
@@ -173,10 +200,12 @@ namespace UnityEditor.AddressableAssets.Build
                                         input.PlayerVersion = cacheData.playerVersion;
                                         input.PreviousContentState = cacheData;
                                     }
+
                                     AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult rst, input);
                                     OnPostbuild(input, rst);
                                 });
                             }
+
                             break;
                     }
 
@@ -195,7 +224,6 @@ namespace UnityEditor.AddressableAssets.Build
             }
 
             return doContentUpdate;
-
         }
     }
 }

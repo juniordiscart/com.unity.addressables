@@ -46,8 +46,8 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             List<AnalyzeRuleContainerTreeViewItem> activeSelection = (from id in GetSelection()
                 let selection = FindItem(id, rootItem)
-                    where selection is AnalyzeRuleContainerTreeViewItem
-                    select selection as AnalyzeRuleContainerTreeViewItem).ToList();
+                where selection is AnalyzeRuleContainerTreeViewItem
+                select selection as AnalyzeRuleContainerTreeViewItem).ToList();
 
             PerformActionForRuleItems(action, activeSelection);
         }
@@ -102,6 +102,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 Debug.LogError("Error: Structure of AnalyzeRule tree view is different to expected.");
                 return;
             }
+
             List<AnalyzeRuleContainerTreeViewItem> activeSelection = new List<AnalyzeRuleContainerTreeViewItem>(1);
             activeSelection.Add(root);
             PerformActionForRuleItems((ruleContainer) =>
@@ -109,10 +110,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 AnalyzeSystem.ClearAnalysis(ruleContainer.analyzeRule);
                 BuildResults(ruleContainer, new List<AnalyzeRule.AnalyzeResult>());
             }, activeSelection);
-            
+
             Reload();
             UpdateSelections(GetSelection());
         }
+
         public void ClearAllSelectedRules()
         {
             PerformActionForEntireRuleSelection((ruleContainer) =>
@@ -139,8 +141,8 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             var allSelectedRuleContainers = (from id in selectedIds
                 let ruleContainer = FindItem(id, rootItem) as AnalyzeRuleContainerTreeViewItem
-                    where ruleContainer != null
-                    select ruleContainer);
+                where ruleContainer != null
+                select ruleContainer);
 
             List<AnalyzeRuleContainerTreeViewItem> allRuleContainers = new List<AnalyzeRuleContainerTreeViewItem>();
             foreach (var ruleContainer in allSelectedRuleContainers)
@@ -184,7 +186,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     {
                         foreach (var customMenuItem in analyzeRuleContainer.analyzeRule.GetCustomContextMenuItems())
                         {
-                            if(customMenuItem.MenuEnabled)
+                            if (customMenuItem.MenuEnabled)
                                 menu.AddItem(new GUIContent(customMenuItem.MenuName), customMenuItem.ToggledOn, () => customMenuItem.MenuAction());
                             else
                                 menu.AddDisabledItem(new GUIContent(customMenuItem.MenuName));
@@ -205,11 +207,10 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (item != null)
                         items.Add(item);
                 }
-                
+
                 if (items.Count > 0)
                     AnalyzeResultsTreeViewItem.ContextClicked(items);
             }
-            
         }
 
         protected override void DoubleClickedItem(int id)
@@ -267,7 +268,7 @@ namespace UnityEditor.AddressableAssets.GUI
             var ruleContainers = GatherAllInheritRuleContainers(baseViewItem);
             foreach (var ruleContainer in ruleContainers)
             {
-                if(ruleContainer == null)
+                if (ruleContainer == null)
                     continue;
 
                 EditorUtility.DisplayProgressBar("Calculating Analyze Results...", ruleContainer.displayName, (index / (float)ruleContainers.Count));
@@ -282,21 +283,22 @@ namespace UnityEditor.AddressableAssets.GUI
         }
 
         private readonly Dictionary<int, AnalyzeResultsTreeViewItem> hashToAnalyzeResults = new Dictionary<int, AnalyzeResultsTreeViewItem>();
+
         void BuildResults(TreeViewItem root, List<AnalyzeRule.AnalyzeResult> ruleResults)
         {
             hashToAnalyzeResults.Clear();
             int updateFrequency = Mathf.Max(ruleResults.Count / 10, 1);
 
-            for (int index=0; index < ruleResults.Count; ++index)
+            for (int index = 0; index < ruleResults.Count; ++index)
             {
                 var result = ruleResults[index];
                 if (index == 0 || index % updateFrequency == 0)
                     EditorUtility.DisplayProgressBar("Building Results Tree...", result.resultName, (float)index / hashToAnalyzeResults.Keys.Count);
-                
+
                 var resPath = result.resultName.Split(AnalyzeRule.kDelimiter);
                 string name = string.Empty;
                 TreeViewItem parent = root;
-                
+
                 for (int i = 0; i < resPath.Length; i++)
                 {
                     name += resPath[i];
@@ -402,7 +404,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
 
         public AnalyzeTreeViewItemBase(int id, int depth, string displayName) : base(id, depth,
-                                                                                     displayName)
+            displayName)
         {
             currentDisplayName = baseDisplayName = displayName;
         }
@@ -444,7 +446,7 @@ namespace UnityEditor.AddressableAssets.GUI
             severity = type;
             results = new HashSet<AnalyzeRule.AnalyzeResult>();
         }
-        
+
         public AnalyzeResultsTreeViewItem(int id, int depth, string displayName, MessageType type, AnalyzeRule.AnalyzeResult analyzeResult)
             : base(id, depth, displayName)
         {
@@ -455,7 +457,7 @@ namespace UnityEditor.AddressableAssets.GUI
         internal static void ContextClicked(List<AnalyzeResultsTreeViewItem> items)
         {
             HashSet<UnityEngine.Object> objects = new HashSet<Object>();
-            
+
             foreach (AnalyzeResultsTreeViewItem viewItem in items)
             {
                 foreach (var itemResult in viewItem.results)

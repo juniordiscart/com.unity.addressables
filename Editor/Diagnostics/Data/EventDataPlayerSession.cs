@@ -12,14 +12,14 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
         internal EventDataSet m_RootStreamEntry = new EventDataSet(0, null, null, -1);
         internal EventDataSet m_EventCountDataSet;
         internal EventDataSet m_InstantitationCountDataSet;
-        
+
         internal Dictionary<int, EventDataSet> m_DataSets = new Dictionary<int, EventDataSet>();
         Dictionary<int, HashSet<int>> m_objectToParents = new Dictionary<int, HashSet<int>>();
         internal Dictionary<int, List<DiagnosticEvent>> m_FrameEvents = new Dictionary<int, List<DiagnosticEvent>>();
-        
+
         internal List<EvtQueueData> m_Queue = new List<EvtQueueData>();
-        
-        
+
+
         string m_EventName;
         int m_PlayerId;
         bool m_IsActive;
@@ -28,22 +28,52 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
         int m_LastInstantiationFrame = -1;
         int m_LastFrameInstantiationCount = 0;
         int m_LastFrameWithEvents = -1;
-        
+
         internal bool NeedsReload = false;
 
         const int k_DestroyEventFrameDelay = 300;
-        
+
         int m_FrameCount = 300;
-        
-        public EventDataSet RootStreamEntry { get { return m_RootStreamEntry; } }
-        public string EventName { get { return m_EventName; } }
-        public int PlayerId { get { return m_PlayerId; } }
-        public bool IsActive { get { return m_IsActive; } set { m_IsActive = value; } }
-        public int LatestFrame { get { return m_LatestFrame; } }
-        public int StartFrame { get { return m_StartFrame; } }
-        public int FrameCount { get { return m_FrameCount; } }
-      
-        public EventDataPlayerSession() { }
+
+        public EventDataSet RootStreamEntry
+        {
+            get { return m_RootStreamEntry; }
+        }
+
+        public string EventName
+        {
+            get { return m_EventName; }
+        }
+
+        public int PlayerId
+        {
+            get { return m_PlayerId; }
+        }
+
+        public bool IsActive
+        {
+            get { return m_IsActive; }
+            set { m_IsActive = value; }
+        }
+
+        public int LatestFrame
+        {
+            get { return m_LatestFrame; }
+        }
+
+        public int StartFrame
+        {
+            get { return m_StartFrame; }
+        }
+
+        public int FrameCount
+        {
+            get { return m_FrameCount; }
+        }
+
+        public EventDataPlayerSession()
+        {
+        }
 
         public EventDataPlayerSession(string eventName, int playerId)
         {
@@ -83,12 +113,12 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
             m_LatestFrame = evt.Frame;
             m_StartFrame = m_LatestFrame - m_FrameCount;
             entryCreated = false;
-            
+
             bool countedAllRecordedEventsOnCurrentFrame = evt.Frame > m_LastFrameWithEvents
-                && m_LastFrameWithEvents >= 0
-                && m_FrameEvents[m_LastFrameWithEvents] != null 
-                && m_FrameEvents[m_LastFrameWithEvents].Count > 0
-                && m_EventCountDataSet != null;
+                                                          && m_LastFrameWithEvents >= 0
+                                                          && m_FrameEvents[m_LastFrameWithEvents] != null
+                                                          && m_FrameEvents[m_LastFrameWithEvents].Count > 0
+                                                          && m_EventCountDataSet != null;
 
             //once all recorded events on a given frame have been logged in m_FrameEvents, create a sample for alevents
             if (countedAllRecordedEventsOnCurrentFrame)
@@ -101,21 +131,21 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
             {
                 HandleRecordedEvent(evt);
             }
-            
-            bool countedAllInstantiationEventsOnCurrentFrame = evt.Frame > m_LastInstantiationFrame 
-                && m_LastInstantiationFrame >= 0 
-                && m_LastFrameInstantiationCount > 0
-                && m_InstantitationCountDataSet != null;
-            
+
+            bool countedAllInstantiationEventsOnCurrentFrame = evt.Frame > m_LastInstantiationFrame
+                                                               && m_LastInstantiationFrame >= 0
+                                                               && m_LastFrameInstantiationCount > 0
+                                                               && m_InstantitationCountDataSet != null;
+
             if (countedAllInstantiationEventsOnCurrentFrame)
             {
                 m_InstantitationCountDataSet.AddSample(0, m_LastInstantiationFrame, m_LastFrameInstantiationCount);
                 m_LastFrameInstantiationCount = 0;
             }
-            
+
             if (evt.DisplayName.StartsWith("Instance"))
             {
-                if ((ResourceManager.DiagnosticEventType) evt.Stream == ResourceManager.DiagnosticEventType.AsyncOperationCreate)
+                if ((ResourceManager.DiagnosticEventType)evt.Stream == ResourceManager.DiagnosticEventType.AsyncOperationCreate)
                     HandleInstantiationEvent(evt);
                 return;
             }
@@ -126,19 +156,19 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
                 HandleEventDataSetCreation(evt);
                 entryCreated = true;
             }
-            
+
             EventDataSet data = null;
             if (m_DataSets.TryGetValue(evt.ObjectId, out data))
             {
                 data.AddSample(evt.Stream, evt.Frame, evt.Value);
             }
-            
-            if ((ResourceManager.DiagnosticEventType) evt.Stream == ResourceManager.DiagnosticEventType.AsyncOperationDestroy)
+
+            if ((ResourceManager.DiagnosticEventType)evt.Stream == ResourceManager.DiagnosticEventType.AsyncOperationDestroy)
             {
-                m_Queue.Add(new EvtQueueData { Event = evt, DestroyFrame = evt.Frame});
+                m_Queue.Add(new EvtQueueData {Event = evt, DestroyFrame = evt.Frame});
             }
         }
-        
+
         internal void HandleRecordedEvent(DiagnosticEvent evt)
         {
             List<DiagnosticEvent> frameEvents;
@@ -149,9 +179,11 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
                     m_EventCountDataSet = new EventDataSet(0, "EventCount", "Event Counts", EventDataSet.k_EventCountSortOrder);
                     RootStreamEntry.AddChild(m_EventCountDataSet);
                 }
+
                 m_LastFrameWithEvents = evt.Frame;
                 m_FrameEvents.Add(evt.Frame, frameEvents = new List<DiagnosticEvent>());
             }
+
             frameEvents.Add(evt);
         }
 
@@ -159,9 +191,10 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
         {
             if (m_InstantitationCountDataSet == null)
             {
-                    m_InstantitationCountDataSet = new EventDataSet(1, "InstantiationCount", "Instantiation Counts", EventDataSet.k_InstanceCountSortOrder);
-                    RootStreamEntry.AddChild(m_InstantitationCountDataSet);
+                m_InstantitationCountDataSet = new EventDataSet(1, "InstantiationCount", "Instantiation Counts", EventDataSet.k_InstanceCountSortOrder);
+                RootStreamEntry.AddChild(m_InstantitationCountDataSet);
             }
+
             m_LastInstantiationFrame = evt.Frame;
             m_LastFrameInstantiationCount++;
         }
@@ -184,6 +217,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
                             RootStreamEntry.RemoveChild(d);
                             m_objectToParents.Add(d, depParents = new HashSet<int>());
                         }
+
                         depParents.Add(evt.ObjectId);
                     }
                 }
@@ -193,9 +227,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
             {
                 RootStreamEntry.AddChild(ds);
             }
-              
-        }  
-        
+        }
+
         public void Update()
         {
             foreach (var q in m_Queue)
@@ -220,7 +253,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
             }
 
             NeedsReload = true;
-            
+
             if (evt.Dependencies != null)
             {
                 foreach (var d in evt.Dependencies)
@@ -238,6 +271,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
                     }
                 }
             }
+
             m_DataSets.Remove(evt.ObjectId);
 
             HashSet<int> parents = null;

@@ -5,7 +5,9 @@ using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace UnityEngine.ResourceManagement.Util
 {
-    internal interface IOperationCacheKey : IEquatable<IOperationCacheKey> {}
+    internal interface IOperationCacheKey : IEquatable<IOperationCacheKey>
+    {
+    }
 
     /// <summary>
     /// Used to compare cachable operation based solely on a single string id
@@ -59,6 +61,7 @@ namespace UnityEngine.ResourceManagement.Util
 
         public override bool Equals(object obj) => Equals(obj as LocationCacheKey);
         public bool Equals(IOperationCacheKey other) => Equals(other as LocationCacheKey);
+
         bool Equals(LocationCacheKey other)
         {
             if (ReferenceEquals(this, other)) return true;
@@ -71,6 +74,7 @@ namespace UnityEngine.ResourceManagement.Util
     {
         readonly IList<IResourceLocation> m_Dependencies;
         readonly int m_DependenciesHash;
+
         public DependenciesCacheKey(IList<IResourceLocation> dependencies, int dependenciesHash)
         {
             m_Dependencies = dependencies;
@@ -84,6 +88,7 @@ namespace UnityEngine.ResourceManagement.Util
 
         public override bool Equals(object obj) => Equals(obj as DependenciesCacheKey);
         public bool Equals(IOperationCacheKey other) => Equals(other as DependenciesCacheKey);
+
         bool Equals(DependenciesCacheKey other)
         {
             if (ReferenceEquals(this, other)) return true;
@@ -95,6 +100,7 @@ namespace UnityEngine.ResourceManagement.Util
     internal sealed class AsyncOpHandlesCacheKey : IOperationCacheKey
     {
         readonly HashSet<AsyncOperationHandle> m_Handles;
+
         public AsyncOpHandlesCacheKey(IList<AsyncOperationHandle> handles)
         {
             m_Handles = new HashSet<AsyncOperationHandle>(handles);
@@ -107,6 +113,7 @@ namespace UnityEngine.ResourceManagement.Util
 
         public override bool Equals(object obj) => Equals(obj as AsyncOpHandlesCacheKey);
         public bool Equals(IOperationCacheKey other) => Equals(other as AsyncOpHandlesCacheKey);
+
         bool Equals(AsyncOpHandlesCacheKey other)
         {
             if (ReferenceEquals(this, other)) return true;
@@ -126,8 +133,8 @@ namespace UnityEngine.ResourceManagement.Util
             if (ReferenceEquals(loc2, null)) return false;
 
             return (loc1.InternalId.Equals(loc2.InternalId)
-                && loc1.ProviderId.Equals(loc2.ProviderId)
-                && loc1.ResourceType.Equals(loc2.ResourceType));
+                    && loc1.ProviderId.Equals(loc2.ProviderId)
+                    && loc1.ResourceType.Equals(loc2.ResourceType));
         }
 
         public static bool DependenciesEqual(IList<IResourceLocation> deps1, IList<IResourceLocation> deps2)

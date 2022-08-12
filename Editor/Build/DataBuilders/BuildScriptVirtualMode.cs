@@ -53,10 +53,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var catalogPath = string.Format(m_PathFormat, "", "catalog");
             var settingsPath = string.Format(m_PathFormat, "", "settings");
             return File.Exists(catalogPath) &&
-                File.Exists(settingsPath);
+                   File.Exists(settingsPath);
         }
 
         private string m_pathFormatStore;
+
         private string m_PathFormat
         {
             get
@@ -102,7 +103,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             aaContext.runtimeData.MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests;
             aaContext.runtimeData.CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout;
             aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
-                new[] { ResourceManagerRuntimeData.kCatalogAddress },
+                new[] {ResourceManagerRuntimeData.kCatalogAddress},
                 string.Format(m_PathFormat, "file://{UnityEngine.Application.dataPath}/../", "catalog"),
                 typeof(ContentCatalogProvider), typeof(ContentCatalogData)));
             aaContext.runtimeData.AddressablesVersion = PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version;
@@ -201,11 +202,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         dataSize += size;
                         headerSize += a.Length * 5; //assume 5x path length overhead size per item, probably much less
                     }
+
                     if (bd.Value.Count == 0)
                     {
                         dataSize = 100 * 1024;
                         headerSize = 1024;
                     }
+
                     bundleData.SetSize(dataSize, headerSize);
 
 
@@ -228,6 +231,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     virtualBundleRuntimeData.AssetBundles.Add(bundleData);
                 }
             }
+
             foreach (var kvp in m_CreatedProviderIds)
             {
                 if (kvp.Value != null)
@@ -281,6 +285,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         m_ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(typeof(LegacyResourcesProvider)));
                     }
                 }
+
                 return errorString;
             }
 
@@ -319,7 +324,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     var newName = bid.assetBundleName;
                     while (aaContext.bundleToAssetGroup.ContainsKey(newName) && count < 1000)
                         newName = bid.assetBundleName.Replace(".bundle", string.Format("{0}.bundle", count++));
-                    bundleInputDefs[i] = new AssetBundleBuild { assetBundleName = newName, addressableNames = bid.addressableNames, assetBundleVariant = bid.assetBundleVariant, assetNames = bid.assetNames };
+                    bundleInputDefs[i] = new AssetBundleBuild
+                        {assetBundleName = newName, addressableNames = bid.addressableNames, assetBundleVariant = bid.assetBundleVariant, assetNames = bid.assetNames};
                 }
 
                 aaContext.bundleToAssetGroup.Add(bundleInputDefs[i].assetBundleName, assetGroup.Guid);
@@ -339,7 +345,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             var guid = AssetDatabase.AssetPathToGUID(a);
             var legacyPath = string.Format("Library/metadata/{0}{1}/{2}", guid[0], guid[1], guid);
-#if UNITY_2020_2_OR_NEWER            
+#if UNITY_2020_2_OR_NEWER
             var artifactID = Experimental.AssetDatabaseExperimental.ProduceArtifact(new ArtifactKey(new GUID(guid)));
             if (Experimental.AssetDatabaseExperimental.GetArtifactPaths(artifactID, out var paths))
                 return Path.GetFullPath(paths[0]);
@@ -376,6 +382,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 return 1024 * 1024;
             }
+
             return new FileInfo(path).Length;
         }
 

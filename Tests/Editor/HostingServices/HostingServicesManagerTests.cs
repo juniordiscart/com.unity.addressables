@@ -39,7 +39,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             m_Settings.HostingServicesManager = m_Manager;
             var group = m_Settings.CreateGroup("testGroup", false, false, false, null);
             group.AddSchema<BundledAssetGroupSchema>();
-            m_Settings.groups.Add(group); 
+            m_Settings.groups.Add(group);
         }
 
         [TearDown]
@@ -51,6 +51,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             {
                 m_Manager.RemoveHostingService(svc);
             }
+
             if (Directory.Exists(k_TestConfigFolder))
                 AssetDatabase.DeleteAsset(k_TestConfigFolder);
             EditorBuildSettings.RemoveConfigObject(k_TestConfigName);
@@ -198,10 +199,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
         [Test]
         public void AddHostingServiceShould_ThrowIfTypeIsAbstract()
         {
-            Assert.Throws<MissingMethodException>(() =>
-            {
-                m_Manager.AddHostingService(typeof(AbstractTestHostingService), "test");
-            });
+            Assert.Throws<MissingMethodException>(() => { m_Manager.AddHostingService(typeof(AbstractTestHostingService), "test"); });
         }
 
         [Test]
@@ -461,6 +459,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
                 svc.StartHostingService();
                 Assert.IsTrue(svc.IsHostingServiceRunning);
             }
+
             m_Manager.OnDisable();
 
             foreach (var svc in m_Manager.HostingServices)
@@ -498,6 +497,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
                 m_Manager.OnEnable();
                 Assert.IsTrue(svc.IsHostingServiceRunning, $"Service '{svc.DescriptiveName}' not running after manager.OnEnable() (iteration {i}");
             }
+
             Assert.AreEqual(expectedPort, svc.HostingServicePort);
             HostingServicesManager.EraseSessionStateKeys();
         }
@@ -650,9 +650,9 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             m_Manager.GlobalProfileVariables.Clear();
             var customIps = new Dictionary<string, string>()
             {
-                { m_Manager.GetPrivateIpAddressKey(0), "111.1.1.1" },
-                { m_Manager.GetPrivateIpAddressKey(1), "222.2.2.2" },
-                { m_Manager.GetPrivateIpAddressKey(2), "333.3.3.3" },
+                {m_Manager.GetPrivateIpAddressKey(0), "111.1.1.1"},
+                {m_Manager.GetPrivateIpAddressKey(1), "222.2.2.2"},
+                {m_Manager.GetPrivateIpAddressKey(2), "333.3.3.3"},
             };
             foreach (KeyValuePair<string, string> pair in customIps)
             {
@@ -686,7 +686,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
 
             m_Manager.SaveSessionStateKeys();
             m_Manager.GlobalProfileVariables.Clear();
-            
+
             SessionState.EraseString(HostingServicesManager.GetSessionStateKey(1));
             m_Manager.LoadSessionStateKeysIfExists();
             Assert.AreEqual(2, m_Manager.GlobalProfileVariables.Count);
@@ -723,7 +723,7 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             m_Manager.GlobalProfileVariables.Add(ipAddressKey, "111.1.1.1");
             m_Manager.GlobalProfileVariables.Add(m_Manager.GetPrivateIpAddressKey(1), "222.2.2.2");
             m_Manager.GlobalProfileVariables.Add(m_Manager.GetPrivateIpAddressKey(2), "333.3.3.3");
-            
+
             m_Manager.SaveSessionStateKeys();
             m_Manager.GlobalProfileVariables.Clear();
             m_Manager.GlobalProfileVariables.Add(ipAddressKey, ipAddressVal);

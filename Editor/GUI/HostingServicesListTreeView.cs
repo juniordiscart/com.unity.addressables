@@ -62,10 +62,11 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 m_Window.ServiceIndex = 0;
             }
+
             Reload();
 
             if (m_Window.ServiceIndex >= 0)
-                SetSelection(new List<int> { m_Window.ServiceIndex });
+                SetSelection(new List<int> {m_Window.ServiceIndex});
         }
 
         /// <summary>
@@ -83,7 +84,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         protected override TreeViewItem BuildRoot()
         {
-            var root = new TreeViewItem { id = -1, depth = -1, displayName = "Root" };
+            var root = new TreeViewItem {id = -1, depth = -1, displayName = "Root"};
             m_Names.Clear();
             foreach (var service in m_Manager.HostingServices)
             {
@@ -92,7 +93,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             for (int i = 0; i < m_Names.Count; i++)
             {
-                root.AddChild(new TreeViewItem { id = i, displayName = m_Names[i] });
+                root.AddChild(new TreeViewItem {id = i, displayName = m_Names[i]});
             }
 
             return root;
@@ -135,6 +136,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     return r as TreeViewItem;
                 }
             }
+
             return null;
         }
 
@@ -147,6 +149,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     return i;
                 ++i;
             }
+
             return -1;
         }
 
@@ -157,6 +160,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (name == service.DescriptiveName)
                     return service;
             }
+
             return default(IHostingService);
         }
 
@@ -171,6 +175,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     selectedNodes.Add(item);
                 }
             }
+
             return selectedNodes;
         }
 

@@ -57,10 +57,18 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsEmpty(actualGUID);
         }
 
-        public class TestBaseClass {}
+        public class TestBaseClass
+        {
+        }
+
         [System.ComponentModel.DisplayName("TestSubClass_DisplayName")]
-        public class TestSubClass : TestBaseClass {}
-        public abstract class TestAbstractSubClass : TestBaseClass {}
+        public class TestSubClass : TestBaseClass
+        {
+        }
+
+        public abstract class TestAbstractSubClass : TestBaseClass
+        {
+        }
 
         [Test]
         public void GetTypesGeneric_ReturnsOnly_NonAbstractSubTypes()
@@ -214,10 +222,10 @@ namespace UnityEditor.AddressableAssets.Tests
             Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == "UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null");
             var conversionMapping = new Dictionary<Type, Type>()
             {
-                { asm.GetType("UnityEditor.Audio.AudioMixerGroupController"), typeof(AudioMixerGroup) },
-                { asm.GetType("UnityEditor.Audio.AudioMixerController"), typeof(AudioMixer) },
-                { typeof(UnityEditor.SceneAsset),  typeof(UnityEngine.ResourceManagement.ResourceProviders.SceneInstance) },
-                { typeof(UnityEditor.Animations.AnimatorController), typeof(RuntimeAnimatorController) }
+                {asm.GetType("UnityEditor.Audio.AudioMixerGroupController"), typeof(AudioMixerGroup)},
+                {asm.GetType("UnityEditor.Audio.AudioMixerController"), typeof(AudioMixer)},
+                {typeof(UnityEditor.SceneAsset), typeof(UnityEngine.ResourceManagement.ResourceProviders.SceneInstance)},
+                {typeof(UnityEditor.Animations.AnimatorController), typeof(RuntimeAnimatorController)}
             };
 
             foreach (Type key in conversionMapping.Keys)
@@ -234,7 +242,8 @@ namespace UnityEditor.AddressableAssets.Tests
             var g1 = CreateTestPrefabAsset(folderPath + "/p1.prefab", "p1");
             var g2 = CreateTestPrefabAsset(folderPath + "/p2.prefab", "p2");
             Assert.AreEqual(0, Settings.DefaultGroup.entries.Count);
-            var result = AddressableAssetUtility.SafeMoveResourcesToGroup(Settings, Settings.DefaultGroup, new List<string> { AssetDatabase.GUIDToAssetPath(g1), AssetDatabase.GUIDToAssetPath(g2) }, null, false);
+            var result = AddressableAssetUtility.SafeMoveResourcesToGroup(Settings, Settings.DefaultGroup, new List<string> {AssetDatabase.GUIDToAssetPath(g1), AssetDatabase.GUIDToAssetPath(g2)},
+                null, false);
             Assert.IsTrue(result);
             Assert.AreEqual(2, Settings.DefaultGroup.entries.Count);
             var ap = $"{TestFolder}_Resources_moved";
@@ -248,7 +257,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsFalse(AddressableAssetUtility.SafeMoveResourcesToGroup(Settings, Settings.DefaultGroup, null, null, false));
         }
 
-        HashSet<string> otherInternaIds = new HashSet<string>(new string[] { "a", "ab", "abc" });
+        HashSet<string> otherInternaIds = new HashSet<string>(new string[] {"a", "ab", "abc"});
 
         [TestCase(BundledAssetGroupSchema.AssetNamingMode.FullPath, "Assets/blah/something.asset", "", "Assets/blah/something.asset")]
         [TestCase(BundledAssetGroupSchema.AssetNamingMode.Filename, "Assets/blah/something.asset", "", "something.asset")]
@@ -262,7 +271,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var mode = (BundledAssetGroupSchema.AssetNamingMode)imode;
             var bas = Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>();
             bas.InternalIdNamingMode = mode;
-            var actualId  = bas.GetAssetLoadPath(assetPath, otherInternaIds, s => guid);
+            var actualId = bas.GetAssetLoadPath(assetPath, otherInternaIds, s => guid);
             Assert.AreEqual(expectedId, actualId);
         }
 
@@ -280,16 +289,16 @@ namespace UnityEditor.AddressableAssets.Tests
             targets[0] = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path1);
             targets[1] = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path2);
             var infos = UnityEditor.AddressableAssets.GUI.AddressableAssetInspectorGUI.GatherTargetInfos(targets, Settings);
-            
+
             Assert.AreEqual(2, infos.Count);
             Assert.NotNull(infos[0].MainAssetEntry);
             Assert.NotNull(infos[1].MainAssetEntry);
-           
+
             // clean up
             Settings.RemoveAssetEntry(guid1);
             Settings.RemoveAssetEntry(guid2);
         }
-        
+
         [Test]
         public void InspectorGUI_GatherTargetinfo_MixedAddressable()
         {
@@ -302,15 +311,15 @@ namespace UnityEditor.AddressableAssets.Tests
             targets[0] = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path1);
             targets[1] = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path2);
             var infos = UnityEditor.AddressableAssets.GUI.AddressableAssetInspectorGUI.GatherTargetInfos(targets, Settings);
-            
+
             Assert.AreEqual(2, infos.Count);
             Assert.NotNull(infos[0].MainAssetEntry);
             Assert.IsNull(infos[1].MainAssetEntry);
-           
+
             // clean up
             Settings.RemoveAssetEntry(guid1);
         }
-        
+
         [Test]
         public void InspectorGUI_FindUniqueAssetGuids_CorrectAssetCount()
         {
@@ -323,18 +332,18 @@ namespace UnityEditor.AddressableAssets.Tests
             targets[0] = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path1);
             targets[1] = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path2);
             var infos = UnityEditor.AddressableAssets.GUI.AddressableAssetInspectorGUI.GatherTargetInfos(targets, Settings);
-            
+
             Assert.AreEqual(2, infos.Count);
             Assert.NotNull(infos[0].MainAssetEntry);
             Assert.IsNull(infos[1].MainAssetEntry);
-            
+
             infos.Add(infos[0]);
             infos.Add(infos[1]);
             UnityEditor.AddressableAssets.GUI.AddressableAssetInspectorGUI.FindUniqueAssetGuids(infos, out var uniqueAssetGuids, out var uniqueAddressableAssetGuids);
-            
+
             Assert.AreEqual(2, uniqueAssetGuids.Count);
             Assert.AreEqual(1, uniqueAddressableAssetGuids.Count);
-           
+
             // clean up
             Settings.RemoveAssetEntry(guid1);
         }
@@ -343,8 +352,8 @@ namespace UnityEditor.AddressableAssets.Tests
         public void GivenFunction_ParallelForEachAsync_ReturnsCompletedTask()
         {
             //two identical lists
-            var originalNums = new List<int>() { 1, 2, 3, 4, 5 };
-            var nums = new List<int>() { 1, 2, 3, 4, 5 };
+            var originalNums = new List<int>() {1, 2, 3, 4, 5};
+            var nums = new List<int>() {1, 2, 3, 4, 5};
 
             //function modifies original list by adding one 
             AddressableAssetUtility.ParallelForEachAsync(nums, 5, (num) =>
@@ -375,32 +384,32 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Assert.NotNull(hashString);
             Assert.AreEqual("827ccb0eea8a706c4c34a16891f84e7b", hashString);
-
         }
-        
+
         [Test]
         public void GetPackageVersion_ReturnsAValidVersion()
         {
             string v = AddressableAssetUtility.GetVersionFromPackageData();
             Assert.IsTrue(v.StartsWith("1."), $"Failed to get a valid version from package.json data. Expected 1.X but was {v}");
-            Assert.IsTrue(v.Split('.').Length == 2, 
+            Assert.IsTrue(v.Split('.').Length == 2,
                 $"Format from GetVersionFromPackageData, produced {v} which is incorrectly formatted");
         }
-        
+
         [Test]
         public void SortedDelegate_InvokesMultipleRegisters()
         {
             AddressableAssetUtility.SortedDelegate<string[], string[], string[], string[]> handler =
                 new AddressableAssetUtility.SortedDelegate<string[], string[], string[], string[]>();
-            
+
             calledOrder.Clear();
             handler.Register(Callback1, 0);
             handler.Register(Callback2, 0);
-            handler.Invoke(null,null,null,null);
+            handler.Invoke(null, null, null, null);
             Assert.AreEqual(2, calledOrder.Count, "Expected to have had two callbacks triggered");
         }
 
         private List<int> calledOrder = new List<int>();
+
         [Test]
         public void SortedDelegate_InvokesMultipleRegisters_CorrectOrder()
         {
@@ -410,13 +419,13 @@ namespace UnityEditor.AddressableAssets.Tests
             calledOrder.Clear();
             handler.Register(Callback1, 1);
             handler.Register(Callback2, 0);
-            
-            handler.Invoke(null,null,null,null);
+
+            handler.Invoke(null, null, null, null);
             Assert.AreEqual(2, calledOrder.Count, "Expected to have had two callbacks triggered");
             Assert.AreEqual(2, calledOrder[0], "Callback2 was expected to be called first, but was not");
             Assert.AreEqual(1, calledOrder[1], "Callback1 was expected to be called second, but was not");
         }
-        
+
         [Test]
         public void SortedDelegate_InvokesMultipleRegisters_RemovesCallbacks()
         {
@@ -426,17 +435,17 @@ namespace UnityEditor.AddressableAssets.Tests
             calledOrder.Clear();
             handler.Register(Callback1, 0);
             handler.Register(Callback2, 0);
-            handler.Invoke(null,null,null,null);
+            handler.Invoke(null, null, null, null);
             Assert.AreEqual(2, calledOrder.Count, "Expected to have two callbacks Invoked");
-            
+
             calledOrder.Clear();
             handler.Unregister(Callback1);
-            handler.Invoke(null,null,null,null);
+            handler.Invoke(null, null, null, null);
             Assert.AreEqual(1, calledOrder.Count, "Expected to have one callbacks Invoked");
-            
+
             calledOrder.Clear();
             handler -= Callback2;
-            handler.Invoke(null,null,null,null);
+            handler.Invoke(null, null, null, null);
             Assert.AreEqual(0, calledOrder.Count, "Expected to have no callbacks Invoked");
             Assert.IsTrue(handler == null, "Equalto to return true to null when no callbacks are available"); // doesn't work with Assert.IsNull
         }

@@ -28,18 +28,22 @@ namespace UnityEngine.AddressableAssets
         /// The Resource Locator that has been loaded into the Addressables system.
         /// </summary>
         public IResourceLocator Locator { get; private set; }
+
         /// <summary>
         /// The local hash for this Resource Locator.  If a remote content catalog is updated and the remote hash changes,
         /// this locator info is used to determine if a new content catalog needs to be updated.
         /// </summary>
         public string LocalHash { get; private set; }
+
         /// <summary>
         /// The Content Catalog location this Resource Locator was loaded from.  Catalog locations typically contain
         /// exactly two dependencies.  The first dependency is the remote location of the content catalog hash file, the 
         /// second is the local path of the hash file.
         /// </summary>
         public IResourceLocation CatalogLocation { get; private set; }
+
         internal bool ContentUpdateAvailable { get; set; }
+
         /// <summary>
         /// Contstruct a ResourceLocatorInfo for a given Resource Locator.
         /// </summary>
@@ -59,10 +63,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public IResourceLocation HashLocation
         {
-            get
-            {
-                return CatalogLocation.Dependencies[0];
-            }
+            get { return CatalogLocation.Dependencies[0]; }
         }
 
         /// <summary>
@@ -70,10 +71,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public bool CanUpdateContent
         {
-            get
-            {
-                return !string.IsNullOrEmpty(LocalHash) && CatalogLocation != null && CatalogLocation.HasDependencies && CatalogLocation.Dependencies.Count == 2;
-            }
+            get { return !string.IsNullOrEmpty(LocalHash) && CatalogLocation != null && CatalogLocation.HasDependencies && CatalogLocation.Dependencies.Count == 2; }
         }
 
         internal void UpdateContent(IResourceLocator locator, string hash, IResourceLocation loc)
@@ -108,7 +106,9 @@ namespace UnityEngine.AddressableAssets
         /// Construct a new InvalidKeyException.
         /// </summary>
         /// <param name="key">The key that caused the exception.</param>
-        public InvalidKeyException(object key) : this(key, typeof(object)) {}
+        public InvalidKeyException(object key) : this(key, typeof(object))
+        {
+        }
 
         private AddressablesImpl m_Addressables;
 
@@ -122,7 +122,7 @@ namespace UnityEngine.AddressableAssets
             Key = key;
             Type = type;
         }
-        
+
         internal InvalidKeyException(object key, Type type, AddressablesImpl addr)
         {
             Key = key;
@@ -142,7 +142,7 @@ namespace UnityEngine.AddressableAssets
             Type = type;
             MergeMode = mergeMode;
         }
-        
+
         internal InvalidKeyException(object key, Type type, Addressables.MergeMode mergeMode, AddressablesImpl addr)
         {
             Key = key;
@@ -152,16 +152,24 @@ namespace UnityEngine.AddressableAssets
         }
 
         ///<inheritdoc cref="InvalidKeyException"/>
-        public InvalidKeyException() {}
+        public InvalidKeyException()
+        {
+        }
 
         ///<inheritdoc/>
-        public InvalidKeyException(string message) : base(message) {}
+        public InvalidKeyException(string message) : base(message)
+        {
+        }
 
         ///<inheritdoc/>
-        public InvalidKeyException(string message, Exception innerException) : base(message, innerException) {}
+        public InvalidKeyException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
 
         ///<inheritdoc/>
-        protected InvalidKeyException(SerializationInfo message, StreamingContext context) : base(message, context) {}
+        protected InvalidKeyException(SerializationInfo message, StreamingContext context) : base(message, context)
+        {
+        }
 
         const string BaseInvalidKeyMessageFormat = "{0}, Key={1}, Type={2}";
 
@@ -199,11 +207,13 @@ namespace UnityEngine.AddressableAssets
                         string keysCSV = GetCSVString(stringKeys, "Key=", "Keys=");
                         return $"{base.Message} No MergeMode is set to merge the multiple keys requested. {keysCSV}, Type={Type}";
                     }
+
                     if (keyCount != stringKeys.Count)
                     {
                         string types = GetCSVString(keyTypeNames, "Type=", "Types=");
                         return $"{base.Message} Enumerable key contains multiple Types. {types}, all Keys are expected to be strings";
                     }
+
                     if (keyCount == 1)
                         return GetMessageForSingleKey(stringKeys[0]);
                     return GetMessageforMergeKeys(stringKeys);
@@ -229,7 +239,7 @@ namespace UnityEngine.AddressableAssets
             HashSet<Type> typesAvailableForKey = GetTypesForKey(keyString);
             if (typesAvailableForKey.Count == 0)
                 return $"{base.Message} No Location found for Key={keyString}";
-            
+
             if (typesAvailableForKey.Count == 1)
             {
                 Type availableType = null;
@@ -239,7 +249,7 @@ namespace UnityEngine.AddressableAssets
                     return string.Format(BaseInvalidKeyMessageFormat, base.Message, keyString, Type);
                 return $"{base.Message} No Asset found with for Key={keyString}. Key exists as Type={availableType}, which is not assignable from the requested Type={Type}";
             }
-            
+
             StringBuilder csv = new StringBuilder(512);
             int count = 0;
             foreach (Type type in typesAvailableForKey)
@@ -261,7 +271,7 @@ namespace UnityEngine.AddressableAssets
                 case Addressables.MergeMode.Union:
                 {
                     messageBuilder = new StringBuilder($"{base.Message} No {MergeMode.Value} of Assets between {keysCSV} with Type={Type}");
-                    
+
                     Dictionary<Type, List<string>> typeToKeys = new Dictionary<Type, List<string>>();
                     foreach (string key in keys)
                     {
@@ -304,17 +314,18 @@ namespace UnityEngine.AddressableAssets
                             messageBuilder.Append(string.Format(NoLocationLineMessage, key));
                         }
                     }
+
                     if (hasInvalidKeys)
                         break;
-                    
-                    foreach (KeyValuePair<Type,List<string>> pair in typeToKeys)
+
+                    foreach (KeyValuePair<Type, List<string>> pair in typeToKeys)
                     {
                         if (pair.Value.Count == keys.Count)
                             messageBuilder.Append($"\nAn Intersection exists for Type={pair.Key}");
                     }
                 }
                     break;
-                
+
                 case Addressables.MergeMode.UseFirst:
                 {
                     messageBuilder = new StringBuilder($"{base.Message} No {MergeMode.Value} Asset within {keysCSV} with Type={Type}");
@@ -327,7 +338,7 @@ namespace UnityEngine.AddressableAssets
                     }
 
                     string keyCSV;
-                    foreach (KeyValuePair<Type,List<string>> pair in typeToKeys)
+                    foreach (KeyValuePair<Type, List<string>> pair in typeToKeys)
                     {
                         keyCSV = GetCSVString(pair.Value, "Key=", "Keys=");
                         messageBuilder.Append($"\nType={pair.Key} exists for {keyCSV}");
@@ -335,24 +346,25 @@ namespace UnityEngine.AddressableAssets
                 }
                     break;
             }
+
             return messageBuilder.ToString();
         }
-        
+
         HashSet<Type> GetTypesForKey(string keyString)
         {
             HashSet<Type> typesAvailableForKey = new HashSet<Type>();
-            foreach (var locator in  m_Addressables.ResourceLocators)
+            foreach (var locator in m_Addressables.ResourceLocators)
             {
                 if (!locator.Locate(keyString, null, out var locations))
                     continue;
-                        
+
                 foreach (IResourceLocation location in locations)
                     typesAvailableForKey.Add(location.ResourceType);
             }
 
             return typesAvailableForKey;
         }
-        
+
         bool GetTypeToKeys(string key, Dictionary<Type, List<string>> typeToKeys)
         {
             HashSet<Type> types = GetTypesForKey(key);
@@ -366,9 +378,10 @@ namespace UnityEngine.AddressableAssets
                 else
                     keysForType.Add(key);
             }
+
             return true;
         }
-        
+
         string GetCSVString(IEnumerable<string> enumerator, string prefixSingle, string prefixPlural)
         {
             StringBuilder keysCSVBuilder = new StringBuilder(prefixPlural);
@@ -378,6 +391,7 @@ namespace UnityEngine.AddressableAssets
                 count++;
                 keysCSVBuilder.Append(count > 1 ? $", {key}" : key);
             }
+
             if (count == 1 && !string.IsNullOrEmpty(prefixPlural) && !string.IsNullOrEmpty(prefixSingle))
                 keysCSVBuilder.Replace(prefixPlural, prefixSingle);
             return keysCSVBuilder.ToString();
@@ -391,6 +405,7 @@ namespace UnityEngine.AddressableAssets
     {
         internal static bool reinitializeAddressables = true;
         internal static AddressablesImpl m_AddressablesInstance = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+
         static AddressablesImpl m_Addressables
         {
             get
@@ -406,11 +421,19 @@ namespace UnityEngine.AddressableAssets
                 return m_AddressablesInstance;
             }
         }
+
         /// <summary>
         /// Stores the ResourceManager associated with this Addressables instance.
         /// </summary>
-        public static ResourceManager ResourceManager { get { return m_Addressables.ResourceManager; } }
-        internal static AddressablesImpl Instance { get { return m_Addressables; } }
+        public static ResourceManager ResourceManager
+        {
+            get { return m_Addressables.ResourceManager; }
+        }
+
+        internal static AddressablesImpl Instance
+        {
+            get { return m_Addressables; }
+        }
 
 #if UNITY_EDITOR
         [InitializeOnLoadMethod]
@@ -430,7 +453,10 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// The Instance Provider used by the Addressables System.
         /// </summary>
-        public static IInstanceProvider InstanceProvider { get { return m_Addressables.InstanceProvider; } }
+        public static IInstanceProvider InstanceProvider
+        {
+            get { return m_Addressables.InstanceProvider; }
+        }
 
         /// <summary>
         /// Used to resolve a string using addressables config values
@@ -487,14 +513,17 @@ namespace UnityEngine.AddressableAssets
             /// Use to indicate that no merge should occur. The first set of results will be used.
             /// </summary>
             None = 0,
+
             /// <summary>
             /// Use to indicate that the merge should take the first set of results.
             /// </summary>
             UseFirst = 0,
+
             /// <summary>
             /// Use to indicate that the merge should take the union of the results.
             /// </summary>
             Union,
+
             /// <summary>
             /// Use to indicate that the merge should take the intersection of the results.
             /// </summary>
@@ -505,6 +534,7 @@ namespace UnityEngine.AddressableAssets
         /// The name of the PlayerPrefs value used to set the path to load the addressables runtime data file.
         /// </summary>
         public const string kAddressablesRuntimeDataPath = "AddressablesRuntimeDataPath";
+
         const string k_AddressablesLogConditional = "ADDRESSABLES_LOG_ALL";
 
         /// <summary>
@@ -515,7 +545,10 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// The subfolder used by the Addressables system for its initialization data.
         /// </summary>
-        public static string StreamingAssetsSubFolder { get { return m_Addressables.StreamingAssetsSubFolder; } }
+        public static string StreamingAssetsSubFolder
+        {
+            get { return m_Addressables.StreamingAssetsSubFolder; }
+        }
 
         /// <summary>
         /// The path to the Addressables Library subfolder
@@ -525,24 +558,36 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// The path used by the Addressables system for its initialization data.
         /// </summary>
-        public static string BuildPath { get { return m_Addressables.BuildPath; } }
+        public static string BuildPath
+        {
+            get { return m_Addressables.BuildPath; }
+        }
 
         /// <summary>
         /// The path that addressables player data gets copied to during a player build.
         /// </summary>
-        public static string PlayerBuildDataPath { get { return m_Addressables.PlayerBuildDataPath; } }
+        public static string PlayerBuildDataPath
+        {
+            get { return m_Addressables.PlayerBuildDataPath; }
+        }
 
         /// <summary>
         /// The path used by the Addressables system to load initialization data.
         /// </summary>
-        public static string RuntimePath { get { return m_Addressables.RuntimePath; } }
+        public static string RuntimePath
+        {
+            get { return m_Addressables.RuntimePath; }
+        }
 
 
         /// <summary>
         /// Gets the collection of configured <see cref="IResourceLocator"/> objects. Resource Locators are used to find <see cref="IResourceLocation"/> objects from user-defined typed keys.
         /// </summary>
         /// <value>The resource locators collection.</value>
-        public static IEnumerable<IResourceLocator> ResourceLocators { get { return m_Addressables.ResourceLocators; } }
+        public static IEnumerable<IResourceLocator> ResourceLocators
+        {
+            get { return m_Addressables.ResourceLocators; }
+        }
 
         [Conditional(k_AddressablesLogConditional)]
         internal static void InternalSafeSerializationLog(string msg, LogType logType = LogType.Log)
@@ -1948,7 +1993,7 @@ namespace UnityEngine.AddressableAssets
         {
             return m_Addressables.LoadSceneAsync(key, new LoadSceneParameters(loadMode), activateOnLoad, priority);
         }
-        
+
         /// <summary>
         /// Loads an Addressable Scene asset.
         /// </summary>
@@ -1988,7 +2033,7 @@ namespace UnityEngine.AddressableAssets
         {
             return m_Addressables.LoadSceneAsync(location, new LoadSceneParameters(loadMode), activateOnLoad, priority);
         }
-        
+
         /// <summary>
         /// Loads an Addressable Scene asset.
         /// </summary>
@@ -2183,7 +2228,8 @@ namespace UnityEngine.AddressableAssets
         /// <param name="catalogs">The set of catalogs to update.  If null, all catalogs that have an available update will be updated.</param>
         /// <param name="autoReleaseHandle">If true, the handle will automatically be released when the operation completes.</param>
         /// <returns>The operation with the list of updated content catalog data.</returns>
-        public static AsyncOperationHandle<List<IResourceLocator>> UpdateCatalogs(bool autoCleanBundleCache, IEnumerable<string> catalogs = null, bool autoReleaseHandle = true) // autoCleanBundleCache must be listed first to avoid breaking API
+        public static AsyncOperationHandle<List<IResourceLocator>>
+            UpdateCatalogs(bool autoCleanBundleCache, IEnumerable<string> catalogs = null, bool autoReleaseHandle = true) // autoCleanBundleCache must be listed first to avoid breaking API
         {
             return m_Addressables.UpdateCatalogs(catalogs, autoReleaseHandle, autoCleanBundleCache);
         }

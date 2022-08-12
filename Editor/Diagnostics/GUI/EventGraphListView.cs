@@ -13,6 +13,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         {
             public GUIContent Content { get; private set; }
             public EventDataSet Entry { get; private set; }
+
             public DataStreamEntry(EventDataSet dataSet, int depth) : base(dataSet.ObjectId, depth, dataSet.DisplayName)
             {
                 Entry = dataSet;
@@ -44,7 +45,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
             }
         }
 
-        internal EventGraphListView(Func<EventDataSet> dsFunc, TreeViewState tvs, MultiColumnHeaderState mchs, Func<string, bool> filter, IComparer<EventDataSet> dsComparer) : base(tvs, new MultiColumnHeader(mchs))
+        internal EventGraphListView(Func<EventDataSet> dsFunc, TreeViewState tvs, MultiColumnHeaderState mchs, Func<string, bool> filter, IComparer<EventDataSet> dsComparer) : base(tvs,
+            new MultiColumnHeader(mchs))
         {
             m_GetRootDataSetAction = dsFunc;
             showBorder = true;
@@ -141,6 +143,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
                     m_LastReloadTime = Time.unscaledTime;
                 }
             }
+
             base.OnGUI(rect);
         }
 
@@ -183,17 +186,18 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
                             foreach (var i in GetSelection())
                                 m_MaximizedState[i] = !maximized;
                         }
+
                         Reload();
                         m_LastReloadTime = Time.unscaledTime;
                     }
                 }
-                break;
+                    break;
                 case 1:
                 {
                     cellRect.xMin += (GetContentIndent(item) + extraSpaceBeforeIconAndLabel);
                     EditorGUI.LabelField(cellRect, item.Content);
                 }
-                break;
+                    break;
                 case 2:
                     DrawGraph(item.Entry, cellRect, visibleStartTime, visibleDuration, IsItemMaximized(item.id));
                     break;

@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "1.20.3",
+  "version": "1.20.5",
   "unity": "2019.4",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -19,16 +19,13 @@
     "com.unity.modules.unitywebrequest": "1.0.0",
     "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
   },
+  "upmCi": {
+    "footprint": "6cdc743fe0e4cce3d3682685be9937ae7697368f"
+  },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "3f7d9cb75a18834feebead299cb25984481580c7"
-  },
-  "_upm": {
-    "changelog": "- Added documentation to several areas (Build, Settings, Profiles, Catalogs, Runtime loading).\r\n- Fixed issue where GatherAllAssets filter would still return subObjects of filtered Assets.\r\n- Fixed issue where content update entries dependent on modified entries and not found as modified by check for content update restrictions\r\n- Fixed issue where the notification for changed static content wasn't getting cleared for assets inside of folders.\r\n- Fixed issue where Sprites belonging to a Sprite Atlas aren't assignable to an AssetReferenceSprite field.\r\n- Fixed issue where RefreshGlobalProfileVariables is called during script compilation.\r\n- Fixed issue where UnauthorizedAccessException occurs when lacking permissions to cache a remote catalog.\r\n- Fixed stack overflow with SortedDelegate and Addressables OnPostProcessAllAssets occurred during invoke a queued invoke and registering a new delegate.\r\n- Fixed issue where SceneLoadParameters were not used when using LoadSceneAsync using SceneLoadParameters.\r\n- Fixed issue where Schema gui with List members would not save when editing in the Group inspector.\r\n- Fixed issue where Serializable types of structs and class members of MonoBehaviour or ScriptableObjects would be returned as a location with GetResourceLocations but would not be loadable.\r\n- Fixed issue where setting default group does not dirty settings. Causing a reload to reset to previous default group.\r\n- Added updated documentation for the 1.20 Content Update workflows\r\n- Fixed issue where AssetReference subasset popup text is always white regardless of Editor skin.\r\n- Fixed issue where newly created assets would not show the Addressables inspector until after a domain reload.\r\n- Optimised Build pass Post Process Bundles when running on a large number of asset dependency trees.\r\n- A warning now gets printed if caching data fails due to Application.persistentDataPath being an empty string\r\n- Fixed issue where pressing the Reset button on the Hosting window would not assign a new random available port number.\r\n- Fixed bug where WaitForCompletion could hang indefinitely under certain race conditions (primarily on Android)\r\n- Fixed a bug where calling WaitForCompletion on a LoadAssetAsync call that was loading from Resources would freeze the editor."
-  },
-  "upmCi": {
-    "footprint": "341f6064b6dc63bc0c57e47bdcca60f9c5a44aab"
+    "revision": "9eff436324157f2516645735c070f9de223019fb"
   },
   "samples": [
     {

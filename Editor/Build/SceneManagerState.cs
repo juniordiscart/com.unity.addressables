@@ -21,14 +21,19 @@ namespace UnityEditor.AddressableAssets.Build
             [FormerlySerializedAs("m_isActive")]
             [SerializeField]
             internal bool isActive;
+
             [FormerlySerializedAs("m_isLoaded")]
             [SerializeField]
             internal bool isLoaded;
+
             [FormerlySerializedAs("m_path")]
             [SerializeField]
             internal string path;
 
-            internal SceneState() {}
+            internal SceneState()
+            {
+            }
+
             internal SceneState(SceneSetup s)
             {
                 isActive = s.isActive;
@@ -52,16 +57,30 @@ namespace UnityEditor.AddressableAssets.Build
             [FormerlySerializedAs("m_guid")]
             [SerializeField]
             internal string guid;
+
             [FormerlySerializedAs("m_enabled")]
             [SerializeField]
             internal bool enabled;
-            internal EbsSceneState() {}
-            internal EbsSceneState(EditorBuildSettingsScene s) { guid = s.guid.ToString(); enabled = s.enabled; }
-            internal EditorBuildSettingsScene GetBuildSettingsScene() { return new EditorBuildSettingsScene(new GUID(guid), enabled); }
+
+            internal EbsSceneState()
+            {
+            }
+
+            internal EbsSceneState(EditorBuildSettingsScene s)
+            {
+                guid = s.guid.ToString();
+                enabled = s.enabled;
+            }
+
+            internal EditorBuildSettingsScene GetBuildSettingsScene()
+            {
+                return new EditorBuildSettingsScene(new GUID(guid), enabled);
+            }
         }
 
         [SerializeField]
         internal SceneState[] openSceneState;
+
         [SerializeField]
         internal EbsSceneState[] editorBuildSettingsSceneState;
 
@@ -96,6 +115,7 @@ namespace UnityEditor.AddressableAssets.Build
         }
 
         static string s_DefaultPath = Addressables.LibraryPath + "SceneManagerState.json";
+
         /// <summary>
         /// Record the state of the EditorSceneManager and save to a JSON file.
         /// </summary>
@@ -104,7 +124,7 @@ namespace UnityEditor.AddressableAssets.Build
         {
             if (string.IsNullOrEmpty(path))
                 path = s_DefaultPath;
-            
+
             try
             {
                 var dir = Path.GetDirectoryName(path);
@@ -140,10 +160,9 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="restoreSceneManagerSetup">If true, the recorded active scenes are restored. EditorBuildSettings.scenes are always restored.</param>
         public static void Restore(string path = "", bool restoreSceneManagerSetup = false)
         {
-            
             if (string.IsNullOrEmpty(path))
                 path = s_DefaultPath;
-            
+
             try
             {
                 var state = JsonUtility.FromJson<SceneManagerState>(File.ReadAllText(path));

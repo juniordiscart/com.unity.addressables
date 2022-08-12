@@ -104,7 +104,7 @@ namespace AddressableAssetSettingsResourceLocationTests
         public IEnumerator GetResourceLocations_IncludesFolderSceneSubEntries_NullType()
         {
             IList<IResourceLocation> locations = new List<IResourceLocation>();
-            yield return  m_Addressables.GetResourceLocations(k_SceneSubFolderAddress, null, out locations);
+            yield return m_Addressables.GetResourceLocations(k_SceneSubFolderAddress, null, out locations);
             Assert.AreEqual(1, locations.Count);
         }
 
@@ -129,6 +129,12 @@ namespace AddressableAssetSettingsResourceLocationTests
     }
 
 #if UNITY_EDITOR
-    class AddressableAssetSettingsResourceLocationTests_FastMode : AddressableAssetSettingsResourceLocationTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
+    class AddressableAssetSettingsResourceLocationTests_FastMode : AddressableAssetSettingsResourceLocationTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
 #endif
 }

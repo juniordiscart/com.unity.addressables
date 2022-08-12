@@ -20,26 +20,26 @@ namespace UnityEngine.AddressableAssets
 
         private string AtlasSpriteProviderId
         {
-	        get
-	        {
-		        if (!string.IsNullOrEmpty(m_AtlasSpriteProviderId))
-			        return m_AtlasSpriteProviderId;
-		        
-		        var providers = m_Addressables.ResourceManager.ResourceProviders;
-		        foreach (IResourceProvider provider in providers)
-		        {
-			        if (provider is AtlasSpriteProvider)
-			        {
-				        m_AtlasSpriteProviderId = provider.ProviderId;
-				        return m_AtlasSpriteProviderId;
-			        }
-		        }
+            get
+            {
+                if (!string.IsNullOrEmpty(m_AtlasSpriteProviderId))
+                    return m_AtlasSpriteProviderId;
 
-		        // if nothing found, fallback to the default name
-		        return typeof(AtlasSpriteProvider).FullName;
-	        }
+                var providers = m_Addressables.ResourceManager.ResourceProviders;
+                foreach (IResourceProvider provider in providers)
+                {
+                    if (provider is AtlasSpriteProvider)
+                    {
+                        m_AtlasSpriteProviderId = provider.ProviderId;
+                        return m_AtlasSpriteProviderId;
+                    }
+                }
+
+                // if nothing found, fallback to the default name
+                return typeof(AtlasSpriteProvider).FullName;
+            }
         }
-        
+
 
         public DynamicResourceLocator(AddressablesImpl addr)
         {
@@ -56,7 +56,7 @@ namespace UnityEngine.AddressableAssets
                     if (type == typeof(Sprite))
                         m_Addressables.GetResourceLocations(mainKey, typeof(SpriteAtlas), out locs);
                 }
-	            
+
                 if (locs != null && locs.Count > 0)
                 {
                     locations = new List<IResourceLocation>(locs.Count);
@@ -65,6 +65,7 @@ namespace UnityEngine.AddressableAssets
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -72,7 +73,7 @@ namespace UnityEngine.AddressableAssets
         {
             if (type == typeof(Sprite) && mainLoc.ResourceType == typeof(U2D.SpriteAtlas))
             {
-                locations.Add(new ResourceLocationBase(locName, $"{mainLoc.InternalId}[{subKey}]", AtlasSpriteProviderId, type, new IResourceLocation[] { mainLoc }));
+                locations.Add(new ResourceLocationBase(locName, $"{mainLoc.InternalId}[{subKey}]", AtlasSpriteProviderId, type, new IResourceLocation[] {mainLoc}));
             }
             else
             {

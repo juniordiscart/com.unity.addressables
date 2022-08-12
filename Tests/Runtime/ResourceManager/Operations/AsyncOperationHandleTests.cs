@@ -24,8 +24,14 @@ namespace UnityEngine.ResourceManagement.Tests
                 m_RM.postProfilerEvents = true;
             }
 
-            public object GetResultAsObject() { return null; }
-            protected override void Execute() {}
+            public object GetResultAsObject()
+            {
+                return null;
+            }
+
+            protected override void Execute()
+            {
+            }
         }
 
         void IncreaseRefCount(AsyncOperationHandle handle, int count)
@@ -49,6 +55,7 @@ namespace UnityEngine.ResourceManagement.Tests
                 var copy = handle;
                 copy.Release();
             }
+
             return count;
         }
 
@@ -61,6 +68,7 @@ namespace UnityEngine.ResourceManagement.Tests
                 var copy = handle;
                 copy.Release();
             }
+
             return count;
         }
 

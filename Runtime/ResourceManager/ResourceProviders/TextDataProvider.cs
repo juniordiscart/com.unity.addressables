@@ -31,7 +31,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             private bool m_Complete = false;
             private int m_Timeout = 0;
 
-            private float GetPercentComplete() { return m_RequestOperation != null ? m_RequestOperation.progress : 0.0f; }
+            private float GetPercentComplete()
+            {
+                return m_RequestOperation != null ? m_RequestOperation.progress : 0.0f;
+            }
 
             public void Start(ProvideHandle provideHandle, TextDataProvider rawProvider)
             {
@@ -117,6 +120,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         textResult = webReq.downloadHandler.text;
                     else
                         exception = new RemoteProviderException($"{nameof(TextDataProvider)} : unable to load from url : {webReq.url}", m_PI.Location, uwrResult);
+                    webReq.Dispose();
                 }
                 else
                 {
@@ -183,7 +187,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <param name="type">The object type the text is converted to.</param>
         /// <param name="text">The text to be converted.</param>
         /// <returns>The converted object.</returns>
-        public virtual object Convert(Type type, string text) { return text; }
+        public virtual object Convert(Type type, string text)
+        {
+            return text;
+        }
 
         /// <summary>
         /// Provides raw text data from the location.

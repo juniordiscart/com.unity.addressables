@@ -24,9 +24,11 @@ public class ImportExistingGroup : EditorWindow
         AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
         if (settings == null)
         {
-            EditorUtility.DisplayDialog("Error", "Attempting to open Import Groups window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
+            EditorUtility.DisplayDialog("Error",
+                "Attempting to open Import Groups window, but no Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
             return;
         }
+
         GetWindow(typeof(ImportExistingGroup), false, "Import Groups");
     }
 
@@ -44,8 +46,10 @@ public class ImportExistingGroup : EditorWindow
         }
 
         GUILayout.Space(10f);
-        groupName = EditorGUILayout.TextField(new GUIContent("Group Name", "The name of the group that the schemas will be added to. This should be the filename of the imported group, for example 'MyGroup'."), groupName);
-        schemaFolder = EditorGUILayout.TextField(new GUIContent("Schema Folder", "The folder containing the schema assets of the group to import, for example 'Packages/com.unity.example/Schemas'."), schemaFolder);
+        groupName = EditorGUILayout.TextField(
+            new GUIContent("Group Name", "The name of the group that the schemas will be added to. This should be the filename of the imported group, for example 'MyGroup'."), groupName);
+        schemaFolder = EditorGUILayout.TextField(new GUIContent("Schema Folder", "The folder containing the schema assets of the group to import, for example 'Packages/com.unity.example/Schemas'."),
+            schemaFolder);
         using (new GUILayout.HorizontalScope())
         {
             GUILayout.FlexibleSpace();
@@ -67,6 +71,7 @@ public class ImportExistingGroup : EditorWindow
             EditorUtility.DisplayDialog("Error", "Cannot import group. No Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
             return;
         }
+
         ImportGroupInternal(settings, groupPath);
     }
 
@@ -83,6 +88,7 @@ public class ImportExistingGroup : EditorWindow
             EditorUtility.DisplayDialog("Error", "Cannot import schemas. No Addressables Settings file exists.  \n\nOpen 'Window/Asset Management/Addressables/Groups' for more info.", "Ok");
             return;
         }
+
         ImportSchemasInternal(settings, groupName, schemaFolder);
     }
 
@@ -93,12 +99,14 @@ public class ImportExistingGroup : EditorWindow
             Debug.LogError($"Group at '{groupPath}' not a valid group asset. Group will not be imported.");
             return;
         }
+
         AddressableAssetGroup oldGroup = AssetDatabase.LoadAssetAtPath<AddressableAssetGroup>(groupPath);
         if (oldGroup == null)
         {
             Debug.LogError($"Cannot load group asset at '{groupPath}'. Group will not be imported.");
             return;
         }
+
         if (settings.FindGroup(oldGroup.Name) != null)
         {
             Debug.LogError($"Settings already contains group '{oldGroup.Name}'. Group will not be imported.");
@@ -106,13 +114,14 @@ public class ImportExistingGroup : EditorWindow
         }
 
         string groupFileName = Path.GetFileName(groupPath);
-        string newGroupPath =  $"{settings.GroupFolder}/{groupFileName}";
+        string newGroupPath = $"{settings.GroupFolder}/{groupFileName}";
         newGroupPath = newGroupPath.Replace("\\", "/");
         if (File.Exists(newGroupPath))
         {
             Debug.LogError($"File already exists at '{newGroupPath}'. Group will not be imported.");
             return;
         }
+
         if (!AssetDatabase.CopyAsset(groupPath, newGroupPath))
             Debug.LogError("Failed to copy group asset. Importing group failed.");
     }
@@ -124,6 +133,7 @@ public class ImportExistingGroup : EditorWindow
             Debug.LogError($"Schema folder path is not a valid folder '{schemaFolder}'. Schemas will not be imported.");
             return;
         }
+
         AddressableAssetGroup group = settings.FindGroup(groupName);
         if (group == null)
         {
@@ -144,12 +154,14 @@ public class ImportExistingGroup : EditorWindow
                 Debug.LogError($"Cannot load schema asset at '{path}'. Schema will not be imported.");
                 continue;
             }
+
             if (schema is BundledAssetGroupSchema bundledSchema)
             {
                 List<string> variableNames = schema.Group.Settings.profileSettings.GetVariableNames();
-                SetBundledAssetGroupSchemaPaths(settings, bundledSchema.BuildPath, AddressableAssetSettings.kLocalBuildPath,"LocalBuildPath",  variableNames);
-                SetBundledAssetGroupSchemaPaths(settings, bundledSchema.LoadPath, AddressableAssetSettings.kLocalLoadPath,"LocalLoadPath",  variableNames);
+                SetBundledAssetGroupSchemaPaths(settings, bundledSchema.BuildPath, AddressableAssetSettings.kLocalBuildPath, "LocalBuildPath", variableNames);
+                SetBundledAssetGroupSchemaPaths(settings, bundledSchema.LoadPath, AddressableAssetSettings.kLocalLoadPath, "LocalLoadPath", variableNames);
             }
+
             group.AddSchema(schema);
         }
     }

@@ -27,12 +27,19 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// <summary>
         /// The GenerateLocationListsTask version.
         /// </summary>
-        public int Version { get { return k_Version; } }
+        public int Version
+        {
+            get { return k_Version; }
+        }
 
         /// <summary>
         /// The mapping of the old to new bundle names.
         /// </summary>
-        public Dictionary<string, string> BundleNameRemap { get { return m_BundleNameRemap; } set { m_BundleNameRemap = value; }}
+        public Dictionary<string, string> BundleNameRemap
+        {
+            get { return m_BundleNameRemap; }
+            set { m_BundleNameRemap = value; }
+        }
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
@@ -76,6 +83,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 bucket.guid = asset;
                 buckets.Add(asset, bucket);
             }
+
             return bucket;
         }
 
@@ -86,8 +94,15 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             public List<ObjectSerializedInfo> objs = new List<ObjectSerializedInfo>();
             public BuildLayout.ExplicitAsset ExplictAsset;
 
-            public ulong CalcObjectSize() { return (ulong)objs.Sum(x => (long)x.header.size); }
-            public ulong CalcStreamedSize() { return (ulong)objs.Sum(x => (long)x.rawData.size); }
+            public ulong CalcObjectSize()
+            {
+                return (ulong)objs.Sum(x => (long)x.header.size);
+            }
+
+            public ulong CalcStreamedSize()
+            {
+                return (ulong)objs.Sum(x => (long)x.rawData.size);
+            }
         }
 
         private BuildLayout CreateBuildLayout()
@@ -203,6 +218,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         file.MonoScriptSize += bucket.CalcObjectSize();
                         continue;
                     }
+
                     var otherData = new BuildLayout.DataFromOtherAsset();
                     otherData.AssetPath = assetPath;
                     otherData.AssetGuid = bucket.guid;
@@ -270,7 +286,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         Debug.LogWarningFormat("Group name in settings does not match name in group asset, reset group name: \"{0}\" to \"{1}\"", group.name, group.Name);
                         group.Name = group.Name;
                     }
-                    
+
                     var grp = new BuildLayout.Group();
                     grp.Name = group.Name;
                     grp.Guid = group.Guid;
@@ -288,6 +304,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                             sd.KvpDetails.Add(new Tuple<string, string>("Compression", bSchema.Compression.ToString()));
                             groupNameToBuildPath[group.name] = bSchema.BuildPath.GetValue(aaContext.Settings);
                         }
+
                         grp.Schemas.Add(sd);
                     }
 
@@ -308,17 +325,18 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         var assetGroup = lookup.GroupLookup[grpName];
                         b.Name = m_BundleNameRemap[b.Name];
                         string filePath = Path.Combine(groupNameToBuildPath[assetGroup.Name], b.Name);
-                        if(File.Exists(filePath))
+                        if (File.Exists(filePath))
                             b.FileSize = (ulong)new FileInfo(filePath).Length;
                         else
                         {
                             Debug.LogWarning($"AssetBundle {b.Name} from Addressable Group \"{assetGroup.Name}\" was detected as part of the build, " +
-                                $"but the file could not be found.  Likely this is because a Content Update Restricted asset was modifed before doing a Content Update build. " +
-                                $"This could mean that assets inteded for an update are not included as part of this build. " +
-                                $"You can automatically run the Restrictions check by changing the Check for Content Update Restrictions option in the AddressableAssetSettings under the Update a Previous Build section, " +
-                                $"or run Addressable Groups Window -> Tools -> Check For Content Update Restrictions to determine if assets have been modified.");
+                                             $"but the file could not be found.  Likely this is because a Content Update Restricted asset was modifed before doing a Content Update build. " +
+                                             $"This could mean that assets inteded for an update are not included as part of this build. " +
+                                             $"You can automatically run the Restrictions check by changing the Check for Content Update Restrictions option in the AddressableAssetSettings under the Update a Previous Build section, " +
+                                             $"or run Addressable Groups Window -> Tools -> Check For Content Update Restrictions to determine if assets have been modified.");
                             continue;
                         }
+
                         assetGroup.Bundles.Add(b);
                     }
                     else
@@ -335,9 +353,11 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                                     break;
                                 }
                             }
+
                             if (b.FileSize > 0)
                                 break;
                         }
+
                         layout.BuiltInBundles.Add(b);
                     }
                 }

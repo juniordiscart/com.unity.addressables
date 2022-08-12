@@ -12,52 +12,85 @@ namespace UnityEngine.ResourceManagement.Diagnostics
     public struct DiagnosticEvent
     {
         [SerializeField]
-        string m_Graph;  //id of graph definition to use
+        string m_Graph; //id of graph definition to use
+
         [SerializeField]
         int[] m_Dependencies; //used to nest datagraphs
+
         [SerializeField]
-        int m_ObjectId;     //id of a set of data streams
+        int m_ObjectId; //id of a set of data streams
+
         [SerializeField]
         string m_DisplayName;
+
         [SerializeField]
-        int m_Stream;    //data stream
+        int m_Stream; //data stream
+
         [SerializeField]
-        int m_Frame;     //frame of the event
+        int m_Frame; //frame of the event
+
         [SerializeField]
-        int m_Value;      //data value of event
+        int m_Value; //data value of event
 
         /// <summary>
         /// Gets the graph id that this event is intended for
         /// </summary>
         /// <value>The graph Id</value>
-        public string Graph { get { return m_Graph; } }
+        public string Graph
+        {
+            get { return m_Graph; }
+        }
+
         /// <summary>
         /// Unique object identifier for this event
         /// </summary>
-        public int ObjectId { get { return m_ObjectId; } }
+        public int ObjectId
+        {
+            get { return m_ObjectId; }
+        }
+
         /// <summary>
         /// Display name for event
         /// </summary>
-        public string DisplayName { get { return m_DisplayName; } }
+        public string DisplayName
+        {
+            get { return m_DisplayName; }
+        }
+
         /// <summary>
         /// Array of object identifiers that are dependencies for this event
         /// </summary>
-        public int[] Dependencies { get { return m_Dependencies; } }
+        public int[] Dependencies
+        {
+            get { return m_Dependencies; }
+        }
+
         /// <summary>
         /// The stream id for the event.  Each graph may display multiple streams of data for the same event Id
         /// </summary>
         /// <value>Stream Id</value>
-        public int Stream { get { return m_Stream; } }
+        public int Stream
+        {
+            get { return m_Stream; }
+        }
+
         /// <summary>
         /// The frame that the event occurred
         /// </summary>
         /// <value>Frame number</value>
-        public int Frame { get { return m_Frame; } }
+        public int Frame
+        {
+            get { return m_Frame; }
+        }
+
         /// <summary>
         /// The value of the event. This value depends on the event type
         /// </summary>
         /// <value>Event value</value>
-        public int Value { get { return m_Value; } }
+        public int Value
+        {
+            get { return m_Value; }
+        }
 
         /// <summary>
         /// DiagnosticEvent constructor

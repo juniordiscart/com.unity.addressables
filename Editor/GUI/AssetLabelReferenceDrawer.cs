@@ -28,6 +28,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     currentLabel.stringValue = labelList[newIndex];
                 }
             }
+
             EditorGUI.EndProperty();
         }
     }

@@ -15,10 +15,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <inheritdoc />
         public override string Name
         {
-            get
-            {
-                return "Use Existing Build (requires built groups)";
-            }
+            get { return "Use Existing Build (requires built groups)"; }
         }
 
         private bool m_DataBuilt;
@@ -50,13 +47,21 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var buildLogsPath = Addressables.BuildPath + "/buildLogs.json";
             if (!File.Exists(settingsPath))
             {
-                IDataBuilderResult resE = new AddressablesPlayModeBuildResult() { Error = "Player content must be built before entering play mode with packed data.  This can be done from the Addressables window in the Build->Build Player Content menu command." };
+                IDataBuilderResult resE = new AddressablesPlayModeBuildResult()
+                {
+                    Error = "Player content must be built before entering play mode with packed data.  This can be done from the Addressables window in the Build->Build Player Content menu command."
+                };
                 return (TResult)resE;
             }
+
             var rtd = JsonUtility.FromJson<ResourceManagerRuntimeData>(File.ReadAllText(settingsPath));
             if (rtd == null)
             {
-                IDataBuilderResult resE = new AddressablesPlayModeBuildResult() { Error = string.Format("Unable to load initialization data from path {0}.  This can be done from the Addressables window in the Build->Build Player Content menu command.", settingsPath) };
+                IDataBuilderResult resE = new AddressablesPlayModeBuildResult()
+                {
+                    Error = string.Format("Unable to load initialization data from path {0}.  This can be done from the Addressables window in the Build->Build Player Content menu command.",
+                        settingsPath)
+                };
                 return (TResult)resE;
             }
 
@@ -74,14 +79,14 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     $"Asset bundles built with build target {dataBuildTarget} may not be compatible with running in the Editor."));
             }
 
-            if(buildLogs.RuntimeBuildLogs.Count > 0)
+            if (buildLogs.RuntimeBuildLogs.Count > 0)
                 File.WriteAllText(buildLogsPath, JsonUtility.ToJson(buildLogs));
 
             //TODO: detect if the data that does exist is out of date..
             var runtimeSettingsPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings.json";
             PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, runtimeSettingsPath);
             PlayerPrefs.SetString(Addressables.kAddressablesRuntimeBuildLogPath, buildLogsPath);
-            IDataBuilderResult res = new AddressablesPlayModeBuildResult() { OutputPath = settingsPath, Duration = timer.Elapsed.TotalSeconds };
+            IDataBuilderResult res = new AddressablesPlayModeBuildResult() {OutputPath = settingsPath, Duration = timer.Elapsed.TotalSeconds};
             m_DataBuilt = true;
             return (TResult)res;
         }

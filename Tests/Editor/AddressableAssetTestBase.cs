@@ -17,8 +17,8 @@ namespace UnityEditor.AddressableAssets.Tests
         protected string TestFolder => $"Assets/{TestFolderName}";
         protected string TestFolderName => $"{GetType()}_Tests";
         protected string ConfigFolder => TestFolder + "/Config";
-        
-        
+
+
         protected string GetAssetPath(string assetName)
         {
             return $"{TestFolder}/{assetName}";
@@ -35,10 +35,15 @@ namespace UnityEditor.AddressableAssets.Tests
                 return m_Settings;
             }
         }
+
         protected string m_AssetGUID;
         protected string[] m_SceneGuids;
 
-        protected virtual bool PersistSettings { get { return true; } }
+        protected virtual bool PersistSettings
+        {
+            get { return true; }
+        }
+
         [OneTimeSetUp]
         public void Init()
         {
@@ -51,7 +56,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 if (!AssetDatabase.DeleteAsset(TestFolder))
                     Directory.Delete(TestFolder);
             }
-            
+
             Debug.Log($"{GetType()} (init) - creating {TestFolder}");
             AssetDatabase.CreateFolder("Assets", TestFolderName);
             AssetDatabase.CreateFolder(TestFolder, "Config");
@@ -60,7 +65,7 @@ namespace UnityEditor.AddressableAssets.Tests
             GameObject testObject = new GameObject("TestObject");
             GameObject testObject1 = new GameObject("TestObject 1");
             GameObject testObject2 = new GameObject("TestObject 2");
-          
+
             PrefabUtility.SaveAsPrefabAsset(testObject, TestFolder + "/test.prefab");
             PrefabUtility.SaveAsPrefabAsset(testObject1, TestFolder + "/test 1.prefab");
             PrefabUtility.SaveAsPrefabAsset(testObject2, TestFolder + "/test 2.prefab");
@@ -100,6 +105,7 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         private bool resetFailingMessages = false;
+
         //TODO: Remove when NSImage warning issue on bokken is fixed
         private void CheckLogForWarning(string condition, string stackTrace, LogType type)
         {
@@ -107,7 +113,9 @@ namespace UnityEditor.AddressableAssets.Tests
             resetFailingMessages = true;
         }
 
-        protected virtual void OnInit() {}
+        protected virtual void OnInit()
+        {
+        }
 
         [OneTimeTearDown]
         public void Cleanup()
@@ -118,6 +126,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 Debug.Log($"{GetType()} - (cleanup) deleting {TestFolder}");
                 AssetDatabase.DeleteAsset(TestFolder);
             }
+
             EditorBuildSettings.RemoveConfigObject(k_TestConfigName);
         }
 
@@ -129,12 +138,12 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             if (string.IsNullOrEmpty(objectName))
                 objectName = Path.GetFileNameWithoutExtension(assetPath);
-            
+
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             go.name = objectName;
             //this is to ensure that bundles are different for every run.
             go.transform.localPosition = UnityEngine.Random.onUnitSphere;
-            
+
             string directoryName = Path.GetDirectoryName(assetPath);
             CreateFolderDeep(directoryName);
             try
@@ -144,12 +153,12 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.IsNotNull(go, "Attempting to save null GameObject to Prefab");
                 PrefabUtility.SaveAsPrefabAsset(go, assetPath);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Debug.LogError($"Error while attempting to save prefab {objectName} to {assetPath} with Exception message {e.Message}");
                 throw e;
             }
-            
+
             UnityEngine.Object.DestroyImmediate(go, false);
             return AssetDatabase.AssetPathToGUID(assetPath);
         }
@@ -159,7 +168,7 @@ namespace UnityEditor.AddressableAssets.Tests
             path = path.Replace('\\', '/');
             if (!path.StartsWith("Assets/"))
                 return null;
-            
+
             if (Directory.Exists(path))
             {
                 if (AssetDatabase.IsValidFolder(path))
@@ -167,7 +176,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                 return AssetDatabase.AssetPathToGUID(path);
             }
-            
+
             Directory.CreateDirectory(path);
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             return AssetDatabase.AssetPathToGUID(path);

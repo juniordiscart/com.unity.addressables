@@ -98,6 +98,7 @@ namespace UnityEngine.AddressableAssets.Initialization
                 Complete(Result, false, string.Format("Addressables - Unable to load runtime data at location {0}.", m_rtdOp));
                 return;
             }
+
             Addressables.LogFormat("Initializing Addressables version {0}.", m_rtdOp.Result.AddressablesVersion);
             var rtd = m_rtdOp.Result;
 
@@ -128,7 +129,9 @@ namespace UnityEngine.AddressableAssets.Initialization
 
 #if UNITY_EDITOR
             if (UnityEditor.EditorUserBuildSettings.activeBuildTarget.ToString() != rtd.BuildTarget)
-                Addressables.LogErrorFormat("Addressables - runtime data was built with a different build target.  Expected {0}, but data was built with {1}.  Certain assets may not load correctly including shaders.  You can rebuild player content via the Addressables window.", UnityEditor.EditorUserBuildSettings.activeBuildTarget, rtd.BuildTarget);
+                Addressables.LogErrorFormat(
+                    "Addressables - runtime data was built with a different build target.  Expected {0}, but data was built with {1}.  Certain assets may not load correctly including shaders.  You can rebuild player content via the Addressables window.",
+                    UnityEditor.EditorUserBuildSettings.activeBuildTarget, rtd.BuildTarget);
 #endif
             if (!rtd.LogResourceManagerExceptions)
                 ResourceManager.ExceptionHandler = null;
@@ -169,6 +172,7 @@ namespace UnityEngine.AddressableAssets.Initialization
                     remoteHashLocation = catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote];
                     catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache];
                 }
+
                 m_loadCatalogOp = LoadContentCatalogInternal(catalogs, 0, locMap, remoteHashLocation);
             }
         }
@@ -212,7 +216,8 @@ namespace UnityEngine.AddressableAssets.Initialization
             }
         }
 
-        static AsyncOperationHandle<IResourceLocator> OnCatalogDataLoaded(AddressablesImpl addressables, AsyncOperationHandle<ContentCatalogData> op, string providerSuffix, IResourceLocation remoteHashLocation)
+        static AsyncOperationHandle<IResourceLocator> OnCatalogDataLoaded(AddressablesImpl addressables, AsyncOperationHandle<ContentCatalogData> op, string providerSuffix,
+            IResourceLocation remoteHashLocation)
         {
             var data = op.Result;
             addressables.Release(op);
@@ -232,12 +237,14 @@ namespace UnityEngine.AddressableAssets.Initialization
                     if (prov != null)
                         addressables.InstanceProvider = prov;
                 }
+
                 if (addressables.SceneProvider == null)
                 {
                     var prov = data.SceneProviderData.CreateInstance<ISceneProvider>();
                     if (prov != null)
                         addressables.SceneProvider = prov;
                 }
+
                 if (remoteHashLocation != null)
                     data.location.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = remoteHashLocation;
 
@@ -248,7 +255,8 @@ namespace UnityEngine.AddressableAssets.Initialization
             }
         }
 
-        public static AsyncOperationHandle<IResourceLocator> LoadContentCatalog(AddressablesImpl addressables, IResourceLocation loc, string providerSuffix, IResourceLocation remoteHashLocation = null)
+        public static AsyncOperationHandle<IResourceLocator> LoadContentCatalog(AddressablesImpl addressables, IResourceLocation loc, string providerSuffix,
+            IResourceLocation remoteHashLocation = null)
         {
             Type provType = typeof(ProviderOperation<ContentCatalogData>);
             var catalogOp = addressables.ResourceManager.CreateOperation<ProviderOperation<ContentCatalogData>>(provType, provType.GetHashCode(), null, null);
@@ -285,10 +293,7 @@ namespace UnityEngine.AddressableAssets.Initialization
             if (loadOp.IsDone)
                 LoadOpComplete(loadOp, catalogs, locMap, index, remoteHashLocation);
             else
-                loadOp.Completed += op =>
-                {
-                    LoadOpComplete(op, catalogs, locMap, index, remoteHashLocation);
-                };
+                loadOp.Completed += op => { LoadOpComplete(op, catalogs, locMap, index, remoteHashLocation); };
             return loadOp;
         }
 

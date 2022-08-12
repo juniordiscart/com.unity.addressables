@@ -13,29 +13,41 @@ namespace UnityEngine.ResourceManagement.Exceptions
         /// <summary>
         /// Construct a new ResourceManagerException.
         /// </summary>
-        public ResourceManagerException() {}
+        public ResourceManagerException()
+        {
+        }
+
         /// <summary>
         /// Construct a new ResourceManagerException.
         /// </summary>
         /// <param name="message">Message to describe the exception.</param>
-        public ResourceManagerException(string message) : base(message) {}
+        public ResourceManagerException(string message) : base(message)
+        {
+        }
+
         /// <summary>
         /// Construct a new ResourceManagerException.
         /// </summary>
         /// <param name="message">Message to describe the exception.</param>
         /// <param name="innerException">Inner exception that caused this exception.</param>
-        public ResourceManagerException(string message, Exception innerException) : base(message, innerException) {}
+        public ResourceManagerException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
         /// <summary>
         /// Construct a new ResourceManagerException.
         /// </summary>
         /// <param name="message">Message to describe the exception.</param>
         /// <param name="context">Context related to the exception.</param>
-        protected ResourceManagerException(SerializationInfo message, StreamingContext context) : base(message, context) {}
+        protected ResourceManagerException(SerializationInfo message, StreamingContext context) : base(message, context)
+        {
+        }
 
         /// <summary>Provides a new string object describing the exception.</summary>
         /// <returns>A newly allocated managed string.</returns>
         public override string ToString() => $"{GetType().Name} : {base.Message}\n{InnerException}";
     }
+
     /// <summary>
     /// Exception returned when the IResourceProvider is not found for a location.
     /// </summary>
@@ -45,6 +57,7 @@ namespace UnityEngine.ResourceManagement.Exceptions
         /// The location that contains the provider id that was not found.
         /// </summary>
         public IResourceLocation Location { get; private set; }
+
         /// <summary>
         /// Construct a new UnknownResourceProviderException
         /// </summary>
@@ -57,35 +70,44 @@ namespace UnityEngine.ResourceManagement.Exceptions
         /// <summary>
         ///  Construct a new UnknownResourceProviderException
         /// </summary>
-        public UnknownResourceProviderException() {}
+        public UnknownResourceProviderException()
+        {
+        }
+
         /// <summary>
         /// Construct a new UnknownResourceProviderException
         /// </summary>
         /// <param name="message">Message to describe the exception.</param>
-        public UnknownResourceProviderException(string message) : base(message) {}
+        public UnknownResourceProviderException(string message) : base(message)
+        {
+        }
+
         /// <summary>
         /// Construct a new UnknownResourceProviderException
         /// </summary>
         /// <param name="message">Message to describe the exception.</param>
         /// <param name="innerException">Inner exception that caused this exception.</param>
-        public UnknownResourceProviderException(string message, Exception innerException) : base(message, innerException) {}
+        public UnknownResourceProviderException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
         /// <summary>
         /// Construct a new UnknownResourceProviderException
         /// </summary>
         /// <param name="message">Message to describe the exception.</param>
         /// <param name="context">Context related to the exception.</param>
-        protected UnknownResourceProviderException(SerializationInfo message, StreamingContext context) : base(message, context) {}
+        protected UnknownResourceProviderException(SerializationInfo message, StreamingContext context) : base(message, context)
+        {
+        }
 
         /// <summary>
         /// Returns a string describing this exception.
         /// </summary>
         public override string Message
         {
-            get
-            {
-                return base.Message + ", ProviderId=" + Location.ProviderId + ", Location=" + Location;
-            }
+            get { return base.Message + ", ProviderId=" + Location.ProviderId + ", Location=" + Location; }
         }
+
         /// <summary>
         /// Returns string representation of exception.
         /// </summary>
@@ -106,7 +128,9 @@ namespace UnityEngine.ResourceManagement.Exceptions
         /// </summary>
         /// <param name="message">A message describing the error.</param>
         /// <param name="innerException">The exception that caused the error, if any.</param>
-        public OperationException(string message, Exception innerException = null) : base(message, innerException) {}
+        public OperationException(string message, Exception innerException = null) : base(message, innerException)
+        {
+        }
 
         /// <summary>Provides a new string object describing the exception.</summary>
         /// <returns>A newly allocated managed string.</returns>

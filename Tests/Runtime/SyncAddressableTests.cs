@@ -56,10 +56,10 @@ namespace AddressableTests.SyncAddressables
             string guid = CreatePrefab(tempAssetFolder + "/synctest.prefab");
             AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, syncGroup);
             entry.address = m_PrefabKey;
-            
+
             string path = Path.Combine($"{GetGeneratedAssetsPath()}", "Resources");
             Directory.CreateDirectory(path);
-            
+
             string resourceGuid = CreatePrefab(Path.Combine(path, "synctest.prefab"));
             AddressableAssetEntry resourceEntry = settings.CreateOrMoveEntry(resourceGuid, syncGroup);
             resourceEntry.address = m_ResourcePrefabKey;
@@ -97,16 +97,16 @@ namespace AddressableTests.SyncAddressables
             //Cleanup
             ReleaseOp(loadOp);
         }
-        
+
         [Test]
         public void SyncAddressableLoad_CompletesWithValidKeyWhenLoadedFromResources()
         {
             //string path = Path.Combine($"{GetGeneratedAssetsPath()}", "Resources");
-            
+
             IResourceLocation loc = new ResourceLocationBase(m_ResourcePrefabKey, "synctest", typeof(LegacyResourcesProvider).FullName, typeof(GameObject));
             if (!m_Addressables.ResourceManager.ResourceProviders.Any(rp => rp.GetType() == typeof(LegacyResourcesProvider)))
                 m_Addressables.ResourceManager.ResourceProviders.Add(new LegacyResourcesProvider());
-            
+
             var loadOp = m_Addressables.LoadAssetAsync<GameObject>(loc);
             var result = loadOp.WaitForCompletion();
             Assert.AreEqual(AsyncOperationStatus.Succeeded, loadOp.Status);
@@ -115,13 +115,12 @@ namespace AddressableTests.SyncAddressables
             Assert.AreEqual(loadOp.Result, result);
             //Cleanup
             ReleaseOp(loadOp);
-                
         }
 
         [Test]
         public void SyncAddressableLoadAssets_CompletesWithValidKey()
         {
-            var loadOp = m_Addressables.LoadAssetsAsync<GameObject>(new List<string>() { m_PrefabKey, m_SceneKey }, null, Addressables.MergeMode.Union, false);
+            var loadOp = m_Addressables.LoadAssetsAsync<GameObject>(new List<string>() {m_PrefabKey, m_SceneKey}, null, Addressables.MergeMode.Union, false);
             var result = loadOp.WaitForCompletion();
             Assert.AreEqual(AsyncOperationStatus.Succeeded, loadOp.Status);
             Assert.NotNull(result);
@@ -151,8 +150,8 @@ namespace AddressableTests.SyncAddressables
         public void ProviderOperation_WaitForCompletion_AfterOpComplete_DoesntHang()
         {
             ProviderOperation<GameObject> providerOp = new ProviderOperation<GameObject>();
-            providerOp.Init(m_Addressables.ResourceManager, new BundledAssetProvider(), 
-                new ResourceLocationBase(m_PrefabKey, m_PrefabKey, typeof(BundledAssetProvider).FullName, typeof(GameObject)), 
+            providerOp.Init(m_Addressables.ResourceManager, new BundledAssetProvider(),
+                new ResourceLocationBase(m_PrefabKey, m_PrefabKey, typeof(BundledAssetProvider).FullName, typeof(GameObject)),
                 new AsyncOperationHandle<IList<AsyncOperationHandle>>());
             providerOp.HasExecuted = true;
             providerOp.ProviderCompleted(default(GameObject), true, null);
@@ -163,7 +162,7 @@ namespace AddressableTests.SyncAddressables
         [Test]
         public void SyncAddressableLoadAssets_CompletesWithInvalidKey()
         {
-            var loadOp = m_Addressables.LoadAssetsAsync<GameObject>(new List<string>() { m_PrefabKey, m_SceneKey, "bad key" }, null, Addressables.MergeMode.Union, false);
+            var loadOp = m_Addressables.LoadAssetsAsync<GameObject>(new List<string>() {m_PrefabKey, m_SceneKey, "bad key"}, null, Addressables.MergeMode.Union, false);
             var result = loadOp.WaitForCompletion();
             Assert.AreEqual(AsyncOperationStatus.Succeeded, loadOp.Status);
             Assert.NotNull(result);
@@ -326,7 +325,7 @@ namespace AddressableTests.SyncAddressables
         [Test]
         public void RequestingResourceLocations_CompletesSynchronously()
         {
-            var requestOp = m_Addressables.LoadResourceLocationsAsync(new List<string>() { m_PrefabKey, m_SceneKey }, Addressables.MergeMode.Union);
+            var requestOp = m_Addressables.LoadResourceLocationsAsync(new List<string>() {m_PrefabKey, m_SceneKey}, Addressables.MergeMode.Union);
             var result = requestOp.WaitForCompletion();
             Assert.AreEqual(AsyncOperationStatus.Succeeded, requestOp.Status);
             Assert.IsNotNull(result);
@@ -549,7 +548,10 @@ namespace AddressableTests.SyncAddressables
 #if UNITY_EDITOR
     class SyncAddressableTests_FastMode : SyncAddressablesWithSceneTests
     {
-        protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } }
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
 
         [Test]
         [Timeout(3000)]
@@ -568,11 +570,21 @@ namespace AddressableTests.SyncAddressables
         }
     }
 
-    class SyncAddressableTests_VirtualMode : SyncAddressablesWithSceneTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
+    class SyncAddressableTests_VirtualMode : SyncAddressablesWithSceneTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
 
     class SyncAddressableTests_PackedPlaymodeMode : SyncAddressablesWithSceneTests
     {
-        protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } }
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+
         [Test]
         public void DownloadDependencies_CompletesSynchronously_WhenAutoReleased()
         {
@@ -583,10 +595,13 @@ namespace AddressableTests.SyncAddressables
     }
 #endif
 
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
     class SyncAddressableTests_PackedMode : SyncAddressableTests
     {
-        protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } }
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
 
         [Test]
         public void DownloadDependencies_CompletesSynchronously_WhenAutoReleased()

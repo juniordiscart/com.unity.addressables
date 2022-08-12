@@ -17,10 +17,7 @@ public class CustomPlayModeScript : BuildScriptBase
     /// <inheritdoc />
     public override string Name
     {
-        get
-        {
-            return "Use Custom Build (requires built groups)";
-        }
+        get { return "Use Custom Build (requires built groups)"; }
     }
 
     private bool m_DataBuilt;
@@ -52,13 +49,18 @@ public class CustomPlayModeScript : BuildScriptBase
         var buildLogsPath = Addressables.BuildPath + "/buildLogs.json";
         if (!File.Exists(settingsPath))
         {
-            IDataBuilderResult resE = new AddressablesPlayModeBuildResult() { Error = "Player content must be built before entering play mode with packed data.  This can be done from the Addressables window in the Build->Build Player Content menu command." };
+            IDataBuilderResult resE = new AddressablesPlayModeBuildResult()
+                {Error = "Player content must be built before entering play mode with packed data.  This can be done from the Addressables window in the Build->Build Player Content menu command."};
             return (TResult)resE;
         }
+
         var rtd = JsonUtility.FromJson<ResourceManagerRuntimeData>(File.ReadAllText(settingsPath));
         if (rtd == null)
         {
-            IDataBuilderResult resE = new AddressablesPlayModeBuildResult() { Error = string.Format("Unable to load initialization data from path {0}.  This can be done from the Addressables window in the Build->Build Player Content menu command.", settingsPath) };
+            IDataBuilderResult resE = new AddressablesPlayModeBuildResult()
+            {
+                Error = string.Format("Unable to load initialization data from path {0}.  This can be done from the Addressables window in the Build->Build Player Content menu command.", settingsPath)
+            };
             return (TResult)resE;
         }
 
@@ -82,7 +84,7 @@ public class CustomPlayModeScript : BuildScriptBase
         var runtimeSettingsPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings.json";
         PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, runtimeSettingsPath);
         PlayerPrefs.SetString(Addressables.kAddressablesRuntimeBuildLogPath, buildLogsPath);
-        IDataBuilderResult res = new AddressablesPlayModeBuildResult() { OutputPath = settingsPath, Duration = timer.Elapsed.TotalSeconds };
+        IDataBuilderResult res = new AddressablesPlayModeBuildResult() {OutputPath = settingsPath, Duration = timer.Elapsed.TotalSeconds};
         m_DataBuilt = true;
         return (TResult)res;
     }

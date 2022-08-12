@@ -16,8 +16,8 @@ namespace UnityEngine.AddressableAssets.Tests
             obj.name = name;
             return obj;
         }
-        
-        #if UNITY_EDITOR
+
+#if UNITY_EDITOR
         static public TestObject Create(string name, string assetPath)
         {
             var obj = CreateInstance<TestObject>();
@@ -27,8 +27,9 @@ namespace UnityEngine.AddressableAssets.Tests
                 AssetDatabase.CreateAsset(obj, assetPath);
                 AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             }
+
             return obj;
         }
-        #endif
+#endif
     }
 }

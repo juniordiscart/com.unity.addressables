@@ -64,9 +64,10 @@ namespace UnityEditor.AddressableAssets.Tests
 
             if (addToBuild)
             {
-                var list = new List<EditorBuildSettingsScene>() { new EditorBuildSettingsScene(scenePath, true)};
+                var list = new List<EditorBuildSettingsScene>() {new EditorBuildSettingsScene(scenePath, true)};
                 SceneManagerState.AddScenesForPlayMode(list);
             }
+
             return AssetDatabase.AssetPathToGUID(scenePath);
         }
 
@@ -91,7 +92,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
         protected string CreateSpriteAtlas(string atlasPath, string spriteTextureGuid)
         {
-            return CreateSpriteAtlas(atlasPath, new[] { spriteTextureGuid });
+            return CreateSpriteAtlas(atlasPath, new[] {spriteTextureGuid});
         }
 
         protected string CreateSpriteAtlas(string atlasPath, string[] spriteTextureGuids)
@@ -100,7 +101,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.CreateAsset(sa, atlasPath);
             Object[] targetObjects = spriteTextureGuids.Select(g => AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(g))).ToArray();
             sa.Add(targetObjects);
-            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { sa }, EditorUserBuildSettings.activeBuildTarget, false);
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {sa}, EditorUserBuildSettings.activeBuildTarget, false);
 
             AssetDatabase.Refresh();
             return AssetDatabase.AssetPathToGUID(atlasPath);

@@ -34,7 +34,7 @@ namespace UnityEngine.ResourceManagement.Diagnostics
             get
             {
                 if (s_editorConnectionGuid == Guid.Empty)
-                    s_editorConnectionGuid = new Guid(1, 2, 3, new byte[] { 20, 1, 32, 32, 4, 9, 6, 44 });
+                    s_editorConnectionGuid = new Guid(1, 2, 3, new byte[] {20, 1, 32, 32, 4, 9, 6, 44});
                 return s_editorConnectionGuid;
             }
         }
@@ -119,6 +119,7 @@ namespace UnityEngine.ResourceManagement.Diagnostics
         float m_lastTickSent = 0;
         int m_lastFrame = 0;
         float fpsAvg = 30;
+
         void Update()
         {
             if (s_EventHandlers.Count > 0)
@@ -161,8 +162,9 @@ namespace UnityEngine.ResourceManagement.Diagnostics
             {
                 var go = new GameObject("EventCollector", typeof(DiagnosticEventCollector));
                 s_Collector = go.GetComponent<DiagnosticEventCollector>();
-                go.hideFlags = HideFlags.DontSave;// HideFlags.HideAndDontSave;
+                go.hideFlags = HideFlags.DontSave; // HideFlags.HideAndDontSave;
             }
+
             return s_Collector;
         }
 

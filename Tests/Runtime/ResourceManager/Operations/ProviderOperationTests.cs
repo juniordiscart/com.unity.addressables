@@ -209,7 +209,11 @@ namespace UnityEngine.ResourceManagement.Tests
             ResourceLocationBase depLoc = new ResourceLocationBase("dep1", "dep1", m_Provider2.ProviderId, typeof(object));
             ResourceLocationBase depLoc2 = new ResourceLocationBase("dep2", "dep2", m_Provider2.ProviderId, typeof(object));
             ResourceLocationBase loc = new ResourceLocationBase("1", "1", m_Provider.ProviderId, typeof(object), depLoc, depLoc2);
-            m_Provider.ProvideCallback = (handle) => { handle.GetDependencies(deps); handle.Complete(0, true, null); };
+            m_Provider.ProvideCallback = (handle) =>
+            {
+                handle.GetDependencies(deps);
+                handle.Complete(0, true, null);
+            };
             var op = m_RM.ProvideResource<object>(loc);
             m_RM.Update(0.0f);
 
@@ -235,8 +239,13 @@ namespace UnityEngine.ResourceManagement.Tests
             Assert.AreEqual(0.75f, providerOp.PercentComplete);
         }
 
-        class Type1 {}
-        class Type2 {}
+        class Type1
+        {
+        }
+
+        class Type2
+        {
+        }
 
         [Test]
         public void WhenProviderCallsComplete_AndTypeIsIncorrect_Throws()
@@ -284,7 +293,11 @@ namespace UnityEngine.ResourceManagement.Tests
             m_Provider.ProvideCallback = (x) =>
             {
                 handle = x;
-                handle.SetProgressCallback(() => { didThrow = true; throw new Exception("I have failed"); });
+                handle.SetProgressCallback(() =>
+                {
+                    didThrow = true;
+                    throw new Exception("I have failed");
+                });
             };
             var op = m_RM.ProvideResource<Type1>(loc);
             Assert.AreEqual(0.0f, op.PercentComplete);
@@ -311,10 +324,7 @@ namespace UnityEngine.ResourceManagement.Tests
         {
             ResourceLocationBase loc = new ResourceLocationBase("1", "1", m_Provider.ProviderId, typeof(object));
             ProvideHandle handle = default(ProvideHandle);
-            m_Provider.ProvideCallback = (x) =>
-            {
-                handle = x;
-            };
+            m_Provider.ProvideCallback = (x) => { handle = x; };
             var op = m_RM.ProvideResource<TRequestType>(loc);
 
             if (string.IsNullOrEmpty(exceptionMessage))
@@ -331,7 +341,9 @@ namespace UnityEngine.ResourceManagement.Tests
             op.Release();
         }
 
-        class Type3 : Type2 {}
+        class Type3 : Type2
+        {
+        }
 
         [Test]
         public void ProvideHandle_CompleteWithExactType_Succeeds()
@@ -380,10 +392,7 @@ namespace UnityEngine.ResourceManagement.Tests
         public void ProvideResource_WhenDependencyFailsToLoad_AndProviderCanLoadWithFailedDependencies_ProviderStillProvides()
         {
             m_Provider._BehaviourFlags = ProviderBehaviourFlags.CanProvideWithFailedDependencies;
-            m_Provider.ProvideCallback = (pi) =>
-            {
-                pi.Complete(5, true, null);
-            };
+            m_Provider.ProvideCallback = (pi) => { pi.Complete(5, true, null); };
             m_RM.ResourceProviders.Add(m_Provider);
             ResourceLocationBase locDep = new ResourceLocationBase("depasset", "depasset", "unkonwn", typeof(object));
             ResourceLocationBase locRoot = new ResourceLocationBase("rootasset", "rootasset", m_Provider.ProviderId, typeof(object), locDep);
@@ -397,16 +406,10 @@ namespace UnityEngine.ResourceManagement.Tests
         [Test]
         public void ProvideResource_ReceiveDiagnosticsCallback_IGenericProviderOperationHasLocation()
         {
-            m_Provider.ProvideCallback = (pi) =>
-            {
-                pi.Complete(int.Parse(pi.Location.InternalId), true, null);
-            };
+            m_Provider.ProvideCallback = (pi) => { pi.Complete(int.Parse(pi.Location.InternalId), true, null); };
             m_RM.ResourceProviders.Add(m_Provider);
             List<ResourceManager.DiagnosticEventContext> eventsRecieved = new List<ResourceManager.DiagnosticEventContext>();
-            m_RM.RegisterDiagnosticCallback(ctx =>
-            {
-                eventsRecieved.Add(ctx);
-            });
+            m_RM.RegisterDiagnosticCallback(ctx => { eventsRecieved.Add(ctx); });
 
             var locations = new ResourceLocationBase("1", "1", m_Provider.ProviderId, typeof(object));
             AsyncOperationHandle<object> op = m_RM.ProvideResource<object>(locations);
@@ -429,16 +432,10 @@ namespace UnityEngine.ResourceManagement.Tests
         [Test]
         public void ProvideResource_ReceiveDiagnosticsCallback_CreateAndComplete()
         {
-            m_Provider.ProvideCallback = (pi) =>
-            {
-                pi.Complete(int.Parse(pi.Location.InternalId), true, null);
-            };
+            m_Provider.ProvideCallback = (pi) => { pi.Complete(int.Parse(pi.Location.InternalId), true, null); };
             m_RM.ResourceProviders.Add(m_Provider);
             List<ResourceManager.DiagnosticEventContext> eventsRecieved = new List<ResourceManager.DiagnosticEventContext>();
-            m_RM.RegisterDiagnosticCallback(ctx =>
-            {
-                eventsRecieved.Add(ctx);
-            });
+            m_RM.RegisterDiagnosticCallback(ctx => { eventsRecieved.Add(ctx); });
 
             var locations = new ResourceLocationBase("1", "1", m_Provider.ProviderId, typeof(object));
             AsyncOperationHandle<object> op = m_RM.ProvideResource<object>(locations);
@@ -481,10 +478,7 @@ namespace UnityEngine.ResourceManagement.Tests
         [Test]
         public void ProvideResource_ReceiveDiagnosticsCallback_MultipleCallbacks()
         {
-            m_Provider.ProvideCallback = (pi) =>
-            {
-                pi.Complete(int.Parse(pi.Location.InternalId), true, null);
-            };
+            m_Provider.ProvideCallback = (pi) => { pi.Complete(int.Parse(pi.Location.InternalId), true, null); };
             m_RM.ResourceProviders.Add(m_Provider);
 
             bool callback1 = false, callback2 = false;
@@ -506,10 +500,7 @@ namespace UnityEngine.ResourceManagement.Tests
         [Test]
         public void ProvideResources_CanLoadAndUnloadMultipleResources()
         {
-            m_Provider.ProvideCallback = (pi) =>
-            {
-                pi.Complete(int.Parse(pi.Location.InternalId), true, null);
-            };
+            m_Provider.ProvideCallback = (pi) => { pi.Complete(int.Parse(pi.Location.InternalId), true, null); };
             m_RM.ResourceProviders.Add(m_Provider);
             var locations = new List<IResourceLocation>()
             {
@@ -522,6 +513,7 @@ namespace UnityEngine.ResourceManagement.Tests
             {
                 Assert.AreEqual((int)op.Result[i], i);
             }
+
             op.Release();
         }
 
@@ -569,7 +561,7 @@ namespace UnityEngine.ResourceManagement.Tests
             ResourceLocationBase loc_b = new ResourceLocationBase("dep2", "dep2", m_Provider.ProviderId, typeof(object));
 
             var op = m_RM.ProvideResources<object>(
-                new List<IResourceLocation> { loc_a, loc_b },
+                new List<IResourceLocation> {loc_a, loc_b},
                 false,
                 null);
             m_RM.Update(0.0f);
@@ -593,7 +585,7 @@ namespace UnityEngine.ResourceManagement.Tests
             ResourceLocationBase depLoc2b = new ResourceLocationBase("dep2b", "dep2b", m_Provider.ProviderId, typeof(object));
             ResourceLocationBase loc_b = new ResourceLocationBase("2", "2", m_Provider.ProviderId, typeof(object), depLoc1b, depLoc2b);
 
-            var op = m_RM.ProvideResources<object>(new List<IResourceLocation> { loc_a, loc_b }, true, null);
+            var op = m_RM.ProvideResources<object>(new List<IResourceLocation> {loc_a, loc_b}, true, null);
             m_RM.Update(0.0f);
             Assert.AreEqual(AsyncOperationStatus.Failed, op.Status);
             Assert.AreEqual(2, m_Provider.ProvideLog.Count);
@@ -611,7 +603,7 @@ namespace UnityEngine.ResourceManagement.Tests
             ResourceLocationBase depLoc2b = new ResourceLocationBase("dep2b", "dep2b", m_Provider.ProviderId, typeof(object));
             ResourceLocationBase loc_b = new ResourceLocationBase("2", "2", m_Provider.ProviderId, typeof(object), depLoc1b, depLoc2b);
 
-            var op = m_RM.ProvideResources<object>(new List<IResourceLocation> { loc_a, loc_b }, false, null);
+            var op = m_RM.ProvideResources<object>(new List<IResourceLocation> {loc_a, loc_b}, false, null);
             m_RM.Update(0.0f);
             Assert.AreEqual(AsyncOperationStatus.Failed, op.Status);
             Assert.AreEqual(2, m_Provider.ProvideLog.Count);
@@ -631,7 +623,7 @@ namespace UnityEngine.ResourceManagement.Tests
             ResourceLocationBase depLoc2b = new ResourceLocationBase("dep2b", "dep2b", m_Provider.ProviderId, typeof(object));
             ResourceLocationBase loc_b = new ResourceLocationBase("2", "2", m_Provider.ProviderId, typeof(object), depLoc1b, depLoc2b);
 
-            var op = m_RM.ProvideResources<object>(new List<IResourceLocation> { loc_a, loc_b }, false, null);
+            var op = m_RM.ProvideResources<object>(new List<IResourceLocation> {loc_a, loc_b}, false, null);
             m_RM.Update(0.0f);
             Assert.AreEqual(AsyncOperationStatus.Failed, op.Status);
             Assert.AreEqual(2, m_Provider.ProvideLog.Count);
@@ -654,8 +646,8 @@ namespace UnityEngine.ResourceManagement.Tests
             ResourceLocationBase loc_b = new ResourceLocationBase("loc_b", "2", m_Provider.ProviderId, typeof(object), depLoc1b, depLoc2b);
             ResourceLocationBase loc_shared = new ResourceLocationBase("loc_shared", "3", m_Provider.ProviderId, typeof(object), depLoc2a);
 
-            var op_shared = m_RM.ProvideResources<object>(new List<IResourceLocation> { loc_shared }, true, null);
-            var op = m_RM.ProvideResources<object>(new List<IResourceLocation> { loc_a, loc_b }, true, null);
+            var op_shared = m_RM.ProvideResources<object>(new List<IResourceLocation> {loc_shared}, true, null);
+            var op = m_RM.ProvideResources<object>(new List<IResourceLocation> {loc_a, loc_b}, true, null);
             m_RM.Update(0.0f);
 
             Assert.AreEqual(AsyncOperationStatus.Failed, op.Status);

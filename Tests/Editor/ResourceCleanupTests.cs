@@ -18,6 +18,7 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 if (o.name.Equals(name)) ++count;
             }
+
             return count;
         }
 
@@ -40,7 +41,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var currentDAMCount = CountResourcesByName("DelayedActionManager");
 
             EditorApplication.isPlaying = true;
-            DelayedActionManager.AddAction(new Action(() => {}));
+            DelayedActionManager.AddAction(new Action(() => { }));
             Assert.True(DelayedActionManager.Exists);
             Assert.NotNull(DelayedActionManager.Instance);
             EditorApplication.isPlaying = false;

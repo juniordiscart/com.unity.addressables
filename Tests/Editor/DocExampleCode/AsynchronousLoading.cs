@@ -1,6 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     #region doc_asyncload
+
     using System.Collections;
     using UnityEngine;
     using UnityEngine.AddressableAssets;
@@ -10,16 +11,18 @@ namespace AddressableAssets.DocExampleCode
     {
         private string address = "tree";
         private AsyncOperationHandle loadHandle;
-        
+
         // always minimum of 1 frame
-        IEnumerator LoadAssetCoroutine() {
+        IEnumerator LoadAssetCoroutine()
+        {
             loadHandle = Addressables.LoadAssetAsync<GameObject>(address);
             yield return loadHandle;
         }
 
         // minimum of 1 frame for new asset loads
         // callback called in current frame for already loaded assets
-        void LoadAssetCallback() {
+        void LoadAssetCallback()
+        {
             loadHandle = Addressables.LoadAssetAsync<GameObject>(address);
             loadHandle.Completed += h =>
             {
@@ -29,14 +32,17 @@ namespace AddressableAssets.DocExampleCode
 
         // minimum of 1 frame for new asset loads
         // await completes in current frame for already loaded assets
-        async void LoadAssetWait() {
+        async void LoadAssetWait()
+        {
             loadHandle = Addressables.LoadAssetAsync<GameObject>(address);
             await loadHandle.Task;
         }
-        
-        private void OnDestroy() {
+
+        private void OnDestroy()
+        {
             Addressables.Release(loadHandle);
         }
     }
+
     #endregion
 }

@@ -101,14 +101,14 @@ namespace UnityEditor.AddressableAssets.GUI
                 return;
             }
 
-            var item = new ProfileVarItem(key, value) { id = m_ItemMap.Count };
+            var item = new ProfileVarItem(key, value) {id = m_ItemMap.Count};
             m_ItemMap.Add(key, item);
             Reload();
         }
 
         protected override TreeViewItem BuildRoot()
         {
-            var root = new TreeViewItem(-1, -1) { children = new List<TreeViewItem>() };
+            var root = new TreeViewItem(-1, -1) {children = new List<TreeViewItem>()};
             foreach (var item in m_ItemMap.Values)
                 root.AddChild(item);
 

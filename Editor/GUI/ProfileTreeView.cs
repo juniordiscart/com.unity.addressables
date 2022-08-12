@@ -13,6 +13,7 @@ namespace UnityEditor.AddressableAssets.GUI
         private Dictionary<int, AddressableAssetProfileSettings.BuildProfile> m_TreeIndexToBuildProfileMap;
         public List<string> Names => m_Names;
         private int m_LastClickedProfile;
+
         public int lastClickedProfile
         {
             get { return m_LastClickedProfile; }
@@ -63,7 +64,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
 
         internal ProfileTreeView(TreeViewState treeViewState, List<AddressableAssetProfileSettings.BuildProfile> profiles, ProfileWindow window,
-                                 MultiColumnHeader header) : base(treeViewState, header)
+            MultiColumnHeader header) : base(treeViewState, header)
         {
             m_Window = window;
             m_ProfileList = profiles;
@@ -78,15 +79,14 @@ namespace UnityEditor.AddressableAssets.GUI
 
             if (m_Window.ProfileIndex >= 0)
             {
-                SetSelection(new List<int> { m_Window.ProfileIndex });
+                SetSelection(new List<int> {m_Window.ProfileIndex});
                 m_LastClickedProfile = m_Window.ProfileIndex;
             }
-
         }
 
         protected override TreeViewItem BuildRoot()
         {
-            var root = new TreeViewItem { id = -1, depth = -1, displayName = "Root" };
+            var root = new TreeViewItem {id = -1, depth = -1, displayName = "Root"};
             m_Names.Clear();
             m_TreeIndexToBuildProfileMap.Clear();
 
@@ -95,7 +95,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 var profile = m_ProfileList[i];
                 m_Names.Add(profile.profileName);
                 m_TreeIndexToBuildProfileMap.Add(i, profile);
-                root.AddChild(new TreeViewItem { id = i, displayName = profile.profileName });
+                root.AddChild(new TreeViewItem {id = i, displayName = profile.profileName});
             }
 
             return root;
@@ -139,6 +139,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 if (r.id == id) return r as TreeViewItem;
             }
+
             return null;
         }
 
@@ -158,6 +159,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     selectedNodes.Add(item);
                 }
             }
+
             return selectedNodes;
         }
 
@@ -224,7 +226,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             if (!args.acceptedRename)
                 return;
-            
+
             var item = FindItemInVisibleRows(args.itemID);
 
             AddressableAssetProfileSettings.BuildProfile profile = GetProfile(item.id);
@@ -269,6 +271,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     AssetDatabase.SaveAssets();
                 }
             }
+
             m_Window.ProfileIndex = -1;
             Reload();
         }
@@ -283,6 +286,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     return m_ProfileList[item.id];
                 }
             }
+
             return default(AddressableAssetProfileSettings.BuildProfile);
         }
     }

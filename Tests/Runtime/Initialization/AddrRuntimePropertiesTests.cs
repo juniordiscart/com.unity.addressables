@@ -51,6 +51,7 @@ namespace AddrRuntimePropertiesTests
         }
 
         public static string ReflectableStringValue = "myReflectionResult";
+
         [Test]
         public void RuntimeProperties_CanEvaluateReflection()
         {
@@ -89,10 +90,7 @@ namespace AddrRuntimePropertiesTests
 
             string expectedResult = tok1 + replacement + tok3;
 
-            string actualResult = AddressablesRuntimeProperties.EvaluateString(toEval, delim, delim, s =>
-            {
-                return replacement;
-            });
+            string actualResult = AddressablesRuntimeProperties.EvaluateString(toEval, delim, delim, s => { return replacement; });
 
             Assert.AreEqual(expectedResult, actualResult);
         }
@@ -105,7 +103,7 @@ namespace AddrRuntimePropertiesTests
             string b = "[A]";
             string toEval = "Test_[A]_";
             string expectedResult = "Test_#ERROR-CyclicToken#_";
-            
+
             string actualResult = AddressablesRuntimeProperties.EvaluateString(toEval, '[', ']', s =>
             {
                 switch (s)
@@ -115,12 +113,13 @@ namespace AddrRuntimePropertiesTests
                     case "B":
                         return b;
                 }
+
                 return "";
             });
-            
+
             Assert.AreEqual(expectedResult, actualResult);
         }
-        
+
         [Test]
         [Timeout(1000)]
         public void RuntimeProperties_CanEvaluateInnerProperties()
@@ -130,14 +129,14 @@ namespace AddrRuntimePropertiesTests
             stringLookup.Add("With_inner", "Success");
             string toEval = "Test_[With_[B]]";
             string expectedResult = "Test_Success";
-            
+
             string actualResult = AddressablesRuntimeProperties.EvaluateString(toEval, '[', ']', s =>
             {
                 if (stringLookup.TryGetValue(s, out string val))
                     return val;
                 return "";
             });
-            
+
             Assert.AreEqual(expectedResult, actualResult);
         }
 
@@ -146,25 +145,17 @@ namespace AddrRuntimePropertiesTests
         {
             string testString = "[{[{correct}]bad}]";
             string expectedResult = "CORRECTBAD";
-            string actualResult = AddressablesRuntimeProperties.EvaluateString(testString, '[', ']', s =>
-            {
-                return AddressablesRuntimeProperties.EvaluateString(s, '{', '}', str => str.ToUpper());
-            });
+            string actualResult = AddressablesRuntimeProperties.EvaluateString(testString, '[', ']', s => { return AddressablesRuntimeProperties.EvaluateString(s, '{', '}', str => str.ToUpper()); });
             Assert.AreEqual(expectedResult, actualResult, "EvaluateString does not properly initialize a local stack for recursive/simultaneous calls.");
         }
-        
+
         [Test]
         public void RuntimeProperties_EvaluateString_CreatesLocalStacksOnDeepRecursiveCall()
         {
             string testString = "[{([{(correct)}]bad)}]";
             string expectedResult = "CORRECTBAD";
-            string actualResult = AddressablesRuntimeProperties.EvaluateString(testString, '[', ']', s =>
-            {
-                return AddressablesRuntimeProperties.EvaluateString(s, '{', '}', str =>
-                {
-                    return AddressablesRuntimeProperties.EvaluateString(str, '(', ')', str2 => str2.ToUpper());
-                });
-            });
+            string actualResult = AddressablesRuntimeProperties.EvaluateString(testString, '[', ']',
+                s => { return AddressablesRuntimeProperties.EvaluateString(s, '{', '}', str => { return AddressablesRuntimeProperties.EvaluateString(str, '(', ')', str2 => str2.ToUpper()); }); });
             Assert.AreEqual(expectedResult, actualResult, "EvaluateString does not properly initialize a local stack for recursive/simultaneous calls.");
         }
 
@@ -173,7 +164,7 @@ namespace AddrRuntimePropertiesTests
         public void RuntimeProperties_EvaluateString_DoesNotLoopInfinitelyOnUnmatchedEndingDelimiter()
         {
             string testString = "[correct]bad]";
-            string expectedResult = "#ERROR-" + testString+" contains unmatched delimiters#";
+            string expectedResult = "#ERROR-" + testString + " contains unmatched delimiters#";
             string actualResult = AddressablesRuntimeProperties.EvaluateString(testString, '[', ']', s => s);
             Assert.AreEqual(expectedResult, actualResult, "EvaluateString encounters infinite loop with unmatched ending delimiter");
         }
@@ -221,18 +212,12 @@ namespace AddrRuntimePropertiesTests
             char delim = '?';
             toEval = tok1 + tok2 + delim + tok3;
             expectedResult = toEval;
-            actualResult = AddressablesRuntimeProperties.EvaluateString(toEval, delim, delim, s =>
-            {
-                return replacement;
-            });
+            actualResult = AddressablesRuntimeProperties.EvaluateString(toEval, delim, delim, s => { return replacement; });
             Assert.AreEqual(expectedResult, actualResult);
 
             toEval = tok1 + delim + tok2 + tok3;
             expectedResult = toEval;
-            actualResult = AddressablesRuntimeProperties.EvaluateString(toEval, delim, delim, s =>
-            {
-                return replacement;
-            });
+            actualResult = AddressablesRuntimeProperties.EvaluateString(toEval, delim, delim, s => { return replacement; });
             Assert.AreEqual(expectedResult, actualResult);
         }
     }

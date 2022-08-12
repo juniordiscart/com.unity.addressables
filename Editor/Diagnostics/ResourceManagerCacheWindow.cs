@@ -24,6 +24,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         class CacheDataTree : TreeView
         {
             ResourceManagerCacheWindow m_Window;
+
             static int Compare(TreeViewItem a, TreeViewItem b)
             {
                 return ((EventTreeViewItem)b).m_state.ReferenceCount - ((EventTreeViewItem)a).m_state.ReferenceCount;
@@ -32,6 +33,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             class EventTreeViewItem : TreeViewItem
             {
                 internal OperationState m_state;
+
                 public EventTreeViewItem(Dictionary<int, OperationState> states, OperationState e, int depth) : base(e.ObjectId, depth, string.Format("{0}\t{1}", e.ReferenceCount, e.DisplayName))
                 {
                     m_state = e;
@@ -44,6 +46,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     }
                 }
             }
+
             public CacheDataTree(ResourceManagerCacheWindow rmcw, TreeViewState tvs) : base(tvs)
             {
                 m_Window = rmcw;
@@ -89,6 +92,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
 
         Dictionary<int, OperationState> m_OpStates = new Dictionary<int, OperationState>();
         int m_lastRepaintedFrame = -1;
+
         public void OnEvent(DiagnosticEvent evt)
         {
             var hash = evt.ObjectId;
@@ -108,7 +112,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 {
                     Debug.LogWarningFormat("Unable to find op info for id {0} - {1}, stream={2}", hash, evt.DisplayName, evt.Stream);
                 }
-                m_OpStates.Add(hash, op = new OperationState() { ObjectId = evt.ObjectId, DisplayName = evt.DisplayName, Dependencies = evt.Dependencies, ReferenceCount = 0 });
+
+                m_OpStates.Add(hash, op = new OperationState() {ObjectId = evt.ObjectId, DisplayName = evt.DisplayName, Dependencies = evt.Dependencies, ReferenceCount = 0});
             }
 
             if (evt.Stream == (int)ResourceManager.DiagnosticEventType.AsyncOperationReferenceCount)

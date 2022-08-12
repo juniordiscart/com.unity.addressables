@@ -21,7 +21,11 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// List of schemas for this group.
         /// </summary>
-        public List<AddressableAssetGroupSchema> Schemas { get { return m_Schemas; } }
+        public List<AddressableAssetGroupSchema> Schemas
+        {
+            get { return m_Schemas; }
+        }
+
         /// <summary>
         /// Get the list of schema types.
         /// </summary>
@@ -49,6 +53,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarning("Cannot add null Schema object.");
                 return null;
             }
+
             var type = schema.GetType();
 
             if (GetSchema(type) != null)
@@ -154,6 +159,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -203,6 +209,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     }
                 }
             }
+
             m_Schemas.Clear();
         }
 
@@ -227,6 +234,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (!string.IsNullOrEmpty(setPath))
                     result = false;
             }
+
             return result;
         }
     }

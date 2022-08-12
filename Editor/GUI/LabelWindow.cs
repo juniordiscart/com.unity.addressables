@@ -79,7 +79,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 m_Settings.RenameLabel(m_OldName, m_CurrentEdit);
                 EndEditMenu();
             }
-            else if(current.type == EventType.MouseDown && m_IsEditing)
+            else if (current.type == EventType.MouseDown && m_IsEditing)
                 EndEditMenu();
         }
 
@@ -110,7 +110,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             m_Settings.RemoveLabel(m_Settings.labelTable.labelNames[list.index]);
             AddressableAssetUtility.OpenAssetIfUsingVCIntegration(m_Settings);
-        } 
+        }
 
         void OnAddLabel(Rect buttonRect, ReorderableList list)
         {

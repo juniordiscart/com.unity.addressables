@@ -2,7 +2,9 @@ namespace UnityEditor.AddressableAssets.Settings
 {
     internal class AddressablesAssetPostProcessor : AssetPostprocessor
     {
-        private static AddressableAssetUtility.SortedDelegate<string[], string[], string[], string[]> s_OnPostProcessHandler = new AddressableAssetUtility.SortedDelegate<string[], string[], string[], string[]>();
+        private static AddressableAssetUtility.SortedDelegate<string[], string[], string[], string[]> s_OnPostProcessHandler =
+            new AddressableAssetUtility.SortedDelegate<string[], string[], string[], string[]>();
+
         public static AddressableAssetUtility.SortedDelegate<string[], string[], string[], string[]> OnPostProcess => s_OnPostProcessHandler;
 
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)

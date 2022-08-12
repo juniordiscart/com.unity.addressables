@@ -27,8 +27,15 @@ namespace AddressableAssetsIntegrationTests
         const string kOldBuildId = "Old";
         const string kNewBuildId = "New";
 
-        string GetNonRefAsset(int i) { return $"{kOldBuildId}{i}"; }
-        string GetRefAsset(int i) { return $"{kNewBuildId}{i}"; }
+        string GetNonRefAsset(int i)
+        {
+            return $"{kOldBuildId}{i}";
+        }
+
+        string GetRefAsset(int i)
+        {
+            return $"{kNewBuildId}{i}";
+        }
 
 #if UNITY_EDITOR
         internal override void Setup(AddressableAssetSettings settings, string tempAssetFolder)
@@ -122,7 +129,7 @@ namespace AddressableAssetsIntegrationTests
         Dictionary<string, string> GetCacheEntries(string key)
         {
             var cacheEntries = new Dictionary<string, string>();
-            m_Addressables.GetResourceLocations(new object[] { key }, typeof(GameObject), Addressables.MergeMode.Intersection, out IList<IResourceLocation> locations);
+            m_Addressables.GetResourceLocations(new object[] {key}, typeof(GameObject), Addressables.MergeMode.Intersection, out IList<IResourceLocation> locations);
             Assert.AreEqual(1, locations?.Count);
 
             if (locations[0].HasDependencies)
@@ -136,6 +143,7 @@ namespace AddressableAssetsIntegrationTests
                     }
                 }
             }
+
             return cacheEntries;
         }
 
@@ -153,6 +161,7 @@ namespace AddressableAssetsIntegrationTests
                         cacheEntries.Add(cab);
                 }
             }
+
             return cacheEntries;
         }
 
@@ -175,6 +184,7 @@ namespace AddressableAssetsIntegrationTests
 #endif
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator WhenValidCatalogId_RemovesNonReferencedBundlesFromCache([Values(true, false)] bool forceSingleThreading)
         {
 #if ENABLE_CACHING
@@ -191,7 +201,7 @@ namespace AddressableAssetsIntegrationTests
             entriesToRemove.ExceptWith(entriesToPreserve);
 
             string locatorId = m_Addressables.m_ResourceLocators[0].Locator.LocatorId;
-            var handle = m_Addressables.CleanBundleCache(new List<string> { locatorId }, forceSingleThreading);
+            var handle = m_Addressables.CleanBundleCache(new List<string> {locatorId}, forceSingleThreading);
             yield return handle;
             handle.Release();
 
@@ -206,6 +216,7 @@ namespace AddressableAssetsIntegrationTests
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator WhenCatalogIdListNull_UsesLoadedCatalogs_AndRemovesNonReferencedBundlesFromCache()
         {
 #if ENABLE_CACHING
@@ -250,7 +261,8 @@ namespace AddressableAssetsIntegrationTests
             var handle = m_Addressables.CleanBundleCache(null, false);
             yield return handle;
 
-            Assert.AreEqual("Provided catalogs do not load data from a catalog file. This can occur when using the \"Use Asset Database (fastest)\" playmode script. Bundle cache was not modified.", handle.OperationException.Message);
+            Assert.AreEqual("Provided catalogs do not load data from a catalog file. This can occur when using the \"Use Asset Database (fastest)\" playmode script. Bundle cache was not modified.",
+                handle.OperationException.Message);
             handle.Release();
 
             LogAssert.ignoreFailingMessages = ifm;
@@ -273,10 +285,11 @@ namespace AddressableAssetsIntegrationTests
             var ifm = LogAssert.ignoreFailingMessages;
             LogAssert.ignoreFailingMessages = true;
 
-            var handle = m_Addressables.CleanBundleCache(new List<string> { "invalidId" }, false);
+            var handle = m_Addressables.CleanBundleCache(new List<string> {"invalidId"}, false);
             yield return handle;
 
-            Assert.AreEqual("Provided catalogs do not load data from a catalog file. This can occur when using the \"Use Asset Database (fastest)\" playmode script. Bundle cache was not modified.", handle.OperationException.Message);
+            Assert.AreEqual("Provided catalogs do not load data from a catalog file. This can occur when using the \"Use Asset Database (fastest)\" playmode script. Bundle cache was not modified.",
+                handle.OperationException.Message);
             handle.Release();
 
             LogAssert.ignoreFailingMessages = ifm;
@@ -343,10 +356,29 @@ namespace AddressableAssetsIntegrationTests
     }
 
 #if UNITY_EDITOR
-    class CleanBundleCacheTests_FastMode : CleanBundleCacheTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
-    class CleanBundleCacheTests_PackedPlaymodeMode : CleanBundleCacheTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class CleanBundleCacheTests_FastMode : CleanBundleCacheTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
+
+    class CleanBundleCacheTests_PackedPlaymodeMode : CleanBundleCacheTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
-    class CleanBundleCacheTests_PackedMode : CleanBundleCacheTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } } }
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
+    class CleanBundleCacheTests_PackedMode : CleanBundleCacheTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
+    }
 }

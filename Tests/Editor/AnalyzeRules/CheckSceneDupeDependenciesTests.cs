@@ -45,7 +45,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             PrefabUtility.SaveAsPrefabAsset(prefabWithMaterial, k_PrefabWithMaterialPath);
             AssetDatabase.Refresh();
         }
-        
+
         [Test]
         public void CheckSceneDupe_GetsCorrectResourcePaths()
         {
@@ -68,6 +68,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
                         break;
                     }
                 }
+
                 Assert.IsTrue(success, "CheckSceneDupeDependencies ResourcePaths did not find the created Scene for test as expected.");
             }
             finally
@@ -94,8 +95,8 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             var rule = new CheckSceneDupeDependencies();
 
             EditorBuildSettingsScene editorScene = new EditorBuildSettingsScene(k_ScenePath, true);
-            rule.BuiltInResourcesToDependenciesMap(new string[] { editorScene.path });
-            rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>() { new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupePrefabA)) });
+            rule.BuiltInResourcesToDependenciesMap(new string[] {editorScene.path});
+            rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>() {new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupePrefabA))});
 
             Assert.IsTrue(rule.m_ResourcesToDependencies.ContainsKey(editorScene.path));
             Assert.AreEqual(1, rule.m_ResourcesToDependencies[editorScene.path].Count);
@@ -115,8 +116,8 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             var rule = new CheckSceneDupeDependencies();
 
             EditorBuildSettingsScene editorScene = new EditorBuildSettingsScene(k_ScenePath, true);
-            rule.BuiltInResourcesToDependenciesMap(new string[] { editorScene.path });
-            rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>() { new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupeMyMaterial)) });
+            rule.BuiltInResourcesToDependenciesMap(new string[] {editorScene.path});
+            rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>() {new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupeMyMaterial))});
 
             Assert.IsTrue(rule.m_ResourcesToDependencies.ContainsKey(editorScene.path));
             Assert.AreEqual(1, rule.m_ResourcesToDependencies[editorScene.path].Count);
@@ -125,7 +126,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             //Cleanup
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
         }
-        
+
         [Test]
         public void CheckSceneDupe_SceneDependenciesDoNotIncludeEditorOnly()
         {
@@ -137,8 +138,8 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             var rule = new CheckSceneDupeDependencies();
 
             EditorBuildSettingsScene editorScene = new EditorBuildSettingsScene(k_ScenePath, true);
-            rule.BuiltInResourcesToDependenciesMap(new string[] { editorScene.path });
-            rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>() { new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupeMyMaterial)) });
+            rule.BuiltInResourcesToDependenciesMap(new string[] {editorScene.path});
+            rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>() {new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupeMyMaterial))});
 
             Assert.IsTrue(rule.m_ResourcesToDependencies.ContainsKey(editorScene.path));
             Assert.AreEqual(0, rule.m_ResourcesToDependencies[editorScene.path].Count);
@@ -157,7 +158,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             var rule = new CheckSceneDupeDependencies();
 
             EditorBuildSettingsScene editorScene = new EditorBuildSettingsScene(k_ScenePath, true);
-            rule.BuiltInResourcesToDependenciesMap(new string[] { editorScene.path });
+            rule.BuiltInResourcesToDependenciesMap(new string[] {editorScene.path});
             rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>()
             {
                 new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupeMyMaterial))
@@ -170,7 +171,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             //Cleanup
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
         }
-        
+
         [Test]
         public void CheckSceneDupe_SceneDependenciesDoNotIncludeScripts()
         {
@@ -183,11 +184,11 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             var rule = new CheckSceneDupeDependencies();
 
             EditorBuildSettingsScene editorScene = new EditorBuildSettingsScene(k_ScenePath, true);
-            rule.BuiltInResourcesToDependenciesMap(new string[] { editorScene.path });
+            rule.BuiltInResourcesToDependenciesMap(new string[] {editorScene.path});
 
             Assert.IsTrue(rule.m_ResourcesToDependencies.ContainsKey(editorScene.path));
             bool containsAnyScripts = false;
-            foreach ( GUID guid in rule.m_ResourcesToDependencies[editorScene.path])
+            foreach (GUID guid in rule.m_ResourcesToDependencies[editorScene.path])
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid.ToString());
                 if (path.EndsWith(".cs") || path.EndsWith(".dll"))
@@ -196,6 +197,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
                     break;
                 }
             }
+
             Assert.IsFalse(containsAnyScripts, "Scripts were included as a duplciate dependency");
 
             //Cleanup

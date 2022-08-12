@@ -18,23 +18,31 @@ namespace UnityEditor.AddressableAssets.Settings
             [FormerlySerializedAs("m_postProfilerEvents")]
             [SerializeField]
             internal bool postProfilerEventsInternal;
+
             [FormerlySerializedAs("m_localLoadSpeed")]
             [SerializeField]
             internal long localLoadSpeedInternal = 1024 * 1024 * 10;
+
             [FormerlySerializedAs("m_remoteLoadSpeed")]
             [SerializeField]
             internal long remoteLoadSpeedInternal = 1024 * 1024 * 1;
+
             [FormerlySerializedAs("m_hierarchicalSearch")]
             [SerializeField]
             internal bool hierarchicalSearchInternal = true;
+
             [SerializeField]
             internal int activePlayModeIndex = 0;
+
             [SerializeField]
             internal bool hideSubObjectsInGroupView = false;
+
             [SerializeField]
             internal bool showGroupsAsHierarchy = false;
+
             [SerializeField]
             internal bool generateBuildLayout = false;
+
             [SerializeField]
             internal ReportFileFormat buildLayoutReportFileFormat = ReportFileFormat.TXT;
         }
@@ -89,6 +97,7 @@ namespace UnityEditor.AddressableAssets.Settings
             /// The .txt file format.
             /// </summary>
             TXT,
+
             /// <summary>
             /// The .json file format.
             /// </summary>

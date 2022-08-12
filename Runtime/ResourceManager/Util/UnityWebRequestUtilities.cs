@@ -133,7 +133,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// The target url of the request.
         /// </summary>
         public string Url { get; }
-        
+
         /// <summary>
         /// Determines if the web request can be sent again based on its error. 
         /// </summary>
@@ -142,7 +142,7 @@ namespace UnityEngine.ResourceManagement.Util
         {
             if (string.IsNullOrEmpty(Error))
                 return true;
-            
+
             if (Error == "Request aborted" ||
                 Error == "Unable to write data" ||
                 Error == "Malformed URL" ||
@@ -161,7 +161,7 @@ namespace UnityEngine.ResourceManagement.Util
                 Error == "Cannot override system-specified headers"
                )
                 return false;
-            
+
             /* Errors that can be retried:
                 "Unknown Error":
                 "No Internet Connection"

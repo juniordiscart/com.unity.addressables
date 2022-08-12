@@ -43,7 +43,6 @@ namespace UnityEditor.AddressableAssets.Settings
         [InitializeOnLoadMethod]
         internal static void InitializeCloudEnvironment()
         {
-
             var cloudEnvironment = GetCloudEnvironment();
             switch (cloudEnvironment)
             {
@@ -69,6 +68,7 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         const string EnvironmentArg = "-cloudEnvironment";
+
         internal static string GetCloudEnvironment()
         {
             try
@@ -128,6 +128,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 aa.profileGroupTypes = CreateDefaultGroupTypes();
                 EditorUtility.SetDirty(aa);
             }
+
             return aa;
         }
 
@@ -157,7 +158,8 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Creates a list of default group types that are automatically added on ProfileDataSourceSettings object creation
         /// </summary>
         /// <returns>List of ProfileGroupTypes: Built-In and Editor Hosted</returns>
-        public static List<ProfileGroupType> CreateDefaultGroupTypes() => new List<ProfileGroupType> {
+        public static List<ProfileGroupType> CreateDefaultGroupTypes() => new List<ProfileGroupType>
+        {
             CreateBuiltInGroupType(),
             CreateEditorHostedGroupType(),
 #if ENABLE_CCD
@@ -185,7 +187,8 @@ namespace UnityEditor.AddressableAssets.Settings
         static ProfileGroupType CreateCcdManagerGroupType()
         {
             string buildPath = $"{AddressableAssetSettings.kCCDBuildDataPath}/{MANAGED_ENVIRONMENT}/{MANAGED_BUCKET}/{MANAGED_BADGE}";
-            string loadPath = $"https://{CloudProjectSettings.projectId}{m_CcdClientBasePath}/client_api/v1/environments/{{CcdManager.EnvironmentName}}/buckets/{{CcdManager.BucketId}}/release_by_badge/{{CcdManager.Badge}}/entry_by_path/content/?path=";
+            string loadPath =
+ $"https://{CloudProjectSettings.projectId}{m_CcdClientBasePath}/client_api/v1/environments/{{CcdManager.EnvironmentName}}/buckets/{{CcdManager.BucketId}}/release_by_badge/{{CcdManager.Badge}}/entry_by_path/content/?path=";
             ProfileGroupType defaultCcdManager = new ProfileGroupType(AddressableAssetSettings.CcdManagerGroupTypePrefix);
             defaultCcdManager.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, buildPath));
             defaultCcdManager.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, loadPath));
@@ -218,6 +221,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     break;
                 }
             }
+
             return result;
         }
 
@@ -276,7 +280,8 @@ namespace UnityEditor.AddressableAssets.Settings
                         if (badges.Count == 0) badges.Add(new CcdBadge(name: "latest"));
                         foreach (var badge in badges)
                         {
-                            var groupType = new ProfileGroupType($"CCD{ProfileGroupType.k_PrefixSeparator}{projectId}{ProfileGroupType.k_PrefixSeparator}{environment.id}{ProfileGroupType.k_PrefixSeparator}{bucket.Id}{ProfileGroupType.k_PrefixSeparator}{badge.Name}");
+                            var groupType =
+ new ProfileGroupType($"CCD{ProfileGroupType.k_PrefixSeparator}{projectId}{ProfileGroupType.k_PrefixSeparator}{environment.id}{ProfileGroupType.k_PrefixSeparator}{bucket.Id}{ProfileGroupType.k_PrefixSeparator}{badge.Name}");
                             groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBucket)}{nameof(CcdBucket.Name)}", bucket.Name));
                             groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBucket)}{nameof(CcdBucket.Id)}", bucket.Id.ToString()));
                             groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBadge)}{nameof(CcdBadge.Name)}", badge.Name));
@@ -289,7 +294,8 @@ namespace UnityEditor.AddressableAssets.Settings
                             string buildPath = $"{AddressableAssetSettings.kCCDBuildDataPath}/{environment.id}/{bucket.Id}/{badge.Name}";
                             groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, buildPath));
 
-                            string loadPath = $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environment.id}/buckets/{bucket.Id}/release_by_badge/{badge.Name}/entry_by_path/content/?path=";
+                            string loadPath = 
+$"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environment.name}/buckets/{bucket.Id}/release_by_badge/{badge.Name}/entry_by_path/content/?path=";
                             groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, loadPath));
 
                             profileGroupTypes.Add(groupType);
@@ -489,12 +495,16 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             [SerializeField]
             public string id;
+
             [SerializeField]
             public string projectId;
+
             [SerializeField]
             public string projectGenesisId;
+
             [SerializeField]
             public string name;
+
             [SerializeField]
             public bool isDefault;
         }

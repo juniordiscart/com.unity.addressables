@@ -26,7 +26,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         /// <summary>
         /// The GenerateLocationListsTask version.
         /// </summary>
-        public int Version { get { return k_Version; } }
+        public int Version
+        {
+            get { return k_Version; }
+        }
 
 #pragma warning disable 649
         [InjectContext(ContextUsage.In)]
@@ -89,30 +92,37 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             /// Mapping from serialized filename to the bundle name 
             /// </summary>
             public Dictionary<string, string> FileToBundle;
+
             /// <summary>
             /// Mapping of an asset to all the serialized files needed to load it. The first entry is the file that contains the asset itself.
             /// </summary>
             public Dictionary<GUID, List<string>> AssetToFiles;
+
             /// <summary>
             /// Map of Guid to AssetLoadInfo
             /// </summary>
             public Dictionary<GUID, AssetLoadInfo> AssetToAssetInfo;
+
             /// <summary>
             /// The logger used during the build.
             /// </summary>
             public IBuildLogger Logger;
+
             /// <summary>
             /// The current AddressableAssetSettings to be processed.
             /// </summary>
             public AddressableAssetSettings Settings;
+
             /// <summary>
             /// Mapping of the AssetBundle to the AddressableAssetGroup it was derived from
             /// </summary>
             public Dictionary<string, string> BundleToAssetGroup;
+
             /// <summary>
             /// All the AddressableAssetEntries to process
             /// </summary>
             public List<AddressableAssetEntry> AddressableAssetEntries;
+
             /// <summary>
             /// The BuildTarget to build for.
             /// </summary>
@@ -128,25 +138,29 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             /// Content Catalog entries that were built into the Catalog.
             /// </summary>
             public List<ContentCatalogDataEntry> Locations;
+
             /// <summary>
             /// A mapping of AddressableAssetGroups to the AssetBundles generated from its data.
             /// </summary>
             public Dictionary<AddressableAssetGroup, List<string>> AssetGroupToBundles;
+
             /// <summary>
             /// A hash set of all the provider types included in the build.
             /// </summary>
             public HashSet<Type> ProviderTypes;
+
             /// <summary>
             /// A mapping of AssetBundles to the direct dependencies
             /// </summary>
             public Dictionary<string, List<string>> BundleToImmediateBundleDependencies;
+
             /// <summary>
             /// A mapping of AssetBundles to their expanded dependencies.
             /// </summary>
             public Dictionary<string, List<string>> BundleToExpandedBundleDependencies;
         }
 
-        static AddressableAssetGroup GetGroupFromBundle(string bundleName, Dictionary<string, string> bundleToAssetGroupGUID , AddressableAssetSettings settings)
+        static AddressableAssetGroup GetGroupFromBundle(string bundleName, Dictionary<string, string> bundleToAssetGroupGUID, AddressableAssetSettings settings)
         {
             if (!bundleToAssetGroupGUID.TryGetValue(bundleName, out string groupGuid))
                 return settings.DefaultGroup;
@@ -189,13 +203,14 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     if (!visited.Contains(dep))
                         toVisit.Enqueue(dep);
             }
+
             entry.ExpandedDependencies = visited;
         }
 
         static BundleEntry GetOrCreateBundleEntry(string bundleName, Dictionary<string, BundleEntry> bundleToEntry)
         {
             if (!bundleToEntry.TryGetValue(bundleName, out BundleEntry e))
-                bundleToEntry.Add(bundleName, e = new BundleEntry() { BundleName = bundleName });
+                bundleToEntry.Add(bundleName, e = new BundleEntry() {BundleName = bundleName});
             return e;
         }
 
@@ -214,7 +229,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Create a bundle entry for every bundle that our assets could reference
             foreach (List<string> files in input.AssetToFiles.Values)
                 files.ForEach(x => GetOrCreateBundleEntry(input.FileToBundle[x], bundleToEntry));
-            
+
             // build list of assets each bundle has as well as the dependent bundles
             using (input.Logger.ScopedStep(LogLevel.Info, "Calculate Bundle Dependencies"))
             {
@@ -243,7 +258,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 string bundleProvider = GetBundleProviderName(bEntry.Group);
                 string bundleInternalId = GetLoadPath(bEntry.Group, bEntry.BundleName, input.Target);
-                locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), bundleInternalId, bundleProvider, new object[] { bEntry.BundleName }));
+                locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), bundleInternalId, bundleProvider, new object[] {bEntry.BundleName}));
             }
 
             using (input.Logger.ScopedStep(LogLevel.Info, "Calculate Locations"))
@@ -257,8 +272,9 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     var schema = bEntry.Group.GetSchema<BundledAssetGroupSchema>();
                     foreach (GUID assetGUID in bEntry.Assets)
                     {
-                        if (guidToEntry.TryGetValue(assetGUID.ToString(), out AddressableAssetEntry entry)) 
-                            entry.CreateCatalogEntries(locations, true, assetProvider, bEntry.ExpandedDependencies.Select(x => x.BundleName), null, input.AssetToAssetInfo, providerTypes, schema.IncludeAddressInCatalog, schema.IncludeGUIDInCatalog, schema.IncludeLabelsInCatalog, bEntry.AssetInternalIds);
+                        if (guidToEntry.TryGetValue(assetGUID.ToString(), out AddressableAssetEntry entry))
+                            entry.CreateCatalogEntries(locations, true, assetProvider, bEntry.ExpandedDependencies.Select(x => x.BundleName), null, input.AssetToAssetInfo, providerTypes,
+                                schema.IncludeAddressInCatalog, schema.IncludeGUIDInCatalog, schema.IncludeLabelsInCatalog, bEntry.AssetInternalIds);
                     }
                 }
             }
@@ -272,7 +288,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             output.ProviderTypes = providerTypes;
             output.AssetGroupToBundles = assetGroupToBundles;
             output.BundleToImmediateBundleDependencies = bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.Dependencies.Select(y => y.BundleName).ToList());
-            output.BundleToExpandedBundleDependencies = bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.ExpandedDependencies.Where(y => !x.Dependencies.Contains(y)).Select(y => y.BundleName).ToList());
+            output.BundleToExpandedBundleDependencies =
+                bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.ExpandedDependencies.Where(y => !x.Dependencies.Contains(y)).Select(y => y.BundleName).ToList());
             return output;
         }
 
@@ -316,7 +333,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 loadPath += name;
             else
                 loadPath = loadPath + "/" + name;
-            
+
             if (!string.IsNullOrEmpty(bagSchema.UrlSuffix))
                 loadPath += bagSchema.UrlSuffix;
             if (!ResourceManagerConfig.ShouldPathUseWebRequest(loadPath) && !bagSchema.UseUnityWebRequestForLocalBundles)
@@ -325,6 +342,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 if (separator != '/')
                     loadPath = loadPath.Replace('/', separator);
             }
+
             return loadPath;
         }
 

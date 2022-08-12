@@ -13,6 +13,7 @@ namespace UnityEngine.AddressableAssets.Utility
         public string DisplayName;
         public int ObjectId;
         public int[] Dependencies;
+
         public DiagnosticEvent CreateEvent(string category, ResourceManager.DiagnosticEventType eventType, int frame, int val)
         {
             return new DiagnosticEvent(category, DisplayName, ObjectId, (int)eventType, frame, val, Dependencies);
@@ -41,13 +42,14 @@ namespace UnityEngine.AddressableAssets.Utility
         {
             List<AsyncOperationHandle> deps = new List<AsyncOperationHandle>();
             handle.GetDependencies(deps);
-            
+
             int sumOfDependencyHashes = 0;
             foreach (var d in deps)
                 unchecked
                 {
                     sumOfDependencyHashes += d.DebugName.GetHashCode() + SumDependencyNameHashCodes(d);
                 }
+
             return sumOfDependencyHashes;
         }
 
@@ -58,10 +60,10 @@ namespace UnityEngine.AddressableAssets.Utility
 
             int sumOfDependencyHashes = SumDependencyNameHashCodes(handle);
             bool nameChangesWithState = handle.DebugName.Contains("result=") && handle.DebugName.Contains("status=");
-            
+
             // We default to the regular hash code in the case of operations with names that change with their state
             // since their names aren't a reliable way to reference them
-            
+
             if (nameChangesWithState)
                 return handle.GetHashCode();
             //its okay if this overflows
@@ -105,13 +107,15 @@ namespace UnityEngine.AddressableAssets.Utility
                             completedOpResultStringBuilder.Append(", ");
                         }
                     }
+
                     completedOpResultStringBuilder.Remove(completedOpResultStringBuilder.Length - 2, 2);
                     completedOpResultStringBuilder.Append("]");
-                    completedOpResultString = completedOpResultStringBuilder.ToString(); 
+                    completedOpResultString = completedOpResultStringBuilder.ToString();
                 }
 
                 return handle.DebugName + " Result type: List, result: " + completedOpResultString;
             }
+
             return handle.DebugName + " Result type: " + handle.Result.GetType();
         }
 
@@ -119,7 +123,7 @@ namespace UnityEngine.AddressableAssets.Utility
         {
             var hashCode = CalculateHashCode(eventContext.OperationHandle);
             DiagnosticInfo diagInfo = null;
-            
+
             if (eventContext.Type == ResourceManager.DiagnosticEventType.AsyncOperationDestroy)
             {
                 if (m_cachedDiagnosticInfo.TryGetValue(hashCode, out diagInfo))
@@ -132,17 +136,17 @@ namespace UnityEngine.AddressableAssets.Utility
                     List<AsyncOperationHandle> deps = new List<AsyncOperationHandle>();
                     eventContext.OperationHandle.GetDependencies(deps);
                     var depIds = new int[deps.Count];
-                    
+
                     for (int i = 0; i < depIds.Length; i++)
                         depIds[i] = CalculateHashCode(deps[i]);
 
                     if (eventContext.OperationHandle.DebugName.Contains("CompletedOperation"))
                     {
                         string displayName = GenerateCompletedOperationDisplayName(eventContext.OperationHandle);
-                        m_cachedDiagnosticInfo.Add(hashCode, diagInfo = new DiagnosticInfo() { ObjectId = hashCode, DisplayName = displayName, Dependencies = depIds });
+                        m_cachedDiagnosticInfo.Add(hashCode, diagInfo = new DiagnosticInfo() {ObjectId = hashCode, DisplayName = displayName, Dependencies = depIds});
                     }
                     else
-                        m_cachedDiagnosticInfo.Add(hashCode, diagInfo = new DiagnosticInfo() { ObjectId = hashCode, DisplayName = eventContext.OperationHandle.DebugName, Dependencies = depIds });
+                        m_cachedDiagnosticInfo.Add(hashCode, diagInfo = new DiagnosticInfo() {ObjectId = hashCode, DisplayName = eventContext.OperationHandle.DebugName, Dependencies = depIds});
                 }
             }
 

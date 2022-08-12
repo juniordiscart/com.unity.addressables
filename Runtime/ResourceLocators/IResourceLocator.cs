@@ -13,10 +13,12 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// The id for this locator.
         /// </summary>
         string LocatorId { get; }
+
         /// <summary>
         /// The keys defined by this locator.
         /// </summary>
         IEnumerable<object> Keys { get; }
+
         /// <summary>
         /// Retrieve the locations from a specified key.
         /// </summary>

@@ -7,6 +7,7 @@ using UnityEngine.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.U2D;
 using UnityEngine.U2D;
+
 namespace UnityEditor.AddressableAssets.Tests
 {
     public class AddressableAssetReferenceTests : AddressableAssetTestBase
@@ -47,8 +48,8 @@ namespace UnityEditor.AddressableAssets.Tests
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.SaveAndReimport();
 
-            SpriteAtlasExtensions.Add(spriteAtlas, new[] { AssetDatabase.LoadAssetAtPath<Texture>(m_TexturePath) });
-            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { spriteAtlas }, EditorUserBuildSettings.activeBuildTarget, false);
+            SpriteAtlasExtensions.Add(spriteAtlas, new[] {AssetDatabase.LoadAssetAtPath<Texture>(m_TexturePath)});
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {spriteAtlas}, EditorUserBuildSettings.activeBuildTarget, false);
         }
 
         [Test]
@@ -107,7 +108,8 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetReference untypedAssetReference = new AssetReference("badguid");
             untypedAssetReference.SetEditorAsset(subSO);
             Assert.AreEqual(mainSO, untypedAssetReference.editorAsset, "Attempting to use SetEditorAsset on untyped AssetReference should give main asset as editorAsset, subAsset as subAsset");
-            Assert.AreEqual(subSO.name, untypedAssetReference.SubObjectName, "Attempting to use SetEditorAsset on a subObject in an untyped AssetReference should make the requested asset the subasset of the assetReference.");
+            Assert.AreEqual(subSO.name, untypedAssetReference.SubObjectName,
+                "Attempting to use SetEditorAsset on a subObject in an untyped AssetReference should make the requested asset the subasset of the assetReference.");
         }
 
         [Test]
@@ -135,7 +137,8 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetReferenceT<TestSubObject> typedAssetReference = new AssetReferenceT<TestSubObject>("badguid");
             typedAssetReference.SetEditorAsset(subSO2);
             Assert.AreEqual(subSO2, typedAssetReference.editorAsset, "When using a typed asset reference, the editor asset should be set to the requested object even if its a subobject.");
-            Assert.AreNotEqual(subSO, typedAssetReference.editorAsset, "When using a typed asset reference, the editor asset should be set to specifically the requested object, not just an object with the same type and guid.");
+            Assert.AreNotEqual(subSO, typedAssetReference.editorAsset,
+                "When using a typed asset reference, the editor asset should be set to specifically the requested object, not just an object with the same type and guid.");
         }
 
         [Test]
@@ -147,7 +150,8 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(sprite, spriteAssetReference.editorAsset, "When using an AssetReferenceSprite, the editor asset can be set to a Sprite or a SpriteAtlas.");
 
             spriteAssetReference.CachedAsset = null;
-            Assert.AreEqual(sprite, ((AssetReference)spriteAssetReference).editorAsset, "When an AssetReferenceSprite has its editor asset set to a Sprite, the base class editor asset accessor should be a Sprite.");
+            Assert.AreEqual(sprite, ((AssetReference)spriteAssetReference).editorAsset,
+                "When an AssetReferenceSprite has its editor asset set to a Sprite, the base class editor asset accessor should be a Sprite.");
         }
 
         [Test]
@@ -159,7 +163,8 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(atlas, spriteAssetReference.editorAsset, "When using an AssetReferenceSprite, the editor asset can be set to a Sprite or a SpriteAtlas.");
 
             spriteAssetReference.CachedAsset = null;
-            Assert.AreEqual(atlas, ((AssetReference)spriteAssetReference).editorAsset, "When an AssetReferenceSprite has its editor asset set to a SpriteAtlas, the base class editor asset accessor should be a SpriteAtlas.");
+            Assert.AreEqual(atlas, ((AssetReference)spriteAssetReference).editorAsset,
+                "When an AssetReferenceSprite has its editor asset set to a SpriteAtlas, the base class editor asset accessor should be a SpriteAtlas.");
         }
 
         [Test]
@@ -170,10 +175,12 @@ namespace UnityEditor.AddressableAssets.Tests
             typeReference.SubObjectName = "sub";
 
             //Test
-            Assert.AreEqual(typeReference.editorAsset, AssetDatabase.LoadAssetAtPath<TestSubObject>(m_ScriptableObjectPath), "AssetReference with explicit type should get first instance of that type at that guid.");
+            Assert.AreEqual(typeReference.editorAsset, AssetDatabase.LoadAssetAtPath<TestSubObject>(m_ScriptableObjectPath),
+                "AssetReference with explicit type should get first instance of that type at that guid.");
             AssetReference asBase = typeReference;
             Assert.IsNotNull(asBase.editorAsset);
-            Assert.AreEqual(asBase.editorAsset, AssetDatabase.LoadAssetAtPath<TestSubObject>(m_ScriptableObjectPath), "AssetReference with explicit type declared under generic AssetReference should still get the first instance of the specific type at the guid.");
+            Assert.AreEqual(asBase.editorAsset, AssetDatabase.LoadAssetAtPath<TestSubObject>(m_ScriptableObjectPath),
+                "AssetReference with explicit type declared under generic AssetReference should still get the first instance of the specific type at the guid.");
             AssetReference baseReference = new AssetReference(guid);
             Assert.AreEqual(baseReference.editorAsset, AssetDatabase.LoadAssetAtPath<TestObject>(m_ScriptableObjectPath), "Generic AssetReference should get the asset of the main type at the guid.");
         }
@@ -188,7 +195,8 @@ namespace UnityEditor.AddressableAssets.Tests
             //Test
             Assert.IsNull(typeReference.editorAsset, "Attempting to get an object of a type not located at a guid should return a null value.");
             AssetReference asBase = typeReference;
-            Assert.IsNull(asBase.editorAsset, "Attempting to get an object type not located at a guid should return a null value even if the method of the generic AssetReference class is being called.");
+            Assert.IsNull(asBase.editorAsset,
+                "Attempting to get an object type not located at a guid should return a null value even if the method of the generic AssetReference class is being called.");
             AssetReference baseReference = new AssetReference(guid);
             Assert.AreEqual(baseReference.editorAsset, AssetDatabase.LoadAssetAtPath<TestObject>(m_ScriptableObjectPath), "Generic AssetReference should get the asset of the main type at the guid.");
         }

@@ -16,6 +16,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// Indicates that the provider does not have extra specified behavior.
         /// </summary>
         None = 0,
+
         /// <summary>
         /// Indicates that the provider will still fulfill requests even with failed dependencies.
         /// </summary>
@@ -30,6 +31,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         int m_Version;
         IGenericProviderOperation m_InternalOp;
         ResourceManager m_ResourceManager;
+
         internal ProvideHandle(ResourceManager rm, IGenericProviderOperation op)
         {
             m_ResourceManager = rm;
@@ -45,6 +47,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 {
                     throw new Exception(ProviderOperation<object>.kInvalidHandleMsg);
                 }
+
                 return m_InternalOp;
             }
         }
@@ -54,26 +57,32 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// </summary>
         public ResourceManager ResourceManager
         {
-            get
-            {
-                return m_ResourceManager;
-            }
+            get { return m_ResourceManager; }
         }
 
         /// <summary>
         /// The requested object type.
         /// </summary>
-        public Type Type { get { return InternalOp.RequestedType; } }
+        public Type Type
+        {
+            get { return InternalOp.RequestedType; }
+        }
 
         /// <summary>
         /// The location for the request.
         /// </summary>
-        public IResourceLocation Location { get { return InternalOp.Location; } }
+        public IResourceLocation Location
+        {
+            get { return InternalOp.Location; }
+        }
 
         /// <summary>
         /// Number of dependencies.
         /// </summary>
-        public int DependencyCount { get { return InternalOp.DependencyCount; } }
+        public int DependencyCount
+        {
+            get { return InternalOp.DependencyCount; }
+        }
 
         /// <summary>
         /// Get a specific dependency object.
@@ -81,7 +90,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <typeparam name="TDepObject">The dependency type.</typeparam>
         /// <param name="index">The index of the dependency.</param>
         /// <returns>The dependency object.</returns>
-        public TDepObject GetDependency<TDepObject>(int index) { return InternalOp.GetDependency<TDepObject>(index); }
+        public TDepObject GetDependency<TDepObject>(int index)
+        {
+            return InternalOp.GetDependency<TDepObject>(index);
+        }
 
         /// <summary>
         /// Get the depedency objects.

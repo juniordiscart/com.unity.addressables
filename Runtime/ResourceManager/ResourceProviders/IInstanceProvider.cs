@@ -19,23 +19,43 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <summary>
         /// Position in world space to instantiate object.
         /// </summary>
-        public Vector3 Position { get { return m_Position; } }
+        public Vector3 Position
+        {
+            get { return m_Position; }
+        }
+
         /// <summary>
         /// Rotation in world space to instantiate object.
         /// </summary>
-        public Quaternion Rotation { get { return m_Rotation; } }
+        public Quaternion Rotation
+        {
+            get { return m_Rotation; }
+        }
+
         /// <summary>
         /// Transform to set as the parent of the instantiated object.
         /// </summary>
-        public Transform Parent { get { return m_Parent; } }
+        public Transform Parent
+        {
+            get { return m_Parent; }
+        }
+
         /// <summary>
         /// When setting the parent Transform, this sets whether to preserve instance transform relative to world space or relative to the parent.
         /// </summary>
-        public bool InstantiateInWorldPosition { get { return m_InstantiateInWorldPosition; } }
+        public bool InstantiateInWorldPosition
+        {
+            get { return m_InstantiateInWorldPosition; }
+        }
+
         /// <summary>
         /// Flag to tell the IInstanceProvider whether to set the position and rotation on new instances.
         /// </summary>
-        public bool SetPositionRotation { get { return m_SetPositionRotation; } }
+        public bool SetPositionRotation
+        {
+            get { return m_SetPositionRotation; }
+        }
+
         /// <summary>
         /// Create a new InstantationParameters class that will set the parent transform and use the prefab transform.
         /// </summary>
@@ -88,6 +108,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 else
                     result = Object.Instantiate(source, m_Parent, m_InstantiateInWorldPosition);
             }
+
             return result;
         }
     }
@@ -105,6 +126,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <param name="instantiateParameters">The parameters to use for instantation.</param>
         /// <returns>The instantiated object.</returns>
         GameObject ProvideInstance(ResourceManager resourceManager, AsyncOperationHandle<GameObject> prefabHandle, InstantiationParameters instantiateParameters);
+
         /// <summary>
         /// Release an instance.
         /// </summary>

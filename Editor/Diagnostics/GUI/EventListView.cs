@@ -11,11 +11,13 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         class EventTreeViewItem : TreeViewItem
         {
             public DiagnosticEvent entry;
+
             public EventTreeViewItem(DiagnosticEvent e) : base(e.ObjectId + e.Stream, 0)
             {
                 entry = e;
             }
         }
+
         List<DiagnosticEvent> m_Events;
         Action<Rect, DiagnosticEvent, int> m_OnColumnGUI;
         Func<DiagnosticEvent, bool> m_OnFilterEvent;
@@ -64,6 +66,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
                         root.AddChild(new EventTreeViewItem(e));
                 }
             }
+
             return root;
         }
 

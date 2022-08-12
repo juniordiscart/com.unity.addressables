@@ -66,6 +66,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
         {
             public override string ruleName => "TestBaseRule";
         }
+
         class TestInheritedRule : TestBaseRule
         {
             public override string ruleName => "TestInheritedRule";
@@ -98,14 +99,14 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
 
             AnalyzeSystem.Rules.RemoveAt(currentCount);
         }
-        
+
         [Test]
         public void AnalyzeSystem_CanSaveAndLoad()
         {
             string path = GetAssetPath("analysis.json");
             if (File.Exists(path))
                 File.Delete(path);
-            
+
             int currentCount = AnalyzeSystem.Rules.Count;
             AnalyzeSystem.RegisterNewRule<TestBaseRule>();
             AnalyzeSystem.ClearAnalysis<TestBaseRule>();

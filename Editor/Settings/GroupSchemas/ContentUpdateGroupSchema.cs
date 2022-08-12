@@ -16,6 +16,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         [FormerlySerializedAs("m_staticContent")]
         [SerializeField]
         bool m_StaticContent;
+
         /// <summary>
         /// Is the group static.  This property is used in determining which assets need to be moved to a new remote group during the content update process.
         /// </summary>
@@ -51,11 +52,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         {
             string propertyName = "m_StaticContent";
             var prop = SchemaSerializedObject.FindProperty(propertyName);
-            
+
             // Type/Static Content
             ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
             EditorGUI.BeginChangeCheck();
-            
+
             var staticContent = EditorGUILayout.Toggle(m_UpdateRestrictionGUIContent, m_StaticContent);
 
             if (EditorGUI.EndChangeCheck())
@@ -69,6 +70,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                     s.SchemaSerializedObject.ApplyModifiedProperties();
                 }
             }
+
             EditorGUI.showMixedValue = false;
         }
     }

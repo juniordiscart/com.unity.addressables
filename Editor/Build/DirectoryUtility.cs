@@ -11,7 +11,7 @@ internal static class DirectoryUtility
             return;
 
         bool isEmpty = !Directory.EnumerateFiles(directoryPath, "*", SearchOption.AllDirectories).Any()
-            && !Directory.EnumerateDirectories(directoryPath, "*", SearchOption.AllDirectories).Any();
+                       && !Directory.EnumerateDirectories(directoryPath, "*", SearchOption.AllDirectories).Any();
         if (!onlyIfEmpty || isEmpty)
         {
             // check if the folder is valid in the AssetDatabase before deleting through standard file system
@@ -30,12 +30,13 @@ internal static class DirectoryUtility
             Debug.LogError($"Could not Move directory {sourceDirName}, directory not found.");
             return;
         }
+
         if (Directory.Exists(destDirName))
         {
             Debug.LogError($"Could not Move to directory {destDirName}, directory arlready exists.");
             return;
         }
-        
+
         Directory.Move(sourceDirName, destDirName);
         // check if the folder is valid in the AssetDatabase before deleting through standard file system
         string relativePath = sourceDirName.Replace("\\", "/").Replace(Application.dataPath, "Assets");

@@ -23,6 +23,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 currentIndex = displayNames.IndexOf(data.ProfileName);
                 toolTip = Evaluate(settings, data);
             }
+
             displayNames.Add(AddressableAssetProfileSettings.customEntryString);
 
 
@@ -43,6 +44,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         result = data.Id;
                 }
             }
+
             EditorGUILayout.EndHorizontal();
             EditorGUI.indentLevel += 1;
             if (custom)
@@ -65,6 +67,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 var h = EditorStyles.helpBox.CalcHeight(new GUIContent(val), EditorGUIUtility.currentViewWidth - EditorGUIUtility.labelWidth - 16);
                 return height + h;
             }
+
             return height + EditorStyles.textField.CalcHeight(new GUIContent(currentId), EditorGUIUtility.currentViewWidth - EditorGUIUtility.labelWidth - 16);
         }
 
@@ -120,6 +123,7 @@ namespace UnityEditor.AddressableAssets.GUI
                         result = data.Id;
                 }
             }
+
             var bottomRect = new Rect(rect.x, rect.y + size.y + EditorGUIUtility.standardVerticalSpacing, rect.width, rect.height - (size.y + EditorGUIUtility.standardVerticalSpacing));
 
             if (custom)

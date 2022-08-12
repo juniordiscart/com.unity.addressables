@@ -113,8 +113,8 @@ namespace SceneTests
             LogAssert.ignoreFailingMessages = true;
             var op = m_Addressables.LoadSceneAsync("testkey", new LoadSceneParameters(LoadSceneMode.Single));
             yield return op;
-            
-            Assert.AreEqual(AsyncOperationStatus.Failed,op.Status);
+
+            Assert.AreEqual(AsyncOperationStatus.Failed, op.Status);
             Assert.IsTrue(op.OperationException.Message.Contains("InvalidKey"));
             LogAssert.ignoreFailingMessages = ifm;
         }
@@ -124,7 +124,8 @@ namespace SceneTests
         {
             var ifm = LogAssert.ignoreFailingMessages;
             LogAssert.ignoreFailingMessages = true;
-            var loc = new ResourceLocationBase("scene", "asdf", typeof(SceneProvider).FullName, typeof(SceneInstance), new ResourceLocationBase("invalid", "nobundle", typeof(AssetBundleProvider).FullName, typeof(AssetBundleResource)));
+            var loc = new ResourceLocationBase("scene", "asdf", typeof(SceneProvider).FullName, typeof(SceneInstance),
+                new ResourceLocationBase("invalid", "nobundle", typeof(AssetBundleProvider).FullName, typeof(AssetBundleResource)));
             var op = m_Addressables.LoadSceneAsync(loc);
             yield return op;
 
@@ -132,6 +133,7 @@ namespace SceneTests
             Assert.IsTrue(op.OperationException.Message.Contains("GroupOperation"));
             LogAssert.ignoreFailingMessages = ifm;
         }
+
         [UnityTest]
         public IEnumerator PercentComplete_NeverHasDecreasedValue_WhenLoadingScene()
         {
@@ -146,6 +148,7 @@ namespace SceneTests
                 lastPercentComplete = op.PercentComplete;
                 yield return null;
             }
+
             Assert.True(op.PercentComplete == 1 && op.IsDone);
             yield return op;
 
@@ -167,7 +170,7 @@ namespace SceneTests
             yield return instOp;
             Assert.AreEqual(AsyncOperationStatus.Succeeded, instOp.Status);
             Assert.AreEqual(sceneKeys[0], instOp.Result.scene.name);
-            
+
             yield return UnloadSceneFromHandler(op, m_Addressables);
             Assert.IsFalse(instOp.IsValid());
         }
@@ -307,39 +310,39 @@ namespace SceneTests
             Assert.AreEqual(0, m_Addressables.m_SceneInstances.Count);
             impl.ResourceManager.Dispose();
         }
-        
+
         [UnityTest]
         public IEnumerator SceneTests_UnloadSceneAsync_CanUnloadBaseHandle()
         {
             AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
             var op = m_Addressables.LoadSceneWithChain(impl.InitializeAsync(), sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return op;
-            
+
             Assert.AreEqual(1, m_Addressables.m_SceneInstances.Count);
             bool autoReleaseHandle = false;
             op = impl.UnloadSceneAsync((AsyncOperationHandle)op, UnloadSceneOptions.None, autoReleaseHandle);
             yield return op;
 
-            Assert.AreEqual(AsyncOperationStatus.Succeeded,op.Status);
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
             op.Release();
             yield return op;
-            
+
             Assert.AreEqual(0, m_Addressables.m_SceneInstances.Count);
         }
-        
+
         [UnityTest]
         public IEnumerator SceneTests_UnloadSceneAsync_CanUnloadFromSceneInstance()
         {
             var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return op;
-            
+
             Assert.AreEqual(1, m_Addressables.m_SceneInstances.Count);
-            var sceneInst = op.m_InternalOp.Result; 
+            var sceneInst = op.m_InternalOp.Result;
             yield return m_Addressables.UnloadSceneAsync(sceneInst);
 
             Assert.AreEqual(0, m_Addressables.m_SceneInstances.Count);
         }
-        
+
         [UnityTest]
         public IEnumerator SceneTests_UnloadSceneAsync_UnloadSceneDecreaseRefOnlyOnce()
         {
@@ -350,11 +353,11 @@ namespace SceneTests
 
             Addressables.ResourceManager.Acquire(op);
             yield return UnloadSceneFromHandlerRefCountCheck(op, m_Addressables);
-            
+
             // Cleanup
             Addressables.Release(op);
         }
-        
+
         [UnityTest]
         public IEnumerator SceneTests_Release_ReleaseToZeroRefCountUnloadsScene()
         {
@@ -362,20 +365,20 @@ namespace SceneTests
             yield return op;
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
             Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
-            
+
             m_Addressables.Release(op);
             yield return null;
-            
+
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsFalse(op.IsValid());
         }
-        
+
         [UnityTest]
         public IEnumerator SceneTests_Release_ReleaseToRefCountZeroWhileLoadingUnloadsAfterLoadCompletes()
         {
             // Setup
             var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
-            
+
             // Test
             op.Completed += s => Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             m_Addressables.Release(op);
@@ -386,14 +389,14 @@ namespace SceneTests
             // Cleanup
             yield return op;
         }
-        
+
         [UnityTest]
         public IEnumerator SceneTests_Release_ReleaseNotRefCountZeroWhileLoadingDoesntUnloadAfterLoadCompletes()
         {
             // Setup
             var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             Addressables.ResourceManager.Acquire(op);
-            
+
             // Test
             op.Completed += s => Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Addressables.Release(op);
@@ -406,12 +409,12 @@ namespace SceneTests
             Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsTrue(op.IsValid());
             m_Addressables.Release(op);
-            
+
             yield return op;
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsFalse(op.IsValid());
         }
-        
+
         [UnityTest]
         public IEnumerator SceneTests_Release_ReleaseNotToZeroRefCountDoesNotUnloadScene()
         {
@@ -420,13 +423,13 @@ namespace SceneTests
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
             Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
             Addressables.ResourceManager.Acquire(op);
-            
+
             m_Addressables.Release(op);
             yield return null;
-            
+
             Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsTrue(op.IsValid());
-            
+
             // Cleanup
             m_Addressables.Release(op);
             yield return null;
@@ -447,13 +450,28 @@ namespace SceneTests
     }
 
 #if UNITY_EDITOR
-    class SceneTests_FastMode : SceneTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
+    class SceneTests_FastMode : SceneTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
 
-    class SceneTests_VirtualMode : SceneTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
+    class SceneTests_VirtualMode : SceneTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
 
     class SceneTests_PackedPlaymodeMode : SceneTests
     {
-        protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } }
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
 
         [UnityTest]
         public IEnumerator UnloadScene_ChainsBehindLoadOp_IfLoadOpIsRunning_TypedHandle()
@@ -466,7 +484,8 @@ namespace SceneTests
             yield return unloadHandle;
 
             //Assert
-            Assert.AreEqual(typeof(ChainOperation<SceneInstance, SceneInstance>), unloadHandle.m_InternalOp.GetType(), "Unload a scene while a Load is in progress should have resulted in the unload being chained behind the load op, but wasn't");
+            Assert.AreEqual(typeof(ChainOperation<SceneInstance, SceneInstance>), unloadHandle.m_InternalOp.GetType(),
+                "Unload a scene while a Load is in progress should have resulted in the unload being chained behind the load op, but wasn't");
             Addressables.Release(unloadHandle);
         }
 
@@ -481,43 +500,44 @@ namespace SceneTests
             yield return unloadHandle;
 
             //Assert
-            Assert.AreEqual(typeof(ChainOperationTypelessDepedency<SceneInstance>), unloadHandle.m_InternalOp.GetType(), "Unload a scene while a Load is in progress should have resulted in the unload being chained behind the load op, but wasn't");
+            Assert.AreEqual(typeof(ChainOperationTypelessDepedency<SceneInstance>), unloadHandle.m_InternalOp.GetType(),
+                "Unload a scene while a Load is in progress should have resulted in the unload being chained behind the load op, but wasn't");
             Addressables.Release(unloadHandle);
         }
-        
-                [UnityTest]
+
+        [UnityTest]
         public IEnumerator SceneTests_UnloadSceneAsync_UnloadSceneAfterAcquireAndDoNotDestroyOnLoadDoesNotUnloadDependenciesUntilSecondRelease()
         {
             // Setup scene
             int bundleCountBeforeTest = AssetBundle.GetAllLoadedAssetBundles().Count();
             var activeScene = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return activeScene;
-            
+
             Assert.AreEqual(AsyncOperationStatus.Succeeded, activeScene.Status);
             Addressables.ResourceManager.Acquire(activeScene);
             Assert.AreEqual(activeScene.ReferenceCount, 2);
             SceneManager.SetActiveScene(activeScene.Result.Scene);
             Assert.AreEqual(sceneKeys[1], SceneManager.GetActiveScene().name);
-            
+
             // Setup obj
             Assert.IsNull(GameObject.Find(GetPrefabKey()));
             var instOp = m_Addressables.InstantiateAsync(GetPrefabKey());
             yield return instOp;
-            
+
             Assert.AreEqual(AsyncOperationStatus.Succeeded, instOp.Status);
             Assert.AreEqual(sceneKeys[1], instOp.Result.scene.name);
             UnityEngine.Object.DontDestroyOnLoad(instOp.Result);
             int bundleCountAfterInstantiate = AssetBundle.GetAllLoadedAssetBundles().Count();
-            Assert.Greater(bundleCountAfterInstantiate,bundleCountBeforeTest);
-            
+            Assert.Greater(bundleCountAfterInstantiate, bundleCountBeforeTest);
+
             // Test
             yield return UnloadSceneFromHandlerRefCountCheck(activeScene, m_Addressables);
-            
+
             Assert.NotNull(GameObject.Find(instOp.Result.name));
             Assert.IsFalse(activeScene.Result.Scene.isLoaded);
             int bundleCountAfterUnload = AssetBundle.GetAllLoadedAssetBundles().Count();
             Assert.AreEqual(bundleCountAfterInstantiate, bundleCountAfterUnload);
-            
+
             Addressables.Release(activeScene);
             yield return activeScene;
 
@@ -526,12 +546,12 @@ namespace SceneTests
             Addressables.Release(instOp);
             AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
             int bundleCountEndTest = AssetBundle.GetAllLoadedAssetBundles().Count();
-            Assert.AreEqual(bundleCountBeforeTest,bundleCountEndTest);
+            Assert.AreEqual(bundleCountBeforeTest, bundleCountEndTest);
             Assert.IsFalse(instOp.IsValid());
         }
 
         [UnityTest]
-        public IEnumerator WhenUnloadScene_UnloadEmbeddedAssetsFlagWorks([Values(false,true)] bool unloadEmbeddedAssets)
+        public IEnumerator WhenUnloadScene_UnloadEmbeddedAssetsFlagWorks([Values(false, true)] bool unloadEmbeddedAssets)
         {
             // Create scene with embedded asset. Let's use Scriptable Object for ease of use
             var op = m_Addressables.LoadSceneAsync(kEmbeddedSceneName, new LoadSceneParameters(LoadSceneMode.Additive));
@@ -540,7 +560,7 @@ namespace SceneTests
             // find the ScriptableObject. Get reference to it
             Mesh mesh = GameObject.Find("EmbededMeshGameObject").GetComponent<MeshFilter>().mesh;
 
-            
+
             UnloadSceneOptions options = unloadEmbeddedAssets ? UnloadSceneOptions.UnloadAllEmbeddedSceneObjects : UnloadSceneOptions.None;
             var unloadOp = m_Addressables.UnloadSceneAsync(op, options, false);
             yield return unloadOp;

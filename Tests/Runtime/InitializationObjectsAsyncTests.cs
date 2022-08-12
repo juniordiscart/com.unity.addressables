@@ -20,6 +20,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
             Debug.Log($"{nameof(InitializationObjects_CompletesWhenNoObjectsPresent)} skipped due to not having a runtime settings asset (Fast mode does not create this).");
             yield break;
         }
+
         InitalizationObjectsOperation op = new InitalizationObjectsOperation();
         op.Completed += obj =>
         {
@@ -42,6 +43,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
         {
             Assert.Ignore($"{nameof(InitializationObjects_CompletesWhenNoObjectsPresent)} skipped due to not having a runtime settings asset (Fast mode does not create this).");
         }
+
         InitalizationObjectsOperation op = new InitalizationObjectsOperation();
         op.Completed += obj =>
         {
@@ -66,6 +68,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
             Debug.Log($"{nameof(InitializationObjects_OperationRegistersForCallbacks)} skipped due to not having a runtime settings asset (Fast mode does not create this).");
             return;
         }
+
         //We're checking to make sure we've created a new ResourceManagerCallbacks object.  If this isn't null
         //then we won't create a new one.  This would never be needed in a legitimate scenario.
         MonoBehaviourCallbackHooks.DestroySingleton();
@@ -92,6 +95,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
             Debug.Log($"{nameof(InitializationObjects_CompletesWhenObjectsPresent)} skipped due to not having a runtime settings asset (Fast mode does not create this).");
             yield break;
         }
+
         InitalizationObjectsOperation op = new InitalizationObjectsOperation();
         op.Completed += obj =>
         {
@@ -120,6 +124,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
         {
             Assert.Ignore($"{nameof(InitializationObjects_CompletesWhenObjectsPresent)} skipped due to not having a runtime settings asset (Fast mode does not create this).");
         }
+
         InitalizationObjectsOperation op = new InitalizationObjectsOperation();
         op.Completed += obj =>
         {
@@ -151,6 +156,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
             Debug.Log($"{nameof(InitializationAsync_HandlesEmptyData)} skipped due to not having a runtime settings asset (Fast mode does not create this).");
             yield break;
         }
+
         InitalizationObjectsOperation op = new InitalizationObjectsOperation();
         op.Completed += obj =>
         {
@@ -159,10 +165,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
         };
         var runtimeDataLocation = new ResourceLocationBase("RuntimeData", m_RuntimeSettingsPath, typeof(JsonAssetProvider).FullName, typeof(ResourceManagerRuntimeData));
         var rtdOp = m_Addressables.ResourceManager.ProvideResource<ResourceManagerRuntimeData>(runtimeDataLocation);
-        rtdOp.Completed += obj =>
-        {
-            obj.Result.InitializationObjects.Add(default(ObjectInitializationData));
-        };
+        rtdOp.Completed += obj => { obj.Result.InitializationObjects.Add(default(ObjectInitializationData)); };
         yield return rtdOp;
 
         op.Init(rtdOp, m_Addressables);
@@ -189,7 +192,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
     }
 
     [UnityTest]
-    [UnityPlatform(exclude = new []{RuntimePlatform.XboxOne})]
+    [UnityPlatform(exclude = new[] {RuntimePlatform.XboxOne, RuntimePlatform.PS5})]
     public IEnumerator CacheInitializationObject_FullySetsCachingData()
     {
 #if ENABLE_CACHING
@@ -270,13 +273,37 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
     }
 
 #if UNITY_EDITOR
-    class InitializationObjects_FastMode : InitializationObjectsAsyncTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
+    class InitializationObjects_FastMode : InitializationObjectsAsyncTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
 
-    class InitializationObjects_VirtualMode : InitializationObjectsAsyncTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
+    class InitializationObjects_VirtualMode : InitializationObjectsAsyncTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
 
-    class InitializationObjects_PackedPlaymodeMode : InitializationObjectsAsyncTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class InitializationObjects_PackedPlaymodeMode : InitializationObjectsAsyncTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
-    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
-    class InitializationObjects_PackedMode : InitializationObjectsAsyncTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Packed; } } }
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
+    class InitializationObjects_PackedMode : InitializationObjectsAsyncTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
+    }
 }

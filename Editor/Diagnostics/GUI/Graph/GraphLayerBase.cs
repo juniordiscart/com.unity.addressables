@@ -19,11 +19,20 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI.Graph
             m_Color = color;
         }
 
-        public Color GraphColor { get { return m_Color; } }
+        public Color GraphColor
+        {
+            get { return m_Color; }
+        }
 
-        public string LayerName { get { return m_LayerName; } }
+        public string LayerName
+        {
+            get { return m_LayerName; }
+        }
 
-        public string Description { get { return m_Description; } }
+        public string Description
+        {
+            get { return m_Description; }
+        }
 
         public virtual void Draw(EventDataSet dataSet, Rect rect, int startFrame, int frameCount, int inspectFrame, bool expanded, Material material, int maxValue)
         {

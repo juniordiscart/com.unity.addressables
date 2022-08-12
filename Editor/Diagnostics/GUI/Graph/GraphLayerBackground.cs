@@ -13,7 +13,13 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI.Graph
 
         Color m_LoadColor;
         int m_LoadStatusStream;
-        internal GraphLayerBackgroundGraph(int refCountStream, Color refBgColor, int loadStatusStream, Color loadStatusColor, string name, string desc) : base(refCountStream, name, desc, refBgColor) { m_LoadColor = loadStatusColor; m_LoadStatusStream = loadStatusStream; }
+
+        internal GraphLayerBackgroundGraph(int refCountStream, Color refBgColor, int loadStatusStream, Color loadStatusColor, string name, string desc) : base(refCountStream, name, desc, refBgColor)
+        {
+            m_LoadColor = loadStatusColor;
+            m_LoadStatusStream = loadStatusStream;
+        }
+
         public override void Draw(EventDataSet dataSet, Rect rect, int startFrame, int frameCount, int inspectFrame, bool expanded, Material material, int maxValue)
         {
             if (dataSet == null)

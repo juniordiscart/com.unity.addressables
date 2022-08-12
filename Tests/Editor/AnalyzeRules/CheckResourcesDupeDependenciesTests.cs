@@ -37,7 +37,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             PrefabUtility.SaveAsPrefabAsset(prefabWithMaterial, k_PrefabWithMaterialPath);
             AssetDatabase.Refresh();
         }
-        
+
         [Test]
         public void CheckResourcesDupe_GetsCorrectResourcePaths()
         {
@@ -47,7 +47,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
             string prefabPath = GetAssetPath("Resources/PrefabA.prefab");
             GameObject prefabA = new GameObject("PrefabA");
             PrefabUtility.SaveAsPrefabAsset(prefabA, prefabPath);
-            
+
             var rule = new CheckResourcesDupeDependencies();
             var paths = rule.GetResourcePaths();
             bool success = false;
@@ -59,6 +59,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
                     break;
                 }
             }
+
             Assert.IsTrue(success, "CheckResourcesDupeDependencies ResourcePaths did not find the created prefab for test as expect.");
         }
 
@@ -66,7 +67,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
         public void CheckResourcesDupe_ResourcesDependenciesMatchWithExplicitBundleDependencies()
         {
             var rule = new CheckResourcesDupeDependencies();
-            rule.BuiltInResourcesToDependenciesMap(new string[] { k_CheckDupePrefabA });
+            rule.BuiltInResourcesToDependenciesMap(new string[] {k_CheckDupePrefabA});
             rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>()
             {
                 new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupePrefabA))
@@ -81,7 +82,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
         public void CheckResourcesDupe_ResourcesDependenciesMatchWithImplicitBundleDependencies()
         {
             var rule = new CheckResourcesDupeDependencies();
-            rule.BuiltInResourcesToDependenciesMap(new string[] { k_PrefabWithMaterialPath });
+            rule.BuiltInResourcesToDependenciesMap(new string[] {k_PrefabWithMaterialPath});
             rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>()
             {
                 new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupeMyMaterial))
@@ -96,7 +97,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
         public void CheckResourcesDupe_AllResourcesDependenciesAreReturned()
         {
             var rule = new CheckResourcesDupeDependencies();
-            rule.BuiltInResourcesToDependenciesMap(new string[] { k_PrefabWithMaterialPath, k_CheckDupePrefabA });
+            rule.BuiltInResourcesToDependenciesMap(new string[] {k_PrefabWithMaterialPath, k_CheckDupePrefabA});
             rule.IntersectResourcesDepedenciesWithBundleDependencies(new List<GUID>()
             {
                 new GUID(AssetDatabase.AssetPathToGUID(k_CheckDupeMyMaterial)),

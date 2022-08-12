@@ -13,13 +13,10 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             m_UWR = webRequest;
         }
-        
+
         protected override void Execute()
         {
-            m_UWR.SendWebRequest().completed += (request) =>
-            {
-                Complete(m_UWR, string.IsNullOrEmpty(m_UWR.error), m_UWR.error);
-            };
+            m_UWR.SendWebRequest().completed += (request) => { Complete(m_UWR, string.IsNullOrEmpty(m_UWR.error), m_UWR.error); };
         }
     }
 }

@@ -27,13 +27,31 @@ namespace AddressableAssetsIntegrationTests
         protected const string k_TestConfigFolder = "Assets/AddressableAssetsData_AddressableAssetSettingsIntegrationTests";
 
         protected abstract string TypeName { get; }
-        protected virtual string PathFormat { get { return "Assets/{0}_AssetsToDelete_{1}"; } }
 
-        protected virtual string GetRuntimePath(string testType, string suffix) { return string.Format("{0}" + Addressables.LibraryPath + "settings_{1}_TEST_{2}.json", "file://{UnityEngine.Application.dataPath}/../", testType, suffix); }
-        protected virtual string GetCatalogPath(string testType, string suffix) { return string.Format("{0}" + Addressables.LibraryPath + "catalog_{1}_TEST_{2}.json", "file://{UnityEngine.Application.dataPath}/../", testType, suffix); }
-        protected virtual ILocationSizeData CreateLocationSizeData(string name, long size, uint crc, string hash) { return null; }
+        protected virtual string PathFormat
+        {
+            get { return "Assets/{0}_AssetsToDelete_{1}"; }
+        }
 
-        private object AssetReferenceObjectKey { get { return m_PrefabKeysList.FirstOrDefault(s => s.ToString().Contains("AssetReferenceBehavior")); } }
+        protected virtual string GetRuntimePath(string testType, string suffix)
+        {
+            return string.Format("{0}" + Addressables.LibraryPath + "settings_{1}_TEST_{2}.json", "file://{UnityEngine.Application.dataPath}/../", testType, suffix);
+        }
+
+        protected virtual string GetCatalogPath(string testType, string suffix)
+        {
+            return string.Format("{0}" + Addressables.LibraryPath + "catalog_{1}_TEST_{2}.json", "file://{UnityEngine.Application.dataPath}/../", testType, suffix);
+        }
+
+        protected virtual ILocationSizeData CreateLocationSizeData(string name, long size, uint crc, string hash)
+        {
+            return null;
+        }
+
+        private object AssetReferenceObjectKey
+        {
+            get { return m_PrefabKeysList.FirstOrDefault(s => s.ToString().Contains("AssetReferenceBehavior")); }
+        }
 
         public virtual void Setup()
         {
@@ -59,7 +77,8 @@ namespace AddressableAssetsIntegrationTests
             if (m_Addressables != null)
             {
                 Assert.AreEqual(m_StartingOpCount, m_Addressables.ResourceManager.OperationCacheCount);
-                Assert.AreEqual(m_StartingTrackedHandleCount, m_Addressables.TrackedHandleCount, $"Starting tracked handle count [{m_StartingInstanceCount}], not equal to current tracked handle count [{m_Addressables.TrackedHandleCount}]");
+                Assert.AreEqual(m_StartingTrackedHandleCount, m_Addressables.TrackedHandleCount,
+                    $"Starting tracked handle count [{m_StartingInstanceCount}], not equal to current tracked handle count [{m_Addressables.TrackedHandleCount}]");
                 Assert.AreEqual(m_StartingInstanceCount, m_Addressables.ResourceManager.InstanceOperationCount);
             }
 
@@ -121,18 +140,20 @@ namespace AddressableAssetsIntegrationTests
                             }
                         }
                     }
+
                     initializationComplete = true;
 
                     m_PrevHandler = ResourceManager.ExceptionHandler;
                     ResourceManager.ExceptionHandler = null;
                 }
             }
+
             m_Addressables.ResourceManager.ClearDiagnosticCallbacks();
             m_StartingOpCount = m_Addressables.ResourceManager.OperationCacheCount;
             m_StartingTrackedHandleCount = m_Addressables.TrackedHandleCount;
             m_StartingInstanceCount = m_Addressables.ResourceManager.InstanceOperationCount;
         }
-        
+
         IEnumerator InitWithoutInitializeAsync()
         {
             if (!initializationComplete || TypeName != currentInitType)
@@ -149,11 +170,13 @@ namespace AddressableAssetsIntegrationTests
                     var locator = new DynamicResourceLocator(m_Addressables);
                     m_Addressables.AddResourceLocator(locator);
                 }
+
                 initializationComplete = true;
 
                 m_PrevHandler = ResourceManager.ExceptionHandler;
                 ResourceManager.ExceptionHandler = null;
             }
+
             m_Addressables.ResourceManager.ClearDiagnosticCallbacks();
             m_StartingOpCount = m_Addressables.ResourceManager.OperationCacheCount;
             m_StartingTrackedHandleCount = m_Addressables.TrackedHandleCount;
@@ -169,7 +192,9 @@ namespace AddressableAssetsIntegrationTests
 
         internal class DumbUpdateOperation : AsyncOperationBase<List<IResourceLocator>>
         {
-            protected override void Execute() { }
+            protected override void Execute()
+            {
+            }
 
             public void CallComplete()
             {
@@ -181,7 +206,11 @@ namespace AddressableAssetsIntegrationTests
 #if UNITY_EDITOR
     class AddressablesIntegrationTestsFastMode : AddressablesIntegrationTests
     {
-        protected override string TypeName { get { return "BuildScriptFastMode"; } }
+        protected override string TypeName
+        {
+            get { return "BuildScriptFastMode"; }
+        }
+
         protected override string GetRuntimePath(string testType, string suffix)
         {
             return PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath + TypeName, "");
@@ -190,7 +219,11 @@ namespace AddressableAssetsIntegrationTests
 
     class AddressablesIntegrationTestsVirtualMode : AddressablesIntegrationTests
     {
-        protected override string TypeName { get { return "BuildScriptVirtualMode"; } }
+        protected override string TypeName
+        {
+            get { return "BuildScriptVirtualMode"; }
+        }
+
         protected override ILocationSizeData CreateLocationSizeData(string name, long size, uint crc, string hash)
         {
             return new UnityEngine.ResourceManagement.ResourceProviders.Simulation.VirtualAssetBundleRequestOptions()
@@ -206,9 +239,20 @@ namespace AddressableAssetsIntegrationTests
 
     class AddressablesIntegrationTestsPackedPlayMode : AddressablesIntegrationTests
     {
-        protected override string TypeName { get { return "BuildScriptPackedPlayMode"; } }
-        protected override string GetRuntimePath(string testType, string suffix) { return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + suffix + ".json"; }
-        protected override string GetCatalogPath(string testType, string suffix) { return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog" + suffix + ".json"; }
+        protected override string TypeName
+        {
+            get { return "BuildScriptPackedPlayMode"; }
+        }
+
+        protected override string GetRuntimePath(string testType, string suffix)
+        {
+            return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + suffix + ".json";
+        }
+
+        protected override string GetCatalogPath(string testType, string suffix)
+        {
+            return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog" + suffix + ".json";
+        }
 
         public override void Setup()
         {
@@ -229,6 +273,7 @@ namespace AddressableAssetsIntegrationTests
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator GetDownloadSize_WithList_CalculatesCachedBundles()
         {
             return GetDownloadSize_WithList_CalculatesCachedBundlesInternal();
@@ -244,9 +289,20 @@ namespace AddressableAssetsIntegrationTests
 
     class AddressablesIntegrationPlayer : AddressablesIntegrationTests
     {
-        protected override string TypeName { get { return "BuildScriptPackedMode"; } }
-        protected override string GetRuntimePath(string testType, string suffix) { return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + suffix + ".json"; }
-        protected override string GetCatalogPath(string testType, string suffix) { return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog" + suffix + ".json"; }
+        protected override string TypeName
+        {
+            get { return "BuildScriptPackedMode"; }
+        }
+
+        protected override string GetRuntimePath(string testType, string suffix)
+        {
+            return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + suffix + ".json";
+        }
+
+        protected override string GetCatalogPath(string testType, string suffix)
+        {
+            return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog" + suffix + ".json";
+        }
 
         protected override ILocationSizeData CreateLocationSizeData(string name, long size, uint crc, string hash)
         {
@@ -266,6 +322,7 @@ namespace AddressableAssetsIntegrationTests
         }
 
         [UnityTest]
+        [Platform(Exclude = "PS5")]
         public IEnumerator GetDownloadSize_WithList_CalculatesCachedBundles()
         {
             return GetDownloadSize_WithList_CalculatesCachedBundlesInternal();

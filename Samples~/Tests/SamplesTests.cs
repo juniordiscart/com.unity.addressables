@@ -44,7 +44,7 @@ namespace Addressables.SamplesTests
         [UnityTest]
         public IEnumerator Samples_GetAddressFromAssetReference_ReturnsCorrectAddress()
         {
-            var savedImpl = UnityEngine.AddressableAssets.Addressables.m_AddressablesInstance; 
+            var savedImpl = UnityEngine.AddressableAssets.Addressables.m_AddressablesInstance;
             UnityEngine.AddressableAssets.Addressables.m_AddressablesInstance = m_Addressables;
 
             AsyncOperationHandle assetReferenceHandle = m_Addressables.InstantiateAsync(m_AssetReferenceObjectKey);
@@ -63,11 +63,29 @@ namespace Addressables.SamplesTests
     }
 
 #if UNITY_EDITOR
-    class SamplesTests_FastMode : SamplesTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Fast; } } }
+    class SamplesTests_FastMode : SamplesTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
 
-    class SamplesTests_VirtualMode : SamplesTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.Virtual; } } }
+    class SamplesTests_VirtualMode : SamplesTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Virtual; }
+        }
+    }
 
-    class SamplesTests_PackedPlaymodeMode : SamplesTests { protected override TestBuildScriptMode BuildScriptMode { get { return TestBuildScriptMode.PackedPlaymode; } } }
+    class SamplesTests_PackedPlaymodeMode : SamplesTests
+    {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
     //Unable to run tests in standalone given how upm-ci handles Samples.  May be possible with a different test setup than currently available.
