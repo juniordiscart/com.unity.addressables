@@ -387,7 +387,7 @@ namespace UnityEditor.AddressableAssets.Settings
 			CertificateHandlerChanged
 		}
 
-        private string m_CachedAssetPath;
+		private string m_CachedAssetPath;
 
 		/// <summary>
 		/// The path of the settings asset.
@@ -396,21 +396,21 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			get
 			{
-                if (string.IsNullOrEmpty(m_CachedAssetPath))
-                {
-				string guid;
-				long localId;
-				if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(this, out guid, out localId))
-					throw new Exception($"{nameof(AddressableAssetSettings)} is not persisted.  Unable to determine AssetPath.");
-                    m_CachedAssetPath = AssetDatabase.GUIDToAssetPath(guid);
-                    if (string.IsNullOrEmpty(m_CachedAssetPath))
-					throw new Exception($"{nameof(AddressableAssetSettings)} - Unable to determine AssetPath from guid {guid}.");
+				if (string.IsNullOrEmpty(m_CachedAssetPath))
+				{
+					string guid;
+					long localId;
+					if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(this, out guid, out localId))
+						throw new Exception($"{nameof(AddressableAssetSettings)} is not persisted.  Unable to determine AssetPath.");
+					m_CachedAssetPath = AssetDatabase.GUIDToAssetPath(guid);
+					if (string.IsNullOrEmpty(m_CachedAssetPath))
+						throw new Exception($"{nameof(AddressableAssetSettings)} - Unable to determine AssetPath from guid {guid}.");
+				}
+				return m_CachedAssetPath;
 			}
-                return m_CachedAssetPath;
 		}
-        }
 
-        private string m_CachedConfigFolder;
+		private string m_CachedConfigFolder;
 
 		/// <summary>
 		/// The folder of the settings asset.
@@ -419,9 +419,9 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			get
 			{
-                if (string.IsNullOrEmpty(m_CachedConfigFolder))
-                    m_CachedConfigFolder = Path.GetDirectoryName(AssetPath);
-                return m_CachedConfigFolder;
+				if (string.IsNullOrEmpty(m_CachedConfigFolder))
+					m_CachedConfigFolder = Path.GetDirectoryName(AssetPath);
+				return m_CachedConfigFolder;
 			}
 		}
 
@@ -430,7 +430,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public string GroupFolder
 		{
-            get { return ConfigFolder + "/AssetGroups"; }
+			get { return ConfigFolder + "/AssetGroups"; }
 		}
 
 		/// <summary>
@@ -438,7 +438,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public string DataBuilderFolder
 		{
-            get { return ConfigFolder + "/DataBuilders"; }
+			get { return ConfigFolder + "/DataBuilders"; }
 		}
 
 		/// <summary>
@@ -446,7 +446,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public string GroupSchemaFolder
 		{
-            get { return GroupFolder + "/Schemas"; }
+			get { return GroupFolder + "/Schemas"; }
 		}
 
 		/// <summary>
@@ -454,7 +454,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public string GroupTemplateFolder
 		{
-            get { return ConfigFolder + "/AssetGroupTemplates"; }
+			get { return ConfigFolder + "/AssetGroupTemplates"; }
 		}
 
 		/// <summary>
@@ -485,10 +485,10 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <summary>
 		/// Returns whether this settings object is persisted to an asset.
 		/// </summary>
-        public bool IsPersisted
-        {
-            get { return !m_IsTemporary; }
-        }
+		public bool IsPersisted
+		{
+			get { return !m_IsTemporary; }
+		}
 
 		[SerializeField]
 		bool m_OptimizeCatalogSize = false;
@@ -916,10 +916,10 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <summary>
 		/// List of asset groups.
 		/// </summary>
-        public List<AddressableAssetGroup> groups
-        {
-            get { return m_GroupAssets; }
-        }
+		public List<AddressableAssetGroup> groups
+		{
+			get { return m_GroupAssets; }
+		}
 
 		[FormerlySerializedAs("m_buildSettings")]
 		[SerializeField]
@@ -928,10 +928,10 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <summary>
 		/// Build settings object.
 		/// </summary>
-        public AddressableAssetBuildSettings buildSettings
-        {
-            get { return m_BuildSettings; }
-        }
+		public AddressableAssetBuildSettings buildSettings
+		{
+			get { return m_BuildSettings; }
+		}
 
 		[FormerlySerializedAs("m_profileSettings")]
 		[SerializeField]
@@ -940,10 +940,10 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <summary>
 		/// Profile settings object.
 		/// </summary>
-        public AddressableAssetProfileSettings profileSettings
-        {
-            get { return m_ProfileSettings; }
-        }
+		public AddressableAssetProfileSettings profileSettings
+		{
+			get { return m_ProfileSettings; }
+		}
 
 		[FormerlySerializedAs("m_labelTable")]
 		[SerializeField]
@@ -952,10 +952,10 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <summary>
 		/// LabelTable object.
 		/// </summary>
-        internal LabelTable labelTable
-        {
-            get { return m_LabelTable; }
-        }
+		internal LabelTable labelTable
+		{
+			get { return m_LabelTable; }
+		}
 
 		[FormerlySerializedAs("m_schemaTemplates")]
 		[SerializeField]
@@ -1185,7 +1185,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public Type CertificateHandlerType
 		{
-            get { return m_CertificateHandlerType.Value; }
+			get { return m_CertificateHandlerType.Value; }
 			set
 			{
 				m_CertificateHandlerType.Value = value;
@@ -1204,10 +1204,10 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <summary>
 		/// List of ScriptableObjects that implement the IDataBuilder interface.  These are used to create data for editor play mode and for player builds.
 		/// </summary>
-        public List<ScriptableObject> DataBuilders
-        {
-            get { return m_DataBuilders; }
-        }
+		public List<ScriptableObject> DataBuilders
+		{
+			get { return m_DataBuilders; }
+		}
 
 		/// <summary>
 		/// Get The data builder at a specifc index.
@@ -1303,7 +1303,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public IDataBuilder ActivePlayerDataBuilder
 		{
-            get { return GetDataBuilder(m_ActivePlayerDataBuilderIndex); }
+			get { return GetDataBuilder(m_ActivePlayerDataBuilderIndex); }
 		}
 
 		/// <summary>
@@ -1311,7 +1311,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public IDataBuilder ActivePlayModeDataBuilder
 		{
-            get { return GetDataBuilder(ProjectConfigData.ActivePlayModeIndex); }
+			get { return GetDataBuilder(ProjectConfigData.ActivePlayModeIndex); }
 		}
 
 		/// <summary>
@@ -1319,7 +1319,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public int ActivePlayerDataBuilderIndex
 		{
-            get { return m_ActivePlayerDataBuilderIndex; }
+			get { return m_ActivePlayerDataBuilderIndex; }
 			set
 			{
 				if (m_ActivePlayerDataBuilderIndex != value)
@@ -1335,7 +1335,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public int ActivePlayModeDataBuilderIndex
 		{
-            get { return ProjectConfigData.ActivePlayModeIndex; }
+			get { return ProjectConfigData.ActivePlayModeIndex; }
 			set
 			{
 				ProjectConfigData.ActivePlayModeIndex = value;
@@ -1363,7 +1363,7 @@ namespace UnityEditor.AddressableAssets.Settings
 				SetDirty(ModificationEvent.LabelAdded, label, postEvent, true);
 		}
 
-        internal void RenameLabel(string oldLabelName, string newLabelName, bool postEvent = true)
+		internal void RenameLabel(string oldLabelName, string newLabelName, bool postEvent = true)
 		{
 			int index = m_LabelTable.GetIndexOfLabel(oldLabelName);
 			if (index < 0)
@@ -1371,8 +1371,8 @@ namespace UnityEditor.AddressableAssets.Settings
 
 			if (!m_LabelTable.AddLabelName(newLabelName, index))
 				return;
-            if (postEvent)
-                SetDirty(ModificationEvent.LabelAdded, newLabelName, postEvent, true);
+			if (postEvent)
+				SetDirty(ModificationEvent.LabelAdded, newLabelName, postEvent, true);
 
 			foreach (var group in groups)
 			{
@@ -1387,7 +1387,7 @@ namespace UnityEditor.AddressableAssets.Settings
 			}
 
 			m_LabelTable.RemoveLabelName(oldLabelName);
-            SetDirty(ModificationEvent.LabelRemoved, oldLabelName, postEvent, true);
+			SetDirty(ModificationEvent.LabelRemoved, oldLabelName, postEvent, true);
 		}
 
 		/// <summary>
@@ -1481,24 +1481,24 @@ namespace UnityEditor.AddressableAssets.Settings
 
 		internal void GatherAllAssetReferenceDrawableEntries(List<IReferenceEntryData> assets)
 		{
-            HashSet<string> processed = new HashSet<string>();
-            // gather all direct asset reference data
-            foreach (var g in groups)
+			HashSet<string> processed = new HashSet<string>();
+			// gather all direct asset reference data
+			foreach (var g in groups)
 			{
-                if (g != null)
-                    g.GatherAllDirectAssetReferenceEntryData(assets, processed);
-            }
-            // gather all folders
-				foreach (var g in groups)
-				{
-					if (g != null)
-                    g.GatherAllFolderSubAssetReferenceEntryData(assets, processed);
-				}
-            // gather all collections
-            foreach (var g in groups)
-            {
-                if (g != null)
-                    g.GatherAllAssetCollectionAssetReferenceEntryData(assets, processed);
+				if (g != null)
+					g.GatherAllDirectAssetReferenceEntryData(assets, processed);
+			}
+			// gather all folders
+			foreach (var g in groups)
+			{
+				if (g != null)
+					g.GatherAllFolderSubAssetReferenceEntryData(assets, processed);
+			}
+			// gather all collections
+			foreach (var g in groups)
+			{
+				if (g != null)
+					g.GatherAllAssetCollectionAssetReferenceEntryData(assets, processed);
 			}
 		}
 
@@ -1530,7 +1530,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			profileSettings.OnAfterDeserialize(this);
 			buildSettings.OnAfterDeserialize(this);
-            HostingServicesManager.OnAwake();
+			HostingServicesManager.OnAwake();
 		}
 
 		void OnEnable()
@@ -1710,8 +1710,8 @@ namespace UnityEditor.AddressableAssets.Settings
 				}
 				else if (!typeof(AddressableAssetGroupSchema).IsAssignableFrom(t))
 				{
-                    Debug.LogWarningFormat("CreateAndAddGroupTemplate - Group template {0} schema type at index {1} must inherit from AddressableAssetGroupSchema.  Specified type was {2}.",
-                        displayName, i, t.FullName);
+					Debug.LogWarningFormat("CreateAndAddGroupTemplate - Group template {0} schema type at index {1} must inherit from AddressableAssetGroupSchema.  Specified type was {2}.",
+						displayName, i, t.FullName);
 					typesAreValid = false;
 				}
 			}
@@ -1786,11 +1786,11 @@ namespace UnityEditor.AddressableAssets.Settings
 					Addressables.LogError("Unable to set null as the Default Group.  Default Groups must not be ReadOnly.");
 				else if (!value.CanBeSetAsDefault())
 					Addressables.LogError("Unable to set " + value.Name + " as the Default Group.  Default Groups must not be ReadOnly.");
-                else if (m_DefaultGroup != value.Guid)
-                {
+				else if (m_DefaultGroup != value.Guid)
+				{
 					m_DefaultGroup = value.Guid;
-                    SetDirty(ModificationEvent.BatchModification, null, false, true);
-                }
+					SetDirty(ModificationEvent.BatchModification, null, false, true);
+				}
 			}
 		}
 
@@ -2157,8 +2157,8 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <param name="readOnly">Is the new entry read only.</param>
 		/// <param name="postEvent">Send modification event.</param>
 		/// <exception cref="ArgumentException"></exception>
-        internal void CreateOrMoveEntries(IEnumerable guids, AddressableAssetGroup targetParent, List<AddressableAssetEntry> createdEntries, List<AddressableAssetEntry> movedEntries,
-            bool readOnly = false, bool postEvent = true)
+		internal void CreateOrMoveEntries(IEnumerable guids, AddressableAssetGroup targetParent, List<AddressableAssetEntry> createdEntries, List<AddressableAssetEntry> movedEntries,
+			bool readOnly = false, bool postEvent = true)
 		{
 			if (targetParent == null)
 				throw new ArgumentException("targetParent must not be null");
@@ -2378,6 +2378,7 @@ namespace UnityEditor.AddressableAssets.Settings
 			var aa = this;
 			bool relatedAssetChanged = false;
 			bool settingsChanged = false;
+
 			foreach (string str in importedAssets)
 			{
 				var assetType = AssetDatabase.GetMainAssetTypeAtPath(str);
@@ -2394,7 +2395,7 @@ namespace UnityEditor.AddressableAssets.Settings
 					if (group == null)
 					{
 						var foundGroup = AssetDatabase.LoadAssetAtPath<AddressableAssetGroup>(str);
-						if (!aa.groups.Contains(foundGroup))
+						if (!aa.groups.Contains(foundGroup) && ((foundGroup.Settings == null) || (foundGroup.Settings == aa)))
 						{
 							aa.groups.Add(foundGroup);
 							group = aa.FindGroup(Path.GetFileNameWithoutExtension(str));
@@ -2489,8 +2490,8 @@ namespace UnityEditor.AddressableAssets.Settings
 					if (isAlreadyAddressable && endedInResources)
 					{
 						var fileName = Path.GetFileNameWithoutExtension(str);
-                        Addressables.Log("You have moved addressable asset " + fileName +
-                                         " into a Resources directory.  It has been unmarked as addressable, but can still be loaded via the Addressables API via its Resources path.");
+						Addressables.Log("You have moved addressable asset " + fileName +
+										 " into a Resources directory.  It has been unmarked as addressable, but can still be loaded via the Addressables API via its Resources path.");
 						aa.RemoveAssetEntry(guid, false);
 					}
 					else if (inEditorSceneList)
