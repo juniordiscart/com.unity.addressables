@@ -9,6 +9,7 @@ namespace UnityEditor.AddressableAssets
 	/// <summary>
 	/// Class used to get and set the default Addressable Asset settings object.
 	/// </summary>
+	[CreateAssetMenu(menuName = "Addressables/New Default Object", fileName = "DefaultObject", order = -1)]
 	public class AddressableAssetSettingsDefaultObject : ScriptableObject
 	{
 		public static Action<AddressableAssetSettings> onDefaultObjectsettingsChanged;
@@ -33,7 +34,7 @@ namespace UnityEditor.AddressableAssets
 		/// </summary>
 		public static string DefaultAssetPath
 		{
-            get { return kDefaultConfigFolder + "/" + kDefaultConfigAssetName + ".asset"; }
+			get { return kDefaultConfigFolder + "/" + kDefaultConfigAssetName + ".asset"; }
 		}
 
 		[FormerlySerializedAs("m_addressableAssetSettingsGuid")]
