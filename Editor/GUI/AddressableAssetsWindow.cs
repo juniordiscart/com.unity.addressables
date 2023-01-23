@@ -40,10 +40,10 @@ namespace UnityEditor.AddressableAssets.GUI
 		[MenuItem("Window/Asset Management/Addressables/Groups", priority = 2050)]
 		internal static void Init()
 		{
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow);
+			AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow);
 			var window = GetWindow<AddressableAssetsWindow>();
 			window.titleContent = new GUIContent("Addressables Groups");
-            window.minSize = new Vector2(430, 250);
+			window.minSize = new Vector2(430, 250);
 			window.Show();
 		}
 
@@ -62,7 +62,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		public void OnEnable()
 		{
-            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow, true);
+			AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow, true);
 			m_GroupEditor?.OnEnable();
 			if (m_Request == null || m_Request.Status == StatusCode.Failure)
 			{
@@ -104,17 +104,17 @@ namespace UnityEditor.AddressableAssets.GUI
 				if (GUILayout.Button("Create Addressables Settings"))
 				{
 					m_GroupEditor = null;
-                    AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
-                        AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, true, true);
+					AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
+						AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, true, true);
 					OfferToConvert(AddressableAssetSettingsDefaultObject.Settings);
 				}
-                
+
 				GUILayout.Space(20);
 				GUILayout.BeginHorizontal();
 				GUILayout.Space(50);
 				UnityEngine.GUI.skin.label.wordWrap = true;
-                GUILayout.Label(
-                    "Click the \"Create\" button above or simply drag an asset into this window to start using Addressables.  Once you begin, the Addressables system will save some assets to your project to keep up with its data");
+				GUILayout.Label(
+					"Click the \"Create\" button above or simply drag an asset into this window to start using Addressables.  Once you begin, the Addressables system will save some assets to your project to keep up with its data");
 				GUILayout.Space(50);
 				GUILayout.EndHorizontal();
 				switch (Event.current.type)
@@ -129,8 +129,8 @@ namespace UnityEditor.AddressableAssets.GUI
 								if (!string.IsNullOrEmpty(guid))
 								{
 									if (AddressableAssetSettingsDefaultObject.Settings == null)
-                                        AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
-                                            AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, true, true);
+										AddressableAssetSettingsDefaultObject.Settings = AddressableAssetSettings.Create(AddressableAssetSettingsDefaultObject.kDefaultConfigFolder,
+											AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, true, true);
 									Undo.RecordObject(AddressableAssetSettingsDefaultObject.Settings, "AddressableAssetSettings");
 									AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(guid, AddressableAssetSettingsDefaultObject.Settings.DefaultGroup);
 								}

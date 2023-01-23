@@ -556,6 +556,11 @@ namespace UnityEngine.AddressableAssets
         public static string LibraryPath = "Library/com.unity.addressables/";
 
         /// <summary>
+        /// The path to the Addressables Build Reports subfolder
+        /// </summary>
+        public static string BuildReportPath = "Library/com.unity.addressables/BuildReports/";
+
+        /// <summary>
         /// The path used by the Addressables system for its initialization data.
         /// </summary>
         public static string BuildPath

@@ -13,6 +13,7 @@ using UnityEditor.AddressableAssets.HostingServices;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.Tests.HostingServices
 {
@@ -576,6 +577,40 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             Assert.IsTrue(m_Manager.GlobalProfileVariables.ContainsKey("test"));
             m_Manager.RefreshGlobalProfileVariables();
             Assert.IsFalse(m_Manager.GlobalProfileVariables.ContainsKey("test"));
+        }
+
+        [Test]
+        public void RefreshGlobalProfileVariables_WithValidPingTimeout_DoesNotLogError()
+        {
+            int pingTimeoutInMilliseconds = m_Manager.PingTimeoutInMilliseconds;
+            try
+            {
+                m_Manager.Initialize(m_Settings);
+                m_Manager.PingTimeoutInMilliseconds = 5500;
+                m_Manager.RefreshGlobalProfileVariables();
+                LogAssert.NoUnexpectedReceived();
+            }
+            finally
+            {
+                m_Manager.PingTimeoutInMilliseconds = pingTimeoutInMilliseconds;
+            }
+        }
+
+        [Test]
+        public void RefreshGlobalProfileVariables_WithInvalidPingTimeout_LogsError()
+        {
+            int pingTimeoutInMilliseconds = m_Manager.PingTimeoutInMilliseconds;
+            try
+            {
+                m_Manager.Initialize(m_Settings);
+                m_Manager.PingTimeoutInMilliseconds = -1;
+                m_Manager.RefreshGlobalProfileVariables();
+                LogAssert.Expect(LogType.Error, "Cannot filter IP addresses. Timeout must be a non-negative integer.");
+            }
+            finally
+            {
+                m_Manager.PingTimeoutInMilliseconds = pingTimeoutInMilliseconds;
+            }
         }
 
         // BatchMode

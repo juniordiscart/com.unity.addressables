@@ -315,8 +315,14 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 		internal UnityWebRequest CreateWebRequest(string url)
 		{
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+            Uri uri = new Uri(url.Replace(" ", "%20"));
+#else
+            Uri uri = new Uri(Uri.EscapeUriString(url));
+#endif
+
 			if (m_Options == null)
-				return UnityWebRequestAssetBundle.GetAssetBundle(url);
+                return UnityWebRequestAssetBundle.GetAssetBundle(uri);
 			UnityWebRequest webRequest;
 			if (!string.IsNullOrEmpty(m_Options.Hash))
 			{
@@ -324,17 +330,17 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #if ENABLE_CACHING
 				m_IsLoadingFromCache = Caching.IsVersionCached(cachedBundle);
 				if (m_Options.UseCrcForCachedBundle || !m_IsLoadingFromCache)
-					webRequest = UnityWebRequestAssetBundle.GetAssetBundle(url, cachedBundle, m_Options.Crc);
+                    webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, cachedBundle, m_Options.Crc);
 				else
-					webRequest = UnityWebRequestAssetBundle.GetAssetBundle(url, cachedBundle);
+                    webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, cachedBundle);
 #else
-                webRequest = UnityWebRequestAssetBundle.GetAssetBundle(url, cachedBundle, m_Options.Crc);
+                webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, cachedBundle, m_Options.Crc);
 #endif
 			}
 			else
 			{
 				m_IsLoadingFromCache = false;
-				webRequest = UnityWebRequestAssetBundle.GetAssetBundle(url, m_Options.Crc);
+                webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, m_Options.Crc);
 			}
 
 			if (m_Options.RedirectLimit > 0)
@@ -494,13 +500,20 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			{
 				while (!UnityWebRequestUtilities.IsAssetBundleDownloaded(op))
 					System.Threading.Thread.Sleep(k_WaitForWebRequestMainThreadSleep);
+#if ENABLE_ASYNC_ASSETBUNDLE_UWR
+                if (m_IsLoadingFromCache)
+                {
+                    var downloadHandler = (DownloadHandlerAssetBundle)op?.webRequest?.downloadHandler;
+                    if (downloadHandler.autoLoadAssetBundle)
+                        m_AssetBundle = downloadHandler.assetBundle;
 			}
-
-			if (m_RequestOperation is UnityWebRequestAsyncOperation && !m_WebRequestCompletedCallbackCalled)
+#endif
+                if (!m_WebRequestCompletedCallbackCalled)
 			{
 				WebRequestOperationCompleted(m_RequestOperation);
 				m_RequestOperation.completed -= WebRequestOperationCompleted;
 			}
+            }
 
 			var assetBundle = GetAssetBundle();
 			if (!m_Completed && m_RequestOperation.isDone)

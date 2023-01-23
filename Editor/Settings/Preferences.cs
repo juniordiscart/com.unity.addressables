@@ -80,7 +80,7 @@ namespace UnityEditor.AddressableAssets
                 EditorGUI.indentLevel++;
                 ProjectConfigData.ReportFileFormat buildLayoutReportFileFormat = ProjectConfigData.BuildLayoutReportFileFormat;
                 int formatOldIndex = (int)buildLayoutReportFileFormat;
-                int formatNewIndex = EditorGUILayout.Popup(Properties.buildLayoutReportFileFormat, formatOldIndex, new[] {"TXT", "JSON"});
+                int formatNewIndex = EditorGUILayout.Popup(Properties.buildLayoutReportFileFormat, formatOldIndex, new[] {"TXT and JSON", "JSON"});
                 if (formatNewIndex != formatOldIndex)
                     ProjectConfigData.BuildLayoutReportFileFormat = (ProjectConfigData.ReportFileFormat)formatNewIndex;
                 EditorGUI.indentLevel--;

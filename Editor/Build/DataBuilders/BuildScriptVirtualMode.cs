@@ -93,7 +93,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 bundleToAssetGroup = new Dictionary<string, string>(),
                 locations = new List<ContentCatalogDataEntry>(),
                 providerTypes = new HashSet<Type>(),
-                assetEntries = new List<AddressableAssetEntry>()
+                assetEntries = new List<AddressableAssetEntry>(),
+                buildStartTime = DateTime.Now
             };
             m_AllBundleInputDefinitions = new List<AssetBundleBuild>();
             aaContext.runtimeData.BuildTarget = builderInput.Target.ToString();

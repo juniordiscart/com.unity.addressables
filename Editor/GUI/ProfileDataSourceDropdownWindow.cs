@@ -246,7 +246,7 @@ namespace UnityEditor.AddressableAssets.GUI
                                     m_EnvironmentName = env.name;
 
                                     m_ProfileDataSource.SetEnvironmentById(env.id);
-                                    AddressableAssetSettingsDefaultObject.Settings.m_CcdManagedData.State = CcdManagedData.ConfigState.Default;
+                                    SetCcdManagedDataState(CcdManagedData.ConfigState.Default);
 
                                     var args = new DropdownWindowEventArgs();
                                     var groupType = m_ProfileDataSource.GetGroupTypesByPrefix("Automatic").First();
@@ -305,7 +305,7 @@ namespace UnityEditor.AddressableAssets.GUI
                                 }
                             });
 
-                            CCDOption.DrawBuckets(buckets,
+                            CCDOption.DrawBuckets(buckets, m_EnvironmentId,
                                 (KeyValuePair<string, ProfileGroupType> bucket) =>
                                 {
                                     CCDState = CCDDropdownState.Badge;
@@ -348,7 +348,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             });
 
 
-                            CCDOption.DrawBadges(groupTypes, m_BucketId, (ProfileGroupType groupType) =>
+                            CCDOption.DrawBadges(groupTypes, m_BucketId, m_EnvironmentId, (ProfileGroupType groupType) =>
                             {
 
                                 m_ProfileDataSource.SetEnvironmentById(m_EnvironmentId);
@@ -358,6 +358,7 @@ namespace UnityEditor.AddressableAssets.GUI
                                 args.Option.BuildPath = groupType.GetVariableBySuffix("BuildPath").Value;
                                 args.Option.LoadPath = groupType.GetVariableBySuffix("LoadPath").Value;
                                 args.IsCustom = false;
+                                SetCcdManagedDataState(CcdManagedData.ConfigState.None);
                                 OnValueChanged(args);
                                 editorWindow.Close();
                             });
@@ -374,6 +375,9 @@ namespace UnityEditor.AddressableAssets.GUI
                 case DropdownState.BuiltIn:
                 case DropdownState.EditorHosted:
                 default:
+#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+                    SetCcdManagedDataState(CcdManagedData.ConfigState.None);
+#endif
                     editorWindow.Close();
                     break;
             }
@@ -447,6 +451,13 @@ namespace UnityEditor.AddressableAssets.GUI
             m_ProfileGroupTypes = dataSourceSettings.GetGroupTypesByPrefix("CCD" + ProfileGroupType.k_PrefixSeparator + CloudProjectSettings.projectId);
         }
 
+
+#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+        private void SetCcdManagedDataState(CcdManagedData.ConfigState state)
+        {
+            AddressableAssetSettingsDefaultObject.Settings.m_CcdManagedData.State = state;
+        }
+#endif
         private async Task<OrgData> GetOrgData()
         {
             using (System.Net.Http.HttpClient client = new System.Net.Http.HttpClient())
@@ -594,7 +605,8 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
-            internal static void DrawBuckets(Dictionary<string, ProfileGroupType> buckets, Action<KeyValuePair<string, ProfileGroupType>> action)
+            internal static void DrawBuckets(Dictionary<string, ProfileGroupType> buckets, string environmentId,
+                Action<KeyValuePair<string, ProfileGroupType>> action)
             {
                 if (buckets.Count > 0)
                 {
@@ -613,10 +625,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     DrawCompleteCCDOnBoarding();
                 }
-                DrawCreateBucket();
+                DrawCreateBucket(environmentId);
             }
 
-            internal static void DrawBadges(HashSet<ProfileGroupType> groupTypes, string bucketId, Action<ProfileGroupType> action)
+            internal static void DrawBadges(HashSet<ProfileGroupType> groupTypes, string bucketId, string environmentId,
+                Action<ProfileGroupType> action)
             {
                 if (groupTypes.Count > 0)
                 {
@@ -626,7 +639,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     }
                 }
 
-                DrawCreateBadge(bucketId);
+                DrawCreateBadge(bucketId, environmentId);
             }
 
 #endif
@@ -644,30 +657,32 @@ namespace UnityEditor.AddressableAssets.GUI
                 EditorGUI.LabelField(lastRect, "<a>___________________________</a>", menuOptionStyle);
             }
 
-            internal static void DrawCreateBucket()
+            internal static void DrawCreateBucket(string environmentId)
             {
                 DrawMenuItem("<a>Create new bucket</a>", null, () =>
                 {
                     Application.OpenURL(
-                        String.Format("{0}/organizations/{1}/projects/{2}/cloud-content-delivery",
+                        String.Format("{0}/organizations/{1}/projects/{2}/environments/{3}/cloud-content-delivery",
                             ProfileDataSourceSettings.m_DashboardBasePath,
                             m_Organization.foreign_key,
-                            CloudProjectSettings.projectId));
+                            CloudProjectSettings.projectId,
+                            environmentId));
                 });
                 var lastRect = GUILayoutUtility.GetLastRect();
                 lastRect.y += 2;
                 EditorGUI.LabelField(lastRect, "<a>_____________________</a>", menuOptionStyle);
             }
 
-            internal static void DrawCreateBadge(string bucketId)
+            internal static void DrawCreateBadge(string bucketId, string environmentId)
             {
                 DrawMenuItem("<a>Create new badge</a>", null, () =>
                 {
                     Application.OpenURL(
-                        String.Format("{0}/organizations/{1}/projects/{2}/cloud-content-delivery/buckets/{3}/badges",
+                        String.Format("{0}/organizations/{1}/projects/{2}/environments/{3}/cloud-content-delivery/buckets/{4}/badges",
                             ProfileDataSourceSettings.m_DashboardBasePath,
                             m_Organization.foreign_key,
                             CloudProjectSettings.projectId,
+                            environmentId,
                             bucketId));
                 });
                 var lastRect = GUILayoutUtility.GetLastRect();

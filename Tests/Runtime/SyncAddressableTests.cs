@@ -24,6 +24,7 @@ namespace AddressableTests.SyncAddressables
     {
         protected string m_PrefabKey = "syncprefabkey";
         protected string m_PrefabKey2 = "syncprefabkey2";
+        protected string m_PrefabKey3 = "syncprefabkey3";
         protected string m_InvalidKey = "notarealkey";
         protected string m_SceneKey = "syncscenekey";
         protected string m_ResourcePrefabKey = "resourceprefabkey";
@@ -73,6 +74,18 @@ namespace AddressableTests.SyncAddressables
             string sceneGuid = CreateScene($"{tempAssetFolder}/SyncTestScene.unity");
             AddressableAssetEntry sceneEntry = settings.CreateOrMoveEntry(sceneGuid, syncGroup);
             sceneEntry.address = m_SceneKey;
+
+#if ENABLE_ASYNC_ASSETBUNDLE_UWR
+            AddressableAssetGroup syncGroup3 = settings.CreateGroup("SyncAddressables3", false, false, true,
+                new List<AddressableAssetGroupSchema>(), typeof(BundledAssetGroupSchema));
+            syncGroup3.GetSchema<BundledAssetGroupSchema>().BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.OnlyHash;
+            syncGroup3.GetSchema<BundledAssetGroupSchema>().UseUnityWebRequestForLocalBundles = true;
+
+            //Create prefab
+            string guid3 = CreatePrefab(tempAssetFolder + "/synctest3.prefab");
+            AddressableAssetEntry entry3 = settings.CreateOrMoveEntry(guid3, syncGroup3);
+            entry3.address = m_PrefabKey3;
+#endif
         }
 
 #endif
@@ -592,6 +605,44 @@ namespace AddressableTests.SyncAddressables
             downloadDependencies.WaitForCompletion();
             Assert.IsTrue(downloadDependencies.IsDone);
         }
+
+#if ENABLE_CACHING && ENABLE_ASYNC_ASSETBUNDLE_UWR
+        [Test]
+        public void SyncAddressableLoad_CachedBundle_WithAutoLoadEnabled_Completes()
+        {
+            // Cache the bundle
+            Caching.ClearCache();
+            var initloadOp = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKey3);
+            initloadOp.WaitForCompletion();
+            ReleaseOp(initloadOp);
+
+            var loadOp = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKey3);
+            var result = loadOp.WaitForCompletion();
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, loadOp.Status);
+            Assert.NotNull(result);
+            Assert.IsNotNull(loadOp.Result);
+            Assert.AreEqual(loadOp.Result, result);
+
+            ReleaseOp(loadOp);
+            Caching.ClearCache();
+        }
+
+        [Test]
+        public void SyncAddressableLoad_NotCachedBundle_WithAutoLoadEnabled_Completes()
+        {
+            Caching.ClearCache();
+
+            var loadOp = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKey3);
+            var result = loadOp.WaitForCompletion();
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, loadOp.Status);
+            Assert.NotNull(result);
+            Assert.IsNotNull(loadOp.Result);
+            Assert.AreEqual(loadOp.Result, result);
+
+            ReleaseOp(loadOp);
+            Caching.ClearCache();
+        }
+#endif
     }
 #endif
 
@@ -610,5 +661,43 @@ namespace AddressableTests.SyncAddressables
             downloadDependencies.WaitForCompletion();
             Assert.IsTrue(downloadDependencies.IsDone);
         }
+
+#if ENABLE_CACHING && ENABLE_ASYNC_ASSETBUNDLE_UWR
+        [Test]
+        public void SyncAddressableLoad_CachedBundle_WithAutoLoadEnabled_Completes()
+        {
+            // Cache the bundle
+            Caching.ClearCache();
+            var initloadOp = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKey3);
+            initloadOp.WaitForCompletion();
+            ReleaseOp(initloadOp);
+
+            var loadOp = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKey3);
+            var result = loadOp.WaitForCompletion();
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, loadOp.Status);
+            Assert.NotNull(result);
+            Assert.IsNotNull(loadOp.Result);
+            Assert.AreEqual(loadOp.Result, result);
+
+            ReleaseOp(loadOp);
+            Caching.ClearCache();
+        }
+
+        [Test]
+        public void SyncAddressableLoad_NotCachedBundle_WithAutoLoadEnabled_Completes()
+        {
+            Caching.ClearCache();
+
+            var loadOp = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKey3);
+            var result = loadOp.WaitForCompletion();
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, loadOp.Status);
+            Assert.NotNull(result);
+            Assert.IsNotNull(loadOp.Result);
+            Assert.AreEqual(loadOp.Result, result);
+
+            ReleaseOp(loadOp);
+            Caching.ClearCache();
+        }
+#endif
     }
 }

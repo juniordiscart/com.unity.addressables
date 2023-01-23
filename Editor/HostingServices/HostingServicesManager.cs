@@ -63,6 +63,17 @@ namespace UnityEditor.AddressableAssets.HostingServices
         ILogger m_Logger;
         List<Type> m_RegisteredServiceTypes;
 
+        [SerializeField]
+        int m_PingTimeoutInMilliseconds = 5000;
+        /// <summary>
+        /// Timeout in milliseconds for filtering ip addresses for the hosting service
+        /// </summary>
+        internal int PingTimeoutInMilliseconds
+        {
+            get { return m_PingTimeoutInMilliseconds; }
+            set { m_PingTimeoutInMilliseconds = value; }
+        }
+
         /// <summary>
         /// Key/Value pairs valid for profile variable substitution
         /// </summary>
@@ -555,11 +566,16 @@ namespace UnityEditor.AddressableAssets.HostingServices
         private List<IPAddress> FilterValidIPAddresses(List<IPAddress> ipAddresses)
         {
             List<IPAddress> validIpList = new List<IPAddress>();
+            if (PingTimeoutInMilliseconds < 0)
+            {
+                m_Logger.LogFormat(LogType.Error, "Cannot filter IP addresses. Timeout must be a non-negative integer.");
+                return validIpList;
+            }
 
             foreach (IPAddress address in ipAddresses)
             {
                 var sender = new System.Net.NetworkInformation.Ping();
-                var reply = sender.Send(address.ToString(), 5000);
+                var reply = sender.Send(address.ToString(), PingTimeoutInMilliseconds);
                 if (reply.Status == IPStatus.Success)
                 {
                     validIpList.Add(address);

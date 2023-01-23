@@ -104,6 +104,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private GUIContent m_RefreshVariablesGUIContent = new GUIContent("Refresh", "Reloads information about the service. Useful when the network changed");
 
+        private GUIContent m_PingTimeoutGUIContent = new GUIContent("IP Ping Timeout (ms)", "Timeout in milliseconds for filtering ip addresses for the hosting service. Default value is 5000ms (5s).");
+
         /// <summary>
         /// Show the <see cref="HostingServicesWindow"/>, initialized with the given <see cref="AddressableAssetSettings"/>
         /// </summary>
@@ -393,18 +395,26 @@ namespace UnityEditor.AddressableAssets.GUI
 
             EditorGUILayout.Space();
 
+            var manager = m_Settings.HostingServicesManager;
             using (new EditorGUI.DisabledScope(!svc.IsHostingServiceRunning))
             {
                 GUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(m_HostingServiceVariablesGUIContent);
-
-                var manager = m_Settings.HostingServicesManager;
                 if (GUILayout.Button(m_RefreshVariablesGUIContent, GUILayout.ExpandWidth(false)))
                     manager.RefreshGlobalProfileVariables();
 
                 GUILayout.EndHorizontal();
 
                 DrawProfileVarTable(svc);
+            }
+
+            EditorGUILayout.Space();
+
+            var newPing = EditorGUILayout.DelayedIntField(m_PingTimeoutGUIContent, manager.PingTimeoutInMilliseconds);
+            if (newPing != manager.PingTimeoutInMilliseconds && newPing >= 0)
+            {
+                manager.PingTimeoutInMilliseconds = newPing;
+                isDirty = true;
             }
 
             if (isDirty && m_Settings != null)

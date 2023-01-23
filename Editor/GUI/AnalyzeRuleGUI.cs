@@ -85,7 +85,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             GUIStyle m_ToolbarButtonStyle = "RL FooterButton";
-            GUIContent m_ManageLabelsButtonContent = EditorGUIUtility.TrIconContent("_Popup@2x", "Manage Labels");
+            GUIContent m_ManageLabelsButtonContent = EditorGUIUtility.TrIconContent("_Popup@2x", "Import/Export Analysis Results");
             Rect plusRect = buttonRect;
             plusRect.height = k_ButtonHeight;
             plusRect.width = plusRect.height;

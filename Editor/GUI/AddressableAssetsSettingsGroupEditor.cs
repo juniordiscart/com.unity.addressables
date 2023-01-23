@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Diagnostics;
 using UnityEditor.AddressableAssets.Settings;
@@ -10,6 +11,9 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
+#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+using static UnityEditor.AddressableAssets.Build.CcdBuildEvents;
+#endif
 
 // ReSharper disable DelegateSubtraction
 
@@ -104,6 +108,7 @@ namespace UnityEditor.AddressableAssets.GUI
 		float m_VerticalSplitterPercent;
 
 		const int k_SplitterWidth = 3;
+
 
 		public AddressableAssetsSettingsGroupEditor(AddressableAssetsWindow w)
 		{
@@ -344,7 +349,7 @@ namespace UnityEditor.AddressableAssets.GUI
 									addressablesPlayerBuildResultBuilderExists = true;
 									BuildMenuContext context = new BuildMenuContext()
 									{
-										buildScriptIndex = -1,
+                                        buildScriptIndex = i,
 										BuildMenu = buildOption,
 										Settings = settings
 									};
@@ -378,11 +383,46 @@ namespace UnityEditor.AddressableAssets.GUI
 				}
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
-				//Build & Release
-				var guiBuildAndRelease = new GUIContent("Build & Release");
-				if (GUILayout.Button(guiBuildAndRelease, EditorStyles.toolbarButton))
+                var guiBuildToCcd = new GUIContent("Build to CCD", "Options for building Addressable Assets");
+                Rect rBuildToCcd = GUILayoutUtility.GetRect(guiBuildToCcd, EditorStyles.toolbarDropDown);
+                if (EditorGUI.DropdownButton(rBuildToCcd, guiBuildToCcd, FocusType.Passive, EditorStyles.toolbarDropDown))
 				{
-					OnBuildAndRelease();
+                    var types = AddressableAssetUtility.GetTypes<IAddressablesBuildMenu>();
+                    var genericDropdownMenu = new GenericMenu();
+                    var displayMenus = CreateBuildMenus(types);
+                    foreach (IAddressablesBuildMenu buildOption in displayMenus)
+                    {
+                        if (buildOption.SelectableBuildScript)
+                        {
+                            bool addressablesPlayerBuildResultBuilderExists = false;
+                            for (int i = 0; i < settings.DataBuilders.Count; i++)
+                            {
+                                var dataBuilder = settings.GetDataBuilder(i);
+                                if (dataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
+                                {
+                                    addressablesPlayerBuildResultBuilderExists = true;
+                                    BuildMenuContext context = new BuildMenuContext()
+                                    {
+                                        buildScriptIndex = i,
+                                        BuildMenu = buildOption,
+                                        Settings = settings
+                                    };
+
+                                    genericDropdownMenu.AddItem(new GUIContent(dataBuilder.Name), false, OnBuildCcd, context);
+                                }
+                            }
+
+                            if (!addressablesPlayerBuildResultBuilderExists)
+                                genericDropdownMenu.AddDisabledItem(new GUIContent("No Build Script Available"));
+                        }
+                        else
+                        {
+                            BuildMenuContext context = new BuildMenuContext()
+                            { buildScriptIndex = -1, BuildMenu = buildOption, Settings = settings };
+                            genericDropdownMenu.AddItem(new GUIContent(buildOption.BuildMenuPath), false, OnBuildCcd, context);
+                        }
+                    }
+                    genericDropdownMenu.DropDown(rBuildToCcd);
 				}
 #endif
 
@@ -474,6 +514,87 @@ namespace UnityEditor.AddressableAssets.GUI
 
 			HandlePostBuild(context, builderInput, rst);
 		}
+
+#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+        private static void OnBuildCcd(object ctx)
+        {
+            BuildMenuContext buildAddressableContext = (BuildMenuContext)ctx;
+            OnBuildCcd(buildAddressableContext);
+        }
+
+        private static async void OnBuildCcd(BuildMenuContext context)
+        {
+            bool isUpdate = false; 
+            PreEvent preEvent = null;
+            PostEvent postEvent = null;
+            try {
+                if (context.BuildMenu == null)
+                {
+                    Addressables.LogError("Addressable content build failure : null build menu context");
+                    return;
+                }
+
+                if (context.buildScriptIndex >= 0)
+                    context.Settings.ActivePlayerDataBuilderIndex = context.buildScriptIndex;
+
+                isUpdate = context.BuildMenu is AddressablesBuildMenuUpdateAPreviousBuild;
+                RegisterBuildMenuEvents(context, isUpdate, out preEvent, out postEvent);
+
+                await AddressableAssetSettings.BuildAndReleasePlayerContent(isUpdate);
+            } finally {
+                UnregisterBuildMenuEvents(isUpdate, preEvent, postEvent);
+                EditorUtility.ClearProgressBar();                               
+            }
+        }
+
+        static void RegisterBuildMenuEvents(BuildMenuContext context, bool isUpdate, out PreEvent preEvent, out PostEvent postEvent) {
+            preEvent = GetHandlePreBuildDelegate(context);
+            postEvent = GetHandlePostBuildDelegate(context);
+            if (isUpdate)
+            {
+                CcdBuildEvents.OnPreUpdateEvents += preEvent;
+                CcdBuildEvents.PrependPostUpdateEvent(postEvent);
+                return;
+            }
+            CcdBuildEvents.OnPreBuildEvents += preEvent;
+            CcdBuildEvents.PrependPostBuildEvent(postEvent);
+        }
+
+        static void UnregisterBuildMenuEvents(bool isUpdate, PreEvent preEvent, PostEvent postEvent)
+        {
+            if (preEvent == null || postEvent == null)
+            {
+                return;
+            }
+            if (isUpdate)
+            {
+                CcdBuildEvents.OnPreUpdateEvents -= preEvent;
+                CcdBuildEvents.OnPostUpdateEvents -= postEvent;
+                return;
+            }
+            CcdBuildEvents.OnPreBuildEvents -= preEvent;
+            CcdBuildEvents.OnPostBuildEvents -= postEvent;
+        }
+
+
+        static PreEvent GetHandlePreBuildDelegate(BuildMenuContext context)
+        {
+            return input =>
+            {
+                return Task.FromResult(HandlePreBuild(context, input));
+            };
+        }
+
+        static PostEvent GetHandlePostBuildDelegate(BuildMenuContext context)
+        {
+            return (input, result) =>
+            {
+                HandlePostBuild(context, input, result);
+                return Task.FromResult(true);
+            };
+        }
+
+#endif
 
 		static bool HandlePreBuild(BuildMenuContext context, AddressablesDataBuilderInput builderInput)
 		{

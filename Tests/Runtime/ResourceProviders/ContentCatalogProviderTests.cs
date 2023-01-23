@@ -51,10 +51,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            IResourceLocation[] dependencies = new IResourceLocation[(int)ContentCatalogProvider.DependencyHashIndex.Count];
+            IResourceLocation[] dependencies = new IResourceLocation[(int) ContentCatalogProvider.DependencyHashIndex.Count];
 
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
             var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", string.Empty}, true);
@@ -107,10 +107,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            IResourceLocation[] dependencies = new IResourceLocation[(int)ContentCatalogProvider.DependencyHashIndex.Count];
+            IResourceLocation[] dependencies = new IResourceLocation[(int) ContentCatalogProvider.DependencyHashIndex.Count];
 
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
             var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {string.Empty, "hash"});
@@ -123,10 +123,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            IResourceLocation[] dependencies = new IResourceLocation[(int)ContentCatalogProvider.DependencyHashIndex.Count];
+            IResourceLocation[] dependencies = new IResourceLocation[(int) ContentCatalogProvider.DependencyHashIndex.Count];
 
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
             var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", "hash"});
@@ -139,10 +139,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            IResourceLocation[] dependencies = new IResourceLocation[(int)ContentCatalogProvider.DependencyHashIndex.Count];
+            IResourceLocation[] dependencies = new IResourceLocation[(int) ContentCatalogProvider.DependencyHashIndex.Count];
 
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
             var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", ""}, true);
@@ -155,10 +155,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            IResourceLocation[] dependencies = new IResourceLocation[(int)ContentCatalogProvider.DependencyHashIndex.Count];
+            IResourceLocation[] dependencies = new IResourceLocation[(int) ContentCatalogProvider.DependencyHashIndex.Count];
 
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
             var loadedId = contentCatalogOp.DetermineIdToLoad(location, new List<object> {"hash", "local"}, true);
@@ -170,10 +170,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            IResourceLocation[] dependencies = new IResourceLocation[(int)ContentCatalogProvider.DependencyHashIndex.Count];
+            IResourceLocation[] dependencies = new IResourceLocation[(int) ContentCatalogProvider.DependencyHashIndex.Count];
 
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
             Assert.IsTrue(string.IsNullOrEmpty(contentCatalogOp.m_LocalHashValue));
@@ -186,10 +186,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
             var contentCatalogOp = new ContentCatalogProvider.InternalOp();
 
-            IResourceLocation[] dependencies = new IResourceLocation[(int)ContentCatalogProvider.DependencyHashIndex.Count];
+            IResourceLocation[] dependencies = new IResourceLocation[(int) ContentCatalogProvider.DependencyHashIndex.Count];
 
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
-            dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Remote] = new ResourceLocationBase(string.Empty, k_RemoteLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
+            dependencies[(int) ContentCatalogProvider.DependencyHashIndex.Cache] = new ResourceLocationBase(string.Empty, k_CacheLocationId, typeof(ContentCatalogProvider).FullName, typeof(object));
 
             var location = new ResourceLocationBase(k_LocationName, k_LocationId, typeof(ContentCatalogProvider).FullName, typeof(object), dependencies);
 
@@ -256,6 +256,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         }
 
         [UnityTest]
+        [UnityPlatform(exclude = new[] {RuntimePlatform.Android})]
         public IEnumerator BundledCatalog_WhenCatalogIsRemote_LoadCatalogFromBundle_ShouldLoadCatalogAndUnloadResources()
         {
             string localBundleFilePath = Path.Combine(Addressables.RuntimePath, m_RuntimeCatalogFilename);

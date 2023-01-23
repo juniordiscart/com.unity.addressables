@@ -53,6 +53,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         private string m_SettingsAssetPath;
 
         /// <summary>
+        /// The time the build started
+        /// </summary>
+        public DateTime buildStartTime;
+
+        /// <summary>
         /// The current runtime data being built.
         /// </summary>
         public ResourceManagerRuntimeData runtimeData;

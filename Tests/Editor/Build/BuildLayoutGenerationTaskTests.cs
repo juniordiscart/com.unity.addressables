@@ -53,7 +53,7 @@ public class BuildLayoutGenerationTaskTests
         TempPath = kTempPath + (ExecCount++).ToString();
         foreach (var fileFormat in Enum.GetValues(typeof(ProjectConfigData.ReportFileFormat)))
         {
-            string layoutFile = BuildLayoutGenerationTask.GetLayoutFile((ProjectConfigData.ReportFileFormat)fileFormat);
+            string layoutFile = BuildLayoutGenerationTask.GetLayoutFilePathForFormat((ProjectConfigData.ReportFileFormat)fileFormat);
             if (File.Exists(layoutFile))
                 File.Delete(layoutFile);
         }
@@ -85,17 +85,45 @@ public class BuildLayoutGenerationTaskTests
         AssetDatabase.Refresh();
     }
 
-    static string CreateAsset(string name)
+    string MakeAddressable(AddressableAssetGroup group, string guid, string address = null)
     {
-        string assetPath = $"{TempPath}/{name}.prefab";
+        var entry = Settings.CreateOrMoveEntry(guid, group, false, false);
+        entry.address = address == null ? Path.GetFileNameWithoutExtension(entry.AssetPath) : address;
+        entry.BundleFileId = "GenericFileId";
+        return guid;
+    }
+
+    // Prefab asset emthods
+
+    static string CreatePrefabAsset(string name)
+    {
+        return CreatePrefabAsset($"{TempPath}/{name}.prefab", name);
+    }
+
+    static string CreatePrefabAsset(string assetPath, string objectName)
+    {
         GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.name = name;
+        go.name = objectName;
         //this is to ensure that bundles are different for every run.
         go.transform.localPosition = UnityEngine.Random.onUnitSphere;
         PrefabUtility.SaveAsPrefabAsset(go, assetPath);
         UnityEngine.Object.DestroyImmediate(go, false);
         return AssetDatabase.AssetPathToGUID(assetPath);
     }
+
+    string CreateAddressablePrefab(string name, AddressableAssetGroup group)
+    {
+        string guid = CreatePrefabAsset($"{TempPath}/{name}.prefab", name);
+        return MakeAddressable(group, guid);
+    }
+
+    bool DeletePrefab(string name)
+    {
+        string path = $"{TempPath}/{name}.prefab";
+        return AssetDatabase.DeleteAsset(path);
+    }
+
+    // Texture asset creation
 
     static string CreateTexture(string name, int size = 32)
     {
@@ -106,6 +134,15 @@ public class BuildLayoutGenerationTaskTests
         File.WriteAllBytes(assetPath, data);
         AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         return AssetDatabase.AssetPathToGUID(assetPath);
+    }
+
+    string CreateAddressableTexture(string name, AddressableAssetGroup group, int size = 32)
+    {
+        string guid = CreateTexture(name, size);
+        TextureImporter ti = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GUIDToAssetPath(guid));
+        ti.isReadable = false;
+        ti.SaveAndReimport();
+        return MakeAddressable(group, guid);
     }
 
     static string CreateSpriteAtlas(string name, string guidTargetTexture)
@@ -119,6 +156,12 @@ public class BuildLayoutGenerationTaskTests
         return AssetDatabase.AssetPathToGUID(saPath);
     }
 
+    bool DeleteSpriteAtlas(string name)
+    {
+        string assetPath = $"{TempPath}/{name}.spriteAtlas";
+        return AssetDatabase.DeleteAsset(assetPath);
+    }
+
     static string CreateSpriteTexture(string name, int size, bool includesSource)
     {
         string guid = CreateTexture(name, size);
@@ -129,39 +172,17 @@ public class BuildLayoutGenerationTaskTests
         return guid;
     }
 
-    string MakeAddressable(AddressableAssetGroup group, string guid, string address = null)
+    bool DeleteTexture(string name)
     {
-        var entry = Settings.CreateOrMoveEntry(guid, group, false, false);
-        entry.address = address == null ? Path.GetFileNameWithoutExtension(entry.AssetPath) : address;
-        return guid;
+        string assetPath = $"{TempPath}/{name}.png";
+        return AssetDatabase.DeleteAsset(assetPath);
     }
 
-    static string CreateAsset(string assetPath, string objectName)
-    {
-        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.name = objectName;
-        //this is to ensure that bundles are different for every run.
-        go.transform.localPosition = UnityEngine.Random.onUnitSphere;
-        PrefabUtility.SaveAsPrefabAsset(go, assetPath);
-        UnityEngine.Object.DestroyImmediate(go, false);
-        return AssetDatabase.AssetPathToGUID(assetPath);
-    }
-
-    string CreateAddressablePrefab(string name, AddressableAssetGroup group)
-    {
-        string guid = CreateAsset($"{TempPath}/{name}.prefab", name);
-        return MakeAddressable(group, guid);
-    }
-
-    string CreateAddressableTexture(string name, AddressableAssetGroup group, int size = 32)
-    {
-        string guid = CreateTexture(name, size);
-        TextureImporter ti = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GUIDToAssetPath(guid));
-        ti.isReadable = false;
-        ti.SaveAndReimport();
-        return MakeAddressable(group, guid);
-    }
-
+    /// <summary>
+    /// Adds a component to Prefab that references assetToReference
+    /// </summary>
+    /// <param name="prefabGUID"></param>
+    /// <param name="assetToReferenceGUID"></param>
     void MakePefabReference(string prefabGUID, string assetToReferenceGUID)
     {
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(prefabGUID));
@@ -187,7 +208,7 @@ public class BuildLayoutGenerationTaskTests
         try
         {
             BuildLayout layout = null;
-            BuildLayoutGenerationTask.s_LayoutCompleteCallback = (x) => layout = x;
+            BuildLayoutGenerationTask.s_LayoutCompleteCallback = (x, y) => layout = y;
             Settings.BuildPlayerContentImpl();
             return layout;
         }
@@ -259,50 +280,114 @@ public class BuildLayoutGenerationTaskTests
     [Test]
     public void WhenBundleReferencesAnotherBundle_ExternalReferenceExists()
     {
-        AddressableAssetGroup group = CreateGroup("Group1");
-        string prefabGUID = CreateAddressablePrefab("p1", group);
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+        AddressableAssetGroup group = null;
+        AddressableAssetGroup group2 = null;
 
-        AddressableAssetGroup group2 = CreateGroup("Group2");
-        string g2p1GUID = CreateAddressablePrefab("g2p1", group2);
-        MakePefabReference(prefabGUID, g2p1GUID);
+        try
+        {
+            // setup
+            group = CreateGroup("Group1");
+            string prefabGUID = CreateAddressablePrefab("p1", group);
+            group2 = CreateGroup("Group2");
+            string g2p1GUID = CreateAddressablePrefab("g2p1", group2);
+            MakePefabReference(prefabGUID, g2p1GUID);
+            AssetDatabase.SaveAssets();
 
-        BuildLayout layout = BuildAndExtractLayout();
-        CollectionAssert.Contains(layout.Groups[0].Bundles[0].Dependencies, layout.Groups[1].Bundles[0]);
-        Assert.AreEqual(layout.Groups[0].Bundles[0].Files[0].Assets[0].ExternallyReferencedAssets[0], layout.Groups[1].Bundles[0].Files[0].Assets[0]);
+            BuildLayout layout = BuildAndExtractLayout();
+
+            // Test
+            CollectionAssert.Contains(layout.Groups[0].Bundles[0].Dependencies, layout.Groups[1].Bundles[0]);
+            Assert.AreEqual(layout.Groups[0].Bundles[0].Files[0].Assets[0].ExternallyReferencedAssets[0], layout.Groups[1].Bundles[0].Files[0].Assets[0]);
+        }
+        finally // cleanup
+        {
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (group2 != null)
+                Settings.RemoveGroup(group2);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeletePrefab("p1");
+            DeletePrefab("g2p1");
+        }
+
     }
 
     [Test]
     public void WhenAssetImplicitlyPulledIntoBundle_ImplicitEntryAndReferencesCreated()
     {
-        AddressableAssetGroup group = CreateGroup("Group1");
-        string prefabGUID = CreateAddressablePrefab("p1", group);
-        string aGUID = CreateAsset("p2");
-        MakePefabReference(prefabGUID, aGUID);
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+        AddressableAssetGroup group = null;
 
-        BuildLayout layout = BuildAndExtractLayout();
-        BuildLayout.DataFromOtherAsset oa = layout.Groups[0].Bundles[0].Files[0].OtherAssets.First(x => x.AssetPath.Contains("p2.prefab"));
-        Assert.AreEqual(aGUID, oa.AssetGuid);
+        try
+        {
+            // setup
+            group = CreateGroup("Group1");
+            string prefabGUID = CreateAddressablePrefab("p1", group);
+            string aGUID = CreatePrefabAsset("p2");
+            MakePefabReference(prefabGUID, aGUID);
+            AssetDatabase.SaveAssets();
+
+            BuildLayout layout = BuildAndExtractLayout();
+
+            // Test
+            BuildLayout.DataFromOtherAsset oa = layout.Groups[0].Bundles[0].Files[0].OtherAssets.First(x => x.AssetPath.Contains("p2.prefab"));
+            Assert.AreEqual(aGUID, oa.AssetGuid);
+        }
+        finally // cleanup
+        {
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeletePrefab("p1");
+            DeletePrefab("p2");
+        }
     }
 
     [Test]
     public void WhenBundleContainsMultipleFiles_FilesAndSizesMatchArchiveContent()
     {
-        AddressableAssetGroup groupScenes = CreateGroup("SceneGroup");
-        AddressableAssetGroup textureGroup = CreateGroup("TextureGroup");
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
         string scenePath = $"{TempPath}/scene.unity";
-        Scene scene1 = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
-        new GameObject().AddComponent<TestBehaviourWithReference>();
-        EditorSceneManager.SaveScene(scene1, scenePath);
-        AddressableAssetEntry e = Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(scenePath), groupScenes);
-        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
-        CreateAddressableTexture("t1", textureGroup, 256);
+        AddressableAssetGroup groupScenes = null;
+        AddressableAssetGroup textureGroup = null;
+        bool sceneSaved = false;
 
-        BuildLayout layout = BuildAndExtractLayout();
+        try
+        {
+            // setup
+            groupScenes = CreateGroup("SceneGroup");
+            textureGroup = CreateGroup("TextureGroup");
 
-        BundledAssetGroupSchema schema = Settings.groups.First(x => x.HasSchema<BundledAssetGroupSchema>()).GetSchema<BundledAssetGroupSchema>();
-        string path = schema.BuildPath.GetValue(Settings);
-        foreach (BuildLayout.Bundle bundle in layout.Groups.SelectMany(x => x.Bundles))
-            AssertEditorBundleDetailsMatchPhysicalBundle(Path.Combine(path, bundle.Name), bundle);
+            Scene scene1 = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+            new GameObject().AddComponent<TestBehaviourWithReference>();
+            EditorSceneManager.SaveScene(scene1, scenePath);
+            Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(scenePath), groupScenes);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+            CreateAddressableTexture("t1", textureGroup, 256);
+            AssetDatabase.SaveAssets();
+
+            BuildLayout layout = BuildAndExtractLayout();
+
+            // Test
+            BundledAssetGroupSchema schema = Settings.groups.First(x => x.HasSchema<BundledAssetGroupSchema>()).GetSchema<BundledAssetGroupSchema>();
+            string path = schema.BuildPath.GetValue(Settings);
+            foreach (BuildLayout.Bundle bundle in layout.Groups.SelectMany(x => x.Bundles))
+                AssertEditorBundleDetailsMatchPhysicalBundle(Path.Combine(path, bundle.Name), bundle);
+        }
+        finally // cleanup
+        {
+            if (groupScenes != null)
+                Settings.RemoveGroup(groupScenes);
+            if (textureGroup != null)
+                Settings.RemoveGroup(textureGroup);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            AssetDatabase.DeleteAsset(scenePath);
+            DeleteTexture("t1");
+        }
     }
 
     // Even though slim writes is true, the system will enable it if it needs to generate a build layout report
@@ -310,52 +395,69 @@ public class BuildLayoutGenerationTaskTests
     public void WhenSlimWriteResultsIsTrue_LayoutStillGenerated()
     {
         ProjectConfigData.ReportFileFormat fileFormat = ProjectConfigData.ReportFileFormat.TXT;
-        string layoutFile = BuildLayoutGenerationTask.GetLayoutFile(fileFormat);
-
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(fileFormat);
+        AddressableAssetGroup group = null;
         bool prevSlim = ScriptableBuildPipeline.slimWriteResults;
         ProjectConfigData.ReportFileFormat prevFileFormat = ProjectConfigData.BuildLayoutReportFileFormat;
-        CreateAddressablePrefab("p1", CreateGroup("Group1"));
+
         try
         {
+            // setup
             ScriptableBuildPipeline.slimWriteResults = true;
             ProjectConfigData.BuildLayoutReportFileFormat = fileFormat;
+            group = CreateGroup("Group1");
+            CreateAddressablePrefab("p1", group);
+            AssetDatabase.SaveAssets();
+
             BuildAndExtractLayout();
+
+            FileAssert.Exists(layoutFilePath);
         }
-        finally
+        finally // cleanup
         {
             ScriptableBuildPipeline.slimWriteResults = prevSlim;
             ProjectConfigData.BuildLayoutReportFileFormat = prevFileFormat;
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeletePrefab("p1");
         }
-
-        FileAssert.Exists(layoutFile);
-
-        File.Delete(layoutFile);
     }
 
     [Test]
     public void WhenBuildLayoutIsDisabled_BuildLayoutIsNotGenerated()
     {
         ProjectConfigData.ReportFileFormat fileFormat = ProjectConfigData.ReportFileFormat.TXT;
-        string layoutFile = BuildLayoutGenerationTask.GetLayoutFile(fileFormat);
-
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(fileFormat);
+        AddressableAssetGroup group = null;
         bool prevGenerateBuildLayout = ProjectConfigData.GenerateBuildLayout;
         ProjectConfigData.ReportFileFormat prevFileFormat = ProjectConfigData.BuildLayoutReportFileFormat;
+
         try
         {
+            // setup
             ProjectConfigData.GenerateBuildLayout = false;
             ProjectConfigData.BuildLayoutReportFileFormat = fileFormat;
-            CreateAddressablePrefab("p1", CreateGroup("Group1"));
+            group = CreateGroup("Group1");
+            CreateAddressablePrefab("p1", group);
+            AssetDatabase.SaveAssets();
+
             BuildAndExtractLayout();
+
+            // Test
+            FileAssert.DoesNotExist(layoutFilePath);
         }
-        finally
+        finally // cleanup
         {
             ProjectConfigData.GenerateBuildLayout = prevGenerateBuildLayout;
             ProjectConfigData.BuildLayoutReportFileFormat = prevFileFormat;
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeletePrefab("p1");
         }
-
-        FileAssert.DoesNotExist(layoutFile);
-
-        File.Delete(layoutFile);
     }
 
     [Test]
@@ -363,59 +465,106 @@ public class BuildLayoutGenerationTaskTests
     [TestCase(ProjectConfigData.ReportFileFormat.JSON)]
     public void WhenBuildLayoutIsEnabled_BuildLayoutIsGenerated(ProjectConfigData.ReportFileFormat format)
     {
-        string layoutFile = BuildLayoutGenerationTask.GetLayoutFile(format);
-
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(format);
+        AddressableAssetGroup group = null;
         bool prevGenerateBuildLayout = ProjectConfigData.GenerateBuildLayout;
         ProjectConfigData.ReportFileFormat prevFileFormat = ProjectConfigData.BuildLayoutReportFileFormat;
+
         try
         {
+            // setup
             ProjectConfigData.GenerateBuildLayout = true;
             ProjectConfigData.BuildLayoutReportFileFormat = format;
-            CreateAddressablePrefab("p1", CreateGroup("Group1"));
+            group = CreateGroup("Group1");
+            CreateAddressablePrefab("p1", group);
+            AssetDatabase.SaveAssets();
+
             BuildAndExtractLayout();
+
+            // Test
+            FileAssert.Exists(layoutFilePath);
+            if (format == ProjectConfigData.ReportFileFormat.JSON)
+            {
+                string text = File.ReadAllText(layoutFilePath);
+                var layout = JsonUtility.FromJson<BuildLayout>(text);
+                Assert.IsNotNull(layout);
+            }
         }
-        finally
+        finally // cleanup
         {
             ProjectConfigData.GenerateBuildLayout = prevGenerateBuildLayout;
             ProjectConfigData.BuildLayoutReportFileFormat = prevFileFormat;
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeletePrefab("p1");
         }
-
-        FileAssert.Exists(layoutFile);
-        if (format == ProjectConfigData.ReportFileFormat.JSON)
-        {
-            string text = File.ReadAllText(layoutFile);
-            var layout = JsonUtility.FromJson<BuildLayout>(text);
-            Assert.IsNotNull(layout);
-        }
-
-        File.Delete(layoutFile);
     }
 
     [Test]
     public void WhenAssetHasStreamedData_IsReportedCorrectly()
     {
-        AddressableAssetGroup group = CreateGroup("Group1");
-        string prefabGUID = CreateAddressableTexture("t1", group, 256);
-        BuildLayout layout = BuildAndExtractLayout();
-        Assert.IsTrue(layout.Groups[0].Bundles[0].Files[0].Assets[0].StreamedSize != 0);
-        BuildLayout.SubFile f = layout.Groups[0].Bundles[0].Files[0].SubFiles.First(x => x.Name.EndsWith(".resS"));
-        Assert.IsFalse(f.IsSerializedFile);
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+        AddressableAssetGroup group = null;
+
+        try
+        {
+            // setup
+            group = CreateGroup("Group1");
+            CreateAddressableTexture("t1", group, 256);
+            AssetDatabase.SaveAssets();
+
+            BuildLayout layout = BuildAndExtractLayout();
+
+            // Test
+            Assert.IsTrue(layout.Groups[0].Bundles[0].Files[0].Assets[0].StreamedSize != 0);
+            BuildLayout.SubFile f = layout.Groups[0].Bundles[0].Files[0].SubFiles.First(x => x.Name.EndsWith(".resS"));
+            Assert.IsFalse(f.IsSerializedFile);
+        }
+        finally // cleanup
+        {
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeleteTexture("t1");
+        }
     }
 
     [Test]
     public void WhenAllContentsOfAnAssetAreStripped_ExplicitAssetHasNoObjects()
     {
-        AddressableAssetGroup group = CreateGroup("Group1");
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+        AddressableAssetGroup group = null;
         string assetPath = $"{TempPath}/testpreset.preset";
-        Material obj = new Material(Shader.Find("Transparent/Diffuse"));
-        Preset myPreset = new Preset(obj);
-        AssetDatabase.CreateAsset(myPreset, assetPath);
-        GameObject.DestroyImmediate(obj);
-        AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
-        string guid = AssetDatabase.AssetPathToGUID(assetPath);
-        MakeAddressable(group, guid);
-        BuildLayout layout = BuildAndExtractLayout();
-        Assert.AreEqual(0, layout.Groups[0].Bundles[0].Files[0].Assets[0].SerializedSize);
+
+        try
+        {
+            // setup
+            Material obj = new Material(Shader.Find("Transparent/Diffuse"));
+            Preset myPreset = new Preset(obj);
+            AssetDatabase.CreateAsset(myPreset, assetPath);
+            GameObject.DestroyImmediate(obj);
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            string guid = AssetDatabase.AssetPathToGUID(assetPath);
+            group = CreateGroup("Group1");
+            MakeAddressable(group, guid);
+            AssetDatabase.SaveAssets();
+
+            BuildLayout layout = BuildAndExtractLayout();
+
+            // Test
+            Assert.AreEqual(0, layout.Groups[0].Bundles[0].Files[0].Assets[0].SerializedSize);
+        }
+        finally // cleanup
+        {
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            AssetDatabase.DeleteAsset(assetPath);
+        }
     }
 
     class SpritePackerScope : IDisposable
@@ -439,14 +588,66 @@ public class BuildLayoutGenerationTaskTests
     {
         using (new SpritePackerScope(SpritePackerMode.BuildTimeOnlyAtlas))
         {
-            BuildCache.PurgeCache(false);
-            AddressableAssetGroup group = CreateGroup("Group1");
-            string textureGUID = CreateSpriteTexture("spritetexture", 256, false);
-            MakeAddressable(group, CreateSpriteAtlas("atlas", textureGUID));
+            string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+            AddressableAssetGroup group = null;
+
+            try
+            {
+                // setup
+                BuildCache.PurgeCache(false);
+                group = CreateGroup("Group1");
+                string textureGUID = CreateSpriteTexture("spritetexture", 256, false);
+                MakeAddressable(group, CreateSpriteAtlas("atlas", textureGUID));
+                AssetDatabase.SaveAssets();
+
+                BuildLayout layout = BuildAndExtractLayout();
+
+                // Test
+                BuildLayout.DataFromOtherAsset otherAssets = layout.Groups[0].Bundles[0].Files[0].Assets[0].InternalReferencedOtherAssets[0];
+                Assert.IsTrue(otherAssets.AssetPath.StartsWith("library/atlascache", StringComparison.OrdinalIgnoreCase));
+                CollectionAssert.Contains(otherAssets.ReferencingAssets, layout.Groups[0].Bundles[0].Files[0].Assets[0]);
+            }
+            finally // cleanup
+            {
+                if (group != null)
+                    Settings.RemoveGroup(group);
+                if (File.Exists(layoutFilePath))
+                    File.Delete(layoutFilePath);
+                DeleteSpriteAtlas("atlas");
+                DeleteTexture("spritetexture");
+            }
+        }
+    }
+
+    [Test]
+    public void WhenBuildRemoteCatalogIsDisabled_BuildLayoutContainsCatalogHash()
+    {
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+        AddressableAssetGroup group = null;
+        bool prevBuildRemoteCatalog = Settings.BuildRemoteCatalog;
+
+        try
+        {
+            // setup
+            group = CreateGroup("Group1");
+            CreateAddressablePrefab("p1", group);
+            AssetDatabase.SaveAssets();
+
             BuildLayout layout = BuildAndExtractLayout();
-            BuildLayout.DataFromOtherAsset otherAssets = layout.Groups[0].Bundles[0].Files[0].Assets[0].InternalReferencedOtherAssets[0];
-            Assert.IsTrue(otherAssets.AssetPath.StartsWith("library/atlascache", StringComparison.OrdinalIgnoreCase));
-            CollectionAssert.Contains(otherAssets.ReferencingAssets, layout.Groups[0].Bundles[0].Files[0].Assets[0]);
+
+            // Test
+            Assert.IsFalse(string.IsNullOrEmpty(layout.AddressablesRuntimeSettings.CatalogHash), "Catalog Hash was not correctly written to the Layout");
+            Assert.AreEqual(32, layout.AddressablesRuntimeSettings.CatalogHash.Length, "Catalog Hash was not correctly written to the Layout, incorrect size for hash");
+            Assert.AreEqual(32, layout.BuildResultHash.Length, "Build is expected to have a result hash for the build");
+        }
+        finally // cleanup
+        {
+            Settings.BuildRemoteCatalog = prevBuildRemoteCatalog;
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeletePrefab("p1");
         }
     }
 }

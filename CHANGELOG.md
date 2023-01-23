@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.21.1] - 2022-10-5
+- Fixed issue where CcdManagedData State was not being set correctly
+- Added IP ping timeout to the Hosting Services window.
+- Fixed issue where loading cached bundles using WaitForCompletion in 2021.2+ results in an error.
+- Fixed issue when loading urls with unconverted special url characters such as a space.
+- Fixed issue where folders in Groups window would display the subObjects of assets without expanding the assets.
+- Added public API to support more detailed Build Layout
+
+
 ## [1.20.5] - 2022-08-03
 - Fixed issue where object picker for the AssetReferenceDrawer would cut off longer asset names due to only being as wide as the property drawer.
 - Improved performance of gathering assets for an AssetReference.
@@ -1196,6 +1205,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.0.8-preview] - 2018-02-08
 - Initial submission for package distribution
+
+
 
 
 

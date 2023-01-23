@@ -80,6 +80,9 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         [SerializeField]
         internal string m_LocatorId;
 
+        [SerializeField]
+        internal string m_BuildResultHash;
+
         /// <summary>
         /// Stores the id of the data provider.
         /// </summary>

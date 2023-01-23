@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -44,7 +46,10 @@ namespace UnityEditor.AddressableAssets.Settings
             internal bool generateBuildLayout = false;
 
             [SerializeField]
-            internal ReportFileFormat buildLayoutReportFileFormat = ReportFileFormat.TXT;
+            internal ReportFileFormat buildLayoutReportFileFormat = ReportFileFormat.JSON;
+
+            [SerializeField]
+            internal List<string> buildReports = new List<string>();
         }
 
         static ConfigSaveData s_Data;
@@ -94,7 +99,7 @@ namespace UnityEditor.AddressableAssets.Settings
         public enum ReportFileFormat
         {
             /// <summary>
-            /// The .txt file format.
+            /// When selected, a human readable .txt build layout will be generated alongside the .json file format
             /// </summary>
             TXT,
 
@@ -124,6 +129,62 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
         }
+
+        /// <summary>
+        /// Returns the file paths of build reports used by the Build Reports window.
+        /// </summary>
+        public static List<string> BuildReportFilePaths
+        {
+            get
+            {
+                ValidateData();
+                return s_Data.buildReports;
+            }
+        }
+
+        /// <summary>
+        /// Adds the filepath of a build report to be used by the Build Reports window
+        /// </summary>
+        /// <param name="reportFilePath">The file path to add</param>
+        public static void AddBuildReportFilePath(string reportFilePath)
+        {
+            ValidateData();
+            s_Data.buildReports.Add(reportFilePath);
+            SaveData();
+        }
+
+        /// <summary>
+        /// Removes the build report at index from the list of build reports shown in the Build Reports window
+        /// </summary>
+        /// <param name="index">The index of the build report to be removed</param>
+        public static void RemoveBuildReportFilePathAtIndex(int index)
+        {
+            ValidateData();
+            s_Data.buildReports.RemoveAt(index);
+            SaveData();
+        }
+
+        /// <summary>
+        /// Removes the build report located at reportFilePath from the list of build reports shown in the Build Reports window
+        /// </summary>
+        /// <param name="reportFilePath"></param>
+        public static void RemoveBuildReportFilePath(string reportFilePath)
+        {
+            ValidateData();
+            s_Data.buildReports.Remove(reportFilePath);
+            SaveData();
+        }
+
+        /// <summary>
+        /// Removes all build reports from the Build Reports window
+        /// </summary>
+        public static void ClearBuildReportFilePaths()
+        {
+            ValidateData();
+            s_Data.buildReports.Clear();
+            SaveData();
+        }
+
 
         /// <summary>
         /// The active play mode data builder index.
@@ -275,6 +336,9 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     s_Data = new ConfigSaveData();
                 }
+
+                if(s_Data.buildReports == null)
+                    s_Data.buildReports = new List<string>();
             }
         }
 

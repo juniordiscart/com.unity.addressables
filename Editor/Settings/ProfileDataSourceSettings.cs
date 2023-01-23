@@ -390,7 +390,7 @@ $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environme
             return badges;
         }
 
-        internal static async Task<List<Environment>> GetEnvironments()
+		internal static async Task<List<Environment>> GetEnvironments()
         {
             var authToken = await GetAuthToken();
             using (System.Net.Http.HttpClient client = new System.Net.Http.HttpClient())

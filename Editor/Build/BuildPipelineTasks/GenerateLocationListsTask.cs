@@ -89,7 +89,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         public struct Input
         {
             /// <summary>
-            /// Mapping from serialized filename to the bundle name 
+            /// Mapping from serialized filename to the bundle name
             /// </summary>
             public Dictionary<string, string> FileToBundle;
 
@@ -353,6 +353,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 case BuildTarget.StandaloneWindows64:
                 case BuildTarget.StandaloneWindows:
                 case BuildTarget.XboxOne:
+                    return '\\';
+                case BuildTarget.GameCoreXboxOne:
+                    return '\\';
+                case BuildTarget.Android:
                     return '\\';
                 default:
                     return '/';
