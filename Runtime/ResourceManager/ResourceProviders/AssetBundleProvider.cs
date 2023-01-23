@@ -555,7 +555,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			}
 
 			path = resourceManager.TransformInternalId(location);
-			if (Application.platform == RuntimePlatform.Android && path.StartsWith("jar:"))
+            if (Application.platform == RuntimePlatform.Android && path.StartsWith("jar:", StringComparison.Ordinal))
 				loadType = options.UseUnityWebRequestForLocalBundles ? LoadType.Web : LoadType.Local;
 			else if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
 				loadType = LoadType.Web;

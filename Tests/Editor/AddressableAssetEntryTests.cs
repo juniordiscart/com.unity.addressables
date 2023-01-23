@@ -22,6 +22,7 @@ namespace UnityEditor.AddressableAssets.Tests
     {
         string m_guid;
         AddressableAssetGroup m_testGroup;
+        AddressableAssetSettings m_Settings;
 
         protected override void OnInit()
         {
@@ -45,6 +46,7 @@ namespace UnityEditor.AddressableAssets.Tests
         protected override void OnCleanup()
         {
             Settings.RemoveGroup(m_testGroup);
+
         }
 
         [Test]

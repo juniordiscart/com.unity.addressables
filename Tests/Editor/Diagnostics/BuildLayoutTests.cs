@@ -10,18 +10,28 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
 {
     public class BuildLayoutTests
     {
-        private BuildLayout.ExplicitAsset CreateExplicitAssetWithParentBundle(BuildLayout.Bundle parent)
+        private BuildLayout.ExplicitAsset CreateExplicitAssetWithParentBundle(BuildLayout.Bundle parent, ulong filesize = 1)
         {
             BuildLayout.ExplicitAsset asset = new BuildLayout.ExplicitAsset();
             asset.Bundle = parent;
+            asset.SerializedSize = filesize;
             return asset;
         }
 
-        private BuildLayout.Bundle CreateBundleWithAssetCount(int assetCount, string name = "default")
+        private BuildLayout.Bundle CreateBundleWithFileSize(ulong filesize, string name = "default")
+        {
+            var bundle = new BuildLayout.Bundle();
+            bundle.Name = name;
+            bundle.FileSize = (ulong) filesize;
+            return bundle;
+        }
+
+        private BuildLayout.Bundle CreateBundleWithFileSize(int assetCount, string name = "default")
         {
             var bundle = new BuildLayout.Bundle();
             bundle.AssetCount = assetCount;
             bundle.Name = name;
+            bundle.FileSize = (ulong) assetCount;
             return bundle;
         }
 
@@ -29,8 +39,8 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
         [Test]
         public void BuildLayoutBundle_CalculateEfficiency_CorrectlyWorksInSimpleCase()
         {
-            BuildLayout.Bundle parent = CreateBundleWithAssetCount(5);
-            BuildLayout.Bundle child = CreateBundleWithAssetCount(10);
+            BuildLayout.Bundle parent = CreateBundleWithFileSize(5);
+            BuildLayout.Bundle child = CreateBundleWithFileSize(10);
 
             BuildLayout.ExplicitAsset parentAsset = CreateExplicitAssetWithParentBundle(parent);
             BuildLayout.ExplicitAsset childAsset = CreateExplicitAssetWithParentBundle(child);
@@ -38,7 +48,7 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             child.DependentBundles.Add(parent);
 
             parent.UpdateBundleDependency(parentAsset, childAsset);
-            parent.SerializeBundleToDependencyLink();
+            parent.SerializeBundleToBundleDependency();
             BuildLayoutGenerationTask.CalculateEfficiency(parent);
 
             float expectedEfficiency = .10f;
@@ -49,8 +59,8 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
         [Test]
         public void BuildLayoutBundle_CalculateEfficiency_MultipleAssetDependencyCaseStillCreatesCorrectEfficiency()
         {
-            BuildLayout.Bundle parent = CreateBundleWithAssetCount(5);
-            BuildLayout.Bundle child = CreateBundleWithAssetCount(10);
+            BuildLayout.Bundle parent = CreateBundleWithFileSize(5);
+            BuildLayout.Bundle child = CreateBundleWithFileSize(10);
 
             BuildLayout.ExplicitAsset parentAsset = CreateExplicitAssetWithParentBundle(parent);
             for (int i = 0; i < 10; i++)
@@ -59,7 +69,7 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
                 parent.UpdateBundleDependency(parentAsset, asset);
             }
 
-            parent.SerializeBundleToDependencyLink();
+            parent.SerializeBundleToBundleDependency();
             BuildLayoutGenerationTask.CalculateEfficiency(parent);
 
             float expectedEfficiency = 1f;
@@ -77,9 +87,9 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             int parentDependencyCount,
             int childDependencyCount)
         {
-            BuildLayout.Bundle grandparent = CreateBundleWithAssetCount(1);
-            BuildLayout.Bundle parent = CreateBundleWithAssetCount(parentAssetCount);
-            BuildLayout.Bundle child = CreateBundleWithAssetCount(childAssetCount);
+            BuildLayout.Bundle grandparent = CreateBundleWithFileSize(1);
+            BuildLayout.Bundle parent = CreateBundleWithFileSize(parentAssetCount);
+            BuildLayout.Bundle child = CreateBundleWithFileSize(childAssetCount);
 
             BuildLayout.ExplicitAsset grandparentAsset = CreateExplicitAssetWithParentBundle(grandparent);
             List<BuildLayout.ExplicitAsset> parentAssets = new List<BuildLayout.ExplicitAsset>();
@@ -95,8 +105,8 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
                 parent.UpdateBundleDependency(parentAssets[0], childAsset);
             }
 
-            grandparent.SerializeBundleToDependencyLink();
-            parent.SerializeBundleToDependencyLink();
+            grandparent.SerializeBundleToBundleDependency();
+            parent.SerializeBundleToBundleDependency();
 
             BuildLayoutGenerationTask.CalculateEfficiency(grandparent);
 
@@ -104,21 +114,21 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             float expectedGrandparentExpandedEfficiency = (float) (childDependencyCount + parentDependencyCount) / (childAssetCount + parentAssetCount);
             float expectedParentEfficiency = (float) childDependencyCount / childAssetCount;
             Assert.AreEqual(expectedGrandparentEfficiency, grandparent.BundleDependencies[0].Efficiency, "Grandparent Efficiency not calculated correctly - this should not be affected by the children of parent.");
-            Assert.AreEqual(expectedGrandparentExpandedEfficiency, grandparent.BundleDependencies[0].ExpandedEfficiency, "Grandparent ExpandedEfficiency not calculated correctly - this should take into account the total Efficiency of both the direct children Dependency Links as well as all DependencyLinks below the child.");
+            Assert.AreEqual(expectedGrandparentExpandedEfficiency, grandparent.BundleDependencies[0].ExpandedEfficiency, "Grandparent ExpandedEfficiency not calculated correctly - this should take into account the total Efficiency of both the direct children Dependency Links as well as all BundleDependencies below the child.");
             Assert.AreEqual(expectedParentEfficiency, parent.BundleDependencies[0].ExpandedEfficiency, "Parent ExpandedEfficiency not calculated correctly - this should take into account the Efficiency of the direct child only.");
         }
 
         [Test]
         public void BuildLayoutBundle_CalculateEfficiency_AssetDependenciesAreNotDoubleCounted()
         {
-            var parentBundle = CreateBundleWithAssetCount(1);
-            var childBundle = CreateBundleWithAssetCount(1);
+            var parentBundle = CreateBundleWithFileSize(1);
+            var childBundle = CreateBundleWithFileSize(1);
 
             var parentAsset = CreateExplicitAssetWithParentBundle(parentBundle);
             var childAsset = CreateExplicitAssetWithParentBundle(childBundle);
 
             parentBundle.UpdateBundleDependency(parentAsset, childAsset);
-            parentBundle.SerializeBundleToDependencyLink();
+            parentBundle.SerializeBundleToBundleDependency();
             BuildLayoutGenerationTask.CalculateEfficiency(parentBundle);
 
             Assert.AreEqual(1f, parentBundle.BundleDependencies[0].ExpandedEfficiency, "ExpandedEfficiency not correctly calculated");
@@ -135,9 +145,9 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             int child1DependencyCount,
             int child2DependencyCount)
         {
-            BuildLayout.Bundle parentBundle = CreateBundleWithAssetCount(2);
-            BuildLayout.Bundle childBundle1 = CreateBundleWithAssetCount(child1AssetCount);
-            BuildLayout.Bundle childBundle2 = CreateBundleWithAssetCount(child2AssetCount);
+            BuildLayout.Bundle parentBundle = CreateBundleWithFileSize(2);
+            BuildLayout.Bundle childBundle1 = CreateBundleWithFileSize(child1AssetCount);
+            BuildLayout.Bundle childBundle2 = CreateBundleWithFileSize(child2AssetCount);
 
             var parentAsset1 = CreateExplicitAssetWithParentBundle(parentBundle);
             var parentAsset2 = CreateExplicitAssetWithParentBundle(parentBundle);
@@ -154,7 +164,7 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
                 parentBundle.UpdateBundleDependency(parentAsset2, childAsset);
             }
 
-            parentBundle.SerializeBundleToDependencyLink();
+            parentBundle.SerializeBundleToBundleDependency();
             BuildLayoutGenerationTask.CalculateEfficiency(parentBundle);
 
             float expectedChild1Efficiency = (float) child1DependencyCount / child1AssetCount;
@@ -166,8 +176,8 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
         [Test]
         public void BuildLayoutBundle_CalculateEfficiency_DoesNotDoubleCountDependencies()
         {
-            BuildLayout.Bundle parent = CreateBundleWithAssetCount(2);
-            BuildLayout.Bundle child = CreateBundleWithAssetCount(2);
+            BuildLayout.Bundle parent = CreateBundleWithFileSize(2);
+            BuildLayout.Bundle child = CreateBundleWithFileSize(2);
 
             BuildLayout.ExplicitAsset parentAsset1 = CreateExplicitAssetWithParentBundle(parent);
             BuildLayout.ExplicitAsset parentAsset2 = CreateExplicitAssetWithParentBundle(parent);
@@ -176,7 +186,7 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             parent.UpdateBundleDependency(parentAsset1, childAsset1);
             parent.UpdateBundleDependency(parentAsset2, childAsset1);
 
-            parent.SerializeBundleToDependencyLink();
+            parent.SerializeBundleToBundleDependency();
             BuildLayoutGenerationTask.CalculateEfficiency(parent);
 
             float expectedEfficiency = .5f;
@@ -197,10 +207,10 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             int child1DependencyCount,
             int child2DependencyCount)
         {
-            BuildLayout.Bundle grandparent = CreateBundleWithAssetCount(1);
-            BuildLayout.Bundle parent = CreateBundleWithAssetCount(parentAssetCount);
-            BuildLayout.Bundle childBundle1 = CreateBundleWithAssetCount(child1AssetCount);
-            BuildLayout.Bundle childBundle2 = CreateBundleWithAssetCount(child2AssetCount);
+            BuildLayout.Bundle grandparent = CreateBundleWithFileSize(1);
+            BuildLayout.Bundle parent = CreateBundleWithFileSize(parentAssetCount);
+            BuildLayout.Bundle childBundle1 = CreateBundleWithFileSize(child1AssetCount);
+            BuildLayout.Bundle childBundle2 = CreateBundleWithFileSize(child2AssetCount);
 
             BuildLayout.ExplicitAsset grandparentAsset = CreateExplicitAssetWithParentBundle(grandparent);
             BuildLayout.ExplicitAsset parentAsset = CreateExplicitAssetWithParentBundle(parent);
@@ -219,8 +229,8 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
                 parent.UpdateBundleDependency(parentAsset, childAsset);
             }
 
-            grandparent.SerializeBundleToDependencyLink();
-            parent.SerializeBundleToDependencyLink();
+            grandparent.SerializeBundleToBundleDependency();
+            parent.SerializeBundleToBundleDependency();
 
             BuildLayoutGenerationTask.CalculateEfficiency(grandparent);
 
@@ -248,11 +258,11 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             int child1DependencyCount,
             int child2DependencyCount)
         {
-            BuildLayout.Bundle grandparent1 = CreateBundleWithAssetCount(1);
-            BuildLayout.Bundle grandparent2 = CreateBundleWithAssetCount(1);
-            BuildLayout.Bundle parent = CreateBundleWithAssetCount(parentAssetCount);
-            BuildLayout.Bundle child1 = CreateBundleWithAssetCount(child1AssetCount);
-            BuildLayout.Bundle child2 = CreateBundleWithAssetCount(child2AssetCount);
+            BuildLayout.Bundle grandparent1 = CreateBundleWithFileSize(1);
+            BuildLayout.Bundle grandparent2 = CreateBundleWithFileSize(1);
+            BuildLayout.Bundle parent = CreateBundleWithFileSize(parentAssetCount);
+            BuildLayout.Bundle child1 = CreateBundleWithFileSize(child1AssetCount);
+            BuildLayout.Bundle child2 = CreateBundleWithFileSize(child2AssetCount);
 
             BuildLayout.ExplicitAsset grandparent1Asset = CreateExplicitAssetWithParentBundle(grandparent1);
             BuildLayout.ExplicitAsset grandparent2Asset = CreateExplicitAssetWithParentBundle(grandparent2);
@@ -275,22 +285,22 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
 
             Dictionary<BuildLayout.Bundle.BundleDependency, BuildLayout.Bundle.EfficiencyInfo> bdCache = new Dictionary<BuildLayout.Bundle.BundleDependency, BuildLayout.Bundle.EfficiencyInfo>();
 
-            grandparent1.SerializeBundleToDependencyLink();
-            grandparent2.SerializeBundleToDependencyLink();
-            parent.SerializeBundleToDependencyLink();
+            grandparent1.SerializeBundleToBundleDependency();
+            grandparent2.SerializeBundleToBundleDependency();
+            parent.SerializeBundleToBundleDependency();
 
             BuildLayoutGenerationTask.CalculateEfficiency(grandparent1, bdCache);
 
             var ef1 = new BuildLayout.Bundle.EfficiencyInfo
             {
-                depAssetCount = child1AssetCount,
-                referencedAssetCount = child1DependencyCount
+                totalAssetFileSize = (ulong) child1AssetCount,
+                referencedAssetFileSize = (ulong) child1DependencyCount
             };
 
             var ef2 = new BuildLayout.Bundle.EfficiencyInfo
             {
-                depAssetCount = child2AssetCount,
-                referencedAssetCount = child2DependencyCount
+                totalAssetFileSize = (ulong) child2AssetCount,
+                referencedAssetFileSize = (ulong) child2DependencyCount
             };
 
 
@@ -341,10 +351,10 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             int bundleCDependencyCount,
             int bundleDDependencyCount)
         {
-            BuildLayout.Bundle bundleA = CreateBundleWithAssetCount(1);
-            BuildLayout.Bundle bundleB = CreateBundleWithAssetCount(bundleBAssetCount);
-            BuildLayout.Bundle bundleC = CreateBundleWithAssetCount(bundleCAssetCount);
-            BuildLayout.Bundle bundleD = CreateBundleWithAssetCount(bundleDAssetCount);
+            BuildLayout.Bundle bundleA = CreateBundleWithFileSize(1);
+            BuildLayout.Bundle bundleB = CreateBundleWithFileSize(bundleBAssetCount);
+            BuildLayout.Bundle bundleC = CreateBundleWithFileSize(bundleCAssetCount);
+            BuildLayout.Bundle bundleD = CreateBundleWithFileSize(bundleDAssetCount);
 
             var assetA = CreateExplicitAssetWithParentBundle(bundleA);
             var assetB = CreateExplicitAssetWithParentBundle(bundleB);
@@ -376,10 +386,10 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
                 bundleC.UpdateBundleDependency(assetC, childAsset);
             }
 
-            bundleA.SerializeBundleToDependencyLink();
-            bundleB.SerializeBundleToDependencyLink();
-            bundleC.SerializeBundleToDependencyLink();
-            bundleD.SerializeBundleToDependencyLink();
+            bundleA.SerializeBundleToBundleDependency();
+            bundleB.SerializeBundleToBundleDependency();
+            bundleC.SerializeBundleToBundleDependency();
+            bundleD.SerializeBundleToBundleDependency();
 
             BuildLayoutGenerationTask.CalculateEfficiency(bundleA);
 
@@ -405,10 +415,10 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             int bundleCToDDependencyCount,
             int bundleDToBDependencyCount)
         {
-            BuildLayout.Bundle bundleA = CreateBundleWithAssetCount(1);
-            BuildLayout.Bundle bundleB = CreateBundleWithAssetCount(bundleBAssetCount, "B");
-            BuildLayout.Bundle bundleC = CreateBundleWithAssetCount(bundleCAssetCount, "C");
-            BuildLayout.Bundle bundleD = CreateBundleWithAssetCount(bundleDAssetCount, "D");
+            BuildLayout.Bundle bundleA = CreateBundleWithFileSize(1);
+            BuildLayout.Bundle bundleB = CreateBundleWithFileSize(bundleBAssetCount, "B");
+            BuildLayout.Bundle bundleC = CreateBundleWithFileSize(bundleCAssetCount, "C");
+            BuildLayout.Bundle bundleD = CreateBundleWithFileSize(bundleDAssetCount, "D");
 
             var assetA = CreateExplicitAssetWithParentBundle(bundleA);
             var assetB = CreateExplicitAssetWithParentBundle(bundleB);
@@ -444,10 +454,10 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
                 bundleD.UpdateBundleDependency(assetD, childAsset);
             }
 
-            bundleA.SerializeBundleToDependencyLink();
-            bundleB.SerializeBundleToDependencyLink();
-            bundleC.SerializeBundleToDependencyLink();
-            bundleD.SerializeBundleToDependencyLink();
+            bundleA.SerializeBundleToBundleDependency();
+            bundleB.SerializeBundleToBundleDependency();
+            bundleC.SerializeBundleToBundleDependency();
+            bundleD.SerializeBundleToBundleDependency();
 
             BuildLayoutGenerationTask.CalculateEfficiency(bundleA);
 
@@ -467,14 +477,15 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
             BuildLayout layout = new BuildLayout();
 
             layout.BuildTarget = BuildTarget.Android;
-            layout.BuildType = BuildType.NewBuild;
+            layout.BuildResultHash = "testHash123";
+            layout.BuildType = BuildType.UpdateBuild;
             layout.BuildStart = buildDate;
             layout.Duration = 10;
             layout.BuildError = error;
 
             layout.BuildScript = "DefaultBuildScript";
 
-            BuildLayout.Bundle bundle = CreateBundleWithAssetCount(2);
+            BuildLayout.Bundle bundle = CreateBundleWithFileSize(2);
             bundle.Files = new List<BuildLayout.File>();
             BuildLayout.File file = new BuildLayout.File();
             bundle.Files.Add(file);
@@ -512,10 +523,59 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
         }
 
         [Test]
+        [TestCase(50UL, 50UL, 20UL, 20UL, 10, 5)]
+        [TestCase(30UL, 50UL, 10UL, 5UL, 3, 2)]
+        [TestCase(1UL, 1UL, 1UL, 1UL, 1, 1)]
+        [TestCase(30UL, 1UL, 30UL, 1UL, 1, 1)]
+        [TestCase(5000UL, 5000UL, 500UL, 500UL, 30, 50)]
+        public void BuildLayoutBundle_CalculateEfficiency_CorrectlyUsesFilesizeForEfficiency(
+            ulong parentTotalFilesize, ulong childTotalFilesize,
+            ulong parentDepFileSize, ulong childDepFilesize,
+            int parentDependencyCount, int childDependencyCount)
+        {
+            BuildLayout.Bundle grandparent = CreateBundleWithFileSize(1);
+            BuildLayout.Bundle parent = CreateBundleWithFileSize(parentTotalFilesize);
+            BuildLayout.Bundle child = CreateBundleWithFileSize(childTotalFilesize);
+
+            BuildLayout.ExplicitAsset grandparentAsset = CreateExplicitAssetWithParentBundle(grandparent);
+            List<BuildLayout.ExplicitAsset> parentAssets = new List<BuildLayout.ExplicitAsset>();
+            ulong expectedParentDepFileSize = 0;
+            for (int i = 0; i < parentDependencyCount; i++)
+            {
+                var curFileSize = (ulong)parentDependencyCount / parentDepFileSize;
+                expectedParentDepFileSize += curFileSize;
+                var parentAsset = CreateExplicitAssetWithParentBundle(parent, curFileSize);
+                grandparent.UpdateBundleDependency(grandparentAsset, parentAsset);
+                parentAssets.Add(parentAsset);
+            }
+
+            ulong expectedChildDepFileSize = 0;
+            for (int i = 0; i < childDependencyCount; i++)
+            {
+                var curFileSize = (ulong)childDependencyCount / childDepFilesize;
+                expectedChildDepFileSize += curFileSize;
+                var childAsset = CreateExplicitAssetWithParentBundle(child, curFileSize);
+                parent.UpdateBundleDependency(parentAssets[0], childAsset);
+            }
+
+            grandparent.SerializeBundleToBundleDependency();
+            parent.SerializeBundleToBundleDependency();
+
+            BuildLayoutGenerationTask.CalculateEfficiency(grandparent);
+
+            float expectedGrandparentEfficiency = (float) expectedParentDepFileSize / parentTotalFilesize;
+            float expectedGrandparentExpandedEfficiency = (float) (expectedParentDepFileSize + expectedChildDepFileSize) / (parentTotalFilesize + childTotalFilesize);
+            float expectedParentEfficiency = (float) expectedChildDepFileSize / childTotalFilesize;
+            Assert.AreEqual(expectedGrandparentEfficiency, grandparent.BundleDependencies[0].Efficiency, "Grandparent Efficiency not calculated correctly - this should not be affected by the children of parent.");
+            Assert.AreEqual(expectedGrandparentExpandedEfficiency, grandparent.BundleDependencies[0].ExpandedEfficiency, "Grandparent ExpandedEfficiency not calculated correctly - this should take into account the total Efficiency of both the direct children Dependency Links as well as all BundleDependencies below the child.");
+            Assert.AreEqual(expectedParentEfficiency, parent.BundleDependencies[0].ExpandedEfficiency, "Parent ExpandedEfficiency not calculated correctly - this should take into account the Efficiency of the direct child only.");
+        }
+
+        [Test]
         public void BuildLayoutBundle_SaveAndLoad_ReadsCorrectDataForHeader()
         {
             DateTime time = DateTime.Now;
-            BuildLayout layout = CreateTestLayout(time);
+            BuildLayout layout = CreateTestLayout(time, "testError123");
             time = layout.BuildStart; // due to removing miliseconds in the layout
             string filePath = $"{Application.dataPath}/testLayout.json";
 
@@ -526,10 +586,16 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
                 BuildLayout readLayout = BuildLayout.Open(filePath, false, false);
                 Assert.AreEqual(DateTime.MinValue, readLayout.BuildStart, "StartDate was not expected to have read a valid date");
 
+                // test all header values to ensure the values are as expect (not the same as default values)
                 readLayout.ReadHeader();
-                Assert.AreEqual(time, readLayout.BuildStart, "StartDate was expected to have read a valid date");
-                Assert.AreEqual(time, readLayout.Header.BuildStart, "StartDate was expected to have read a valid date from Header");
+                Assert.AreEqual(time, readLayout.Header.BuildStart, "Header Data written or Read incorrectly");
+                Assert.AreEqual(10, readLayout.Header.Duration, "Header Data written or Read incorrectly");
+                Assert.AreEqual("testError123", readLayout.Header.BuildError, "Header Data written or Read incorrectly");
+                Assert.AreEqual(BuildTarget.Android, readLayout.Header.BuildTarget, "Header Data written or Read incorrectly");
+                Assert.AreEqual(BuildType.UpdateBuild, readLayout.Header.BuildType, "Header Data written or Read incorrectly");
+                Assert.AreEqual("testHash123", readLayout.Header.BuildResultHash, "Header Data written or Read incorrectly");
 
+                // that the test groups have not been read
                 Assert.AreEqual(0, readLayout.Groups.Count, "Expect to have not read any Groups yet with only Header read");
             }
             finally

@@ -92,7 +92,23 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsTrue(cache.TryGetCached(key, out result));
             Assert.AreEqual(result, 20);
         }
-
+#if !UNITY_2020_3_OR_NEWER
+        [Test]
+        public void Hash128AppendExtensionTests()
+        {
+            var h1 = new Hash128(2351235, 3457345734, 457845683, 213451235);
+            var h2 = h1;
+            h2.Append("string");
+            Assert.AreNotEqual(h1, h2);
+            h2 = h1;
+            h2.Append(462346);
+            Assert.AreNotEqual(h1, h2);
+            h2 = h1;
+            Hash128 v = new Hash128(45346,4568234,213,35454);
+            h2.Append(ref v);
+            Assert.AreNotEqual(h1, h2);
+        }
+#endif
         [Test]
         public void SettingsCache_CacheClearedOnSettingsChanged()
         {
@@ -1181,15 +1197,10 @@ namespace UnityEditor.AddressableAssets.Tests
         public void AddressableAssetSettings_HashChanges_WhenGroupIsAdded()
         {
             var prevHash = Settings.currentHash;
-            var testGroupObj = Settings.GetGroupTemplateObject(Settings.GroupTemplateObjects.Count - 1);
-            var testGroup = Settings.groups[0];
+            var newGroup = Settings.CreateGroup("doesnt matter", true, false, false, null, typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema));
+            Assert.AreNotEqual(Settings.currentHash, prevHash);
+            Settings.RemoveGroup(newGroup);
             Assert.AreEqual(Settings.currentHash, prevHash);
-            Settings.AddGroupTemplateObject(testGroupObj);
-            Settings.groups.Add(testGroup);
-            var newHash = Settings.currentHash;
-            Assert.AreNotEqual(newHash, prevHash);
-            Settings.RemoveGroupTemplateObject(Settings.GroupTemplateObjects.Count - 1);
-            Settings.groups.RemoveAt(Settings.groups.Count - 1);
         }
 
         [Test]

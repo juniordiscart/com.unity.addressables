@@ -132,7 +132,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 m_Address = addr;
                 if (string.IsNullOrEmpty(m_Address))
                     m_Address = AssetPath;
-                if (m_GUID.Length > 0 && m_Address.Contains("[") && m_Address.Contains("]"))
+                if (m_GUID.Length > 0 && m_Address.Contains('[') && m_Address.Contains(']'))
                     Debug.LogErrorFormat("Address '{0}' cannot contain '[ ]'.", m_Address);
                 SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, this, postEvent);
             }
@@ -187,7 +187,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (!m_CheckedIsScene)
                 {
                     m_CheckedIsScene = true;
-                    m_IsScene = AssetPath.EndsWith(".unity");
+                    m_IsScene = AssetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase);
                 }
 
                 return m_IsScene;
@@ -300,7 +300,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal AddressableAssetEntry(string guid, string address, AddressableAssetGroup parent, bool readOnly)
         {
-            if (guid.Length > 0 && address.Contains("[") && address.Contains("]"))
+            if (guid.Length > 0 && address.Contains('[') && address.Contains(']'))
                 Debug.LogErrorFormat("Address '{0}' cannot contain '[ ]'.", address);
             m_GUID = guid;
             m_Address = address;
@@ -310,23 +310,28 @@ namespace UnityEditor.AddressableAssets.Settings
             IsInSceneList = false;
         }
 
-        internal void SerializeForHash(BinaryFormatter formatter, Stream stream)
+        Hash128 m_CurrentHash;
+        internal Hash128 currentHash
         {
-            formatter.Serialize(stream, m_GUID);
-            formatter.Serialize(stream, m_Address);
-            formatter.Serialize(stream, m_ReadOnly);
-            formatter.Serialize(stream, m_Labels.Count);
-
-            foreach (var t in m_Labels)
-                formatter.Serialize(stream, t);
-
-            formatter.Serialize(stream, IsInResources);
-            formatter.Serialize(stream, IsInSceneList);
-            formatter.Serialize(stream, IsSubAsset);
+            get
+            {
+                if (!m_CurrentHash.isValid)
+                {
+                    m_CurrentHash.Append(m_GUID);
+                    m_CurrentHash.Append(m_Address);
+                    m_CurrentHash.Append(m_Labels.Count);
+                    var flags = (m_ReadOnly ? 1 : 0) | (IsInResources ? 2 : 0) | (IsInSceneList ? 4 : 0) | (IsSubAsset ? 8 : 0);
+                    m_CurrentHash.Append(flags);
+                    foreach (var l in m_Labels)
+                        m_CurrentHash.Append(l);
+                }
+                return m_CurrentHash;
+            }
         }
 
         internal void SetDirty(AddressableAssetSettings.ModificationEvent e, object o, bool postEvent)
         {
+            m_CurrentHash = default;
             if (parentGroup != null)
                 parentGroup.SetDirty(e, o, postEvent, true);
         }
@@ -478,10 +483,10 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (isBundled)
                     return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchema>().GetAssetLoadPath(AssetPath, otherLoadPaths, p => guid);
                 var path = AssetPath;
-                int i = path.LastIndexOf(".unity");
+                int i = path.LastIndexOf(".unity", StringComparison.OrdinalIgnoreCase);
                 if (i > 0)
                     path = path.Substring(0, i);
-                i = path.ToLower().IndexOf("assets/");
+                i = path.IndexOf("assets/", StringComparison.OrdinalIgnoreCase);
                 if (i == 0)
                     path = path.Substring("assets/".Length);
                 return path;
@@ -491,7 +496,7 @@ namespace UnityEditor.AddressableAssets.Settings
         static string GetResourcesPath(string path)
         {
             path = path.Replace('\\', '/');
-            int ri = path.ToLower().LastIndexOf("/resources/");
+            int ri = path.LastIndexOf("/resources/", StringComparison.OrdinalIgnoreCase);
             if (ri >= 0)
                 path = path.Substring(ri + "/resources/".Length);
             int i = path.LastIndexOf('.');
@@ -604,7 +609,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
                 else
                 {
-                    if (spriteName.EndsWith("(Clone)"))
+                    if (spriteName.EndsWith("(Clone)", StringComparison.Ordinal))
                         spriteName = spriteName.Replace("(Clone)", "");
 
                     var namedAddress = string.Format("{0}[{1}]", address, spriteName);
@@ -702,7 +707,7 @@ namespace UnityEditor.AddressableAssets.Settings
         internal AddressableAssetEntry GetFolderSubEntry(string subAssetGuid, string subAssetPath)
         {
             string assetPath = AssetPath;
-            if (string.IsNullOrEmpty(assetPath) || !subAssetPath.StartsWith(assetPath))
+            if (string.IsNullOrEmpty(assetPath) || !subAssetPath.StartsWith(assetPath, StringComparison.Ordinal))
                 return null;
             var settings = parentGroup.Settings;
 
@@ -750,7 +755,7 @@ namespace UnityEditor.AddressableAssets.Settings
 #pragma warning disable 0618
         internal AddressableAssetEntry GetAssetCollectionSubEntry(string subAssetGuid)
         {
-            if (AssetPath.EndsWith(".asset") && MainAssetType == typeof_AddressableAssetEntryCollection)
+            if (AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && MainAssetType == typeof_AddressableAssetEntryCollection)
             {
                 List<AddressableAssetEntry> implicitEntries = new List<AddressableAssetEntry>();
                 GatherAssetEntryCollectionEntries(implicitEntries, null);
@@ -941,7 +946,7 @@ namespace UnityEditor.AddressableAssets.Settings
             if ((mainType == null || mainType == typeof(DefaultAsset)) && !IsInResources)
             {
                 var t = MainAssetType;
-                Debug.LogWarningFormat("Type {0} is in editor assembly {1}.  Asset location with internal id {2} will be stripped.", t.Name, t.Assembly.FullName, assetPath);
+                Debug.LogWarningFormat("Type {0} is in editor assembly {1}.  Asset location with internal id {2} will be stripped and not included in the build.", t.Name, t.Assembly.FullName, assetPath);
                 return;
             }
 

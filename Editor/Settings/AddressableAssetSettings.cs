@@ -478,7 +478,8 @@ namespace UnityEditor.AddressableAssets.Settings
 
 		[FormerlySerializedAs("m_cachedHash")]
 		[SerializeField]
-		Hash128 m_CachedHash;
+		Hash128 m_currentHash;
+		Hash128 m_selfHash;
 
 		bool m_IsTemporary;
 
@@ -839,6 +840,37 @@ namespace UnityEditor.AddressableAssets.Settings
 			return p;
 		}
 
+		Hash128 selfHash
+		{
+			get
+			{
+				if (!m_selfHash.isValid)
+				{
+					m_selfHash.Append(m_ActiveProfileId);
+				}
+				return m_selfHash;
+			}
+		}
+
+		Hash128 m_GroupsHash;
+		Hash128 groupsHash
+		{
+			get
+			{
+				if (!m_GroupsHash.isValid)
+				{
+					var gc = m_GroupAssets.Count;
+					m_GroupsHash.Append(ref gc);
+					foreach (var g in m_GroupAssets)
+					{
+						var gah = g.currentHash;
+						m_GroupsHash.Append(ref gah);
+					}
+				}
+				return m_GroupsHash;
+			}
+		}
+
 		/// <summary>
 		/// Hash of the current settings.  This value is recomputed if anything changes.
 		/// </summary>
@@ -846,23 +878,19 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			get
 			{
-				if (m_CachedHash.isValid)
-					return m_CachedHash;
-				var stream = new MemoryStream();
-				var formatter = new BinaryFormatter();
-				m_BuildSettings.SerializeForHash(formatter, stream);
-				formatter.Serialize(stream, activeProfileId);
-				formatter.Serialize(stream, m_LabelTable);
-				formatter.Serialize(stream, m_ProfileSettings);
-				formatter.Serialize(stream, m_GroupAssets.Count);
-				foreach (var g in m_GroupAssets)
+				if (!m_currentHash.isValid)
 				{
-					if (g != null)
-					{
-						g.SerializeForHash(formatter, stream);
-					}
+					var subHashes = new Hash128[]
+						{
+						selfHash,
+						m_BuildSettings.currentHash,
+						m_LabelTable.currentHash,
+						m_ProfileSettings.currentHash,
+						groupsHash
+						};
+					m_currentHash.Append(subHashes);
 				}
-				return (m_CachedHash = HashingMethods.Calculate(stream).ToHash128());
+				return m_currentHash;
 			}
 		}
 
@@ -1544,6 +1572,8 @@ namespace UnityEditor.AddressableAssets.Settings
 		}
 
 		private string m_DefaultGroupTemplateName = "Packed Assets";
+		private static Type PackedModeType = typeof(BuildScriptPackedMultiCatalogMode);
+		private static Type FastModeType = typeof(BuildScriptFastMode);
 
 		void Validate()
 		{
@@ -1579,9 +1609,9 @@ namespace UnityEditor.AddressableAssets.Settings
 			}
 
 			if (ActivePlayerDataBuilder != null && !ActivePlayerDataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
-				ActivePlayerDataBuilderIndex = m_DataBuilders.IndexOf(m_DataBuilders.Find(s => s.GetType() == typeof(BuildScriptPackedMultiCatalogMode)));
+				ActivePlayerDataBuilderIndex = m_DataBuilders.IndexOf(m_DataBuilders.Find(s => s.GetType() == PackedModeType));
 			if (ActivePlayModeDataBuilder != null && !ActivePlayModeDataBuilder.CanBuildData<AddressablesPlayModeBuildResult>())
-				ActivePlayModeDataBuilderIndex = m_DataBuilders.IndexOf(m_DataBuilders.Find(s => s.GetType() == typeof(BuildScriptFastMode)));
+				ActivePlayModeDataBuilderIndex = m_DataBuilders.IndexOf(m_DataBuilders.Find(s => s.GetType() == FastModeType));
 
 			profileSettings.Validate(this);
 			buildSettings.Validate(this);
@@ -1680,7 +1710,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
 			foreach (Type type in types)
 				newAssetGroupTemplate.AddSchema(type);
-
 
 			return true;
 		}
@@ -1865,8 +1894,32 @@ namespace UnityEditor.AddressableAssets.Settings
 				if (settingsModified && IsPersisted)
 					EditorUtility.SetDirty(this);
 			}
+			if (settingsModified)
+				m_selfHash = default;
+			if (EventAffectsGroups(modificationEvent))
+				m_GroupsHash = default;
+			m_currentHash = default;
+		}
 
-			m_CachedHash = default(Hash128);
+		private bool EventAffectsGroups(ModificationEvent modificationEvent)
+		{
+			switch (modificationEvent)
+			{
+				case ModificationEvent.BatchModification:
+				case ModificationEvent.EntryAdded:
+				case ModificationEvent.EntryCreated:
+				case ModificationEvent.EntryModified:
+				case ModificationEvent.EntryMoved:
+				case ModificationEvent.EntryRemoved:
+				case ModificationEvent.GroupAdded:
+				case ModificationEvent.GroupMoved:
+				case ModificationEvent.GroupRemoved:
+				case ModificationEvent.GroupRenamed:
+				case ModificationEvent.GroupSchemaModified:
+				case ModificationEvent.GroupSchemaRemoved:
+					return true;
+			}
+			return false;
 		}
 
 		internal bool RemoveMissingGroupReferences()
@@ -2054,7 +2107,7 @@ namespace UnityEditor.AddressableAssets.Settings
 						e.IsInResources = false;
 
 					var newEntry = CreateOrMoveEntry(item.Key, targetParent, false, false);
-					var index = oldPath.ToLower().LastIndexOf("resources/");
+					var index = oldPath.LastIndexOf("resources/", StringComparison.OrdinalIgnoreCase);
 					if (index >= 0)
 					{
 						var newAddress = oldPath.Substring(index + 10);
@@ -2137,6 +2190,10 @@ namespace UnityEditor.AddressableAssets.Settings
 			AddressableAssetEntry entry = FindAssetEntry(guid);
 			if (entry != null) //move entry to where it should go...
 			{
+				//no need to do anything if already done...
+				if (entry.parentGroup == targetParent && entry.ReadOnly == readOnly && !postEvent)
+					return entry;
+
 				MoveEntry(entry, targetParent, readOnly, postEvent);
 			}
 			else //create entry
@@ -2152,37 +2209,39 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		/// <param name="guids">The asset guid's to move.</param>
 		/// <param name="targetParent">The group to add the entries to.</param>
-		/// <param name="createdEntries">List to add new entries to.</param>
-		/// <param name="movedEntries">List to add moved entries to.</param>
+		/// <param name="createdEntries">List to add new entries to. If null, the list will be ignored.</param>
+		/// <param name="movedEntries">List to add moved entries to. If null, the list will be ignored.</param>
 		/// <param name="readOnly">Is the new entry read only.</param>
 		/// <param name="postEvent">Send modification event.</param>
 		/// <exception cref="ArgumentException"></exception>
-		internal void CreateOrMoveEntries(IEnumerable guids, AddressableAssetGroup targetParent, List<AddressableAssetEntry> createdEntries, List<AddressableAssetEntry> movedEntries,
-			bool readOnly = false, bool postEvent = true)
+		internal void CreateOrMoveEntries(IEnumerable<string> guids,
+			AddressableAssetGroup targetParent,
+			List<AddressableAssetEntry> createdEntries = null,
+			List<AddressableAssetEntry> movedEntries = null,
+			bool readOnly = false,
+			bool postEvent = true)
 		{
 			if (targetParent == null)
 				throw new ArgumentException("targetParent must not be null");
-
-			if (createdEntries == null)
-				createdEntries = new List<AddressableAssetEntry>();
-			if (movedEntries == null)
-				movedEntries = new List<AddressableAssetEntry>();
 
 			foreach (string guid in guids)
 			{
 				AddressableAssetEntry entry = FindAssetEntry(guid);
 				if (entry != null)
 				{
-					MoveEntry(entry, targetParent, readOnly, postEvent);
-					movedEntries.Add(entry);
+					MoveEntry(entry, targetParent, readOnly, false);
+					if (movedEntries != null)
+						movedEntries.Add(entry);
 				}
 				else
 				{
-					entry = CreateAndAddEntryToGroup(guid, targetParent, readOnly, postEvent);
-					if (entry != null)
+					entry = CreateAndAddEntryToGroup(guid, targetParent, readOnly, false);
+					if (entry != null && createdEntries != null)
 						createdEntries.Add(entry);
 				}
 			}
+			if (postEvent)
+				SetDirty(ModificationEvent.BatchModification, guids, true, true);
 		}
 
 		private AddressableAssetEntry CreateAndAddEntryToGroup(string guid, AddressableAssetGroup targetParent, bool readOnly = false, bool postEvent = true)
@@ -2545,7 +2604,7 @@ namespace UnityEditor.AddressableAssets.Settings
 					continue;
 				}
 
-				if (collectionPath.StartsWith("Assets"))
+				if (collectionPath.StartsWith("Assets", StringComparison.Ordinal))
 				{
 					if (!AssetDatabase.DeleteAsset(collectionPath))
 						Debug.LogError("Failed to Delete AssetEntryCollection at " + collectionPath);

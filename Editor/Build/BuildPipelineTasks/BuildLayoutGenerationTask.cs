@@ -257,7 +257,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 if (sceneObjects.Count > 0)
                 {
-                    BuildLayout.ExplicitAsset sceneAsset = file.Assets.First(x => x.AssetPath.EndsWith(".unity"));
+                    BuildLayout.ExplicitAsset sceneAsset = file.Assets.First(x => x.AssetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase));
                     AssetBucket bucket = GetOrCreate(buckets, sceneAsset.Guid);
                     bucket.objs.AddRange(sceneObjects);
                 }
@@ -623,8 +623,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         /// <summary>
         /// Calculates the Efficiency of bundle and all bundles below it in the dependency tree and caches the results.
-        /// Example: Given 3 bundles A, B, and C, each containing 10 assets. A depends on 2 assets in B, and B depends on 4 assets in C.
-        /// The Efficiency of the dependencyLink from A->B would be 2/10 -> 20% and the ExpandedEfficiency of A->B would be (2 + 4)/(10 + 10) -> 6/20 -> 30%
+        /// Example: There are 3 bundles A, B, and C, that are each 10 MB on disk. A depends on 2 MB worth of assets in B, and B depends on 4 MB worth of assets in C.
+        /// The Efficiency of the BundleDependency from A->B would be 2/10 -> 20% and the ExpandedEfficiency of A->B would be (2 + 4)/(10 + 10) -> 6/20 -> 30%
         /// </summary>
         /// <param name="bundle"> the root of the dependency tree that the CalculateEfficiency call will start from. </param>
         /// <param name="bundleDependencyCache"> Cache of all bundle dependencies that have already been calculated </param>
@@ -662,25 +662,25 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 var curBd = stk.Pop();
 
-                int totalReferencedAssetCount = 0;
-                int totalDependentAssetCount = 0;
+                ulong totalReferencedAssetFilesize = 0;
+                ulong totalDependentAssetFilesize = 0;
                 foreach (var bd in curBd.DependencyBundle.BundleDependencies)
                 {
                     if (bundleDependencyCache.TryGetValue(bd, out var ei))
                     {
-                        totalReferencedAssetCount += ei.referencedAssetCount;
-                        totalDependentAssetCount += ei.depAssetCount;
+                        totalReferencedAssetFilesize += ei.referencedAssetFileSize;
+                        totalDependentAssetFilesize += ei.totalAssetFileSize;
                     }
                 }
 
                 var newEfficiencyInfo = new BuildLayout.Bundle.EfficiencyInfo()
                 {
-                    depAssetCount = curBd.DependencyBundle.AssetCount + totalDependentAssetCount,
-                    referencedAssetCount = curBd.uniqueReferencedAssets + totalReferencedAssetCount,
+                    referencedAssetFileSize = curBd.referencedAssetsFileSize + totalReferencedAssetFilesize,
+                    totalAssetFileSize = curBd.DependencyBundle.FileSize + totalDependentAssetFilesize,
                 };
 
-                curBd.Efficiency =  newEfficiencyInfo.depAssetCount > 0 ? (float) curBd.uniqueReferencedAssets / curBd.DependencyBundle.AssetCount : 1f;
-                curBd.ExpandedEfficiency = newEfficiencyInfo.depAssetCount > 0 ? (float) newEfficiencyInfo.referencedAssetCount / newEfficiencyInfo.depAssetCount : 1f;
+                curBd.Efficiency =  newEfficiencyInfo.totalAssetFileSize > 0 ? (float) curBd.referencedAssetsFileSize / curBd.DependencyBundle.FileSize : 1f;
+                curBd.ExpandedEfficiency = newEfficiencyInfo.totalAssetFileSize > 0 ? (float) newEfficiencyInfo.referencedAssetFileSize / newEfficiencyInfo.totalAssetFileSize : 1f;
                 bundleDependencyCache[curBd] = newEfficiencyInfo;
             }
         }
@@ -777,7 +777,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             foreach (var file in b.Files)
                 b.AssetCount += file.Assets.Count;
 
-            b.SerializeBundleToDependencyLink();
+            b.SerializeBundleToBundleDependency();
         }
 
         void AddImplicitAssetsToLayout(LayoutLookupTables lookup, BuildLayout layout)

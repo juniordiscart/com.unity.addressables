@@ -134,7 +134,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
 
         protected virtual bool CanHandleEvent(string graph)
         {
-            if (graph.Contains("Count"))
+            if (AddressableAssetUtility.StringContains(graph, "Count", StringComparison.Ordinal))
                 return true;
             return OnCanHandleEvent(graph);
         }

@@ -237,7 +237,7 @@ namespace UnityEngine.AddressableAssets
         {
             var path = AddressablesRuntimeProperties.EvaluateString(id);
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_WSA || UNITY_XBOXONE || UNITY_GAMECORE || UNITY_PS5 || UNITY_PS4 || UNITY_ANDROID
-            if (path.Length >= 260 && path.StartsWith(Application.dataPath))
+            if (path.Length >= 260 && path.StartsWith(Application.dataPath, StringComparison.Ordinal))
                 path = path.Substring(Application.dataPath.Length + 1);
 #endif
             return path;
@@ -392,13 +392,13 @@ namespace UnityEngine.AddressableAssets
             Object settingsObject = null;
             string settingsPath = null;
             //this indicates that a specific addressables settings asset is being used for the runtime locations
-            if (runtimeDataPath.StartsWith("GUID:"))
+            if (runtimeDataPath.StartsWith("GUID:", StringComparison.Ordinal))
                 settingsPath = UnityEditor.AssetDatabase.GUIDToAssetPath(runtimeDataPath.Substring(runtimeDataPath.IndexOf(':') + 1));
 
             var assembly = Assembly.Load("Unity.Addressables.Editor");
             if (string.IsNullOrEmpty(settingsPath) && !UnityEditor.EditorApplication.isPlaying)
             {
-                var rtp = runtimeDataPath.StartsWith("file://") ? runtimeDataPath.Substring("file://".Length) : runtimeDataPath;
+                var rtp = runtimeDataPath.StartsWith("file://", StringComparison.Ordinal) ? runtimeDataPath.Substring("file://".Length) : runtimeDataPath;
                 if (!File.Exists(rtp))
                 {
                     var defaultSettingsObjectType = assembly.GetType("UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject");

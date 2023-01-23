@@ -707,7 +707,7 @@ namespace UnityEditor.AddressableAssets.GUI
             var assetPath = EditorUtility.OpenFilePanelWithFilters("Data Builder", "Assets", new[] {"Data Builder", "asset"});
             if (string.IsNullOrEmpty(assetPath))
                 return;
-            var builder = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath.Substring(assetPath.IndexOf("Assets/")));
+            var builder = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath.Substring(assetPath.IndexOf("Assets/", StringComparison.Ordinal)));
             if (!typeof(IDataBuilder).IsAssignableFrom(builder.GetType()))
             {
                 Debug.LogWarningFormat("Asset at {0} does not implement the IDataBuilder interface.", assetPath);
@@ -745,7 +745,7 @@ namespace UnityEditor.AddressableAssets.GUI
             var assetPath = EditorUtility.OpenFilePanelWithFilters("Assets Group Templates", "Assets", new[] {"Group Template Object", "asset"});
             if (string.IsNullOrEmpty(assetPath))
                 return;
-            if (assetPath.StartsWith(Application.dataPath) == false)
+            if (assetPath.StartsWith(Application.dataPath, StringComparison.Ordinal) == false)
             {
                 Debug.LogWarningFormat("Path at {0} is not an Asset of this project.", assetPath);
                 return;
@@ -788,7 +788,7 @@ namespace UnityEditor.AddressableAssets.GUI
             var assetPath = EditorUtility.OpenFilePanelWithFilters("Initialization Object", "Assets", new[] {"Initialization Object", "asset"});
             if (string.IsNullOrEmpty(assetPath))
                 return;
-            var initObj = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath.Substring(assetPath.IndexOf("Assets/")));
+            var initObj = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath.Substring(assetPath.IndexOf("Assets/", StringComparison.Ordinal)));
             if (!typeof(IObjectInitializationDataProvider).IsAssignableFrom(initObj.GetType()))
             {
                 Debug.LogWarningFormat("Asset at {0} does not implement the IObjectInitializationDataProvider interface.", assetPath);

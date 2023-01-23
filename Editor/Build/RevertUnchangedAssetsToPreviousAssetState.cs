@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -63,7 +64,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
             // cannot detect individual shader usage, so just assume that the shaders haven't changed, and just indeterminisn.
             if (!RevertBundleByNameContains("_unitybuiltinshaders", updateContext, aaContext))
                 return ReturnCode.Error;
-            // Scripts could have been added and fail, or removed and load fine, not enough information to know 
+            // Scripts could have been added and fail, or removed and load fine, not enough information to know
             if (!RevertBundleByNameContains("_monoscripts", updateContext, aaContext))
                 return ReturnCode.Error;
         }
@@ -77,7 +78,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
         foreach (CachedBundleState cachedBundle in updateContext.ContentState.cachedBundles)
         {
             var options = cachedBundle.data as AssetBundleRequestOptions;
-            if (options != null && options.BundleName.Contains(containingString))
+            if (options != null && AddressableAssetUtility.StringContains(options.BundleName, containingString, StringComparison.Ordinal))
             {
                 previousBundleCache = cachedBundle;
                 break;
@@ -91,7 +92,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
             if (catalogEntry.Provider == "UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider")
             {
                 var options = catalogEntry.Data as AssetBundleRequestOptions;
-                if (options != null && options.BundleName.Contains(containingString))
+                if (options != null && AddressableAssetUtility.StringContains(options.BundleName, containingString, StringComparison.Ordinal))
                 {
                     currentLocation = catalogEntry;
                     break;

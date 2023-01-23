@@ -232,7 +232,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>List of ProfileGroupType</returns>
         public List<ProfileGroupType> GetGroupTypesByPrefix(string prefix)
         {
-            return profileGroupTypes.Where((groupType) => groupType.GroupTypePrefix.StartsWith(prefix)).ToList();
+            return profileGroupTypes.Where((groupType) => groupType.GroupTypePrefix.StartsWith(prefix, StringComparison.Ordinal)).ToList();
         }
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
@@ -294,7 +294,7 @@ namespace UnityEditor.AddressableAssets.Settings
                             string buildPath = $"{AddressableAssetSettings.kCCDBuildDataPath}/{environment.id}/{bucket.Id}/{badge.Name}";
                             groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, buildPath));
 
-                            string loadPath = 
+                            string loadPath =
 $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environment.name}/buckets/{bucket.Id}/release_by_badge/{badge.Name}/entry_by_path/content/?path=";
                             groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, loadPath));
 

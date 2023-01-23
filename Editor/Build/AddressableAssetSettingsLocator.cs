@@ -196,7 +196,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         static void GatherEntryLocations(AddressableAssetEntry entry, Type type, IList<IResourceLocation> locations, AddressableAssetTree assetTree)
         {
-            if (!string.IsNullOrEmpty(entry.address) && entry.address.Contains("[") && entry.address.Contains("]"))
+            if (!string.IsNullOrEmpty(entry.address) && entry.address.Contains('[') && entry.address.Contains(']'))
             {
                 Debug.LogErrorFormat("Address '{0}' cannot contain '[ ]'.", entry.address);
                 return;
@@ -347,7 +347,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         resPath = AssetDatabase.GUIDToAssetPath(keyStr);
                         if (!string.IsNullOrEmpty(resPath))
                         {
-                            int index = resPath.IndexOf("Resources/", StringComparison.Ordinal);
+                            int index = resPath.IndexOf("Resources/", StringComparison.OrdinalIgnoreCase);
                             if (index >= 0)
                             {
                                 int start = index + 10;
@@ -395,11 +395,11 @@ namespace UnityEditor.AddressableAssets.Settings
         string GetInternalIdFromFolderEntry(string keyStr, AddressableAssetEntry entry)
         {
             var entryPath = entry.AssetPath;
-            if (keyStr.StartsWith(entry.address + "/"))
+            if (keyStr.StartsWith(entry.address + "/", StringComparison.Ordinal))
                 return entryPath + keyStr.Substring(entry.address.Length);
             foreach (var l in entry.labels)
             {
-                if (keyStr.StartsWith(l + "/"))
+                if (keyStr.StartsWith(l + "/", StringComparison.Ordinal))
                     return entryPath + keyStr.Substring(l.Length);
             }
 

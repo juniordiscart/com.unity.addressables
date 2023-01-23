@@ -207,6 +207,7 @@ static class AddressablesTestUtility
             var spriteGuid = AssetDatabase.AssetPathToGUID(spritePath);
             var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
             importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
             importer.SaveAndReimport();
 
             string atlasPath = folderPath + "/atlas.spriteatlas";

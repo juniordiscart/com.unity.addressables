@@ -200,8 +200,8 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenAssetIsNotInPackageFolder_IsPathValidPackageAsset_ReturnsFalse()
         {
-            Assert.IsFalse(AddressableAssetUtility.IsPathValidPackageAsset("Assets/file.asset"));
-            Assert.IsFalse(AddressableAssetUtility.IsPathValidPackageAsset("Packages/com.company.demo"));
+            Assert.IsFalse(AddressableAssetUtility.IsPathValidPackageAsset("assets/file.asset"));
+            Assert.IsFalse(AddressableAssetUtility.IsPathValidPackageAsset("packages/com.company.demo"));
         }
 
         [Test]
@@ -355,7 +355,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var originalNums = new List<int>() {1, 2, 3, 4, 5};
             var nums = new List<int>() {1, 2, 3, 4, 5};
 
-            //function modifies original list by adding one 
+            //function modifies original list by adding one
             AddressableAssetUtility.ParallelForEachAsync(nums, 5, (num) =>
             {
                 originalNums[num - 1] += 1;

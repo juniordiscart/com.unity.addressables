@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.21.2] - 2022-12-9
+- Fixed issue where folders in Groups window would display the subObjects of assets without expanding the assets.
+- Added the ability to copy a subAsset address to clipboard from right click.
+- Fixed bundle naming mode option names being unclear when selecting multiple groups.
+- Optimised string usage across package
+- Updated the way that the Build Layout calculates efficiency to base it off of the dependent file sizes instead of the dependent file count
+- Fixed issue where Addressables inspector would not show until Addressables settings have been initialised
+- Fixed issue where editor only assets would be marked as changed in the Check for Content Update restrictions window
+
 ## [1.21.1] - 2022-10-5
 - Fixed issue where CcdManagedData State was not being set correctly
 - Added IP ping timeout to the Hosting Services window.
@@ -11,7 +20,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed issue when loading urls with unconverted special url characters such as a space.
 - Fixed issue where folders in Groups window would display the subObjects of assets without expanding the assets.
 - Added public API to support more detailed Build Layout
-
 
 ## [1.20.5] - 2022-08-03
 - Fixed issue where object picker for the AssetReferenceDrawer would cut off longer asset names due to only being as wide as the property drawer.
@@ -1205,14 +1213,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.0.8-preview] - 2018-02-08
 - Initial submission for package distribution
-
-
-
-
-
-
-
-
-
-
 

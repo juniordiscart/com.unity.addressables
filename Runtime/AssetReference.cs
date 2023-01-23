@@ -670,7 +670,7 @@ namespace UnityEngine.AddressableAssets
         {
             Guid result;
             string guid = RuntimeKey.ToString();
-            int subObjectIndex = guid.IndexOf("[");
+            int subObjectIndex = guid.IndexOf('[');
             if (subObjectIndex != -1) //This means we're dealing with a sub-object and need to convert the runtime key.
                 guid = guid.Substring(0, subObjectIndex);
             return Guid.TryParse(guid, out result);
@@ -881,7 +881,7 @@ namespace UnityEngine.AddressableAssets
             if (editorAsset.GetType() == typeof(SpriteAtlas))
             {
                 var spriteName = value.name;
-                if (spriteName.EndsWith("(Clone)"))
+                if (spriteName.EndsWith("(Clone)", StringComparison.Ordinal))
                     spriteName = spriteName.Replace("(Clone)", "");
                 if ((editorAsset as SpriteAtlas).GetSprite(spriteName) == null)
                 {

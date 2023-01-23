@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets.Build
     public enum CheckForContentUpdateRestrictionsOptions
     {
         /// <summary>
-        /// If assets are modified that have been previously built in a Cannot Change Post Release group, 
+        /// If assets are modified that have been previously built in a Cannot Change Post Release group,
         /// the build will be paused and the Update Restrictions Check window is opened
         /// </summary>
         ListUpdatedAssetsWithRestrictions = 0,
@@ -57,7 +57,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// Pulls the Previous Content State bin from the associated Cloud Content Delivery bucket set in the profile variables.
         /// </summary>
         UseCCDBucket = 1
-        
+
     }
 #endif
 
@@ -257,8 +257,8 @@ namespace UnityEditor.AddressableAssets.Build
         private static string m_BinFileCachePath = "Library/com.unity.addressables/AddressablesBinFileDownload/addressables_content_state.bin";
 
         /// <summary>
-        /// If the previous content state file location is a remote location, this path is where the file is downloaded to as part of a 
-        /// contnet update build.  In the event of a fresh build where the previous state file build path is remote, this is the location the 
+        /// If the previous content state file location is a remote location, this path is where the file is downloaded to as part of a
+        /// content update build.  In the event of a fresh build where the previous state file build path is remote, this is the location the
         /// file is built to.
         /// </summary>
         public static string PreviousContentStateFileCachePath
@@ -730,12 +730,19 @@ namespace UnityEditor.AddressableAssets.Build
             var modifiedEntries = new List<AddressableAssetEntry>();
             foreach (var entry in allEntries)
             {
-                CachedAssetState cachedInfo;
-                if (!entryToCacheInfo.TryGetValue(entry.guid, out cachedInfo) || HasAssetOrDependencyChanged(cachedInfo))
+                if (!entryToCacheInfo.TryGetValue(entry.guid, out CachedAssetState cachedInfo) || HasAssetOrDependencyChanged(cachedInfo))
                 {
-                    modifiedEntries.Add(entry);
-                    entry.FlaggedDuringContentUpdateRestriction = true;
-                    entry.parentGroup.FlaggedDuringContentUpdateRestriction = true;
+                    Type mainType = AddressableAssetUtility.MapEditorTypeToRuntimeType(entry.MainAssetType, false);
+                    if ((mainType == null || mainType == typeof(DefaultAsset)) && !entry.IsInResources)
+                    {
+                        entry.FlaggedDuringContentUpdateRestriction = false;
+                    }
+                    else
+                    {
+                        modifiedEntries.Add(entry);
+                        entry.FlaggedDuringContentUpdateRestriction = true;
+                        entry.parentGroup.FlaggedDuringContentUpdateRestriction = true;
+                    }
                 }
                 else
                     entry.FlaggedDuringContentUpdateRestriction = false;

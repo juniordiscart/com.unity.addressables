@@ -85,8 +85,15 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField]
         string m_BundleBuildPath = "Temp/com.unity.addressables/AssetBundles";
 
-        internal void SerializeForHash(BinaryFormatter formatter, Stream stream)
+        Hash128 m_CurrentHash;
+        internal Hash128 currentHash
         {
+            get
+            {
+                if (!m_CurrentHash.isValid)
+                    HashUtilities.ComputeHash128(ref m_LogResourceManagerExceptions, ref m_CurrentHash);
+                return m_CurrentHash;
+            }
         }
 
         [NonSerialized]
@@ -94,6 +101,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         void SetDirty()
         {
+            m_CurrentHash = default;
             if (m_Settings != null)
                 m_Settings.SetDirty(AddressableAssetSettings.ModificationEvent.BuildSettingsChanged, this, true, false);
         }

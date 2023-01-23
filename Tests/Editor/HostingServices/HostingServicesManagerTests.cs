@@ -448,7 +448,6 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             HostingServicesManager.EraseSessionStateKeys();
         }
 
-        [Ignore("Katana instability https://jira.unity3d.com/browse/ADDR-2327")]
         [Test]
         public void OnDisableShould_StopAllServices()
         {

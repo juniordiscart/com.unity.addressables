@@ -24,12 +24,17 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (m_LabelNames.Contains(name))
                 return false;
+#if NET_UNITY_4_8
+            if (name.Contains('[', StringComparison.Ordinal) && name.Contains(']', StringComparison.Ordinal))
+#else
             if (name.Contains("[") && name.Contains("]"))
+#endif
             {
                 Debug.LogErrorFormat("Label name '{0}' cannot contain '[ ]'.", name);
                 return false;
             }
 
+            m_CurrentHash = default;
             m_LabelNames.Add(name);
             return true;
         }
@@ -38,12 +43,16 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (m_LabelNames.Contains(name))
                 return false;
+#if NET_UNITY_4_8
+            if (name.Contains('[', StringComparison.Ordinal) && name.Contains(']', StringComparison.Ordinal))
+#else
             if (name.Contains("[") && name.Contains("]"))
+#endif
             {
                 Debug.LogErrorFormat("Label name '{0}' cannot contain '[ ]'.", name);
                 return false;
             }
-
+            m_CurrentHash = default;
             m_LabelNames.Insert(index, name);
             return true;
         }
@@ -65,6 +74,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal bool RemoveLabelName(string name)
         {
+            m_CurrentHash = default;
             return m_LabelNames.Remove(name);
         }
 
@@ -110,6 +120,20 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (maskSet.Contains(m_LabelNames[i]))
                     val |= one << i;
             return val;
+        }
+
+        Hash128 m_CurrentHash;
+        internal Hash128 currentHash
+        {
+            get
+            {
+                if (!m_CurrentHash.isValid)
+                {
+                    foreach (var label in m_LabelNames)
+                        m_CurrentHash.Append(label);
+                }
+                return m_CurrentHash;
+            }
         }
     }
 }

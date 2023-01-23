@@ -393,7 +393,7 @@ namespace UnityEditor.AddressableAssets.Settings
         static internal string FormatName(string name)
         {
             var formatted = string.IsNullOrEmpty(name) ? "<none>" : name;
-            if (formatted.EndsWith("(Clone)"))
+            if (formatted.EndsWith("(Clone)", StringComparison.Ordinal))
                 formatted = formatted.Replace("(Clone)", "");
             return formatted;
         }

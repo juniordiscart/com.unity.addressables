@@ -17,7 +17,7 @@ namespace AddressableAssets.DocExampleCode
         static string MyCustomTransform(IResourceLocation location)
         {
             if (location.ResourceType == typeof(IAssetBundleResource)
-                && location.InternalId.StartsWith("http"))
+                && location.InternalId.StartsWith("http", System.StringComparison.Ordinal))
                 return location.InternalId + "?customQueryTag=customQueryValue";
 
             return location.InternalId;

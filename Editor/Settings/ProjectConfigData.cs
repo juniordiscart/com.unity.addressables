@@ -294,13 +294,6 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        internal static void SerializeForHash(Stream stream)
-        {
-            ValidateData();
-            BinaryFormatter formatter = new BinaryFormatter();
-            formatter.Serialize(stream, s_Data);
-        }
-
         static void ValidateData()
         {
             if (s_Data == null)

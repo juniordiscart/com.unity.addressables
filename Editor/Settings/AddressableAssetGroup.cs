@@ -70,7 +70,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (!string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
                     m_FolderEntryCache.Add(e);
 #pragma warning disable 0618
-                else if (!string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset") && e.MainAssetType == typeof(AddressableAssetEntryCollection))
+                else if (!string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && e.MainAssetType == typeof(AddressableAssetEntryCollection))
                     m_AssetCollectionEntryCache.Add(e);
 #pragma warning restore 0618
                 if (e.FlaggedDuringContentUpdateRestriction)
@@ -393,15 +393,25 @@ namespace UnityEditor.AddressableAssets.Settings
             return x.guid.CompareTo(y.guid);
         }
 
-        internal void SerializeForHash(BinaryFormatter formatter, Stream stream)
+        Hash128 m_CurrentHash;
+        internal Hash128 currentHash
         {
-            formatter.Serialize(stream, m_GroupName);
-            formatter.Serialize(stream, m_GUID);
-            formatter.Serialize(stream, entries.Count);
-            foreach (var e in entries)
-                e.SerializeForHash(formatter, stream);
-            formatter.Serialize(stream, m_ReadOnly);
-            //TODO: serialize group data
+            get
+            {
+                if (!m_CurrentHash.isValid)
+                {
+                    m_CurrentHash.Append(m_GroupName);
+                    m_CurrentHash.Append(m_GUID);
+                    m_CurrentHash.Append(entries.Count);
+                    m_CurrentHash.Append(ref m_ReadOnly);
+                    foreach (var e in entries)
+                    {
+                        var eh = e.currentHash;
+                        m_CurrentHash.Append(ref eh);
+                    }
+                }
+                return m_CurrentHash;
+            }
         }
 
         /// <summary>
@@ -673,7 +683,7 @@ namespace UnityEditor.AddressableAssets.Settings
             if (m_FolderEntryCache != null && !string.IsNullOrEmpty(e.AssetPath) && e.MainAssetType == typeof(DefaultAsset) && AssetDatabase.IsValidFolder(e.AssetPath))
                 m_FolderEntryCache.Add(e);
 #pragma warning disable 0618
-            else if (m_AssetCollectionEntryCache != null && !string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset") && e.MainAssetType == typeof(AddressableAssetEntryCollection))
+            else if (m_AssetCollectionEntryCache != null && !string.IsNullOrEmpty(e.AssetPath) && e.AssetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase) && e.MainAssetType == typeof(AddressableAssetEntryCollection))
                 m_AssetCollectionEntryCache.Add(e);
 #pragma warning restore 0618
             if (HasSchema<ContentUpdateGroupSchema>() && !GetSchema<ContentUpdateGroupSchema>().StaticContent)
@@ -744,6 +754,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="groupModified">If true, the group asset will be marked as dirty.</param>
         public void SetDirty(AddressableAssetSettings.ModificationEvent modificationEvent, object eventData, bool postEvent, bool groupModified = false)
         {
+            m_CurrentHash = default;
             if (Settings != null)
             {
                 if (groupModified && Settings.IsPersisted && this != null)

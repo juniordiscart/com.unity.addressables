@@ -261,9 +261,9 @@ namespace UnityEditor.AddressableAssets
                     prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.BuiltIn);
                 else if (groupTypeArchetype.GroupTypePrefix == "Editor Hosted")
                     prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.EditorHosted);
-                else if (groupTypeArchetype.GroupTypePrefix.StartsWith("CCD"))
+                else if (groupTypeArchetype.GroupTypePrefix.StartsWith("CCD", StringComparison.Ordinal))
                     prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.CCD);
-                else if (groupTypeArchetype.GroupTypePrefix.StartsWith("Automatic"))
+                else if (groupTypeArchetype.GroupTypePrefix.StartsWith("Automatic", StringComparison.Ordinal))
                     prefixToTypeMap.Add(groupType.GroupTypePrefix, PathType.CCD);
             }
 

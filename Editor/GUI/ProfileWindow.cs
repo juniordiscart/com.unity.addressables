@@ -401,7 +401,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
                 //Could ERR if user has group type prefix that starts with CCD
-                if (selectedGroupType.GroupTypePrefix.StartsWith("CCD"))
+                if (selectedGroupType.GroupTypePrefix.StartsWith("CCD", StringComparison.Ordinal))
                 {
                     var parts = selectedGroupType.GroupTypePrefix.Split(ProfileGroupType.k_PrefixSeparator);
                     var badgeName = String.Join(ProfileGroupType.k_PrefixSeparator.ToString(), parts, 4, parts.Length - 4);

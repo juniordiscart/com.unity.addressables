@@ -46,17 +46,31 @@ namespace UnityEditor.AddressableAssets.Settings
                 public string id
                 {
                     get { return m_Id; }
-                    set { m_Id = value; }
+                    set { m_Id = value; m_CurrentHash = default; }
                 }
 
                 [FormerlySerializedAs("m_value")]
                 [SerializeField]
                 string m_Value;
 
+                Hash128 m_CurrentHash;
+                internal Hash128 currentHash
+                {
+                    get
+                    {
+                        if (!m_CurrentHash.isValid)
+                        {
+                            m_CurrentHash.Append(m_Id);
+                            m_CurrentHash.Append(m_Value);
+                        }
+                        return m_CurrentHash;
+                    }
+                }
+
                 public string value
                 {
                     get { return m_Value; }
-                    set { m_Value = value; }
+                    set { m_Value = value; m_CurrentHash = default; }
                 }
 
                 internal ProfileEntry()
@@ -86,7 +100,7 @@ namespace UnityEditor.AddressableAssets.Settings
             public string inheritedParent
             {
                 get { return m_InheritedParent; }
-                set { m_InheritedParent = value; }
+                set { m_InheritedParent = value; m_CurrentHash = default; }
             }
 
             [FormerlySerializedAs("m_id")]
@@ -96,7 +110,7 @@ namespace UnityEditor.AddressableAssets.Settings
             internal string id
             {
                 get { return m_Id; }
-                set { m_Id = value; }
+                set { m_Id = value; m_CurrentHash = default; }
             }
 
             [FormerlySerializedAs("m_profileName")]
@@ -106,17 +120,38 @@ namespace UnityEditor.AddressableAssets.Settings
             internal string profileName
             {
                 get { return m_ProfileName; }
-                set { m_ProfileName = value; }
+                set { m_ProfileName = value; m_CurrentHash = default; }
             }
 
             [FormerlySerializedAs("m_values")]
             [SerializeField]
             List<ProfileEntry> m_Values = new List<ProfileEntry>();
 
+
+            Hash128 m_CurrentHash;
+            internal Hash128 currentHash
+            {
+                get
+                {
+                    if (!m_CurrentHash.isValid)
+                    {
+                        m_CurrentHash.Append(m_Id);
+                        m_CurrentHash.Append(m_ProfileName);
+                        m_CurrentHash.Append(m_InheritedParent);
+                        foreach (var e in m_Values)
+                        {
+                            var peh = e.currentHash;
+                            m_CurrentHash.Append(ref peh);
+                        }
+                    }
+                    return m_CurrentHash;
+                }
+            }
+
             internal List<ProfileEntry> values
             {
                 get { return m_Values; }
-                set { m_Values = value; }
+                set { m_Values = value; m_CurrentHash = default; }
             }
 
             internal BuildProfile(string name, BuildProfile copyFrom, AddressableAssetProfileSettings ps)
@@ -160,6 +195,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 var i = values.FindIndex(v => v.id == variableId);
                 if (i >= 0)
                     values[i].value = val;
+                m_CurrentHash = default;
             }
         }
 
@@ -214,6 +250,20 @@ namespace UnityEditor.AddressableAssets.Settings
                 get { return m_Name; }
             }
 
+            Hash128 m_CurrentHash;
+            internal Hash128 currentHash
+            {
+                get
+                {
+                    if (!m_CurrentHash.isValid)
+                    {
+                        m_CurrentHash.Append(m_Id);
+                        m_CurrentHash.Append(m_Name);
+                        m_CurrentHash.Append(ref m_InlineUsage);
+                    }
+                    return m_CurrentHash;
+                }
+            }
             /// <summary>
             /// Changes the name of a given profile and updates the values in the profile settings.
             /// </summary>
@@ -234,7 +284,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     foreach (var v in p.values)
                         v.value = v.value.Replace(currRefStr, newRefStr);
                 }
-
+                m_CurrentHash = default;
                 profileSettings.SetDirty(AddressableAssetSettings.ModificationEvent.ProfileModified, null, false);
                 ProfileWindow.MarkForReload();
             }
@@ -276,6 +326,30 @@ namespace UnityEditor.AddressableAssets.Settings
         internal int m_ProfileVersion;
 
         const int k_CurrentProfileVersion = 1;
+
+
+        Hash128 m_CurrentHash;
+        internal Hash128 currentHash
+        {
+            get
+            {
+                if (!m_CurrentHash.isValid)
+                {
+                    m_CurrentHash.Append(m_ProfileVersion);
+                    foreach (var p in m_ProfileEntryNames)
+                    {
+                        var peh = p.currentHash;
+                        m_CurrentHash.Append(ref peh);
+                    }
+                    foreach (var p in m_Profiles)
+                    {
+                        var peh = p.currentHash;
+                        m_CurrentHash.Append(ref peh);
+                    }
+                }
+                return m_CurrentHash;
+            }
+        }
 
         internal List<ProfileIdData> profileEntryNames
         {
@@ -319,6 +393,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public const string undefinedEntryValue = "<undefined>";
 
+        const string k_RootProfileName = "Default";
 
         /// <summary>
         /// Get the profile specific data for a given profile id.
@@ -347,6 +422,7 @@ namespace UnityEditor.AddressableAssets.Settings
         public string Reset()
         {
             m_Profiles = new List<BuildProfile>();
+            m_CurrentHash = default;
             return CreateDefaultProfile();
         }
 
@@ -387,8 +463,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             CreateDefaultProfile();
         }
-
-        const string k_RootProfileName = "Default";
 
         internal string CreateDefaultProfile()
         {
@@ -537,6 +611,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="postEvent">If true, the event is propagated to callbacks.</param>
         public void SetDirty(AddressableAssetSettings.ModificationEvent modificationEvent, object eventData, bool postEvent)
         {
+            m_CurrentHash = default;
             if (m_Settings != null)
                 m_Settings.SetDirty(modificationEvent, eventData, postEvent, true);
         }

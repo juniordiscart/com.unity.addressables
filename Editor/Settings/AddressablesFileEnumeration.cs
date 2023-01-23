@@ -51,7 +51,7 @@ namespace UnityEditor.AddressableAssets.Settings
             if (node.Children != null)
             {
                 List<TreeNode> curDirectory = new List<TreeNode>(node.Children.Values.Where(x => !x.IsAddressable));
-                curDirectory.Sort((x, y) => { return string.Compare(x.Path, y.Path); });
+                curDirectory.Sort((x, y) => { return string.CompareOrdinal(x.Path, y.Path); });
                 string pathPrepend = string.IsNullOrEmpty(relativePath) ? "" : $"{relativePath}/";
                 foreach (var v in curDirectory)
                 {

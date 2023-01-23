@@ -118,6 +118,8 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
         private LayoutHeader m_Header;
 
+        #region HeaderValues // Any values in here should also be in BuildLayoutHeader class
+
         /// <summary>
         /// Build Platform Addressables build is targeting
         /// </summary>
@@ -168,6 +170,8 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Null or Empty if the build completed successfully, else contains error causing the failure
         /// </summary>
         public string BuildError;
+
+        #endregion // End of header values
 
         /// <summary>
         /// Version of the Unity edtior used to perform the build.
@@ -239,6 +243,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         private class BuildLayoutHeader
         {
             public BuildTarget BuildTarget;
+            public string BuildResultHash;
             public BuildType BuildType;
             public string BuildStartTime;
             public double Duration;
@@ -282,27 +287,37 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         {
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
 
-            BuildLayoutHeader header = new BuildLayoutHeader()
-            {
-                BuildTarget = this.BuildTarget,
-                BuildType = this.BuildType,
-                BuildStartTime = this.BuildStartTime,
-                Duration = this.Duration,
-                BuildError = this.BuildError
-            };
-            string headerJson = JsonUtility.ToJson(header, false);
-            headerJson = headerJson.Remove(headerJson.Length - 1, 1) + ',';
+            string versionElementString = "\"UnityVersion\":";
+            string headerJson = null;
             string bodyJson = JsonUtility.ToJson(this, prettyPrint);
 
-            string buildError = "\"UnityVersion\":";
-            int index = bodyJson.IndexOf(buildError);
-            bodyJson = bodyJson.Remove(0, index);
+            if (prettyPrint)
+            {
+                BuildLayoutHeader header = new BuildLayoutHeader()
+                {
+                    BuildTarget = this.BuildTarget,
+                    BuildResultHash = this.BuildResultHash,
+                    BuildType = this.BuildType,
+                    BuildStartTime = this.BuildStartTime,
+                    Duration = this.Duration,
+                    BuildError = this.BuildError
+                };
+                headerJson = JsonUtility.ToJson(header, false);
+                headerJson = headerJson.Remove(headerJson.Length - 1, 1) + ',';
+            }
+
+            int index = bodyJson.IndexOf(versionElementString);
+            if (prettyPrint)
+                bodyJson = bodyJson.Remove(0, index);
+            else
+                bodyJson = bodyJson.Insert(index, "\n");
 
             using (FileStream s = System.IO.File.Open(destinationPath, FileMode.Create))
             {
                 using (StreamWriter sw = new StreamWriter(s))
                 {
-                    sw.WriteLine(headerJson);
+                    if (prettyPrint)
+                        sw.WriteLine(headerJson);
                     sw.Write(bodyJson);
                 }
             }
@@ -754,16 +769,16 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 /// <summary>
                 /// Percentage of Efficiency asset usage that uses the entire dependency tree of this bundle dependency.
                 /// This includes DependencyBundle and all bundles beneath it.
-                /// Value is equal to [Total Number of Dependency Assets] / [Total Number of Assets in Dependency Bundles]
-                /// Example: Given 3 bundles A, B, and C, each containing 10 assets. A depends on 2 assets in B, and B depends on 4 assets in C.
+                /// Value is equal to [Total Filesize of Dependency Assets] / [Total size of all dependency bundles on disk]
+                /// Example: There are 3 bundles A, B, and C, that are each 10 MB on disk. A depends on 2 MB worth of assets in B, and B depends on 4 MB worth of assets in C.
                 /// The Efficiency of the dependencyLink from A->B would be 2/10 -> 20% and the ExpandedEfficiency of A->B would be (2 + 4)/(10 + 10) -> 6/20 -> 30%
                 ///  </summary>
                 public float ExpandedEfficiency;
 
                 /// <summary>
                 /// The Efficiency of the connection between the parent bundle and DependencyBundle irrespective of the full dependency tree below DependencyBundle.
-                /// Value is equal to [Number Of Assets In Dependency Bundle Referenced By Parent]/[Number of Assets In Dependency Bundle]
-                /// Example: Given two Bundles A and B with 10 assets each, and A depends on 5 assets in B, then the Efficiency of DependencyLink A->B is 5/10 = .5
+                /// Value is equal to [Serialized Filesize of assets In Dependency Bundle Referenced By Parent]/[Total size of Dependency Bundle on disk]
+                /// Example: Given two Bundles A and B that are each 10 MB on disk, and A depends on 5 MB worth of assets in B, then the Efficiency of BundleDependency A->B is 5/10 = .5
                 /// </summary>
                 public float Efficiency;
 
@@ -772,7 +787,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 /// <summary>
                 /// The number of uniquely assets that the parent bundle uniquely references in dependency bundle. This is used to calculate Efficiency without double counting.
                 /// </summary>
-                internal int uniqueReferencedAssets => referencedAssets.Count;
+                internal ulong referencedAssetsFileSize = 0;
 
                 internal BundleDependency(Bundle b)
                 {
@@ -782,8 +797,11 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
                 internal void CreateAssetDependency(ExplicitAsset root, ExplicitAsset dependencyAsset)
                 {
+                    if (referencedAssets.Contains(dependencyAsset))
+                        return;
                     referencedAssets.Add(dependencyAsset);
                     AssetDependencies.Add(new AssetDependency(root, dependencyAsset));
+                    referencedAssetsFileSize += dependencyAsset.SerializedSize;
                 }
 
 
@@ -814,7 +832,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// Convert BundleDependencyMap to a format that is able to be serialized and plays nicer with
             /// CalculateEfficiency - this must be called on a bundle before CalculateEfficiency can be called.
             /// </summary>
-            internal void SerializeBundleToDependencyLink()
+            internal void SerializeBundleToBundleDependency()
             {
                 BundleDependencies = new BundleDependency[BundleDependencyMap.Values.Count];
                 BundleDependencyMap.Values.CopyTo(BundleDependencies, 0);
@@ -840,9 +858,10 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             // Helper struct for calculating Efficiency
             internal struct EfficiencyInfo
             {
-                internal int depAssetCount;
-                internal int referencedAssetCount;
+                internal ulong totalAssetFileSize;
+                internal ulong referencedAssetFileSize;
             }
+
 
             /// <summary>
             /// The Compression method used for the AssetBundle.

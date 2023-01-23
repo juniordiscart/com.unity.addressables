@@ -111,8 +111,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 		protected bool IsValidPath(string path)
 		{
 			return AddressableAssetUtility.IsPathValidForEntry(path) &&
-				!path.ToLower().Contains("/resources/") &&
-				!path.ToLower().StartsWith("resources/");
+                   !AddressableAssetUtility.StringContains(path, "/Resources/", StringComparison.OrdinalIgnoreCase);
 		}
 
 		/// <summary>
@@ -196,7 +195,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 				}
 
 				string[] dependencies;
-				if (path.EndsWith(".unity"))
+                if (path.EndsWith(".unity", StringComparison.OrdinalIgnoreCase))
 				{
 					using (var w = new BuildInterfacesWrapper())
 					{
@@ -231,7 +230,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 
 				foreach (string dependency in dependencies)
 				{
-					if (dependency.EndsWith(".cs") || dependency.EndsWith(".dll"))
+                    if (dependency.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) || dependency.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
 						continue;
 					m_ResourcesToDependencies[path].Add(new GUID(AssetDatabase.AssetPathToGUID(dependency)));
 				}

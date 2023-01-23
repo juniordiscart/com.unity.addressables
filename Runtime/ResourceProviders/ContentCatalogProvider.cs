@@ -212,7 +212,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     {
                         throw new ArgumentNullException(nameof(bundlePath), "Catalog bundle path is null.");
                     }
-                    else if (!bundlePath.EndsWith(".bundle"))
+                    else if (!bundlePath.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase))
                     {
                         throw new ArgumentException("You must supply a valid bundle file path.");
                     }

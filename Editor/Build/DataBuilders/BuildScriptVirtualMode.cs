@@ -339,7 +339,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
         static bool IsInternalIdLocal(string path)
         {
-            return path.StartsWith("{UnityEngine.AddressableAssets.Addressables.RuntimePath}");
+            return path.StartsWith("{UnityEngine.AddressableAssets.Addressables.RuntimePath}", StringComparison.Ordinal);
         }
 
         static string OutputLibraryPathForAsset(string a)

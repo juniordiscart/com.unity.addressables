@@ -553,7 +553,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// <returns>Returns true if path is remote.</returns>
         public static bool IsPathRemote(string path)
         {
-            return path != null && path.StartsWith("http");
+            return path != null && path.StartsWith("http", StringComparison.Ordinal);
         }
 
         /// <summary>

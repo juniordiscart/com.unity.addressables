@@ -332,7 +332,7 @@ namespace UnityEditor.AddressableAssets.GUI
                                 groupType.GroupTypePrefix.StartsWith(
                                     String.Join(
                                         ProfileGroupType.k_PrefixSeparator.ToString(), new string[] { "CCD", CloudProjectSettings.projectId, m_EnvironmentId, m_BucketId }
-                                    )
+                                    ), StringComparison.Ordinal
                                 )
                                 ).ToList();
 

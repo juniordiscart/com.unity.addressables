@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,6 +18,7 @@ namespace UnityEditor.AddressableAssets.Tests
         protected string TestFolder => $"Assets/{TestFolderName}";
         protected string TestFolderName => $"{GetType()}_Tests";
         protected string ConfigFolder => TestFolder + "/Config";
+        protected string AddressablesFolder => $"Assets/AddressableAssetsData";
 
 
         protected string GetAssetPath(string assetName)
@@ -30,7 +32,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             get
             {
-                if (m_Settings == null)
+                if (!m_Settings || m_Settings.groups.IsNullOrEmpty())
                     m_Settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName, true, PersistSettings);
                 return m_Settings;
             }
@@ -55,6 +57,13 @@ namespace UnityEditor.AddressableAssets.Tests
                 Debug.Log($"{GetType()} (init) - deleting {TestFolder}");
                 if (!AssetDatabase.DeleteAsset(TestFolder))
                     Directory.Delete(TestFolder);
+            }
+
+            if (Directory.Exists(AddressablesFolder))
+            {
+                Debug.Log($"{GetType()} (init) - deleting {AddressablesFolder}");
+                if (!AssetDatabase.DeleteAsset(AddressablesFolder))
+                    Directory.Delete(AddressablesFolder);
             }
 
             Debug.Log($"{GetType()} (init) - creating {TestFolder}");
@@ -127,6 +136,13 @@ namespace UnityEditor.AddressableAssets.Tests
                 AssetDatabase.DeleteAsset(TestFolder);
             }
 
+            if (Directory.Exists(AddressablesFolder))
+            {
+                Debug.Log($"{GetType()} (init) - deleting {AddressablesFolder}");
+                if (!AssetDatabase.DeleteAsset(AddressablesFolder))
+                    Directory.Delete(AddressablesFolder);
+            }
+
             EditorBuildSettings.RemoveConfigObject(k_TestConfigName);
         }
 
@@ -166,7 +182,7 @@ namespace UnityEditor.AddressableAssets.Tests
         protected string CreateFolderDeep(string path)
         {
             path = path.Replace('\\', '/');
-            if (!path.StartsWith("Assets/"))
+            if (!path.StartsWith("Assets/", StringComparison.Ordinal))
                 return null;
 
             if (Directory.Exists(path))

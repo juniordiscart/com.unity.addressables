@@ -143,9 +143,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 					return SceneManager.LoadSceneAsync(path, loadSceneParameters);
 				else
 				{
-					if (!path.ToLower().StartsWith("assets/") && !path.ToLower().StartsWith("packages/"))
+                    if (!path.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) && !path.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
 						path = "Assets/" + path;
-					if (path.LastIndexOf(".unity") == -1)
+                    if (path.LastIndexOf(".unity", StringComparison.OrdinalIgnoreCase) == -1)
 						path += ".unity";
 
 					return UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(path, loadSceneParameters);

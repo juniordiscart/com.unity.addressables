@@ -49,6 +49,7 @@ namespace LegacyResourcesTests
             CreateTextureOnPath(spritePath);
             var importer = AssetImporter.GetAtPath(spritePath) as TextureImporter;
             importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
             importer.SaveAndReimport();
         }
 

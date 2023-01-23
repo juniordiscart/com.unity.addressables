@@ -22,21 +22,74 @@ namespace UnityEditor.AddressableAssets.Settings
 
     internal static class AddressableAssetUtility
     {
+#if !UNITY_2020_3_OR_NEWER
+        //these extention methods are needed prior to 2020.3 since they are not available
+        public static void Append(this ref Hash128 thisHash, string val)
+        {
+            Hash128 valHash = Hash128.Compute(val);
+            HashUtilities.AppendHash(ref valHash, ref thisHash);
+        }
+
+        public static void Append(this ref Hash128 thisHash, int val)
+        {
+            Hash128 valHash = default;
+            HashUtilities.ComputeHash128(ref val, ref valHash);
+            HashUtilities.AppendHash(ref valHash, ref thisHash);
+        }
+
+        public static void Append(this ref Hash128 thisHash, Hash128[] vals)
+        {
+            Hash128 valHash = default;
+            for (int i = 0; i < vals.Length; i++)
+            {
+                HashUtilities.ComputeHash128(ref vals[i], ref valHash);
+                HashUtilities.AppendHash(ref valHash, ref thisHash);
+            }
+        }
+
+        public static void Append<T>(this ref Hash128 thisHash, ref T val) where T : unmanaged
+        {
+            Hash128 valHash = default;
+            HashUtilities.ComputeHash128(ref val, ref valHash);
+            HashUtilities.AppendHash(ref valHash, ref thisHash);
+        }
+#endif
+
         internal static bool IsInResources(string path)
         {
+#if NET_UNITY_4_8
+            return path.Replace('\\', '/').Contains("/Resources/", StringComparison.OrdinalIgnoreCase);
+#else
             return path.Replace('\\', '/').ToLower().Contains("/resources/");
+#endif
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        internal static bool StringContains(string input, string value, StringComparison comp)
+        {
+#if NET_UNITY_4_8
+            return input.Contains(value, comp);
+#else
+            return input.Contains(value);
+#endif
         }
 
         internal static bool TryGetPathAndGUIDFromTarget(Object target, out string path, out string guid)
         {
-            guid = string.Empty;
-            path = string.Empty;
             if (target == null)
+            {
+                guid = string.Empty;
+                path = string.Empty;
                 return false;
+            }
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out guid, out long id))
+            {
+                guid = string.Empty;
+                path = string.Empty;
+                return false;
+            }
             path = AssetDatabase.GetAssetOrScenePath(target);
             if (!IsPathValidForEntry(path))
-                return false;
-            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out guid, out long id))
                 return false;
             return true;
         }
@@ -48,9 +101,14 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (string.IsNullOrEmpty(path))
                 return false;
-            path = path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
 
-            if (!path.StartsWith("Assets", StringComparison.Ordinal) && !IsPathValidPackageAsset(path))
+            if (path.Contains('\\'))
+                path = path.Replace('\\', Path.DirectorySeparatorChar);
+
+            if (Path.DirectorySeparatorChar != '/' && path.Contains('/'))
+                path = path.Replace('/', Path.DirectorySeparatorChar);
+
+            if (!path.StartsWith("Assets", StringComparison.OrdinalIgnoreCase) && !IsPathValidPackageAsset(path))
                 return false;
 
             string ext = Path.GetExtension(path);
@@ -59,17 +117,27 @@ namespace UnityEditor.AddressableAssets.Settings
                 // is folder
                 if (path == "Assets")
                     return false;
-                if (path.EndsWith(isEditorFolder, StringComparison.Ordinal) || path.Contains(insideEditorFolder))
-                    return false;
-                if (path == CommonStrings.UnityEditorResourcePath ||
-                    path == CommonStrings.UnityDefaultResourcePath ||
-                    path == CommonStrings.UnityBuiltInExtraPath)
+                int editorIndex = path.IndexOf(isEditorFolder, StringComparison.OrdinalIgnoreCase);
+                if (editorIndex != -1)
+                {
+                    int length = path.Length;
+                    if (editorIndex == length - 7)
+                        return false;
+                    if (path[editorIndex + 7] == '/')
+                        return false;
+                    // Could still have something like Assets/editorthings/Editor/things, but less likely
+                    if (StringContains(path, insideEditorFolder, StringComparison.OrdinalIgnoreCase))
+                        return false;
+                }
+                if (String.Equals(path, CommonStrings.UnityEditorResourcePath, StringComparison.Ordinal) ||
+                    String.Equals(path, CommonStrings.UnityDefaultResourcePath, StringComparison.Ordinal) ||
+                    String.Equals(path, CommonStrings.UnityBuiltInExtraPath, StringComparison.Ordinal))
                     return false;
             }
             else
             {
                 // asset type
-                if (path.Contains(insideEditorFolder))
+                if (StringContains(path, insideEditorFolder, StringComparison.OrdinalIgnoreCase))
                     return false;
                 if (excludedExtensions.Contains(ext))
                     return false;
@@ -82,15 +150,15 @@ namespace UnityEditor.AddressableAssets.Settings
             return true;
         }
 
-        internal static bool IsPathValidPackageAsset(string path)
+        internal static bool IsPathValidPackageAsset(string pathLowerCase)
         {
-            string[] splitPath = path.ToLower().Split(Path.DirectorySeparatorChar);
+            string[] splitPath = pathLowerCase.Split(Path.DirectorySeparatorChar);
 
             if (splitPath.Length < 3)
                 return false;
-            if (splitPath[0] != "packages")
+            if (!String.Equals(splitPath[0], "packages", StringComparison.OrdinalIgnoreCase))
                 return false;
-            if (splitPath[2] == "package.json")
+            if (String.Equals(splitPath[2], "package.json", StringComparison.OrdinalIgnoreCase))
                 return false;
             return true;
         }

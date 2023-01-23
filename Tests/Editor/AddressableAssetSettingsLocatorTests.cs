@@ -78,7 +78,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Directory.CreateDirectory(path);
             foreach (var a in assetNames)
             {
-                var guid = a.EndsWith(".unity") ? CreateScene(Path.Combine(path, a)) : CreateAsset(a, Path.Combine(path, a));
+                var guid = a.EndsWith(".unity", StringComparison.OrdinalIgnoreCase) ? CreateScene(Path.Combine(path, a)) : CreateAsset(a, Path.Combine(path, a));
                 guids?.Add(guid);
             }
 

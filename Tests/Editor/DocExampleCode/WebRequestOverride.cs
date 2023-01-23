@@ -1,3 +1,4 @@
+using System;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace AddressableAssets.DocExampleCode
@@ -21,9 +22,9 @@ namespace AddressableAssets.DocExampleCode
         //Override the url of the WebRequest, the request passed to the method is what would be used as standard by Addressables.
         private void EditWebRequestURL(UnityWebRequest request)
         {
-            if (request.url.EndsWith(".bundle"))
+            if (request.url.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase))
                 request.url = request.url + "?customQueryTag=customQueryValue";
-            else if (request.url.EndsWith(".json") || request.url.EndsWith(".hash"))
+            else if (request.url.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || request.url.EndsWith(".hash", StringComparison.OrdinalIgnoreCase))
                 request.url = request.url + "?customQueryTag=customQueryValue";
         }
     }

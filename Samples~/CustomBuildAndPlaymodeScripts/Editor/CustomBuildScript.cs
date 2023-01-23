@@ -277,7 +277,7 @@ public class CustomBuildScript : BuildScriptBase
                         for (int i = 0; i < buildBundles.Count; ++i)
                         {
                             var b = m_AllBundleInputDefs.FindIndex(inputDef =>
-                                buildBundles[i].StartsWith(inputDef.assetBundleName));
+                                buildBundles[i].StartsWith(inputDef.assetBundleName, StringComparison.Ordinal));
                             outputBundles.Add(b >= 0 ? m_OutputAssetBundleNames[b] : buildBundles[i]);
                         }
 
@@ -637,7 +637,7 @@ public class CustomBuildScript : BuildScriptBase
 
     static string StripHashFromBundleLocation(string hashedBundleLocation)
     {
-        return hashedBundleLocation.Remove(hashedBundleLocation.LastIndexOf("_")) + ".bundle";
+        return hashedBundleLocation.Remove(hashedBundleLocation.LastIndexOf('_')) + ".bundle";
     }
 
     /// <inheritdoc />
@@ -733,7 +733,7 @@ public class CustomBuildScript : BuildScriptBase
 
 #if UNITY_2022_1_OR_NEWER
            string loadPath = schema.LoadPath.GetValue(aaContext.Settings);
-           if (loadPath.StartsWith("http://") && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
+           if (loadPath.StartsWith("http://", StringComparison.Ordinal) && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
                 Addressables.LogWarning($"Addressable group {assetGroup.Name} uses insecure http for its load path.  To allow http connections for UnityWebRequests, change your settings in Edit > Project Settings > Player > Other Settings > Configuration > Allow downloads over HTTP.");
 #endif
         if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && aaContext.runtimeData.BuildTarget == BuildTarget.WebGL.ToString())
@@ -1111,7 +1111,7 @@ public class CustomBuildScript : BuildScriptBase
                 dataEntry.Data = requestOptions;
 
                 if (assetGroup == assetGroup.Settings.DefaultGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) &&
-                    (info.FileName.EndsWith("_unitybuiltinshaders.bundle") || info.FileName.EndsWith("_monoscripts.bundle")))
+                    (info.FileName.EndsWith("_unitybuiltinshaders.bundle", StringComparison.Ordinal) || info.FileName.EndsWith("_monoscripts.bundle", StringComparison.Ordinal)))
                 {
                     outputBundles[i] = ConstructAssetBundleName(null, schema, info, outputBundles[i]);
                 }
@@ -1130,9 +1130,9 @@ public class CustomBuildScript : BuildScriptBase
                 if (!m_BundleToInternalId.ContainsKey(buildBundles[i]))
                     m_BundleToInternalId.Add(buildBundles[i], dataEntry.InternalId);
 
-                if (dataEntry.InternalId.StartsWith("http:\\"))
+                if (dataEntry.InternalId.StartsWith("http:\\", StringComparison.Ordinal))
                     dataEntry.InternalId = dataEntry.InternalId.Replace("http:\\", "http://").Replace("\\", "/");
-                if (dataEntry.InternalId.StartsWith("https:\\"))
+                if (dataEntry.InternalId.StartsWith("https:\\", StringComparison.Ordinal))
                     dataEntry.InternalId = dataEntry.InternalId.Replace("https:\\", "https://").Replace("\\", "/");
             }
             else

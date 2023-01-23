@@ -202,7 +202,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             string newAddress = EditorGUILayout.DelayedTextField(entryInfo.Address, GUILayout.ExpandWidth(true));
                             if (newAddress != entryInfo.Address)
                             {
-                                if (newAddress.Contains("[") && newAddress.Contains("]"))
+                                if (newAddress.Contains('[') && newAddress.Contains(']'))
                                     Debug.LogErrorFormat("Rename of address '{0}' cannot contain '[ ]'.", entryInfo.Address);
                                 else
                                 {
@@ -244,17 +244,14 @@ namespace UnityEditor.AddressableAssets.GUI
 
         internal static List<TargetInfo> GatherTargetInfos(Object[] targets, AddressableAssetSettings aaSettings)
         {
-            if (aaSettings == null)
-                return new List<TargetInfo>();
-
             int selectionHashCode = targets[0].GetHashCode();
             for (int i = 1; i < targets.Length; ++i)
                 selectionHashCode = selectionHashCode * 31 ^ targets[i].GetHashCode();
 
             List<TargetInfo> targetInfos = null;
-            if (s_Cache == null)
+            if (s_Cache == null && aaSettings != null)
                 s_Cache = new AddressableAssetSettings.Cache<int, List<TargetInfo>>(aaSettings);
-            if (s_Cache.TryGetCached(selectionHashCode, out targetInfos))
+            if (s_Cache != null && s_Cache.TryGetCached(selectionHashCode, out targetInfos))
                 return targetInfos;
 
             targetInfos = new List<TargetInfo>(targets.Length);
@@ -281,7 +278,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
             }
 
-            if (targetInfos != null && targetInfos.Count > 0)
+            if (s_Cache != null && targetInfos != null && targetInfos.Count > 0)
                 s_Cache.Add(selectionHashCode, targetInfos);
             return targetInfos;
         }

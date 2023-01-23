@@ -127,7 +127,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
             }
 
             // Registers events under "Event Counts" (excluding instantiations)
-            if (recordEvent && !evt.DisplayName.StartsWith("Instance"))
+            if (recordEvent && !evt.DisplayName.StartsWith("Instance", StringComparison.Ordinal))
             {
                 HandleRecordedEvent(evt);
             }
@@ -143,7 +143,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.Data
                 m_LastFrameInstantiationCount = 0;
             }
 
-            if (evt.DisplayName.StartsWith("Instance"))
+            if (evt.DisplayName.StartsWith("Instance", StringComparison.Ordinal))
             {
                 if ((ResourceManager.DiagnosticEventType)evt.Stream == ResourceManager.DiagnosticEventType.AsyncOperationCreate)
                     HandleInstantiationEvent(evt);

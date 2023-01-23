@@ -646,7 +646,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             switch (InternalIdNamingMode)
             {
                 case AssetNamingMode.FullPath: return assetPath;
-                case AssetNamingMode.Filename: return assetPath.EndsWith(".unity") ? System.IO.Path.GetFileNameWithoutExtension(assetPath) : System.IO.Path.GetFileName(assetPath);
+                case AssetNamingMode.Filename: return assetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase) ? System.IO.Path.GetFileNameWithoutExtension(assetPath) : System.IO.Path.GetFileName(assetPath);
                 case AssetNamingMode.GUID: return pathToGUIDFunc(assetPath);
                 case AssetNamingMode.Dynamic:
                 {
@@ -740,6 +740,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             /// </summary>
             public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
             {
+                DrawGUI(position, property, label);
+            }
+
+            internal static int DrawGUI(Rect position, SerializedProperty property, GUIContent label)
+            {
                 bool showMixedValue = EditorGUI.showMixedValue;
                 EditorGUI.BeginProperty(position, label, property);
                 EditorGUI.showMixedValue = showMixedValue;
@@ -762,6 +767,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 }
 
                 EditorGUI.EndProperty();
+                return newValue;
             }
         }
 
@@ -1048,48 +1054,58 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         void ShowSelectedPropertyMulti<T>(SerializedObject so, string propertyName, GUIContent label, List<AddressableAssetGroupSchema> otherSchemas,
             ref List<Action<BundledAssetGroupSchema, BundledAssetGroupSchema>> queuedChanges, Action<BundledAssetGroupSchema, BundledAssetGroupSchema> a, ref T propertyValue)
         {
-            var prop = so.FindProperty(propertyName);
+            SerializedProperty serializedProperty = so.FindProperty(propertyName);
+            Type propertySystemType = typeof(T);
             if (label == null)
-                label = new GUIContent(prop.displayName);
-            ShowMixedValue(prop, otherSchemas, typeof(T), propertyName);
+                label = new GUIContent(serializedProperty.displayName);
+            ShowMixedValue(serializedProperty, otherSchemas, propertySystemType, propertyName);
 
             T newValue = default(T);
-            SerializedPropertyType type = SerializedPropertyType.Generic;
+            SerializedPropertyType serializedPropertyType = SerializedPropertyType.Generic;
             EditorGUI.BeginChangeCheck();
-            if (typeof(T) == typeof(bool))
+            if (propertySystemType == typeof(bool))
             {
                 newValue = (T)(object)EditorGUILayout.Toggle(label, (bool)(object)propertyValue);
-                type = SerializedPropertyType.Boolean;
+                serializedPropertyType = SerializedPropertyType.Boolean;
             }
-            else if (typeof(T).IsEnum)
+            else if (propertySystemType.IsEnum)
             {
-                var e = EditorGUILayout.EnumPopup(label, (Enum)(object)propertyValue);
-                newValue = (T)(object)Convert.ToInt32(e);
-                type = SerializedPropertyType.Enum;
+                serializedPropertyType = SerializedPropertyType.Enum;
+                if (propertySystemType == typeof(BundleNamingStyle))
+                {
+                    Rect rect = EditorGUILayout.GetControlRect();
+                    int enumValue = BundleNamingStylePropertyDrawer.DrawGUI(rect, serializedProperty, label);
+                    newValue = (T)(object)enumValue;
+                }
+                else
+                {
+                    int enumValue = Convert.ToInt32(EditorGUILayout.EnumPopup(label, (Enum)(object)propertyValue));
+                    newValue = (T)(object)enumValue;
+                }
             }
-            else if (typeof(T) == typeof(int))
+            else if (propertySystemType == typeof(int))
             {
                 newValue = (T)(object)EditorGUILayout.IntField(label, (int)(object)propertyValue);
-                type = SerializedPropertyType.Integer;
+                serializedPropertyType = SerializedPropertyType.Integer;
             }
             else
             {
-                EditorGUILayout.PropertyField(prop, label, true);
+                EditorGUILayout.PropertyField(serializedProperty, label, true);
                 so.ApplyModifiedProperties();
             }
 
             if (EditorGUI.EndChangeCheck())
             {
-                if (type != SerializedPropertyType.Generic)
+                if (serializedPropertyType != SerializedPropertyType.Generic)
                 {
-                    HashSet<SerializedProperty> properties = new HashSet<SerializedProperty>() {prop};
+                    HashSet<SerializedProperty> properties = new HashSet<SerializedProperty>() {serializedProperty};
                     foreach (AddressableAssetGroupSchema otherSchema in otherSchemas)
                         properties.Add(otherSchema.SchemaSerializedObject.FindProperty(propertyName));
 
                     foreach (SerializedProperty propertyForValueDestination in properties)
                     {
                         var destinationSerializedObject = propertyForValueDestination.serializedObject;
-                        switch (type)
+                        switch (serializedPropertyType)
                         {
                             case SerializedPropertyType.Boolean:
                                 propertyForValueDestination.boolValue = (bool)(object)newValue;

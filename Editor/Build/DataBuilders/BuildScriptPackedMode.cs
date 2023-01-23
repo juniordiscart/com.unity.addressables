@@ -748,7 +748,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
 		static string StripHashFromBundleLocation(string hashedBundleLocation)
 		{
-			return hashedBundleLocation.Remove(hashedBundleLocation.LastIndexOf("_")) + ".bundle";
+            return hashedBundleLocation.Remove(hashedBundleLocation.LastIndexOf('_')) + ".bundle";
 		}
 
 		/// <inheritdoc />
@@ -851,7 +851,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
 #if UNITY_2022_1_OR_NEWER
 			string loadPath = schema.LoadPath.GetValue(aaContext.Settings);
-			if (loadPath.StartsWith("http://") && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
+           if (loadPath.StartsWith("http://", StringComparison.Ordinal) && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
 				Addressables.LogWarning($"Addressable group {assetGroup.Name} uses insecure http for its load path.  To allow http connections for UnityWebRequests, change your settings in Edit > Project Settings > Player > Other Settings > Configuration > Allow downloads over HTTP.");
 #endif
 			if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && aaContext.runtimeData.BuildTarget == BuildTarget.WebGL.ToString())
@@ -905,8 +905,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			string buildPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.BuildPath.Id);
 			string loadPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.LoadPath.Id);
 
-			bool buildLocal = buildPath.Contains("[UnityEngine.AddressableAssets.Addressables.BuildPath]");
-			bool loadLocal = loadPath.Contains("{UnityEngine.AddressableAssets.Addressables.RuntimePath}");
+            bool buildLocal = AddressableAssetUtility.StringContains(buildPath, "[UnityEngine.AddressableAssets.Addressables.BuildPath]", StringComparison.Ordinal);
+            bool loadLocal = AddressableAssetUtility.StringContains(loadPath, "{UnityEngine.AddressableAssets.Addressables.RuntimePath}", StringComparison.Ordinal);
 
 			if (buildLocal && !loadLocal)
 			{
@@ -1053,7 +1053,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
 		private static void ThrowExceptionIfInvalidFiletypeOrAddress(AddressableAssetEntry entry, bool ignoreUnsupportedFilesInBuild)
 		{
-			if (entry.guid.Length > 0 && entry.address.Contains("[") && entry.address.Contains("]"))
+            if (entry.guid.Length > 0 && entry.address.Contains('[') && entry.address.Contains(']'))
 				throw new Exception($"Address '{entry.address}' cannot contain '[ ]'.");
 			if (entry.MainAssetType == typeof(DefaultAsset) && !AssetDatabase.IsValidFolder(entry.AssetPath))
 			{
@@ -1213,7 +1213,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
 			for (int i = 0; i < builtBundleNames.Count; ++i)
 			{
-				var b = m_AllBundleInputDefs.FindIndex(inputDef => builtBundleNames[i].StartsWith(inputDef.assetBundleName));
+                var b = m_AllBundleInputDefs.FindIndex(inputDef => builtBundleNames[i].StartsWith(inputDef.assetBundleName, StringComparison.Ordinal));
 				outputBundleNames.Add(b >= 0 ? m_OutputAssetBundleNames[b] : builtBundleNames[i]);
 			}
 
@@ -1246,7 +1246,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 					bundleResultInfo.InternalBundleName = requestOptions.BundleName;
 
 					if (assetGroup == assetGroup.Settings.DefaultGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) &&
-						(info.FileName.EndsWith("_unitybuiltinshaders.bundle") || info.FileName.EndsWith("_monoscripts.bundle")))
+                        (info.FileName.EndsWith("_unitybuiltinshaders.bundle", StringComparison.Ordinal) || info.FileName.EndsWith("_monoscripts.bundle", StringComparison.Ordinal)))
 					{
 						outputBundleNames[i] = ConstructAssetBundleName(null, schema, info, outputBundleNames[i]);
 					}
@@ -1264,9 +1264,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 					if (!m_BundleToInternalId.ContainsKey(builtBundleNames[i]))
 						m_BundleToInternalId.Add(builtBundleNames[i], dataEntry.InternalId);
 
-					if (dataEntry.InternalId.StartsWith("http:\\"))
+                    if (dataEntry.InternalId.StartsWith("http:\\", StringComparison.Ordinal))
 						dataEntry.InternalId = dataEntry.InternalId.Replace("http:\\", "http://").Replace("\\", "/");
-					if (dataEntry.InternalId.StartsWith("https:\\"))
+                    else if (dataEntry.InternalId.StartsWith("https:\\", StringComparison.Ordinal))
 						dataEntry.InternalId = dataEntry.InternalId.Replace("https:\\", "https://").Replace("\\", "/");
 				}
 				else

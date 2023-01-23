@@ -881,7 +881,11 @@ namespace UnityEditor.AddressableAssets.GUI
                     {
                         arrayCounts.Add(-1);
                         var currName = slicedName[index];
+#if NET_UNITY_4_8
+                        if (currName.EndsWith(']'))
+#else
                         if (currName.EndsWith("]"))
+#endif
                         {
                             var arraySlice = currName.Split('[', ']');
                             if (arraySlice.Length >= 2)
@@ -900,7 +904,11 @@ namespace UnityEditor.AddressableAssets.GUI
                         arrayCounts.RemoveAt(i);
                     }
 
+#if NET_UNITY_4_8
+                    if (property.propertyPath.EndsWith(']'))
+#else
                     if (property.propertyPath.EndsWith("]"))
+#endif
                     {
                         var slice = property.propertyPath.Split('[', ']');
                         if (slice.Length >= 2)
@@ -988,13 +996,17 @@ namespace UnityEditor.AddressableAssets.GUI
 
         internal static string GetPropertyPathArrayName(string propertyPath)
         {
+#if NET_UNITY_4_8
+            if (propertyPath.EndsWith(']'))
+#else
             if (propertyPath.EndsWith("]"))
+#endif
             {
                 int leftBracket = propertyPath.LastIndexOf('[');
                 if (leftBracket > -1)
                 {
                     string arrayString = propertyPath.Substring(0, leftBracket);
-                    if (arrayString.EndsWith(".data"))
+                    if (arrayString.EndsWith(".data", StringComparison.OrdinalIgnoreCase))
                         return arrayString.Substring(0, arrayString.Length - 5); // remove ".data"
                 }
             }

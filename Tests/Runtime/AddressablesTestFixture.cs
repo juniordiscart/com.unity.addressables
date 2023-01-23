@@ -198,6 +198,61 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         Object.DestroyImmediate(go, false);
         return AssetDatabase.AssetPathToGUID(assetPath);
     }
+           protected string CreateFolderDeep(string path)
+        {
+            path = path.Replace('\\', '/');
+            if (!path.StartsWith("Assets/", StringComparison.Ordinal))
+                return null;
+
+            if (Directory.Exists(path))
+            {
+                if (AssetDatabase.IsValidFolder(path))
+                    return AssetDatabase.AssetPathToGUID(path);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                return AssetDatabase.AssetPathToGUID(path);
+            }
+
+            Directory.CreateDirectory(path);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            return AssetDatabase.AssetPathToGUID(path);
+        }
+        protected string CreateAsset(string assetPath, string objectName = null)
+        {
+            if (string.IsNullOrEmpty(objectName))
+                objectName = Path.GetFileNameWithoutExtension(assetPath);
+
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = objectName;
+            //this is to ensure that bundles are different for every run.
+            go.transform.localPosition = UnityEngine.Random.onUnitSphere;
+            var mat = new Material(Shader.Find("Standard"));
+            var tex = new Texture2D(32, 32);
+            var texPath = assetPath.Replace(".prefab", ".png");
+            File.WriteAllBytes(texPath, tex.EncodeToPNG());
+            AssetDatabase.ImportAsset(texPath, ImportAssetOptions.ForceSynchronousImport);
+            mat.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+            var matPath = assetPath.Replace(".prefab", ".mat");
+            AssetDatabase.CreateAsset(mat, matPath);
+            AssetDatabase.ImportAsset(matPath, ImportAssetOptions.ForceSynchronousImport);
+            go.GetComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+            string directoryName = Path.GetDirectoryName(assetPath);
+            CreateFolderDeep(directoryName);
+            try
+            {
+                Assert.IsTrue(AssetDatabase.IsValidFolder(directoryName), "Attempting to save prefab to invalid Folder : " + directoryName);
+                Assert.IsTrue(Directory.Exists(directoryName), "Folder is not in FileSystem, but is in ADB : " + directoryName);
+                Assert.IsNotNull(go, "Attempting to save null GameObject to Prefab");
+                PrefabUtility.SaveAsPrefabAsset(go, assetPath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error while attempting to save prefab {objectName} to {assetPath} with Exception message {e.Message}");
+                throw e;
+            }
+
+            UnityEngine.Object.DestroyImmediate(go, false);
+            return AssetDatabase.AssetPathToGUID(assetPath);
+        }
 
 #endif
 

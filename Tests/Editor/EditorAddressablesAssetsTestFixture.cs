@@ -86,6 +86,7 @@ namespace UnityEditor.AddressableAssets.Tests
             string guid = CreateTexture(texturePath, size);
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GUIDToAssetPath(guid));
             importer.textureType = TextureImporterType.Sprite; // creates a sprite subobject
+            importer.spriteImportMode = SpriteImportMode.Single;
             importer.SaveAndReimport();
             return guid;
         }

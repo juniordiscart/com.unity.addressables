@@ -1,3 +1,4 @@
+using System;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditorInternal;
 using UnityEngine;
@@ -161,7 +162,11 @@ namespace UnityEditor.AddressableAssets.GUI
                         Debug.LogError("Cannot add empty label to Addressables label list");
                     else if (name != settings.labelTable.GetUniqueLabelName(name))
                         Debug.LogError("Label name '" + name + "' is already in the labels list.");
+#if NET_UNITY_4_8
+                    else if (name.Contains('[', StringComparison.Ordinal) && name.Contains(']', StringComparison.Ordinal))
+#else
                     else if (name.Contains("[") && name.Contains("]"))
+#endif
                         Debug.LogErrorFormat("Label name '{0}' cannot contain '[ ]'.", name);
                     else
                     {

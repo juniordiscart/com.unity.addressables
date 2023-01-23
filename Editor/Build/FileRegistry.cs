@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor.AddressableAssets.Settings;
 
 namespace UnityEditor.AddressableAssets.Build
 {
@@ -54,7 +56,7 @@ namespace UnityEditor.AddressableAssets.Build
         public string GetFilePathForBundle(string bundleName)
         {
             bundleName = Path.GetFileNameWithoutExtension(bundleName);
-            return m_FilePaths.FirstOrDefault((entry) => entry.Contains(bundleName));
+            return m_FilePaths.FirstOrDefault((entry) => AddressableAssetUtility.StringContains(entry, bundleName, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -67,7 +69,7 @@ namespace UnityEditor.AddressableAssets.Build
         {
             if (!m_FilePaths.Contains(newFileRegistryEntry))
             {
-                m_FilePaths.RemoveWhere((entry) => entry.Contains(bundleName));
+                m_FilePaths.RemoveWhere((entry) => AddressableAssetUtility.StringContains(entry, bundleName, StringComparison.Ordinal));
                 AddFile(newFileRegistryEntry);
                 return true;
             }
