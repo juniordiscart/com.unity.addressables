@@ -369,7 +369,7 @@ namespace UnityEngine.AddressableAssets
             set { m_SubObjectName = value; }
         }
 
-        internal virtual Type SubOjbectType
+		internal virtual Type SubObjectType
         {
             get
             {

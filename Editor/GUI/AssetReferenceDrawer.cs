@@ -464,7 +464,7 @@ namespace UnityEditor.AddressableAssets.GUI
             var subAssetNames = subAssets.Select(sa => sa == null ? "<none>" : $"{AssetReferenceDrawerUtilities.FormatName(sa.name)}:{sa.GetType()}").ToList();
             objNames = subAssetNames.ToArray();
 
-            selIndex = subAssetNames.IndexOf($"{m_AssetRefObject.SubObjectName}:{m_AssetRefObject.SubOjbectType}");
+			selIndex = subAssetNames.IndexOf($"{m_AssetRefObject.SubObjectName}:{m_AssetRefObject.SubObjectType}");
             if (selIndex == -1)
                 selIndex = 0;
         }
@@ -838,7 +838,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     if (child.displayName.IndexOf(assetString, StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        SetSelection(new List<int> {child.id});
+						SetSelection(new List<int> { child.id });
                         return;
                     }
                 }

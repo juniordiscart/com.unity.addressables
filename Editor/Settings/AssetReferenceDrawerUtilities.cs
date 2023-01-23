@@ -246,7 +246,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 FieldInfo info = null;
 
                 // We need to look into sub types, if any.
-                string[] pathParts = property.propertyPath.Split(new[] {'.'}, StringSplitOptions.RemoveEmptyEntries);
+				string[] pathParts = property.propertyPath.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
                 for (int i = 0; i < pathParts.Length; i++)
                 {
                     FieldInfo f = t.GetField(pathParts[i],
@@ -302,7 +302,7 @@ namespace UnityEditor.AddressableAssets.Settings
             var repr = AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath);
             if (repr.Any())
             {
-                var subtype = assetReferenceObject.SubOjbectType ?? GetGenericTypeFromAssetReference(assetReferenceObject);
+				var subtype = assetReferenceObject.SubObjectType ?? GetGenericTypeFromAssetReference(assetReferenceObject);
                 if (subtype != null)
                     repr = repr.Where(o => subtype.IsInstanceOfType(o)).OrderBy(s => s.name).ToArray();
             }

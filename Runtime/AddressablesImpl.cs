@@ -62,12 +62,13 @@ namespace UnityEngine.AddressableAssets
         AsyncOperationHandle<List<string>> m_ActiveCheckUpdateOperation;
         internal AsyncOperationHandle<List<IResourceLocator>> m_ActiveUpdateOperation;
 
-
         Action<AsyncOperationHandle> m_OnHandleCompleteAction;
         Action<AsyncOperationHandle> m_OnSceneHandleCompleteAction;
         Action<AsyncOperationHandle> m_OnHandleDestroyedAction;
+
         Dictionary<object, AsyncOperationHandle> m_resultToHandle = new Dictionary<object, AsyncOperationHandle>();
-        internal HashSet<AsyncOperationHandle> m_SceneInstances = new HashSet<AsyncOperationHandle>();
+		Dictionary<Scene, HashSet<AsyncOperationHandle>> m_mergedScenes = new Dictionary<Scene, HashSet<AsyncOperationHandle>>();
+		HashSet<AsyncOperationHandle> m_SceneInstances = new HashSet<AsyncOperationHandle>();
 
         AsyncOperationHandle<bool> m_ActiveCleanBundleCacheOperation;
 
@@ -153,11 +154,34 @@ namespace UnityEngine.AddressableAssets
 
                     var op = SceneProvider.ReleaseScene(m_ResourceManager, sceneHandle);
                     AutoReleaseHandleOnCompletion(op);
+
+					m_ResourceManager.CleanupSceneInstances(scene);
                     break;
                 }
             }
 
-            m_ResourceManager.CleanupSceneInstances(scene);
+			// If the scene was used as a destination for a merger,
+			// then release everything that got merged into this scene.
+			if (m_mergedScenes.ContainsKey(scene))
+			{
+				HashSet<AsyncOperationHandle> sceneHandles = m_mergedScenes[scene];
+				m_mergedScenes.Remove(scene);
+
+				foreach (var s in sceneHandles)
+				{
+					if (!s.IsValid())
+					{
+						continue;
+					}
+
+					var sceneHandle = s.Convert<SceneInstance>();
+					Scene sceneCached = sceneHandle.Result.Scene; // The result of the handle will become invalid, so cache it here.
+
+					var op = SceneProvider.ReleaseScene(m_ResourceManager, sceneHandle);
+					AutoReleaseHandleOnCompletion(op);
+					m_ResourceManager.CleanupSceneInstances(sceneCached);
+				}
+			}
         }
 
         public string StreamingAssetsSubFolder
@@ -266,7 +290,7 @@ namespace UnityEngine.AddressableAssets
         internal bool GetResourceLocations(object key, Type type, out IList<IResourceLocation> locations)
         {
             if (type == null && (key is AssetReference))
-                type = (key as AssetReference).SubOjbectType;
+				type = (key as AssetReference).SubObjectType;
 
             key = EvaluateKey(key);
 
@@ -415,7 +439,7 @@ namespace UnityEngine.AddressableAssets
                 if (settingsObject != null)
                 {
                     var settingsSetupMethod = settingsType.GetMethod("CreatePlayModeInitializationOperation", BindingFlags.Instance | BindingFlags.NonPublic);
-                    m_InitializationOperation = (AsyncOperationHandle<IResourceLocator>)settingsSetupMethod.Invoke(settingsObject, new object[] {this});
+					m_InitializationOperation = (AsyncOperationHandle<IResourceLocator>)settingsSetupMethod.Invoke(settingsObject, new object[] { this });
                 }
             }
 #endif
@@ -903,7 +927,7 @@ namespace UnityEngine.AddressableAssets
         {
             QueueEditorUpdateIfNeeded();
 
-            return GetDownloadSizeAsync(new object[] {key});
+			return GetDownloadSizeAsync(new object[] { key });
         }
 
         public AsyncOperationHandle<long> GetDownloadSizeAsync(IEnumerable keys)
@@ -1372,6 +1396,53 @@ namespace UnityEngine.AddressableAssets
 
             return InternalUnloadScene(handle, unloadOptions, autoReleaseHandle);
         }
+
+		public void MergeScenes(Scene sourceScene, Scene destinationScene)
+		{
+			// Check whether the source scene was still individually tracked.
+			foreach (var s in m_SceneInstances)
+			{
+				var sceneInstance = s.Convert<SceneInstance>();
+				if (sceneInstance.Result.Scene != sourceScene)
+				{
+					continue;
+				}
+
+				// Remove the handle so it will not get unloaded when the scene merging completes.
+				m_SceneInstances.Remove(s);
+				m_resultToHandle.Remove(s.Result);
+
+				if (!m_mergedScenes.ContainsKey(destinationScene))
+				{
+					m_mergedScenes[destinationScene] = new HashSet<AsyncOperationHandle>();
+				}
+
+				// Keep track which scenes were merged.
+				m_mergedScenes[destinationScene].Add(s);
+				break;
+			}
+
+			// Check whether the source scene was already a destination scene once,
+			// then merge the handles to the new destination scene.
+			if (m_mergedScenes.ContainsKey(sourceScene))
+			{
+				if (m_mergedScenes.ContainsKey(destinationScene))
+				{
+					foreach (var s in m_mergedScenes[sourceScene])
+					{
+						m_mergedScenes[destinationScene].Add(s);
+					}
+				}
+				else
+				{
+					m_mergedScenes[destinationScene] = m_mergedScenes[sourceScene];
+				}
+
+				m_mergedScenes.Remove(sourceScene);
+			}
+
+			SceneManager.MergeScenes(sourceScene, destinationScene);
+		}
 
         internal AsyncOperationHandle<SceneInstance> CreateUnloadSceneWithChain(AsyncOperationHandle handle, UnloadSceneOptions unloadOptions, bool autoReleaseHandle)
         {

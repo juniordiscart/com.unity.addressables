@@ -374,7 +374,7 @@ namespace UnityEngine.AddressableAssets
             foreach (Type type in types)
             {
                 if (!typeToKeys.TryGetValue(type, out List<string> keysForType))
-                    typeToKeys.Add(type, new List<string>() {key});
+					typeToKeys.Add(type, new List<string>() { key });
                 else
                     keysForType.Add(key);
             }
@@ -2170,6 +2170,18 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
+		/// Merge the source scene in the destination scene.
+		/// Note: This function is destructive: The source Scene will be destroyed once the merge has been completed.
+		/// This implementation will preserve the Addressable assets loaded in the source scene.
+		/// </summary>
+		/// <param name="sourceScene">The Scene that will be merged into the destination Scene.</param>
+		/// <param name="destinationScene">Existing Scene to merge the source Scene into.</param>
+		public static void MergeScenes(Scene sourceScene, Scene destinationScene)
+		{
+			m_Addressables.MergeScenes(sourceScene, destinationScene);
+		}
+
+		/// <summary>
         /// Checks all updatable content catalogs for a new version.
         /// </summary>
         /// <param name="autoReleaseHandle">If true, the handle will automatically be released when the operation completes.</param>

@@ -4,9 +4,11 @@ The Addressables package by Unity provides a novel way of managing and packing a
 
 This variant forked from the original Addressables-project adds support for building your assets across several catalogs in one go and provides several other benefits, e.g. reduced build times and build size, as well as keeping the buildcache intact.
 
-This package currently tracks version `1.20.5` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
+This package currently tracks version `1.21.2` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
 
 **Note**: this repository does not track every available version of the _vanilla_ Addressables package. It's only kept up-to-date sporadically.
+
+For additional features found in this fork of Addressables, check the [Additional features](#additional-features) section.
 
 ## The problem
 
@@ -88,3 +90,13 @@ In your Addressable Groups window, tick all 'Include in build' boxes of those gr
 When you need to load in the assets put aside in these external packages, you can do so using:
 
 > `Addressables.LoadContentCatalogAsync("path/to/dlc/catalogName.json");`
+
+## Additional Features
+
+Below you'll find additional features in this fork of Addressables that were considered missing in the vanilla flavour of Addressables.
+
+### Addressables Scene Merging
+
+When merging scenes using `SceneManager.MergeScenes`, the source scene will be unloaded by Unity. If this source scene is a scene loaded by Addressables, then its loading handle will be disposed off and releasing all assets associated with the scene. This will cause all merged assets from the source scene that were handled by this single handle be unloaded as well. This may cause several assets to not show up properly anymore, e.g. the well known pink missing material, no meshes, audio clips, etc. will all be missing.
+
+This is resolved by adding a `MergeScenes` method to `Addressables`, similar to `SceneManager.MergeScenes`, but will keep the Addressable scene's loading handle alive until the destination scene is unloaded. This process can be repeated multiple times, passing the loading handle until it's current bearer is unloaded.
