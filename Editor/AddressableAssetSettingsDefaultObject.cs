@@ -9,7 +9,7 @@ namespace UnityEditor.AddressableAssets
 	/// <summary>
 	/// Class used to get and set the default Addressable Asset settings object.
 	/// </summary>
-	[CreateAssetMenu(menuName = "Addressables/New Default Object", fileName = "DefaultObject", order = -1)]
+	[CreateAssetMenu(menuName = "Addressables/New Default Object", fileName = "DefaultObject")]
 	public class AddressableAssetSettingsDefaultObject : ScriptableObject
 	{
 		public static Action<AddressableAssetSettings> onDefaultObjectsettingsChanged;

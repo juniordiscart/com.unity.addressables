@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 	/// <summary>
 	/// Separate catalog for the assigned asset groups.
 	/// </summary>
-	[CreateAssetMenu(menuName = "Addressables/New External Catalog", fileName = "newExternalCatalogSetup", order = -1)]
+	[CreateAssetMenu(menuName = "Addressables/External Catalog", fileName = "ExternalCatalogSetup")]
 	public class ExternalCatalogSetup : ScriptableObject
 	{
 		[SerializeField, Tooltip("Assets groups that belong to this catalog. Entries found in these will get extracted from the default catalog.")]

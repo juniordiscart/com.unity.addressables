@@ -601,7 +601,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 				var returnCode = CreateCatalogBundle(m_CatalogBuildPath, jsonText, builderInput);
 				if (returnCode != ReturnCode.Success || !File.Exists(m_CatalogBuildPath))
 				{
-					Addressables.LogError($"An error occured during the creation of the content catalog bundle (return code {returnCode}).");
+					Addressables.LogError($"An error occurred during the creation of the content catalog bundle (return code {returnCode}).");
 					return false;
 				}
 			}
@@ -659,7 +659,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			var tempFilePath = Path.Combine(tempFolderPath, Path.GetFileName(filepath).Replace(".bundle", ".json"));
 			if (!WriteFile(tempFilePath, jsonText, builderInput.Registry))
 			{
-				throw new Exception("An error occured during the creation of temporary files needed to bundle the content catalog.");
+				throw new Exception("An error occurred during the creation of temporary files needed to bundle the content catalog.");
 			}
 
 			AssetDatabase.Refresh();
@@ -850,8 +850,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			}
 
 #if UNITY_2022_1_OR_NEWER
-		   string loadPath = schema.LoadPath.GetValue(aaContext.Settings);
-		   if (loadPath.StartsWith("http://") && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
+			string loadPath = schema.LoadPath.GetValue(aaContext.Settings);
+			if (loadPath.StartsWith("http://") && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
 				Addressables.LogWarning($"Addressable group {assetGroup.Name} uses insecure http for its load path.  To allow http connections for UnityWebRequests, change your settings in Edit > Project Settings > Player > Other Settings > Configuration > Allow downloads over HTTP.");
 #endif
 			if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && aaContext.runtimeData.BuildTarget == BuildTarget.WebGL.ToString())
