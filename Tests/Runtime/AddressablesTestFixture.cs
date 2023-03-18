@@ -23,7 +23,12 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     internal AddressablesImpl m_Addressables;
     internal string m_RuntimeSettingsPath;
     internal readonly string m_UniqueTestName;
-
+    protected const string kCatalogExt =
+#if ENABLE_BINARY_CATALOG
+            ".bin";
+#else
+            ".json";
+#endif
     protected AddressablesTestFixture()
     {
         m_UniqueTestName = this.GetType().Name;
@@ -124,8 +129,9 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     {
         var buildContext = new AddressablesDataBuilderInput(settings);
         buildContext.RuntimeSettingsFilename = "settings" + id + ".json";
-        buildContext.RuntimeCatalogFilename = "catalog" + id + ".json";
-        buildContext.PathFormat = "{0}" + Addressables.LibraryPath + "{1}_" + id + ".json";
+        buildContext.RuntimeCatalogFilename = "catalog" + id + kCatalogExt;
+        //    buildContext.PathFormat = "{0}" + Addressables.LibraryPath + "{1}_" + id + kCatalogExt;
+        buildContext.PathSuffix = "_" + id;
         if (BuildScriptMode == TestBuildScriptMode.PackedPlaymode)
         {
             IDataBuilder packedModeBuilder = GetBuilderOfType(settings, typeof(BuildScriptPackedMode));
@@ -164,7 +170,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
 
 #endif
 
-    protected string GetRuntimeAddressablesSettingsPath(string id)
+        protected string GetRuntimeAddressablesSettingsPath(string id)
     {
         if (BuildScriptMode == TestBuildScriptMode.Packed || BuildScriptMode == TestBuildScriptMode.PackedPlaymode)
             return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + id + ".json";

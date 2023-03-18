@@ -29,6 +29,8 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
 
             public string LocatorId { get; set; }
 
+            public IEnumerable<IResourceLocation> AllLocations => throw new NotImplementedException();
+
             public TestLocator(string id, params ResourceLocationBase[] locs)
             {
                 LocatorId = id;
@@ -265,7 +267,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         }
 
         [UnityTest]
-        [Ignore("Test only runs on unstead platform, ps4, and causes a compile error on that build target.  https://jira.unity3d.com/browse/ADDR-2796")]
         public IEnumerator UpdateContent_UpdatesCatalogs_WhenAutoCleanCacheEnabled_AndCachingDisabled_ReturnsException()
         {
 #if !ENABLE_CACHING && !PLATFORM_SWITCH
@@ -529,3 +530,4 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         }
     }
 }
+

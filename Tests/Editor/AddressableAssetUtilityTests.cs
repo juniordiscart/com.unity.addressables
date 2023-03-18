@@ -450,6 +450,19 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsTrue(handler == null, "Equalto to return true to null when no callbacks are available"); // doesn't work with Assert.IsNull
         }
 
+        [Test]
+        public void SortedDelegate_RegisterDuringInvocationDoesNotThrow()
+        {
+            var handler = new AddressableAssetUtility.SortedDelegate<string[], string[], string[], string[]>();
+
+            handler.Register((a, b, c, d) =>
+            {
+                Assert.DoesNotThrow(() => handler.Register(Callback1, 0));
+            }, 0);
+
+            handler.Invoke(null, null, null, null);
+        }
+
         private void Callback1(string[] arg1, string[] arg2, string[] arg3, string[] arg4)
         {
             calledOrder.Add(1);

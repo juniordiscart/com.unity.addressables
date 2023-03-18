@@ -277,6 +277,10 @@ namespace UnityEditor.AddressableAssets.GUI
 						menu.AddItem(new GUIContent("Window/Hosting Services"), false, () => EditorWindow.GetWindow<HostingServicesWindow>().Show(settings));
 						menu.AddItem(new GUIContent("Window/Event Viewer"), false, ResourceProfilerWindow.ShowWindow);
 
+#if UNITY_2022_2_OR_NEWER
+                        menu.AddItem(new GUIContent("Window/Addressables Report"), false, BuildReportVisualizer.BuildReportWindow.ShowWindow);
+#endif
+
                         menu.AddItem(new GUIContent("Groups View/Show Sprite and Subobject Addresses"), ProjectConfigData.ShowSubObjectsInGroupView, () =>
                         {
                             ProjectConfigData.ShowSubObjectsInGroupView = !ProjectConfigData.ShowSubObjectsInGroupView;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -31,20 +32,66 @@ namespace UnityEditor.AddressableAssets.HostingServices
             NotFound = 404
         }
 
-        internal class FileUploadOperation
+        internal interface IHttpContext
+        {
+            Uri GetRequestUrl();
+            void SetResponseContentType(string contentType);
+            void SetResponseContentLength(long contentLength);
+            Stream GetResponseOutputStream();
+        }
+
+        // this class exists to make testing with mocks simpler
+        internal class HttpListenerContextWrapper : IHttpContext
         {
             HttpListenerContext m_Context;
+            public HttpListenerContextWrapper(HttpListenerContext context)
+            {
+                m_Context = context;
+            }
+            public Uri GetRequestUrl()
+            {
+                return m_Context.Request.Url;
+            }
+
+            public void SetResponseContentType(string contentType)
+            {
+                m_Context.Response.ContentType = contentType;
+            }
+
+            public void SetResponseContentLength(long contentLength)
+            {
+                m_Context.Response.ContentLength64 = contentLength;
+            }
+
+            public Stream GetResponseOutputStream()
+            {
+                return m_Context.Response.OutputStream;
+            }
+        }
+
+        internal class FileUploadOperation
+        {
+            IHttpContext m_Context;
             byte[] m_ReadByteBuffer;
             FileStream m_ReadFileStream;
             long m_TotalBytesRead;
-            bool m_IsDone = false;
+            bool m_IsDone;
+            private Timer m_UpdateTimer;
+            private int m_UploadSpeed;
+            private TimeSpan m_SleepTime = TimeSpan.FromMilliseconds(250);
+            private Action m_Cleanup;
             public bool IsDone => m_IsDone;
 
-            public FileUploadOperation(HttpListenerContext context, string filePath)
+
+
+            public FileUploadOperation(HttpListenerContext context, string filePath, int uploadSpeed, Action cleanup) : this(new HttpListenerContextWrapper(context), filePath, uploadSpeed, cleanup)
+            {
+            }
+            internal FileUploadOperation(IHttpContext context, string filePath, int uploadSpeed, Action cleanup)
             {
                 m_Context = context;
-                m_Context.Response.ContentType = "application/octet-stream";
-
+                m_UploadSpeed = uploadSpeed;
+                m_Cleanup = cleanup;
                 m_ReadByteBuffer = new byte[k_FileReadBufferSize];
                 try
                 {
@@ -53,19 +100,30 @@ namespace UnityEditor.AddressableAssets.HostingServices
                 catch (Exception e)
                 {
                     m_IsDone = true;
+                    m_Cleanup();
                     Debug.LogException(e);
                     throw;
                 }
 
-                m_Context.Response.ContentLength64 = m_ReadFileStream.Length;
+                m_Context.SetResponseContentType("application/octet-stream");
+                m_Context.SetResponseContentLength(m_ReadFileStream.Length);
             }
 
-            public void Update(double diff, int bytesPerSecond)
+            public void Start()
+            {
+                m_UpdateTimer = new Timer(
+                    callback: this.Update,
+                    state: null,
+                    dueTime: TimeSpan.Zero,
+                    period: m_SleepTime);
+            }
+
+            public void Update(object stateInfo)
             {
                 if (m_Context == null || m_ReadFileStream == null)
                     return;
 
-                int countToRead = (int)(bytesPerSecond * diff);
+                int countToRead = (int)(m_UploadSpeed * m_SleepTime.TotalSeconds);
 
                 try
                 {
@@ -73,7 +131,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
                     {
                         int count = countToRead > m_ReadByteBuffer.Length ? m_ReadByteBuffer.Length : countToRead;
                         int read = m_ReadFileStream.Read(m_ReadByteBuffer, 0, count);
-                        m_Context.Response.OutputStream.Write(m_ReadByteBuffer, 0, read);
+                        m_Context.GetResponseOutputStream().Write(m_ReadByteBuffer, 0, read);
                         m_TotalBytesRead += read;
                         countToRead -= count;
 
@@ -86,7 +144,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
                 }
                 catch (Exception e)
                 {
-                    string url = m_Context.Request.Url.ToString();
+                    string url = m_Context.GetRequestUrl().ToString();
                     Stop();
                     if (e.InnerException != null && e.InnerException is SocketException &&
                         e.InnerException.Message == "The socket has been shut down")
@@ -103,28 +161,43 @@ namespace UnityEditor.AddressableAssets.HostingServices
 
             public void Stop()
             {
-                if (m_IsDone)
+                try
                 {
-                    Debug.LogError("FileUploadOperation has already completed.");
-                    return;
-                }
+                    if (m_IsDone)
+                    {
+                        Debug.LogError("FileUploadOperation has already completed.");
+                        return;
+                    }
 
-                m_IsDone = true;
-                m_ReadFileStream.Dispose();
-                m_ReadFileStream = null;
-                m_Context.Response.OutputStream.Close();
-                m_Context = null;
+                    m_IsDone = true;
+                    // when running tests this may be null
+                    if (m_UpdateTimer != null)
+                    {
+                        m_UpdateTimer.Dispose();
+                    }
+
+                    m_ReadFileStream.Dispose();
+                    m_ReadFileStream = null;
+                    m_Context.GetResponseOutputStream().Flush();
+                    m_Context.GetResponseOutputStream().Close();
+                    m_Context = null;
+                }
+                finally
+                {
+                    m_Cleanup();
+                }
             }
         }
 
         const string k_HostingServicePortKey = "HostingServicePort";
         const int k_FileReadBufferSize = 64 * 1024;
 
-        private const int k_OneGBPS = 1024 * 1024 * 1024;
+        internal const int k_OneGBPS = 1024 * 1024 * 1024;
         const string k_UploadSpeedKey = "HostingServiceUploadSpeed";
         int m_UploadSpeed;
         double m_LastFrameTime;
-        List<FileUploadOperation> m_ActiveUploads = new List<FileUploadOperation>();
+
+        internal List<FileUploadOperation> m_ActiveUploads = new List<FileUploadOperation>();
 
         static readonly IPEndPoint k_DefaultLoopbackEndpoint = new IPEndPoint(IPAddress.Loopback, 0);
         int m_ServicePort;
@@ -245,34 +318,12 @@ namespace UnityEditor.AddressableAssets.HostingServices
             ConfigureHttpListener();
             MyHttpListener.Start();
             MyHttpListener.BeginGetContext(HandleRequest, null);
-            EditorApplication.update += EditorUpdate;
 
             var count = HostingServiceContentRoots.Count;
             Log("Started. Listening on port {0}. Hosting {1} folder{2}.", HostingServicePort, count, count > 1 ? "s" : string.Empty);
             foreach (var root in HostingServiceContentRoots)
             {
                 Log("Hosting : {0}", root);
-            }
-        }
-
-        private void EditorUpdate()
-        {
-            if (m_LastFrameTime == 0)
-                m_LastFrameTime = EditorApplication.timeSinceStartup - Time.unscaledDeltaTime;
-            double diff = EditorApplication.timeSinceStartup - m_LastFrameTime;
-            int speed = m_UploadSpeed * 1024;
-            int bps = speed > 0 ? speed : k_OneGBPS;
-            Update(diff, bps);
-            m_LastFrameTime = EditorApplication.timeSinceStartup;
-        }
-
-        internal void Update(double deltaTime, int bytesPerSecond)
-        {
-            for (int i = m_ActiveUploads.Count - 1; i >= 0; --i)
-            {
-                m_ActiveUploads[i].Update(deltaTime, bytesPerSecond);
-                if (m_ActiveUploads[i].IsDone)
-                    m_ActiveUploads.RemoveAt(i);
             }
         }
 
@@ -288,7 +339,6 @@ namespace UnityEditor.AddressableAssets.HostingServices
             // disposing the object.
             MyHttpListener.Abort();
 
-            EditorApplication.update -= EditorUpdate;
             foreach (FileUploadOperation operation in m_ActiveUploads)
                 operation.Stop();
             m_ActiveUploads.Clear();
@@ -394,10 +444,14 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// <exception cref="ArgumentOutOfRangeException">thrown when the request result code is unknown</exception>
         protected virtual void HandleRequest(IAsyncResult ar)
         {
+
             if (!IsHostingServiceRunning)
                 return;
 
+            // finish this request
             var c = MyHttpListener.EndGetContext(ar);
+
+            // start waiting for the next request
             MyHttpListener.BeginGetContext(HandleRequest, null);
 
             var relativePath = c.Request.Url.LocalPath.Substring(1);
@@ -453,23 +507,24 @@ namespace UnityEditor.AddressableAssets.HostingServices
         {
             if (m_UploadSpeed > 0)
             {
-                m_ActiveUploads.Add(new FileUploadOperation(context, filePath));
+                // enqueue throttled download
+                var op = new FileUploadOperation(context, filePath, m_UploadSpeed, Cleanup);
+                op.Start();
+                m_ActiveUploads.Add(op);
+                return;
             }
-            else
+            context.Response.ContentType = "application/octet-stream";
+
+            var buffer = new byte[readBufferSize];
+            using (var fs = File.OpenRead(filePath))
             {
-                context.Response.ContentType = "application/octet-stream";
-
-                var buffer = new byte[readBufferSize];
-                using (var fs = File.OpenRead(filePath))
-                {
-                    context.Response.ContentLength64 = fs.Length;
-                    int read;
-                    while ((read = fs.Read(buffer, 0, buffer.Length)) > 0)
-                        context.Response.OutputStream.Write(buffer, 0, read);
-                }
-
-                context.Response.OutputStream.Close();
+                context.Response.ContentLength64 = fs.Length;
+                int read;
+                while ((read = fs.Read(buffer, 0, buffer.Length)) > 0)
+                    context.Response.OutputStream.Write(buffer, 0, read);
             }
+
+            context.Response.OutputStream.Close();
         }
 
         /// <summary>
@@ -524,6 +579,16 @@ namespace UnityEditor.AddressableAssets.HostingServices
 
                 var endPoint = socket.LocalEndPoint as IPEndPoint;
                 return endPoint != null ? endPoint.Port : 0;
+            }
+        }
+
+        private void Cleanup()
+        {
+            for (int i = m_ActiveUploads.Count - 1; i >= 0; --i)
+            {
+                if (m_ActiveUploads[i].IsDone) {
+                    m_ActiveUploads.RemoveAt(i);
+                }
             }
         }
     }

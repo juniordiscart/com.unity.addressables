@@ -107,14 +107,20 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                         ex.ToString());
                 }
             }
-
-            m_DepOp = m_Addressables.ResourceManager.CreateGenericGroupOperation(initOperations, true);
-            m_DepOp.Completed += (obj) =>
+            if (initOperations.Count > 0)
             {
-                bool success = obj.Status == AsyncOperationStatus.Succeeded;
-                Complete(true, success, success ? "" : $"{obj.DebugName}, status={obj.Status}, result={obj.Result} failed initialization.");
-                m_Addressables.Release(m_DepOp);
-            };
+                m_DepOp = m_Addressables.ResourceManager.CreateGenericGroupOperation(initOperations, true);
+                m_DepOp.Completed += (obj) =>
+                {
+                    bool success = obj.Status == AsyncOperationStatus.Succeeded;
+                    Complete(true, success, success ? "" : $"{obj.DebugName}, status={obj.Status}, result={obj.Result} failed initialization.");
+                    m_Addressables.Release(m_DepOp);
+                };
+            }
+            else
+            {
+                Complete(true, true, "");
+            }
         }
     }
 }

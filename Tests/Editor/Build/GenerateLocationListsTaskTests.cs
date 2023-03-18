@@ -114,6 +114,30 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
     }
 
     [Test]
+    public void CollectsGuidMapping_WhenCatalogKeysNotIncluded()
+    {
+        GenerateLocationListsTask.Input input = GenerateDefaultInput();
+        AddressableAssetGroup groupX = CreateGroupMappedToBundle(input, "X");
+        var schema = groupX.GetSchema<BundledAssetGroupSchema>();
+        schema.IncludeAddressInCatalog = false;
+        schema.IncludeGUIDInCatalog = false;
+        schema.IncludeLabelsInCatalog = false;
+
+        var guid = CreateAddressablePrefab(input, "p1", groupX, "fileX");
+        if (!GUID.TryParse(guid, out GUID g))
+            Assert.IsFalse(g.Empty());
+
+        input.AddressableAssetEntries = BuildAddressableAssetEntryList(input.Settings);
+        schema.IncludeGUIDInCatalog = true;
+        var output = GenerateLocationListsTask.ProcessInput(input);
+        Assert.AreEqual(1, output.GuidToLocation.Count, "Did not gather guid to catalog mapping");
+        Assert.AreEqual(1, output.GuidToLocation[g].Count);
+
+        string path = AssetDatabase.GUIDToAssetPath(guid);
+        Assert.AreEqual(path, output.GuidToLocation[g][0].InternalId);
+    }
+
+    [Test]
     public void WhenIncludeAddressOptionChanged_LocationsKeysAreSetCorrectly()
     {
         GenerateLocationListsTask.Input input = GenerateDefaultInput();
@@ -198,7 +222,7 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
         AssertLocationDependencies(output, "p6", "bundleW");
     }
 
-    //static 
+    //static
     [Test]
     [TestCase("abc", BuildTarget.XboxOne, @"\abc")]
     [TestCase("abc", BuildTarget.StandaloneWindows64, @"\abc")]

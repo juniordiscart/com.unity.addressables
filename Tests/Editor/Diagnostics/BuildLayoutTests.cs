@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using AddressableAssetsIntegrationTests;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.Layout;
+using UnityEditor.Animations;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Tests.Diagnostics
@@ -629,6 +631,18 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
                 if (File.Exists(filePath))
                     File.Delete(filePath);
             }
+        }
+
+        [Test]
+        [TestCase(typeof(GameObject), AssetType.GameObject)]
+        [TestCase(typeof(SceneAsset), AssetType.Scene)]
+        [TestCase(typeof(AnimatorController), AssetType.AnimationController)]
+        [TestCase(typeof(TestObject), AssetType.ScriptableObject)]
+        [TestCase(typeof(ObjectReferenceMonoBehaviour), AssetType.MonoBehaviour)]
+        public void GetAssetType_ReturnsCorrect(System.Type typeIn, AssetType expectedType)
+        {
+            AssetType actual = BuildLayoutHelpers.GetAssetType(typeIn);
+            Assert.AreEqual(expectedType, actual);
         }
     }
 }

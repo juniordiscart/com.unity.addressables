@@ -19,7 +19,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         public ResourceLocationMap(string id, int capacity = 0)
         {
             LocatorId = id;
-            Locations = new Dictionary<object, IList<IResourceLocation>>(capacity == 0 ? 100 : capacity);
+            locations = new Dictionary<object, IList<IResourceLocation>>(capacity == 0 ? 100 : capacity);
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             LocatorId = id;
             if (locations == null)
                 return;
-            Locations = new Dictionary<object, IList<IResourceLocation>>(locations.Count * 2);
+            this.locations = new Dictionary<object, IList<IResourceLocation>>(locations.Count * 2);
             var locMap = new Dictionary<string, ResourceLocationBase>();
             var dataMap = new Dictionary<string, ResourceLocationData>();
             //create and collect locations
@@ -85,14 +85,26 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// <summary>
         /// The mapping of key to location lists.
         /// </summary>
-        public Dictionary<object, IList<IResourceLocation>> Locations { get; private set; }
+        Dictionary<object, IList<IResourceLocation>> locations;
+
+#if ENABLE_BINARY_CATALOG
+        /// <summary>
+        /// Enumeration of all locations for this locator.
+        /// </summary>
+        public IEnumerable<IResourceLocation> AllLocations => locations.SelectMany(k => k.Value);
+#endif
+
+        /// <summary>
+        /// Map of all locations for this locator.
+        /// </summary>
+        public Dictionary<object, IList<IResourceLocation>> Locations => locations;
 
         /// <summary>
         /// The keys available in this locator.
         /// </summary>
         public IEnumerable<object> Keys
         {
-            get { return Locations.Keys; }
+            get { return locations.Keys; }
         }
 
         /// <summary>
@@ -105,7 +117,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
         {
             IList<IResourceLocation> locs = null;
-            if (!Locations.TryGetValue(key, out locs))
+            if (!this.locations.TryGetValue(key, out locs))
             {
                 locations = null;
                 return false;
@@ -152,8 +164,8 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         public void Add(object key, IResourceLocation location)
         {
             IList<IResourceLocation> locations;
-            if (!Locations.TryGetValue(key, out locations))
-                Locations.Add(key, locations = new List<IResourceLocation>());
+            if (!this.locations.TryGetValue(key, out locations))
+                this.locations.Add(key, locations = new List<IResourceLocation>());
             locations.Add(location);
         }
 
@@ -164,7 +176,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// <param name="locations">The list of locations to store at the given key.</param>
         public void Add(object key, IList<IResourceLocation> locations)
         {
-            Locations.Add(key, locations);
+            this.locations.Add(key, locations);
         }
     }
 }

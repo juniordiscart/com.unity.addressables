@@ -9,6 +9,7 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.AddressableAssets.Tests;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -111,15 +112,33 @@ public class BuildLayoutGenerationTaskTests
         return AssetDatabase.AssetPathToGUID(assetPath);
     }
 
+    static string CreateScriptableObjectAsset(string assetPath, string objectName)
+    {
+        TestObject.Create(objectName, assetPath);
+        return AssetDatabase.AssetPathToGUID(assetPath);
+    }
+
     string CreateAddressablePrefab(string name, AddressableAssetGroup group)
     {
         string guid = CreatePrefabAsset($"{TempPath}/{name}.prefab", name);
         return MakeAddressable(group, guid);
     }
 
+    string CreateAddressableScriptableObject(string name, AddressableAssetGroup group)
+    {
+        string guid = CreateScriptableObjectAsset($"{TempPath}/{name}.asset", name);
+        return MakeAddressable(group, guid);
+    }
+
     bool DeletePrefab(string name)
     {
         string path = $"{TempPath}/{name}.prefab";
+        return AssetDatabase.DeleteAsset(path);
+    }
+
+    bool DeleteScriptableObject(string name)
+    {
+        string path = $"{TempPath}/{name}.asset";
         return AssetDatabase.DeleteAsset(path);
     }
 
@@ -354,7 +373,6 @@ public class BuildLayoutGenerationTaskTests
         string scenePath = $"{TempPath}/scene.unity";
         AddressableAssetGroup groupScenes = null;
         AddressableAssetGroup textureGroup = null;
-        bool sceneSaved = false;
 
         try
         {
@@ -605,7 +623,7 @@ public class BuildLayoutGenerationTaskTests
 
                 // Test
                 BuildLayout.DataFromOtherAsset otherAssets = layout.Groups[0].Bundles[0].Files[0].Assets[0].InternalReferencedOtherAssets[0];
-                Assert.IsTrue(otherAssets.AssetPath.StartsWith("library/atlascache", StringComparison.OrdinalIgnoreCase));
+                Assert.AreEqual(2, layout.Groups[0].Bundles[0].Files[0].Assets[0].InternalReferencedOtherAssets.Count);
                 CollectionAssert.Contains(otherAssets.ReferencingAssets, layout.Groups[0].Bundles[0].Files[0].Assets[0]);
             }
             finally // cleanup
@@ -649,6 +667,53 @@ public class BuildLayoutGenerationTaskTests
             if (File.Exists(layoutFilePath))
                 File.Delete(layoutFilePath);
             DeletePrefab("p1");
+        }
+    }
+
+    [Test]
+    public void WhenBuildContainsMonoScripts_LayoutDoesNotHaveReferencesToMonoScriptAssets()
+    {
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+        AddressableAssetGroup group = null;
+        bool prevBuildRemoteCatalog = Settings.BuildRemoteCatalog;
+
+        try
+        {
+            // setup
+            group = CreateGroup("Group1");
+            CreateAddressableScriptableObject("so1", group);
+            AssetDatabase.SaveAssets();
+
+            BuildLayout layout = BuildAndExtractLayout();
+
+            // Test
+            foreach (BuildLayout.ExplicitAsset explicitAsset in BuildLayoutHelpers.EnumerateAssets(layout))
+            {
+                foreach (var referencedAsset in explicitAsset.InternalReferencedExplicitAssets)
+                {
+                    Assert.IsNotNull(referencedAsset, "Referenced Asset was null, this was likely a stripped MonoScript");
+                    Assert.IsTrue(!referencedAsset.AssetPath.EndsWith(".cs") && referencedAsset.AssetPath.EndsWith(".dll"));
+                }
+                foreach (var referencedAsset in explicitAsset.ExternallyReferencedAssets)
+                {
+                    Assert.IsNotNull(referencedAsset, "Referenced Asset was null, this was likely a stripped MonoScript");
+                    Assert.IsTrue(!referencedAsset.AssetPath.EndsWith(".cs") && referencedAsset.AssetPath.EndsWith(".dll"));
+                }
+                foreach (var referencedAsset in explicitAsset.InternalReferencedOtherAssets)
+                {
+                    Assert.IsNotNull(referencedAsset, "Referenced Asset was null, this was likely a stripped MonoScript");
+                    Assert.IsTrue(!referencedAsset.AssetPath.EndsWith(".cs") && referencedAsset.AssetPath.EndsWith(".dll"));
+                }
+            }
+        }
+        finally // cleanup
+        {
+            Settings.BuildRemoteCatalog = prevBuildRemoteCatalog;
+            if (group != null)
+                Settings.RemoveGroup(group);
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeleteScriptableObject("so1");
         }
     }
 }

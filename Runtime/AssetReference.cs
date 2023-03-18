@@ -26,10 +26,11 @@ namespace UnityEngine.AddressableAssets
         public AssetReferenceT(string guid)
             : base(guid)
         {
-#if UNITY_EDITOR
-            m_DerivedClassType = typeof(TObject);
-#endif
         }
+
+#if UNITY_EDITOR
+        protected override internal Type DerivedClassType => typeof(TObject);
+#endif
 
         /// <summary>
         /// Load the referenced asset as type TObject.
@@ -88,30 +89,13 @@ namespace UnityEngine.AddressableAssets
         }
 
 #if UNITY_EDITOR
-        internal TObject FetchAsset()
-        {
-            var assetPath = AssetDatabase.GUIDToAssetPath(AssetGUID);
-            var asset = AssetDatabase.LoadAssetAtPath(assetPath, typeof(TObject));
-            return (TObject)asset;
-        }
-#endif
-
-#if UNITY_EDITOR
         /// <summary>
         /// Type-specific override of parent editorAsset.  Used by the editor to represent the main asset referenced.
         /// </summary>
         /// <returns>Editor Asset as type TObject, else null</returns>
         public new TObject editorAsset
         {
-            get
-            {
-                if (CachedAsset as TObject != null || string.IsNullOrEmpty(AssetGUID))
-                    return CachedAsset as TObject;
-                TObject asset = FetchAsset();
-                if (asset == null)
-                    Debug.LogWarning("Assigned editorAsset does not match type " + typeof(TObject) + ". EditorAsset will be null.");
-                return asset;
-            }
+            get => base.editorAsset as TObject;
         }
 #endif
     }
@@ -214,14 +198,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public new Object editorAsset
         {
-            get
-            {
-                if (CachedAsset != null || string.IsNullOrEmpty(AssetGUID))
-                    return CachedAsset;
-
-                var prop = typeof(AssetReference).GetProperty("editorAsset");
-                return prop.GetValue(this, null) as Object;
-            }
+            get => GetEditorAssetInternal();
         }
 
         internal override Object GetEditorAssetInternal()
@@ -231,13 +208,13 @@ namespace UnityEngine.AddressableAssets
 
             var assetPath = AssetDatabase.GUIDToAssetPath(m_AssetGUID);
             Type mainAssetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-            Object asset = mainAssetType == typeof(SpriteAtlas) ? AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAtlas)) : AssetDatabase.LoadAssetAtPath(assetPath, m_DerivedClassType);
+            Object asset = mainAssetType == typeof(SpriteAtlas) ? AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAtlas)) : AssetDatabase.LoadAssetAtPath(assetPath, DerivedClassType);
 
-            if (m_DerivedClassType == null)
+            if (DerivedClassType == null)
                 return CachedAsset = asset;
 
             if (asset == null)
-                Debug.LogWarning($"Assigned editorAsset does not match type {typeof(SpriteAtlas)} or {m_DerivedClassType}. EditorAsset will be null.");
+                Debug.LogWarning($"Assigned editorAsset does not match type {typeof(SpriteAtlas)} or {DerivedClassType}. EditorAsset will be null.");
             return CachedAsset = asset;
         }
 
@@ -319,7 +296,9 @@ namespace UnityEngine.AddressableAssets
         string m_SubObjectType = null;
 
         AsyncOperationHandle m_Operation;
-
+#if UNITY_EDITOR
+        virtual protected internal Type DerivedClassType { get; }
+#endif
         /// <summary>
         /// The AsyncOperationHandle currently being used by the AssetReference.
         /// For example, if you call AssetReference.LoadAssetAsync, this property will return a handle to that operation.
@@ -445,15 +424,6 @@ namespace UnityEngine.AddressableAssets
         public AssetReference(string guid)
         {
             m_AssetGUID = guid;
-        }
-
-        //Special constructor only used when constructing in a derived class
-        internal AssetReference(string guid, Type type)
-        {
-            m_AssetGUID = guid;
-#if UNITY_EDITOR
-            m_DerivedClassType = type;
-#endif
         }
 
         /// <summary>
@@ -726,7 +696,6 @@ namespace UnityEngine.AddressableAssets
 #pragma warning disable CS0414
         bool m_EditorAssetChanged;
 
-        protected internal Type m_DerivedClassType;
 #pragma warning restore CS0414
 
         /// <summary>
@@ -748,18 +717,18 @@ namespace UnityEngine.AddressableAssets
 
             var asset = FetchEditorAsset();
 
-            if (m_DerivedClassType == null)
+            if (DerivedClassType == null)
                 return CachedAsset = asset;
 
             if (asset == null)
-                Debug.LogWarning("Assigned editorAsset does not match type " + m_DerivedClassType + ". EditorAsset will be null.");
+                Debug.LogWarning("Assigned editorAsset does not match type " + DerivedClassType + ". EditorAsset will be null.");
             return CachedAsset = asset;
         }
 
         internal Object FetchEditorAsset()
         {
             var assetPath = AssetDatabase.GUIDToAssetPath(m_AssetGUID);
-            var asset = AssetDatabase.LoadAssetAtPath(assetPath, m_DerivedClassType ?? AssetDatabase.GetMainAssetTypeAtPath(assetPath));
+            var asset = AssetDatabase.LoadAssetAtPath(assetPath, DerivedClassType ?? AssetDatabase.GetMainAssetTypeAtPath(assetPath));
             return asset;
         }
 
@@ -779,7 +748,7 @@ namespace UnityEngine.AddressableAssets
 
         internal virtual bool SetEditorAssetInternal(Object value)
         {
-            return OnSetEditorAsset(value, m_DerivedClassType);
+            return OnSetEditorAsset(value, DerivedClassType);
         }
 
         internal bool OnSetEditorAsset(Object value, Type derivedType)

@@ -556,10 +556,10 @@ namespace UnityEditor.AddressableAssets.Settings
 
             public delegate void Delegate(T1 arg1, T2 arg2, T3 arg3, T4 arg4);
 
-            private SortedList<int, Delegate> m_SortedInvocationList = new SortedList<int, Delegate>();
+            private readonly SortedList<int, Delegate> m_SortedInvocationList = new SortedList<int, Delegate>();
 
-            private List<QueuedValues> m_InvokeQueue;
-            private List<(int, Delegate)> m_RegisterQueue;
+            private readonly List<QueuedValues> m_InvokeQueue = new List<QueuedValues>();
+            private readonly List<(int, Delegate)> m_RegisterQueue = new List<(int, Delegate)> ();
             private bool m_IsInvoking;
 
             /// <summary>
@@ -579,7 +579,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     }
                 }
 
-                if (m_IsInvoking && m_RegisterQueue != null)
+                if (m_IsInvoking && m_RegisterQueue.Count > 0)
                 {
                     for (int i = m_RegisterQueue.Count - 1; i >= 0; --i)
                     {
@@ -650,17 +650,16 @@ namespace UnityEditor.AddressableAssets.Settings
 
             private void FlushRegistrationQueue()
             {
-                if (m_RegisterQueue != null && m_RegisterQueue.Count > 0)
+                if (m_RegisterQueue.Count > 0)
                 {
                     for (int i = m_RegisterQueue.Count - 1; i >= 0; --i)
                         RegisterToInvocationList(m_RegisterQueue[i].Item2, m_RegisterQueue[i].Item1);
-                    m_RegisterQueue = null;
                 }
             }
 
             private void FlushInvokeQueue()
             {
-                if (m_InvokeQueue != null)
+                if (m_InvokeQueue.Count > 0)
                 {
                     // keep looping the invoke buffer in case new invokes get added during invoke
                     while (m_InvokeQueue.Count > 0)
@@ -671,8 +670,6 @@ namespace UnityEditor.AddressableAssets.Settings
                             m_InvokeQueue.RemoveAt(i);
                         }
                     }
-
-                    m_InvokeQueue = null;
                 }
             }
 
@@ -688,8 +685,6 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 if (m_SortedInvocationList.Count == 0 || m_IsInvoking)
                 {
-                    if (m_InvokeQueue == null)
-                        m_InvokeQueue = new List<QueuedValues>();
                     m_InvokeQueue.Add(new QueuedValues {arg1 = arg1, arg2 = arg2, arg3 = arg3, arg4 = arg4});
                 }
                 else

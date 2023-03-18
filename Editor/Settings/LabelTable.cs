@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using UnityEditor.AddressableAssets.GUI;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -17,8 +18,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             get { return m_LabelNames; }
         }
-
-        const int k_KNameCountCap = 3;
 
         internal bool AddLabelName(string name)
         {
@@ -78,28 +77,32 @@ namespace UnityEditor.AddressableAssets.Settings
             return m_LabelNames.Remove(name);
         }
 
-        internal string GetString(HashSet<string> val, float width) //TODO - use width to add the "..." in the right place.
+        internal string GetString(HashSet<string> val, float width)
         {
             if (val == null || val.Count == 0)
                 return "";
 
             StringBuilder sb = new StringBuilder();
-            int counter = 0;
-            foreach (var v in m_LabelNames)
-            {
-                if (val.Contains(v))
-                {
-                    if (counter >= k_KNameCountCap)
-                    {
-                        sb.Append("...");
-                        break;
-                    }
 
-                    if (counter > 0)
-                        sb.Append(", ");
-                    sb.Append(v);
-                    counter++;
-                }
+            var content = new GUIContent("");
+            int remaining = val.Count;
+            foreach (string s in val)
+            {
+                remaining--;
+                content.text = s;
+                var sx = UnityEngine.GUI.skin.label.CalcSize(content);
+                width -= sx.x;
+
+                string labelName = m_LabelNames.Contains(s) ? s :
+                    AddressablesGUIUtility.ConvertTextToStrikethrough(s);
+
+                if (remaining > 0)
+                    sb.Append($"{labelName}, ");
+                else
+                    sb.Append(labelName);
+
+                if (width < 20)
+                    break;
             }
 
             return sb.ToString();

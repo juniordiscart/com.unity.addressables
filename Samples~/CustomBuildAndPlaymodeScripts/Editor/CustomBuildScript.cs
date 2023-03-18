@@ -319,7 +319,7 @@ public class CustomBuildScript : BuildScriptBase
         }
 
         var contentCatalog = new ContentCatalogData(ResourceManagerRuntimeData.kCatalogAddress);
-        contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList(), aaContext.Settings.OptimizeCatalogSize);
+        contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList());
 
         contentCatalog.ResourceProviderData.AddRange(m_ResourceProviderData);
         foreach (var t in aaContext.providerTypes)
@@ -1281,3 +1281,4 @@ public class CustomBuildScript : BuildScriptBase
     }
 }
 #endif
+

@@ -133,6 +133,39 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
+#if ENABLE_BINARY_CATALOG
+        HashSet<string> GetCacheDirsInUse(IList<AsyncOperationHandle> catalogOps)
+        {
+            var cacheDirsInUse = new HashSet<string>();
+            for (int i = 0; i < catalogOps.Count; i++)
+            {
+                var locator = catalogOps[i].Result as IResourceLocator;
+
+                if (locator == null)
+                {
+                    var catData = catalogOps[i].Result as ContentCatalogData;
+                    if (catData == null)
+                        return cacheDirsInUse;
+                    locator = catData.CreateCustomLocator(catData.location.PrimaryKey);
+                }
+
+                foreach (var location in locator.AllLocations)
+                {
+                    if (location.Data is AssetBundleRequestOptions options)
+                    {
+                        GetLoadInfo(location, m_Addressables.ResourceManager, out LoadType loadType, out string path);
+                        if (loadType == LoadType.Web)
+                        {
+                            string cacheDir = Path.Combine(Caching.currentCacheForWriting.path, options.BundleName); // Cache entries are named in this format "baseCachePath/bundleName/hash"
+                            cacheDirsInUse.Add(cacheDir);
+                        }
+                    }
+                }
+            }
+
+            return cacheDirsInUse;
+        }
+#else
         HashSet<string> GetCacheDirsInUse(IList<AsyncOperationHandle> catalogOps)
         {
             var cacheDirsInUse = new HashSet<string>();
@@ -164,9 +197,11 @@ namespace UnityEngine.AddressableAssets
                     }
                 }
             }
-
             return cacheDirsInUse;
         }
+#endif
+
+
     }
 }
 #endif

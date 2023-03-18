@@ -344,7 +344,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Assert.Throws<NullReferenceException>(() => new ContentCatalogProvider.InternalOp().LoadCatalog("fakeId", false));
         }
 
+#if ENABLE_BINARY_CATALOG
+        [TestCase("http://127.0.0.1/catalog.bin", false)]
+#else
         [TestCase("http://127.0.0.1/catalog.json", false)]
+#endif
         [TestCase("http://127.0.0.1/catalog.bundle", true)]
         public void BundledCatalog_WhenRequestingRemoteCatalog_CanLoadCatalogFromBundle_ReturnsExpectedResult(string internalId, bool result)
         {

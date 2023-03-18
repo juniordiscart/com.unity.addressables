@@ -1,11 +1,11 @@
 using System;
 using System.IO;
 using System.Net;
-using System.Threading;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets.HostingServices;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.Tests.HostingServices
 {
@@ -52,17 +52,21 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             m_Service.HostingServiceContentRoots.Add(m_ContentRoot);
         }
 
+        [TearDown]
+        public void Cleanup()
+        {
+            m_Service.StopHostingService();
+        }
+
         [OneTimeTearDown]
         public void TearDown()
         {
-            m_Service.StopHostingService();
-
             if (!string.IsNullOrEmpty(m_ContentRoot) && Directory.Exists(m_ContentRoot))
                 Directory.Delete(m_ContentRoot, true);
         }
 
         [TestCase("subdir", "subdir1")] //"subdir3")]
-        [TestCase("subdír☠", "subdirãúñ", TestName = "ShouldServeFilesWSpecialCharacters")] //"subdirü", 
+        [TestCase("subdír☠", "subdirãúñ", TestName = "ShouldServeFilesWSpecialCharacters")] //"subdirü",
         public void ShouldServeRequestedFiles(string subdir1, string subdir2) // string subdir3)
         {
             var fileNames = new[]
@@ -96,19 +100,49 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
             }
         }
 
-        [Test]
-        public void HttpServiceCompletesWithUploadSpeedWhenExpected()
+        private class MockHttpContext : HttpHostingService.IHttpContext
         {
+            public Uri Url { get; set; }
+            public string ContentType { get; set; }
+            public long ContentLength { get; set; }
+
+            public Stream OutputStream { get; set; }
+
+            public Uri GetRequestUrl()
+            {
+                return Url;
+            }
+
+            public void SetResponseContentType(string contentType)
+            {
+                ContentType = contentType;
+            }
+
+            public void SetResponseContentLength(long contentLength)
+            {
+                ContentLength = contentLength;
+            }
+
+            public Stream GetResponseOutputStream()
+            {
+                return OutputStream;
+            }
+        }
+
+        [Test]
+        public void FileUploadOperationSplitsDownload()
+        {
+
             string subdir1 = "subdir";
-            //string subdir2 = "subdir1"; // Remove comment when Mono limit Fixed
-            //string subdir3 = "subdir3";
+            string subdir2 = "subdir1"; // Remove comment when Mono limit Fixed
+            string subdir3 = "subdir3";
 
             var fileNames = new[]
             {
                 Path.GetRandomFileName(),
                 Path.Combine(subdir1, Path.GetRandomFileName()),
-                //Path.Combine(subdir2, Path.Combine(subdir3, Path.GetRandomFileName())) // Remove comment when Mono limit Fixed.
-                //Path.Combine(subdir3, Path.GetRandomFileName()) // Remove when Mono Fix
+                Path.Combine(subdir2, Path.Combine(subdir3, Path.GetRandomFileName())),
+                Path.Combine(subdir3, Path.GetRandomFileName()),
             };
 
             foreach (var fileName in fileNames)
@@ -117,37 +151,138 @@ namespace UnityEditor.AddressableAssets.Tests.HostingServices
                 var bytes = GetRandomBytes(1024);
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath));
                 File.WriteAllBytes(filePath, bytes);
-                m_Service.StartHostingService();
-                m_Service.UploadSpeed = 1024 * 1024 * 10;
+                // we execute every 250ms so you can divide upload speed by 4
+                // to see how much each update will process
+                var uploadSpeed = 2048;
 
-                Assert.IsTrue(m_Service.IsHostingServiceRunning);
-                var url = string.Format("http://127.0.0.1:{0}/{1}", m_Service.HostingServicePort, fileName);
+                var cleanupCalled = false;
+                Action cleanup = () => { cleanupCalled = true; };
+                var context = new MockHttpContext();
+                using (MemoryStream outputStream = new MemoryStream(1024))
+                {
+                    context.OutputStream = outputStream;
+                    context.Url = new Uri("http://127.0.0.1:55555");
+                    var op = new HttpHostingService.FileUploadOperation(context, filePath, uploadSpeed, cleanup);
+                    op.Update(null);
+                    Assert.AreEqual(512, context.OutputStream.Length);
+                    op.Update(null);
+                }
+                Assert.AreEqual(1024, context.ContentLength);
+                Assert.AreEqual("application/octet-stream", context.ContentType);
+                Assert.IsTrue(cleanupCalled);
+            }
+        }
+
+        [Test]
+        public void FileUploadOperationCallsCleanupOnError()
+        {
+
+            string subdir1 = "subdir";
+            var fileName = Path.Combine(subdir1, Path.GetRandomFileName());
+            var filePath = Path.Combine(m_ContentRoot, fileName);
+            // we intentionally do not initialize a test file
+            var uploadSpeed = 2048;
+
+            var exceptionThrown = false;
+            var cleanupCalled = false;
+            Action cleanup = () => { cleanupCalled = true; };
+            var context = new MockHttpContext();
+            try
+            {
+                var _ = new HttpHostingService.FileUploadOperation(context, filePath, uploadSpeed, cleanup);
+            }
+            catch (Exception e)
+            {
+                exceptionThrown = true;
+            }
+
+            LogAssert.Expect(LogType.Exception, $"DirectoryNotFoundException: Could not find a part of the path \"{filePath}\".");
+            Assert.IsTrue(cleanupCalled);
+            Assert.IsTrue(exceptionThrown);
+        }
+
+        [Test]
+        public void FileUploadOperationHandlesError()
+        {
+
+            var fileName = Path.GetRandomFileName();
+
+            var filePath = Path.Combine(m_ContentRoot, fileName);
+            var bytes = GetRandomBytes(1024);
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+            File.WriteAllBytes(filePath, bytes);
+            // we execute every 250ms so you can divide upload speed by 4
+            // to see how much each update will process
+            var uploadSpeed = 2048;
+
+            var cleanupCalled = false;
+            var exceptionCaught = false;
+            Action cleanup = () => { cleanupCalled = true; };
+            var context = new MockHttpContext();
+            using (MemoryStream outputStream = new MemoryStream(1024))
+            {
                 try
                 {
-                    int preOpCount = m_Service.ActiveOperations.Count;
-                    m_Client.DownloadDataAsync(new Uri(url));
-                    while (m_Service.ActiveOperations.Count == preOpCount)
-                    {
-                        // wait until the client has communicated with the service
-                        Thread.Sleep(1);
-                    }
-
-                    var half = (bytes.Length + 1) / 2;
-                    m_Service.Update(1, half);
-                    Assert.AreEqual(m_Service.ActiveOperations.Count, 1);
-                    m_Service.Update(1, half);
-                    Assert.AreEqual(m_Service.ActiveOperations.Count, 0);
-
-                    while (m_Client.IsBusy)
-                    {
-                        // wait until the client has completed
-                        Thread.Sleep(1);
-                    }
+                    context.OutputStream = outputStream;
+                    // close the output stream to trigger an exception on writes
+                    outputStream.Close();
+                    context.Url = new Uri("http://127.0.0.1:55555");
+                    var op = new HttpHostingService.FileUploadOperation(context, filePath, uploadSpeed, cleanup);
+                    op.Update(null);
                 }
                 catch (Exception e)
                 {
-                    Assert.Fail(e.Message);
+                    exceptionCaught = true;
                 }
+            }
+            Assert.IsTrue(cleanupCalled);
+            Assert.IsTrue(exceptionCaught);
+        }
+
+
+        [Test]
+        public void HttpServiceCompletesWithUploadSpeedWhenExpected()
+        {
+            string subdir1 = "subdir";
+            string subdir2 = "subdir1";
+            string subdir3 = "subdir3";
+
+            var fileNames = new[]
+            {
+                Path.GetRandomFileName(),
+                Path.Combine(subdir1, Path.GetRandomFileName()),
+                Path.Combine(subdir2, Path.Combine(subdir3, Path.GetRandomFileName())),
+                Path.Combine(subdir3, Path.GetRandomFileName()),
+            };
+
+            m_Service.StartHostingService();
+            try
+            {
+                foreach (var fileName in fileNames)
+                {
+                    var filePath = Path.Combine(m_ContentRoot, fileName);
+                    var bytes = GetRandomBytes(1024);
+                    Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                    File.WriteAllBytes(filePath, bytes);
+
+                    m_Service.UploadSpeed = 2048;
+
+                    Assert.IsTrue(m_Service.IsHostingServiceRunning);
+                    var url = string.Format("http://127.0.0.1:{0}/{1}", m_Service.HostingServicePort, fileName);
+                    try
+                    {
+                        var downloadedBytes = m_Client.DownloadData(new Uri(url));
+                        Assert.AreEqual(1024, downloadedBytes.Length);
+                    }
+                    catch (Exception e)
+                    {
+                        Assert.Fail(e.Message);
+                    }
+                }
+            }
+            finally
+            {
+                m_Service.StopHostingService();
             }
         }
 

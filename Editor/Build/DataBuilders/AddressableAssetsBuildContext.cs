@@ -97,6 +97,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         public Dictionary<string, List<string>> bundleToExpandedBundleDependencies;
 
+        /// <summary>
+        /// A mapping of Asset GUID's to resulting ContentCatalogDataEntry entries.
+        /// </summary>
+        internal Dictionary<GUID, List<ContentCatalogDataEntry>> GuidToCatalogLocation = null;
+
         private Dictionary<string, List<ContentCatalogDataEntry>> m_PrimaryKeyToDependers = null;
 
         internal Dictionary<string, List<ContentCatalogDataEntry>> PrimaryKeyToDependerLocations

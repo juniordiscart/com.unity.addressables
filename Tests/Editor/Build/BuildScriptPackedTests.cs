@@ -505,14 +505,16 @@ namespace UnityEditor.AddressableAssets.Tests
             var group = Settings.CreateGroup("PackedTest", false, false, false, null, typeof(BundledAssetGroupSchema));
             var bundleToAssetGroup = new Dictionary<string, string>();
 
-            List<string> uniqueNames = BuildScriptPackedMode.HandleDuplicateBundleNames(bundleBuilds, bundleToAssetGroup, group.Guid);
+            List<string> uniqueNames = BuildScriptPackedMode.HandleBundleNames(bundleBuilds, bundleToAssetGroup, group.Guid);
 
             var uniqueNamesInBundleBuilds = bundleBuilds.Select(b => b.assetBundleName).Distinct();
             Assert.AreEqual(bundleBuilds.Count, uniqueNames.Count());
             Assert.AreEqual(bundleBuilds.Count, uniqueNamesInBundleBuilds.Count());
             Assert.AreEqual(bundleBuilds.Count, bundleToAssetGroup.Count);
         }
-
+#if ENABLE_BINARY_CATALOG
+        //TODO: add binary versions of these tests....
+#else
         [Test]
         public void CreateCatalogFiles_NullArgs_ShouldFail()
         {
@@ -525,7 +527,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsFalse(result);
             LogAssert.Expect(LogType.Error, new Regex("catalog", RegexOptions.IgnoreCase));
 
-            result = m_BuildScript.CreateCatalogFiles(null, m_BuilderInput, m_BuildContext);
+            result = m_BuildScript.CreateCatalogFiles((string)null, m_BuilderInput, m_BuildContext);
             Assert.IsFalse(result);
             LogAssert.Expect(LogType.Error, new Regex("catalog", RegexOptions.IgnoreCase));
         }
@@ -639,6 +641,7 @@ namespace UnityEditor.AddressableAssets.Tests
             File.Delete(registryRemoteCatalogPath);
             File.Delete(registryRemoteHashPath);
         }
+#endif
     }
 
     class ProcessPlayerDataSchemaTests : EditorAddressableAssetsTestFixture

@@ -156,6 +156,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             protected virtual void SendWebRequest(string path)
             {
+                path = path.Replace('\\', '/');
                 UnityWebRequest request = new UnityWebRequest(path, UnityWebRequest.kHttpVerbGET, new DownloadHandlerBuffer(), null);
                 if (m_Timeout > 0)
                     request.timeout = m_Timeout;

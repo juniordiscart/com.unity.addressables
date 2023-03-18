@@ -16,3 +16,14 @@ apiRules:
   - exclude: 
       type: Namespace
       uidRegex: DocExampleCode$
+  # hiding samples from api docs
+  - exclude:
+      uidRegex: .*Global Namespace.AddressablesUtility.*
+  - exclude:
+      uidRegex: .*Global Namespace.ComponentReference.*
+  - exclude:
+      uidRegex: .*Global Namespace.DisableAssetImportOnBuild.*
+  - exclude:
+      uidRegex: .*Global Namespace.LoadSceneForCustomBuild.*
+  - exclude:
+      uidRegex: .*Global Namespace.PrefabSpawnerSample.*

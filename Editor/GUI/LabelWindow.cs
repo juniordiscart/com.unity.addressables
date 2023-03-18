@@ -11,7 +11,7 @@ namespace UnityEditor.AddressableAssets.GUI
     public class LabelWindow : EditorWindow
     {
         ReorderableList m_LabelNamesRl;
-        private AddressableAssetSettings m_Settings;
+        [SerializeField] private AddressableAssetSettings m_Settings;
         private Vector2 m_ScrollPosition;
         private int m_BorderSpacing = 7;
 
@@ -20,6 +20,8 @@ namespace UnityEditor.AddressableAssets.GUI
         bool m_IsEditing = false;
         string m_CurrentEdit;
         string m_OldName;
+
+        private const string k_RemoveLabelsOptAlwaysKey = "labelsWindowRemoveLabelFromEntries";
 
         /// <summary>
         /// Creates a new LabelWindow instance and retrieves label names from the given settings object.
@@ -48,6 +50,18 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnGUI()
         {
+            if (m_LabelNamesRl == null)
+            {
+                if (m_Settings != null)
+                    Intialize(m_Settings);
+                else
+                {
+                    // if the settings originally used to initialise are not serialised
+                    // close the window instead of erroring
+                    this.Close();
+                    return;
+                }
+            }
             GUILayout.BeginVertical(EditorStyles.label);
             GUILayout.Space(m_BorderSpacing);
             m_ScrollPosition = GUILayout.BeginScrollView(m_ScrollPosition);
@@ -109,8 +123,26 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnRemoveLabel(ReorderableList list)
         {
-            m_Settings.RemoveLabel(m_Settings.labelTable.labelNames[list.index]);
+            string labelName = m_Settings.labelTable.labelNames[list.index];
+            m_Settings.RemoveLabel(labelName);
             AddressableAssetUtility.OpenAssetIfUsingVCIntegration(m_Settings);
+
+            if (EditorUtility.DisplayDialog("Remove Label", "Also remove label from all entries?",
+                    "Yes", "No", DialogOptOutDecisionType.ForThisMachine, k_RemoveLabelsOptAlwaysKey))
+            {
+                foreach (AddressableAssetGroup assetGroup in m_Settings.groups)
+                {
+                    bool groupChanged = false;
+                    foreach (AddressableAssetEntry entry in assetGroup.entries)
+                    {
+                        if (entry.SetLabel(labelName, false))
+                            groupChanged = true;
+                    }
+
+                    if (groupChanged)
+                        AddressableAssetUtility.OpenAssetIfUsingVCIntegration(assetGroup);
+                }
+            }
         }
 
         void OnAddLabel(Rect buttonRect, ReorderableList list)

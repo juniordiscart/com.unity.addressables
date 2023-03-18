@@ -8,6 +8,7 @@ using System.Text;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -371,9 +372,27 @@ namespace UnityEditor.AddressableAssets.Build
         public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
             string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
         {
+            return SaveContentState(locations, null, path, entries, dependencyData, playerVersion, remoteCatalogPath, carryOverCacheState);
+        }
+
+        /// <summary>
+        /// Save the content update information for a set of AddressableAssetEntry objects.
+        /// </summary>
+        /// <param name="locations">The ContentCatalogDataEntry locations that were built into the Content Catalog.</param>
+        /// <param name="guidToCatalogLocation">Mapping of asset Guid to catalog locations entries for lookup of extra data.</param>
+        /// <param name="path">File to write content stat info to.  If file already exists, it will be deleted before the new file is created.</param>
+        /// <param name="entries">The entries to save.</param>
+        /// <param name="dependencyData">The raw dependency information generated from the build.</param>
+        /// <param name="playerVersion">The player version to save. This is usually set to AddressableAssetSettings.PlayerBuildVersion.</param>
+        /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
+        /// <param name="carryOverCacheState">Cached state that needs to carry over from the previous build.  This mainly affects Content Update.</param>
+        /// <returns>True if the file is saved, false otherwise.</returns>
+        internal static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
+            string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
+        {
             try
             {
-                var cachedInfos = GetCachedAssetStates(locations, entries, dependencyData);
+                var cachedInfos = GetCachedAssetStates(guidToCatalogLocation, entries, dependencyData);
 
                 var cachedBundleInfos = new List<CachedBundleState>();
                 foreach (ContentCatalogDataEntry ccEntry in locations)
@@ -424,40 +443,44 @@ namespace UnityEditor.AddressableAssets.Build
             }
         }
 
-        static IList<CachedAssetState> GetCachedAssetStates(List<ContentCatalogDataEntry> locations, List<AddressableAssetEntry> entries, IDependencyData dependencyData)
+        static IList<CachedAssetState> GetCachedAssetStates(Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation,
+            List<AddressableAssetEntry> entries, IDependencyData dependencyData)
         {
-            Dictionary<string, AddressableAssetEntry> guidToEntries = new Dictionary<string, AddressableAssetEntry>();
-            Dictionary<string, ContentCatalogDataEntry> key1ToCCEntries = new Dictionary<string, ContentCatalogDataEntry>();
+            IList<CachedAssetState> gatheredCachedInfos = new List<CachedAssetState>();
 
+            Dictionary<string, AddressableAssetEntry> guidToEntries = new Dictionary<string, AddressableAssetEntry>();
             foreach (AddressableAssetEntry entry in entries)
                 if (!guidToEntries.ContainsKey(entry.guid))
                     guidToEntries[entry.guid] = entry;
-            foreach (ContentCatalogDataEntry ccEntry in locations)
-                if (ccEntry != null && ccEntry.Keys != null && ccEntry.Keys.Count > 1 && (ccEntry.Keys[1] as string) != null && !key1ToCCEntries.ContainsKey(ccEntry.Keys[1] as string))
-                    key1ToCCEntries[ccEntry.Keys[1] as string] = ccEntry;
 
-            IList<CachedAssetState> cachedInfos = new List<CachedAssetState>();
-            foreach (var assetData in dependencyData.AssetInfo)
+            foreach (KeyValuePair<GUID, AssetLoadInfo> assetData in dependencyData.AssetInfo)
+                GetCachedAssetState(guidToCatalogLocation, guidToEntries, assetData.Key, assetData.Value.referencedObjects, gatheredCachedInfos);
+            foreach (KeyValuePair<GUID, SceneDependencyInfo> sceneData in dependencyData.SceneInfo)
+                GetCachedAssetState(guidToCatalogLocation, guidToEntries, sceneData.Key, sceneData.Value.referencedObjects, gatheredCachedInfos);
+
+            return gatheredCachedInfos;
+        }
+
+        private static void GetCachedAssetState(Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation,
+            Dictionary<string, AddressableAssetEntry> guidToEntries, GUID guid,
+            IReadOnlyCollection<ObjectIdentifier> dependencies, IList<CachedAssetState> cachedInfos)
+        {
+            guidToEntries.TryGetValue(guid.ToString(), out AddressableAssetEntry addressableEntry);
+            List<ContentCatalogDataEntry> catalogLocationsForSceneGuid = null;
+            guidToCatalogLocation?.TryGetValue(guid, out catalogLocationsForSceneGuid);
+
+            if (addressableEntry != null)
             {
-                guidToEntries.TryGetValue(assetData.Key.ToString(), out AddressableAssetEntry addressableAssetEntry);
-                key1ToCCEntries.TryGetValue(assetData.Key.ToString(), out ContentCatalogDataEntry catalogAssetEntry);
-                if (addressableAssetEntry != null && catalogAssetEntry != null &&
-                    GetCachedAssetStateForData(assetData.Key, addressableAssetEntry.BundleFileId, addressableAssetEntry.parentGroup.Guid, catalogAssetEntry.Data,
-                        assetData.Value.referencedObjects.Select(x => x.guid), out CachedAssetState cachedAssetState))
+                object catalogData = catalogLocationsForSceneGuid != null && catalogLocationsForSceneGuid.Count > 0
+                    ? catalogLocationsForSceneGuid[0].Data
+                    : null;
+
+                if (GetCachedAssetStateForData(guid, addressableEntry.BundleFileId,
+                        addressableEntry.parentGroup.Guid, catalogData,
+                        dependencies.Select(x => x.guid),
+                        out CachedAssetState cachedAssetState))
                     cachedInfos.Add(cachedAssetState);
             }
-
-            foreach (var sceneData in dependencyData.SceneInfo)
-            {
-                guidToEntries.TryGetValue(sceneData.Key.ToString(), out AddressableAssetEntry addressableSceneEntry);
-                key1ToCCEntries.TryGetValue(sceneData.Key.ToString(), out ContentCatalogDataEntry catalogSceneEntry);
-                if (addressableSceneEntry != null && catalogSceneEntry != null &&
-                    GetCachedAssetStateForData(sceneData.Key, addressableSceneEntry.BundleFileId, addressableSceneEntry.parentGroup.Guid, catalogSceneEntry.Data,
-                        sceneData.Value.referencedObjects.Select(x => x.guid), out CachedAssetState cachedAssetState))
-                    cachedInfos.Add(cachedAssetState);
-            }
-
-            return cachedInfos;
         }
 
         /// <summary>
@@ -900,7 +923,7 @@ namespace UnityEditor.AddressableAssets.Build
                 List<AssetBundleBuild> bundleInputDefinitions = new List<AssetBundleBuild>();
 
                 BuildScriptPackedMode.PrepGroupBundlePacking(group, bundleInputDefinitions, schema, entry => !entryGuidToDeps.ContainsKey(entry.guid));
-                BuildScriptPackedMode.HandleDuplicateBundleNames(bundleInputDefinitions);
+                BuildScriptPackedMode.HandleBundleNames(bundleInputDefinitions);
 
                 for (int i = 0; i < bundleInputDefinitions.Count; i++)
                 {

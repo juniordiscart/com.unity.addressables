@@ -72,6 +72,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 aaContext.locations = output.Locations;
             else
                 aaContext.locations.AddRange(output.Locations);
+
+            if (aaContext.GuidToCatalogLocation == null)
+                aaContext.GuidToCatalogLocation = output.GuidToLocation;
+            else foreach (KeyValuePair<GUID,List<ContentCatalogDataEntry>> pair in output.GuidToLocation)
+                aaContext.GuidToCatalogLocation[pair.Key] = pair.Value;
+            
             aaContext.assetGroupToBundles = output.AssetGroupToBundles;
             if (aaContext.providerTypes == null)
                 aaContext.providerTypes = output.ProviderTypes;
@@ -138,6 +144,11 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             /// Content Catalog entries that were built into the Catalog.
             /// </summary>
             public List<ContentCatalogDataEntry> Locations;
+
+            /// <summary>
+            /// A mapping of Asset GUID's to resulting ContentCatalogDataEntry entries.
+            /// </summary>
+            internal Dictionary<GUID, List<ContentCatalogDataEntry>> GuidToLocation;
 
             /// <summary>
             /// A mapping of AddressableAssetGroups to the AssetBundles generated from its data.
@@ -261,6 +272,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), bundleInternalId, bundleProvider, new object[] {bEntry.BundleName}));
             }
 
+            Dictionary<GUID, List<ContentCatalogDataEntry>> guidToLocation = new Dictionary<GUID, List<ContentCatalogDataEntry>>();
             using (input.Logger.ScopedStep(LogLevel.Info, "Calculate Locations"))
             {
                 // build a mapping of asset guid to AddressableAssetEntry
@@ -273,8 +285,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     foreach (GUID assetGUID in bEntry.Assets)
                     {
                         if (guidToEntry.TryGetValue(assetGUID.ToString(), out AddressableAssetEntry entry))
+                        {
+                            int indexAddedStart = locations.Count;
                             entry.CreateCatalogEntries(locations, true, assetProvider, bEntry.ExpandedDependencies.Select(x => x.BundleName), null, input.AssetToAssetInfo, providerTypes,
                                 schema.IncludeAddressInCatalog, schema.IncludeGUIDInCatalog, schema.IncludeLabelsInCatalog, bEntry.AssetInternalIds);
+                            if (indexAddedStart < locations.Count)
+                                guidToLocation.Add(assetGUID, locations.GetRange(indexAddedStart, locations.Count-indexAddedStart));
+                        }
                     }
                 }
             }
@@ -285,6 +302,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             var output = new Output();
             output.Locations = locations;
+            output.GuidToLocation = guidToLocation;
             output.ProviderTypes = providerTypes;
             output.AssetGroupToBundles = assetGroupToBundles;
             output.BundleToImmediateBundleDependencies = bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.Dependencies.Select(y => y.BundleName).ToList());

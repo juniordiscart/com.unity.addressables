@@ -53,6 +53,14 @@ namespace UnityEditor.AddressableAssets.GUI
             return s;
         }
 
+        internal static string ConvertTextToStrikethrough(string value)
+        {
+            string str = "";
+            foreach (char c in value)
+                str = str + c + '\u0336';
+            return str;
+        }
+
         internal static bool GetFoldoutValue(string stateKey)
         {
             if (m_CachedSessionStates.TryGetValue(stateKey, out var val))
@@ -75,7 +83,7 @@ namespace UnityEditor.AddressableAssets.GUI
             m_CachedSessionStates.Add(stateKey, foldoutState);
         }
 
-        static Color HeaderBorderColor
+        internal static Color HeaderBorderColor
         {
             get
             {
@@ -84,7 +92,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        static Color HeaderNormalColor
+        internal static Color HeaderNormalColor
         {
             get
             {
@@ -93,7 +101,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        static Color HeaderHoverColor
+        internal static Color HeaderHoverColor
         {
             get
             {

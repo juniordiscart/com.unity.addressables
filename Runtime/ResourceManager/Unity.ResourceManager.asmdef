@@ -1,6 +1,17 @@
 {
     "name": "Unity.ResourceManager",
-	"versionDefines": [
+    "rootNamespace": "",
+    "references": [
+        "GUID:b46779583a009f04ba9f5f31d0e7e6ac"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
         {
             "name": "Unity",
             "expression": "2021.2.0a19",
@@ -10,6 +21,12 @@
             "name": "com.unity.services.ccd.management",
             "expression": "[2.0.0,3.0.0)",
             "define": "ENABLE_CCD"
+        },
+        {
+            "name": "com.unity.profiling.core",
+            "expression": "[1.0.2,3.0.0)",
+            "define": "ENABLE_ADDRESSABLE_PROFILER"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

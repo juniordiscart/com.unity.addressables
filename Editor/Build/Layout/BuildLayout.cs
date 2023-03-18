@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -226,8 +227,19 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// </summary>
         public List<AssetDuplicationData> DuplicatedAssets = new List<AssetDuplicationData>();
 
+        /// <summary>
+        /// The build path on disk of the default local content catalog
+        /// </summary>
+        [SerializeField]
+        internal string LocalCatalogBuildPath;
 
-        private string m_FilePath;
+        /// <summary>
+        /// The build path of the remote content catalog, if one was built
+        /// </summary>
+        [SerializeField]
+        internal string RemoteCatalogBuildPath;
+
+        internal string m_FilePath;
 
         private bool m_HeaderRead = false;
         private bool m_BodyRead = false;
@@ -344,6 +356,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// <summary>
         /// Reads basic information about the build layout
         /// </summary>
+        /// <param name="keepFileStreamsActive">If false, the file will be closed after reading the header line.</param>
         /// <returns>true is successful, else false</returns>
         public bool ReadHeader(bool keepFileStreamsActive = false)
         {
@@ -778,7 +791,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 /// <summary>
                 /// The Efficiency of the connection between the parent bundle and DependencyBundle irrespective of the full dependency tree below DependencyBundle.
                 /// Value is equal to [Serialized Filesize of assets In Dependency Bundle Referenced By Parent]/[Total size of Dependency Bundle on disk]
-                /// Example: Given two Bundles A and B that are each 10 MB on disk, and A depends on 5 MB worth of assets in B, then the Efficiency of BundleDependency A->B is 5/10 = .5
+                /// Example: Given two Bundles A and B that are each 10 MB on disk, and A depends on 5 MB worth of assets in B, then the Efficiency of DependencyLink A->B is 5/10 = .5
                 /// </summary>
                 public float Efficiency;
 
@@ -805,14 +818,17 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 }
 
 
+                /// <summary>
+                /// Represents a dependency from a root Asset to a dependent Asset.
+                /// </summary>
                 [Serializable]
                 public struct AssetDependency
                 {
                     [SerializeReference]
-                    ExplicitAsset rootAsset;
+                    internal ExplicitAsset rootAsset;
 
                     [SerializeReference]
-                    ExplicitAsset dependencyAsset;
+                    internal ExplicitAsset dependencyAsset;
 
                     internal AssetDependency(ExplicitAsset root, ExplicitAsset depAsset)
                     {
@@ -824,6 +840,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
             internal Dictionary<Bundle, BundleDependency> BundleDependencyMap = new Dictionary<Bundle, BundleDependency>();
 
+            /// <summary>
+            /// A list of bundles that this bundle depends upon.
+            /// </summary>
             [SerializeField]
             public BundleDependency[] BundleDependencies = Array.Empty<BundleDependency>();
 
@@ -920,7 +939,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public List<Bundle> Dependencies;
 
             /// <summary>
-            /// The full dependency list, flattened into a list
+            /// The second order dependencies and greater of a bundle
             /// </summary>
             [SerializeReference]
             public List<Bundle> ExpandedDependencies;
@@ -997,6 +1016,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             [SerializeReference]
             public List<DataFromOtherAsset> OtherAssets = new List<DataFromOtherAsset>();
 
+            [SerializeReference]
+            internal List<ExplicitAsset> ExternalReferences = new List<ExplicitAsset>();
+
             /// <summary>
             /// The final filename of the AssetBundle file
             /// </summary>
@@ -1023,6 +1045,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public ulong MonoScriptSize;
         }
 
+        /// <summary>
+        /// A representation of an object in an asset file.
+        /// </summary>
         [Serializable]
         public class ObjectData
         {
@@ -1030,6 +1055,16 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// FileId of Object in Asset File
             /// </summary>
             public long LocalIdentifierInFile;
+
+            /// <summary>
+            /// Object name within the Asset
+            /// </summary>
+            [SerializeField] internal string ObjectName;
+
+            /// <summary>
+            /// Component name if AssetType is a MonoBehaviour or Component
+            /// </summary>
+            [SerializeField] internal string ComponentName;
 
             /// <summary>
             /// Type of Object
@@ -1045,6 +1080,21 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The size of the streamed Asset.
             /// </summary>
             public ulong StreamedSize;
+
+            /// <summary>
+            /// References to other Objects
+            /// </summary>
+            [SerializeField] internal List<ObjectReference> References = new List<ObjectReference>();
+        }
+
+        /// <summary>
+        /// Identification of an Object within the same file
+        /// </summary>
+        [Serializable]
+        internal class ObjectReference
+        {
+            public int AssetId;
+            public List<int> ObjectIds;
         }
 
         /// <summary>
@@ -1133,16 +1183,22 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public List<DataFromOtherAsset> InternalReferencedOtherAssets = new List<DataFromOtherAsset>();
 
             /// <summary>
-            /// List of explicit Assets in the File
+            /// List of explicit Assets referenced by this asset that are in the same AssetBundle
             /// </summary>
             [SerializeReference]
             public List<ExplicitAsset> InternalReferencedExplicitAssets = new List<ExplicitAsset>();
 
             /// <summary>
-            /// List of Assets referenced by the File, but not included in the File.
+            /// List of explicit Assets referenced by this asset that are in a different AssetBundle
             /// </summary>
             [SerializeReference]
             public List<ExplicitAsset> ExternallyReferencedAssets = new List<ExplicitAsset>();
+
+            /// <summary>
+            /// List of Assets that reference this Asset
+            /// </summary>
+            [SerializeReference]
+            internal List<ExplicitAsset> ReferencingAssets = new List<ExplicitAsset>();
         }
 
         /// <summary>
@@ -1210,7 +1266,13 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         [Serializable]
         public class AssetDuplicationData
         {
+            /// <summary>
+            /// The Guid of the Asset with duplicates
+            /// </summary>
             public string AssetGuid;
+            /// <summary>
+            /// A list of duplicated objects and the bundles that contain them.
+            /// </summary>
             public List<ObjectDuplicationData> DuplicatedObjects = new List<ObjectDuplicationData>();
         }
 
@@ -1220,7 +1282,13 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         [Serializable]
         public class ObjectDuplicationData
         {
+            /// <summary>
+            /// The local identifier for an object.
+            /// </summary>
             public long LocalIdentifierInFile;
+            /// <summary>
+            /// A list of bundles that include the referenced file.
+            /// </summary>
             [SerializeReference] public List<File> IncludedInBundleFiles = new List<File>();
         }
     }
@@ -1239,6 +1307,8 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// File name to File data map.
         /// </summary>
         public Dictionary<string, BuildLayout.File> Files = new Dictionary<string, BuildLayout.File>();
+
+        internal Dictionary<BuildLayout.File, FileObjectData> FileToFileObjectData = new Dictionary<BuildLayout.File, FileObjectData>();
 
         /// <summary>
         /// Guid to ExplicitAsset data map.
@@ -1269,5 +1339,42 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
         internal Dictionary<string, AddressableAssetEntry> GuidToEntry = new Dictionary<string, AddressableAssetEntry>();
         internal Dictionary<string, AssetType> AssetPathToTypeMap = new Dictionary<string, AssetType>();
+    }
+
+    internal class FileObjectData
+    {
+        // id's for internal explicit asset and implicit asset
+        public Dictionary<ObjectIdentifier, (int, int)> InternalObjectIds = new Dictionary<ObjectIdentifier, (int, int)>();
+
+        public Dictionary<BuildLayout.ObjectData, ObjectIdentifier> Objects = new Dictionary<BuildLayout.ObjectData, ObjectIdentifier>();
+
+        public void Add(ObjectIdentifier buildObjectIdentifier, BuildLayout.ObjectData layoutObject, int assetId, int objectIndex)
+        {
+            InternalObjectIds[buildObjectIdentifier] = (assetId, objectIndex);
+            Objects[layoutObject] = buildObjectIdentifier;
+        }
+
+        public bool TryGetObjectReferenceData(ObjectIdentifier obj, out (int, int) value)
+        {
+            if (!InternalObjectIds.TryGetValue(obj, out (int, int) data))
+            {
+                value = default;
+                return false;
+            }
+
+            value = data;
+            return true;
+        }
+
+        public bool TryGetObjectIdentifier(BuildLayout.ObjectData obj, out ObjectIdentifier objectIdOut)
+        {
+            if (!Objects.TryGetValue(obj, out objectIdOut))
+            {
+                objectIdOut = default;
+                return false;
+            }
+
+            return true;
+        }
     }
 }

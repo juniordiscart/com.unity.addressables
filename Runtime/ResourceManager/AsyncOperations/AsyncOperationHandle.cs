@@ -205,7 +205,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             return default(TObject);
         }
 
-        AsyncOperationBase<TObject> InternalOp
+        internal AsyncOperationBase<TObject> InternalOp
         {
             get
             {

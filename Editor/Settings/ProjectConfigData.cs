@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -50,6 +49,12 @@ namespace UnityEditor.AddressableAssets.Settings
 
             [SerializeField]
             internal List<string> buildReports = new List<string>();
+#if UNITY_2022_2_OR_NEWER
+            [SerializeField]
+            internal bool autoOpenAddressablesReport = true;
+            [SerializeField]
+            internal bool userHasBeenInformedAboutBuildReportSettingPreBuild = false;
+#endif
         }
 
         static ConfigSaveData s_Data;
@@ -92,6 +97,44 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
         }
+
+#if UNITY_2022_2_OR_NEWER
+        internal static bool AutoOpenAddressablesReport
+        {
+            get
+            {
+                ValidateData();
+                return s_Data.autoOpenAddressablesReport;
+            }
+            set
+            {
+                ValidateData();
+                if (s_Data.autoOpenAddressablesReport != value)
+                {
+                    s_Data.autoOpenAddressablesReport = value;
+                    SaveData();
+                }
+            }
+        }
+
+        internal static bool UserHasBeenInformedAboutBuildReportSettingPreBuild
+        {
+            get
+            {
+                ValidateData();
+                return s_Data.userHasBeenInformedAboutBuildReportSettingPreBuild;
+            }
+            set
+            {
+                ValidateData();
+                if (s_Data.userHasBeenInformedAboutBuildReportSettingPreBuild != value)
+                {
+                    s_Data.userHasBeenInformedAboutBuildReportSettingPreBuild = value;
+                    SaveData();
+                }
+            }
+        }
+#endif
 
         /// <summary>
         /// File formats supported for the bundle build layout report.

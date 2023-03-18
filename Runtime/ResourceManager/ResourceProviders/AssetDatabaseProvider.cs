@@ -16,14 +16,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     {
         float m_LoadDelay = .1f;
 
-        private static Object[] LoadAllAssetRepresentationsAtPath(string assetPath)
-        {
-            return AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath);
-        }
-
         internal static Object LoadAssetSubObject(string assetPath, string subObjectName, Type type)
         {
-            var objs = AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath);
+            var objs = LoadAssetsWithSubAssets(assetPath);
             foreach (var o in objs)
             {
                 if (o.name == subObjectName)
@@ -66,7 +61,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
         internal static Object[] LoadAssetsWithSubAssets(string assetPath)
         {
-            var subObjects = LoadAllAssetRepresentationsAtPath(assetPath);
+            var subObjects = AssetDatabase.LoadAllAssetRepresentationsAtPath(assetPath);
             var allObjects = new Object[subObjects.Length + 1];
             allObjects[0] = LoadMainAssetAtPath(assetPath);
             for (int i = 0; i < subObjects.Length; i++)

@@ -28,6 +28,13 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             return true;
         }
 
+#if ENABLE_BINARY_CATALOG
+        /// <summary>
+        /// Enumeration of all locations for this locator.  This will return an empty array.
+        /// </summary>
+        public IEnumerable<IResourceLocation> AllLocations => new IResourceLocation[0];
+#endif
+
         /// <summary>
         /// The keys available in this locator.
         /// </summary>

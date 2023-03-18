@@ -19,6 +19,13 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// </summary>
         IEnumerable<object> Keys { get; }
 
+#if ENABLE_BINARY_CATALOG
+        /// <summary>
+        /// All locations that are available by this locator.
+        /// </summary>
+        IEnumerable<IResourceLocation> AllLocations { get; }
+#endif
+
         /// <summary>
         /// Retrieve the locations from a specified key.
         /// </summary>

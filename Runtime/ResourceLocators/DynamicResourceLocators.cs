@@ -40,6 +40,7 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
+        public IEnumerable<IResourceLocation> AllLocations => new IResourceLocation[0];
 
         public DynamicResourceLocator(AddressablesImpl addr)
         {

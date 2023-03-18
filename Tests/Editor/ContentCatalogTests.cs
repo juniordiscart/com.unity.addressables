@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
@@ -9,6 +10,7 @@ using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.AddressableAssets.Utility;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.ResourceManagement.Util;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
@@ -112,12 +114,12 @@ namespace UnityEditor.AddressableAssets.Tests
                 Timeout = 12,
                 AssetLoadMode = AssetLoadMode.AllPackedAssetsAndDependencies
             };
-            var dataEntry = new ContentCatalogDataEntry(typeof(ContentCatalogData), "internalId", "provider", new object[] {1}, null, options);
+            var dataEntry = new ContentCatalogDataEntry(typeof(ContentCatalogData), "internalId", "provider", new object[] { 1 }, null, options);
             var entries = new List<ContentCatalogDataEntry>();
             entries.Add(dataEntry);
             var ccData = new ContentCatalogData("TestCatalog");
-            ccData.SetData(entries, false);
-            var locator = ccData.CreateLocator();
+            ccData.SetData(entries);
+            var locator = ccData.CreateCustomLocator("");
             IList<IResourceLocation> locations;
             if (!locator.Locate(1, typeof(object), out locations))
                 Assert.Fail("Unable to locate resource location");
@@ -132,6 +134,8 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(locOptions.Timeout, options.Timeout);
             Assert.AreEqual(locOptions.AssetLoadMode, options.AssetLoadMode);
         }
+
+#if !ENABLE_BINARY_CATALOG
 
         [Test]
         public void VerifySerialization()
@@ -320,19 +324,6 @@ namespace UnityEditor.AddressableAssets.Tests
             }
         }
 
-        [Test]
-        public void ExtractCommonPrefix_ReturnsExpectedString()
-        {
-            var prefixes = new List<string>();
-            var prefixIndices = new Dictionary<string, int>();
-            Assert.AreEqual("0#/z.ext", ContentCatalogData.ExtractCommonPrefix(prefixes, prefixIndices, "x/y/z.ext"));
-            Assert.AreEqual("1#/z.ext", ContentCatalogData.ExtractCommonPrefix(prefixes, prefixIndices, "x/z.ext"));
-            Assert.AreEqual("2#/z.ext", ContentCatalogData.ExtractCommonPrefix(prefixes, prefixIndices, "x/b/z.ext"));
-            Assert.AreEqual("0#/z.ext", ContentCatalogData.ExtractCommonPrefix(prefixes, prefixIndices, "x/y/z.ext"));
-            Assert.AreEqual("z.ext", ContentCatalogData.ExtractCommonPrefix(prefixes, prefixIndices, "z.ext"));
-            Assert.AreEqual(3, prefixes.Count);
-        }
-
         string testData =
             @"{""m_LocatorId"":""AddressablesMainContentCatalog"",""m_InstanceProviderData"":{""m_Id"":""UnityEngine.ResourceManagement.ResourceProviders.InstanceProvider"",""m_ObjectType"":{""m_AssemblyName"":""Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"",""m_ClassName"":""UnityEngine.ResourceManagement.ResourceProviders.InstanceProvider""},""m_Data"":""""},""m_SceneProviderData"":{""m_Id"":""UnityEngine.ResourceManagement.ResourceProviders.SceneProvider"",""m_ObjectType"":{""m_AssemblyName"":""Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"",""m_ClassName"":""UnityEngine.ResourceManagement.ResourceProviders.SceneProvider""},""m_Data"":""""},""m_ResourceProviderData"":[{""m_Id"":""UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider"",""m_ObjectType"":{""m_AssemblyName"":""Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"",""m_ClassName"":""UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider""},""m_Data"":""""},{""m_Id"":""UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider"",""m_ObjectType"":{""m_AssemblyName"":""Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"",""m_ClassName"":""UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider""},""m_Data"":""""},{""m_Id"":""UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider"",""m_ObjectType"":{""m_AssemblyName"":""Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"",""m_ClassName"":""UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider""},""m_Data"":""""}],""m_ProviderIds"":[""UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider"",""UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider""],""m_InternalIds"":[""{UnityEngine.AddressableAssets.Addressables.RuntimePath}/StandaloneWindows64/defaultlocalgroup_assets_all_d4ed3973c342e6f06795a0f8daaebaad.bundle"",""{UnityEngine.AddressableAssets.Addressables.RuntimePath}/StandaloneWindows64/defaultlocalgroup_unitybuiltinshaders_8f144cd21867dc83f60ecd3c93095b52.bundle"",""{UnityEngine.AddressableAssets.Addressables.RuntimePath}/StandaloneWindows64/defaultlocalgroup_scenes_all_e91ebe7804da861b4deb67a340282541.bundle"",""Assets/New Material.mat"",""Assets/swef.unity""],""m_KeyDataString"":""CQAAAABEAAAAZGVmYXVsdGxvY2FsZ3JvdXBfYXNzZXRzX2FsbF9kNGVkMzk3M2MzNDJlNmYwNjc5NWEwZjhkYWFlYmFhZC5idW5kbGUATQAAAGRlZmF1bHRsb2NhbGdyb3VwX3VuaXR5YnVpbHRpbnNoYWRlcnNfOGYxNDRjZDIxODY3ZGM4M2Y2MGVjZDNjOTMwOTViNTIuYnVuZGxlAEQAAABkZWZhdWx0bG9jYWxncm91cF9zY2VuZXNfYWxsX2U5MWViZTc4MDRkYTg2MWI0ZGViNjdhMzQwMjgyNTQxLmJ1bmRsZQAXAAAAQXNzZXRzL05ldyBNYXRlcmlhbC5tYXQAIAAAADNlN2JmNTA3OTRhNzEyMjQ2YWU0ZGNiZTdhODQyOGM4ABEAAABBc3NldHMvc3dlZi51bml0eQAgAAAAYjY4MDdmODNlMWU0ODc2NGM4MjMyM2ZkNTExZTY0NjgEKToMuAQiVa/u"",""m_BucketDataString"":""CQAAAAQAAAABAAAAAAAAAE0AAAABAAAAAQAAAJ8AAAABAAAAAgAAAOgAAAABAAAAAwAAAAQBAAABAAAAAwAAACkBAAABAAAABAAAAD8BAAABAAAABAAAAGQBAAACAAAAAAAAAAEAAABpAQAAAgAAAAIAAAABAAAA"",""m_EntryDataString"":""BQAAAAAAAAAAAAAA/////wAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAP////8AAAAAhQIAAAEAAAAAAAAAAgAAAAAAAAD/////AAAAADQFAAACAAAAAAAAAAMAAAABAAAABwAAACk6DLj/////AwAAAAEAAAAEAAAAAQAAAAgAAAAiVa/u/////wUAAAACAAAA"",""m_ExtraDataString"":""B0xVbml0eS5SZXNvdXJjZU1hbmFnZXIsIFZlcnNpb249MC4wLjAuMCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj1udWxsSlVuaXR5RW5naW5lLlJlc291cmNlTWFuYWdlbWVudC5SZXNvdXJjZVByb3ZpZGVycy5Bc3NldEJ1bmRsZVJlcXVlc3RPcHRpb25z6AEAAHsAIgBtAF8ASABhAHMAaAAiADoAIgBkADQAZQBkADMAOQA3ADMAYwAzADQAMgBlADYAZgAwADYANwA5ADUAYQAwAGYAOABkAGEAYQBlAGIAYQBhAGQAIgAsACIAbQBfAEMAcgBjACIAOgAyADAAMgAxADcANAA3ADAAOQA5ACwAIgBtAF8AVABpAG0AZQBvAHUAdAAiADoAMAAsACIAbQBfAEMAaAB1AG4AawBlAGQAVAByAGEAbgBzAGYAZQByACIAOgBmAGEAbABzAGUALAAiAG0AXwBSAGUAZABpAHIAZQBjAHQATABpAG0AaQB0ACIAOgAtADEALAAiAG0AXwBSAGUAdAByAHkAQwBvAHUAbgB0ACIAOgAwACwAIgBtAF8AQgB1AG4AZABsAGUATgBhAG0AZQAiADoAIgA5ADIAZAAwAGYAOABiAGMAOQBkAGYAZABjADAAMwBlADEAMABkAGYAMgBmADMAYgAzAGIANABjADgAMgA3AGUAIgAsACIAbQBfAEIAdQBuAGQAbABlAFMAaQB6AGUAIgA6ADIANQAyADgALAAiAG0AXwBVAHMAZQBDAHIAYwBGAG8AcgBDAGEAYwBoAGUAZABCAHUAbgBkAGwAZQBzACIAOgB0AHIAdQBlAH0AB0xVbml0eS5SZXNvdXJjZU1hbmFnZXIsIFZlcnNpb249MC4wLjAuMCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj1udWxsSlVuaXR5RW5naW5lLlJlc291cmNlTWFuYWdlbWVudC5SZXNvdXJjZVByb3ZpZGVycy5Bc3NldEJ1bmRsZVJlcXVlc3RPcHRpb25zEgIAAHsAIgBtAF8ASABhAHMAaAAiADoAIgA4AGYAMQA0ADQAYwBkADIAMQA4ADYANwBkAGMAOAAzAGYANgAwAGUAYwBkADMAYwA5ADMAMAA5ADUAYgA1ADIAIgAsACIAbQBfAEMAcgBjACIAOgAzADgAMQAzADcAMgA0ADgANQA5ACwAIgBtAF8AVABpAG0AZQBvAHUAdAAiADoAMAAsACIAbQBfAEMAaAB1AG4AawBlAGQAVAByAGEAbgBzAGYAZQByACIAOgBmAGEAbABzAGUALAAiAG0AXwBSAGUAZABpAHIAZQBjAHQATABpAG0AaQB0ACIAOgAtADEALAAiAG0AXwBSAGUAdAByAHkAQwBvAHUAbgB0ACIAOgAwACwAIgBtAF8AQgB1AG4AZABsAGUATgBhAG0AZQAiADoAIgBmAGMAOAAyAGEAMAAxAGUAYgAwAGEAMgA0AGIAOQBiAGQAOQBjADAAZQBjADEAZAAzAGEAOQBiADIANgA1ADUAXwB1AG4AaQB0AHkAYgB1AGkAbAB0AGkAbgBzAGgAYQBkAGUAcgBzACIALAAiAG0AXwBCAHUAbgBkAGwAZQBTAGkAegBlACIAOgA0ADQANAA1ADQALAAiAG0AXwBVAHMAZQBDAHIAYwBGAG8AcgBDAGEAYwBoAGUAZABCAHUAbgBkAGwAZQBzACIAOgB0AHIAdQBlAH0AB0xVbml0eS5SZXNvdXJjZU1hbmFnZXIsIFZlcnNpb249MC4wLjAuMCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj1udWxsSlVuaXR5RW5naW5lLlJlc291cmNlTWFuYWdlbWVudC5SZXNvdXJjZVByb3ZpZGVycy5Bc3NldEJ1bmRsZVJlcXVlc3RPcHRpb25z6AEAAHsAIgBtAF8ASABhAHMAaAAiADoAIgBlADkAMQBlAGIAZQA3ADgAMAA0AGQAYQA4ADYAMQBiADQAZABlAGIANgA3AGEAMwA0ADAAMgA4ADIANQA0ADEAIgAsACIAbQBfAEMAcgBjACIAOgAzADQAMAA1ADQAMwA2ADQANQAxACwAIgBtAF8AVABpAG0AZQBvAHUAdAAiADoAMAAsACIAbQBfAEMAaAB1AG4AawBlAGQAVAByAGEAbgBzAGYAZQByACIAOgBmAGEAbABzAGUALAAiAG0AXwBSAGUAZABpAHIAZQBjAHQATABpAG0AaQB0ACIAOgAtADEALAAiAG0AXwBSAGUAdAByAHkAQwBvAHUAbgB0ACIAOgAwACwAIgBtAF8AQgB1AG4AZABsAGUATgBhAG0AZQAiADoAIgA5ADEANwBlADUANQAzAGQAZQBiAGQAOAAyADMAOABkAGMAMgBjADIAZAA2ADIANQBkADAAZgA4ADUAOQA0AGMAIgAsACIAbQBfAEIAdQBuAGQAbABlAFMAaQB6AGUAIgA6ADgANwA4ADIALAAiAG0AXwBVAHMAZQBDAHIAYwBGAG8AcgBDAGEAYwBoAGUAZABCAHUAbgBkAGwAZQBzACIAOgB0AHIAdQBlAH0A"",""m_Keys"":[""defaultlocalgroup_assets_all_d4ed3973c342e6f06795a0f8daaebaad.bundle"",""defaultlocalgroup_unitybuiltinshaders_8f144cd21867dc83f60ecd3c93095b52.bundle"",""defaultlocalgroup_scenes_all_e91ebe7804da861b4deb67a340282541.bundle"",""Assets/New Material.mat"",""3e7bf50794a712246ae4dcbe7a8428c8"",""Assets/swef.unity"",""b6807f83e1e48764c82323fd511e6468"",""-1207158231"",""-290499294""],""m_resourceTypes"":[{""m_AssemblyName"":""Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"",""m_ClassName"":""UnityEngine.ResourceManagement.ResourceProviders.IAssetBundleResource""},{""m_AssemblyName"":""UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"",""m_ClassName"":""UnityEngine.Material""},{""m_AssemblyName"":""Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"",""m_ClassName"":""UnityEngine.ResourceManagement.ResourceProviders.SceneInstance""}]}";
 
@@ -353,5 +344,146 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.IsNotNull(res[0].ResourceType);
             }
         }
+#else
+        [Test]
+        public void ResourceLocatorPerfTest([Values(256, 512, 1024, 2048)]int binaryReaderCacheSize, [Values(256, 512, 1024, 2048)]int locatorCacheSize)
+        {
+            var reader = new BinaryStorageBuffer.Reader(File.ReadAllBytes($"{Path.GetDirectoryName(Application.dataPath)}/catalogs/testcatalog.bin"), binaryReaderCacheSize, new ContentCatalogData.Serializer());
+            var locator = new ContentCatalogData(reader).CreateCustomLocator("", null, locatorCacheSize);
+            int count = 0;
+            var keys = locator.Keys.ToArray();
+            var sw = new Stopwatch();
+            sw.Start();
+            var startBytes = GC.GetTotalMemory(true);
+            foreach (var k in keys)
+            {
+                if (count++ > 10000)
+                    break;
+                if (locator.Locate(k.ToString(), null, out var locs))
+                {
+                    foreach (var l in locs)
+                    {
+                        var deps = l.Dependencies;
+                        var d = l.Data;
+                        var id = l.InternalId;
+                        var p = l.PrimaryKey;
+                        var pr = l.ProviderId;
+                        var t = l.ResourceType;
+                        if (deps != null)
+                        {
+                            foreach (var dep in deps)
+                            {
+                                var di = dep.InternalId;
+                                var dd = l.Data;
+                                var did = l.InternalId;
+                                var dp = l.PrimaryKey;
+                                var dpr = l.ProviderId;
+                                var dt = l.ResourceType;
+                            }
+                        }
+                    }
+                }
+            }
+            var endBytes = GC.GetTotalMemory(true);
+            Debug.Log($"BINARY: load time: {sw.ElapsedMilliseconds}, memory: {(float)(endBytes - startBytes) / (1024 * 1024)}mb");
+        }
+
+/*
+        [Test]
+        public void ConvertAndCompactCatalogs([Values(true, false)] bool compressed, [Values(1024, 1024 * 1024)]int binaryReaderCacheSize, [Values(1024, 1024 * 1024)]int locatorCacheSize)
+        {
+            foreach (var f in Directory.GetFiles($"{Path.GetDirectoryName(Application.dataPath)}/catalogs", "*.json"))
+            {
+                var origText = File.ReadAllText(f);
+                var cd = JsonUtility.FromJson<ContentCatalogData>(origText);
+                var entries = cd.GetData();
+                var originalJSONSize = new FileInfo(f).Length;
+                var binFileName = f.Replace(".json", ".bin");
+                uint fileSize = ContentCatalogData.SaveToFile(binFileName, "", entries, compressed);
+                var finalFileSize = new FileInfo(binFileName).Length;
+                var sw = new Stopwatch();
+
+                sw.Start();
+                var startBytes = GC.GetTotalMemory(true);
+                var jsonLocator = JsonUtility.FromJson<ContentCatalogData>(File.ReadAllText(f)).CreateLocator();
+                var endBytes = GC.GetTotalMemory(true);
+                Debug.Log($"JSON: load time: {sw.ElapsedMilliseconds}, memory: {(float)(endBytes - startBytes) / (1024 * 1024)}mb, file size: {(float)(originalJSONSize) / (1024 * 1024)}mb ");
+
+                sw.Restart();
+                startBytes = GC.GetTotalMemory(true);
+                foreach (var k in jsonLocator.Keys)
+                {
+                    if (jsonLocator.Locate(k.ToString(), null, out var locs))
+                    {
+                        foreach (var l in locs)
+                        {
+                            var deps = l.Dependencies;
+                            var d = l.Data;
+                            var id = l.InternalId;
+                            var p = l.PrimaryKey;
+                            var pr = l.ProviderId;
+                            var t = l.ResourceType;
+                            if (deps != null)
+                            {
+                                foreach (var dep in deps)
+                                {
+                                    var di = dep.InternalId;
+                                    var dd = l.Data;
+                                    var did = l.InternalId;
+                                    var dp = l.PrimaryKey;
+                                    var dpr = l.ProviderId;
+                                    var dt = l.ResourceType;
+                                }
+                            }
+                        }
+                    }
+                }
+                endBytes = GC.GetTotalMemory(true);
+                Debug.Log($"JSON: Locate all in {sw.ElapsedMilliseconds}ms, memory still allocated: {(float)(endBytes - startBytes) / (1024 * 1024)}");
+
+
+
+                sw.Restart();
+                startBytes = GC.GetTotalMemory(true);
+                var binLocator = ContentCatalogData.LoadFromFile(binFileName, fileSize, binaryReaderCacheSize, compressed).CreateCustomLocator("", null, locatorCacheSize);
+                endBytes = GC.GetTotalMemory(true);
+                Debug.Log($"BINARY: load time: {sw.ElapsedMilliseconds}, memory: {(float)(endBytes - startBytes) / (1024 * 1024)}mb, file data size  {(float)(fileSize) / (1024 * 1024)}, final size: {(float)(finalFileSize) / (1024 * 1024)}mb");
+
+
+                sw.Restart();
+                startBytes = GC.GetTotalMemory(true);
+                foreach (var k in jsonLocator.Keys)
+                {
+                    if (binLocator.Locate(k.ToString(), null, out var locs))
+                    {
+                        foreach (var l in locs)
+                        {
+                            var deps = l.Dependencies;
+                            var d = l.Data;
+                            var id = l.InternalId;
+                            var p = l.PrimaryKey;
+                            var pr = l.ProviderId;
+                            var t = l.ResourceType;
+                            if (deps != null)
+                            {
+                                foreach (var dep in deps)
+                                {
+                                    var di = dep.InternalId;
+                                    var dd = l.Data;
+                                    var did = l.InternalId;
+                                    var dp = l.PrimaryKey;
+                                    var dpr = l.ProviderId;
+                                    var dt = l.ResourceType;
+                                }
+                            }
+                        }
+                    }
+                }
+                endBytes = GC.GetTotalMemory(true);
+                Debug.Log($"BINARY: locate all in {sw.ElapsedMilliseconds}ms, memory still allocated: {(float)(endBytes - startBytes) / (1024 * 1024)}");
+            }
+        }*/
+#endif
     }
 }
+

@@ -39,7 +39,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             m_Version = op.ProvideHandleVersion;
         }
 
-        IGenericProviderOperation InternalOp
+        internal bool IsValid => m_InternalOp != null && m_InternalOp.ProvideHandleVersion == m_Version;
+
+        internal IGenericProviderOperation InternalOp
         {
             get
             {

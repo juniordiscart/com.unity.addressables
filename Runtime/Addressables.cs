@@ -12,6 +12,7 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Text;
 using UnityEngine.Networking;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -453,6 +454,14 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// The Instance Provider used by the Addressables System.
         /// </summary>
+        /// <remarks>
+        /// Retrieves the interface used by the Addressables Asset System to create instances of Addressable GameObjects.
+        /// </remarks>
+        /// <returns>The [IInstanceProvider](xref:UnityEngine.ResourceManagement.ResourceProviders.IInstanceProvider) object used to create instances of GameObjects.</returns>
+        /// <example>
+        /// The example below instantiates a GameObject using ProvideInstance.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInstanceProvider.cs" region="SAMPLE"/>
+        /// </example>
         public static IInstanceProvider InstanceProvider
         {
             get { return m_Addressables.InstanceProvider; }
@@ -468,29 +477,15 @@ namespace UnityEngine.AddressableAssets
             return m_Addressables.ResolveInternalId(id);
         }
 
-        /// <summary>
-        /// Functor to transform internal ids before being used by the providers.
-        /// </summary>
-        /// <remarks>
-        /// The <see cref="ResourceManager"/> calls your transorm function when it looks up an asset,
-        /// passing the <see cref="IResourceLocation"/> instance for the asset to your function.
-        /// You can change the <see cref="IResourceLocation.InternalId"/> property of this instance
-        /// and return the modified object as the return value of your function.
-        ///
-        /// See also: [Transforming resource URLs](xref:addressables-api-transform-internal-id)
-        /// </remarks>
+        /// <inheritdoc cref="ResourceManager.InternalIdTransformFunc"/>
         static public Func<IResourceLocation, string> InternalIdTransformFunc
         {
             get { return m_Addressables.InternalIdTransformFunc; }
             set { m_Addressables.InternalIdTransformFunc = value; }
         }
 
-        /// <summary>
-        /// Delegate that can be used to override the web request options before being sent.
-        /// </summary>
-        /// <remarks>
-        /// The web request passed to this delegate has already been preconfigured internally. Override at your own risk.
-        /// </remarks>
+
+        /// <inheritdoc cref="ResourceManager.WebRequestOverride"/>
         public static Action<UnityWebRequest> WebRequestOverride
         {
             get { return m_Addressables.WebRequestOverride; }
@@ -543,8 +538,18 @@ namespace UnityEngine.AddressableAssets
         public const string kAddressablesRuntimeBuildLogPath = "AddressablesRuntimeBuildLog";
 
         /// <summary>
-        /// The subfolder used by the Addressables system for its initialization data.
+        /// The subfolder used by the Addressables system for its built data.
         /// </summary>
+        /// <remarks>
+        /// The Addressables system currently builds inside the library in a folder named 'aa'. Each platform that is built
+        /// will be built inside a subfolder matching the platform name. This subfolder is also the base for loading
+        /// streaming data at runtime. The Editor build location is <see cref="BuildPath"/> and player is <see cref="PlayerBuildDataPath"/>.
+        /// </remarks>
+        /// <example>
+        /// The example demonstrates a utility function that looks inside the Streaming Assets subfolder and gets a list of
+        /// all the subfolders. This is returned as a list of all platforms that have been built on the current machine.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingStreamingAssetsSubFolder.cs" region="SAMPLE"/>
+        /// </example>
         public static string StreamingAssetsSubFolder
         {
             get { return m_Addressables.StreamingAssetsSubFolder; }
@@ -561,8 +566,22 @@ namespace UnityEngine.AddressableAssets
         public static string BuildReportPath = "Library/com.unity.addressables/BuildReports/";
 
         /// <summary>
-        /// The path used by the Addressables system for its initialization data.
+        /// The build path used by the Addressables system for its initialization data.
         /// </summary>
+        /// <remarks>
+        /// Addressables.BuildPath returns the path used by the Addressables system for its built initialization data.
+        /// This path is to the Addressables folder in the Project Library folder for the active platform.This folder
+        /// contains the settings, local catalog and addressables managed local asset bundles.
+        /// </remarks>
+        /// <example>
+        /// Gets the runtime settings from the buildPath and returns the Addressables package version that the content was built using.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingBuildPath.cs" region="GET_SETTINGS_FROM_BUILDPATH"/>
+        /// </example>
+        /// <example>
+        /// In this example we add a build pre-process hook. When building a player this throws an exception if the content has not been built.
+        /// This could be useful when 'Build Addressables on Player Build' is not set in Addressables Settings. 
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/ContentBuiltcheck.cs" region="CONTENT_BUILT_CHECK"/>
+        /// </example>
         public static string BuildPath
         {
             get { return m_Addressables.BuildPath; }
@@ -571,6 +590,17 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// The path that addressables player data gets copied to during a player build.
         /// </summary>
+        /// <remarks>
+        /// This resolves to Assets/StreamingAssets/aa by default. Files in this folder are included
+        /// in the player build process. Remote bundles should be built outside this folder to prevent
+        /// them from being included in the default player build.
+        /// </remarks>
+        /// <example>
+        /// This example is a custom build script that extends the default packed build script. Files are built
+        /// in a custom build folder, and then copied into PlayerBuildDataPath so they are included with
+        /// the player build.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingPlayerBuildDataPath.cs" region="SAMPLE"/>
+        /// </example>
         public static string PlayerBuildDataPath
         {
             get { return m_Addressables.PlayerBuildDataPath; }
@@ -579,6 +609,11 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// The path used by the Addressables system to load initialization data.
         /// </summary>
+        /// /// <remarks>
+        /// When running in the Editor Addressables.RuntimePath returns the path to the locally built data in the <see cref="Addressables.LibraryPath"/>.
+        /// When running in a player this returns the path to the same content found in <see cref="Application.streamingAssetsPath"/>. 
+        /// This folder contains the settings, local catalog and Addressables managed local asset bundles.
+        /// </remarks>
         public static string RuntimePath
         {
             get { return m_Addressables.RuntimePath; }
@@ -633,9 +668,16 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// Debug.Log wrapper method that is contional on the ADDRESSABLES_LOG_ALL symbol definition.  This can be set in the Player preferences in the 'Scripting Define Symbols'.
+        /// Log can be used to write a Debug level log message.
         /// </summary>
+        /// <remarks>
+        /// Log works the same as <see cref="Debug.Log(object)">Debug.Log</see>. Addressables only logs warnings and errors so by default this function does not log anything.
+        /// </remarks>
         /// <param name="msg">The msg to log</param>
+        /// <example>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLog.cs" region="SAMPLE" />
+        /// </example>
+        /// <seealso href="xref:addressables-asset-settings#enable-all-logging">Enable all logging</seealso>
         [Conditional(k_AddressablesLogConditional)]
         public static void Log(string msg)
         {
@@ -643,10 +685,17 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// Debug.LogFormat wrapper method that is contional on the ADDRESSABLES_LOG_ALL symbol definition.  This can be set in the Player preferences in the 'Scripting Define Symbols'.
+        /// LogFormat can be used to write a formatted log message.
         /// </summary>
+        /// <remarks>
+        /// LogFormat supports Composite Formatting and works the same way as [Debug.LogFormat](xref:UnityEngine.Debug.LogFormat(System.String,System.Object[])). Addressables logs warnings and errors so by default this function will **not** log.
+        /// </remarks>
+        /// <seealso href="xref:addressables-asset-settings#enable-all-logging">Enable all logging</seealso>
         /// <param name="format">The string with format tags.</param>
         /// <param name="args">The args used to fill in the format tags.</param>
+        /// <example>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogFormat.cs" region="SAMPLE" />
+        /// </example>
         [Conditional(k_AddressablesLogConditional)]
         public static void LogFormat(string format, params object[] args)
         {
@@ -654,57 +703,94 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// Debug.LogWarning wrapper method.
+        /// LogWarning can be used to write a log message.
         /// </summary>
+        /// <remarks>
+        /// LogWarning works the same way as [Debug.LogWarning](xref:UnityEngine.Debug.LogWarning(System.Object)). Addressables logs warnings and errors so by default this function will log.
+        /// </remarks>
         /// <param name="msg">The msg to log</param>
+        /// <example>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogWarning.cs" region="SAMPLE" />
+        /// </example>
         public static void LogWarning(string msg)
         {
             m_Addressables.LogWarning(msg);
         }
 
         /// <summary>
-        /// Debug.LogWarningFormat wrapper method.
+        /// LogFormat can be used to write a formatted log message.
         /// </summary>
+        /// <remarks>
+        /// LogWarningFormat supports Composite Formatting and works the same way as [Debug.LogWarningFormat](xref:UnityEngine.Debug.LogWarningFormat(System.String,System.Object[])). Addressables logs warnings and errors so by default this function will log.
+        /// </remarks>
         /// <param name="format">The string with format tags.</param>
         /// <param name="args">The args used to fill in the format tags.</param>
+        /// <example>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogWarningFormat.cs" region="SAMPLE" />
+        /// </example>
         public static void LogWarningFormat(string format, params object[] args)
         {
             m_Addressables.LogWarningFormat(format, args);
         }
 
         /// <summary>
-        /// Debug.LogError wrapper method.
+        /// Write an error level log message.
         /// </summary>
+        /// <remarks>
+        /// LogError can be used to write an Error message. LogError works the same way as <see cref="Debug.LogError(object)" />. Addressables logs warnings and errors so by default this function will log.
+        /// </remarks>
         /// <param name="msg">The msg to log</param>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogError.cs" region="SAMPLE"/>
+        /// <seealso href="xref:addressables-asset-settings#enable-all-logging">Enable all logging</seealso>
         public static void LogError(string msg)
         {
             m_Addressables.LogError(msg);
         }
 
         /// <summary>
-        /// Debug.LogException wrapper method.
+        /// Write an exception as a log message. 
         /// </summary>
+        /// <remarks>
+        /// LogException can be used to convert an exception to a log message. The exception is stringified. If the operation is in a failed state, the exception is logged at an Error logging level. If not the exception is logged at a Debug logging level.
+        /// Addressables logs warnings and errors so if the operation is not in a failed state by default this function will not log.
+        /// </remarks>
         /// <param name="op">The operation handle.</param>
         /// <param name="ex">The exception.</param>
+        /// <example>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogException.cs" region="SAMPLE_ASYNC_OP"/>
+        /// </example>
+        /// <seealso href="xref:addressables-asset-settings#enable-all-logging">Enable all logging</seealso>
         public static void LogException(AsyncOperationHandle op, Exception ex)
         {
             m_Addressables.LogException(op, ex);
         }
 
         /// <summary>
-        /// Debug.LogException wrapper method.
+        /// Write an exception as a debug log message.
         /// </summary>
+        /// <remarks>
+        /// LogException can be used to convert an exception to a log message. The exception is stringified and logged at a Debug logging level. Addressables logs warnings and errors so by default this function will not log.
+        /// </remarks>
         /// <param name="ex">The exception.</param>
+        /// <example>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogException.cs" region="SAMPLE"/>
+        /// </example>
         public static void LogException(Exception ex)
         {
             m_Addressables.LogException(ex);
         }
 
         /// <summary>
-        /// Debug.LogErrorFormat wrapper method.
+        /// Write an error level formatted log message.
         /// </summary>
+        /// <remarks>
+        /// LogErrorFormat can be used to write a formatted Error level log message. LogErrorFormat supports Composite Formatting and works the same way as <see cref="Debug.LogErrorFormat(string, object[])" />. Addressables logs warnings and errors so by default this function will log.
+        /// </remarks>
         /// <param name="format">The string with format tags.</param>
         /// <param name="args">The args used to fill in the format tags.</param>
+        /// <example>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogErrorFormat.cs" region="SAMPLE"/>
+        /// </example>
         public static void LogErrorFormat(string format, params object[] args)
         {
             m_Addressables.LogErrorFormat(format, args);
@@ -714,12 +800,14 @@ namespace UnityEngine.AddressableAssets
         /// Initialize Addressables system.  Addressables will be initialized on the first API call if this is not called explicitly.
         /// </summary>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.InitializeAsync"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InitializeAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<IResourceLocator> Initialize()
         {
             return InitializeAsync();
         }
+
 
         /// <summary>
         /// Initialize the Addressables system, if needed.
@@ -728,6 +816,16 @@ namespace UnityEngine.AddressableAssets
         /// The Addressables system initializes itself at runtime the first time you call an Addressables API function.
         /// You can call this function explicitly to initialize Addressables earlier. This function does nothing if
         /// initialization has already occurred.
+        ///
+        /// Other Addressables API functions such as <see cref="LoadAssetAsync">LoadAssetAsync</see> also automatically initializes the
+        /// system if not already initialized. However in some cases you may wish to explicitly initalize Addressables,
+        /// for example to check if the initialization process completed successfully before proceeding to load Addressables
+        /// assets. Initializing explicitly shortens the execution time of the subsequent Addressables API function call
+        /// because the initialization process is already completed. 
+        ///
+        /// The initialization process loads configuration data and the local content catalog. Custom initialization
+        /// tasks can also be included in this process, for example loading additional remote catalogs.
+        /// See [Customizing Addressables Initialization](xref:addressables-api-initialize-async) for more information.
         ///
         /// The initialization process:
         /// * Sets up the <see cref="ResourceManager"/> and <see cref="ResourceLocators"/>
@@ -742,16 +840,13 @@ namespace UnityEngine.AddressableAssets
         /// event handler. To access the handle in a coroutine or Task-based function, pass `false` to the
         /// <see cref="InitializeAsync(bool)"/> overload of this function. Otherwise, the Addressables system
         /// releases the <see cref="AsyncOperationHandle{TObject}"/> object before control returns to your code.
-        ///
-        /// Initializing Addressables manually can improve performance of your first loading operations since they do not
-        /// need to wait for initialization to complete. In addition, it can help when debugging early loading operations
-        /// by separating out the initialization process.
-        ///
-        /// See also:
-        /// * [Customizing initialization](xref:addressables-api-initialize-async)
-        /// * [Managing catalogs at runtime](xref:addressables-api-load-content-catalog-async)
         /// </remarks>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is an [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator)  object.</returns>
+        /// <example>
+        /// The following script loads all Addressable assets referenced in the catalog.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInitializeAsync.cs" region="SAMPLE_LOADALL"/>
+        /// </example>
+        /// <seealso href="xref:addressables-api-load-content-catalog-async">Managing catalogs at runtime</seealso>
         public static AsyncOperationHandle<IResourceLocator> InitializeAsync()
         {
             return m_Addressables.InitializeAsync();
@@ -760,33 +855,8 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Initialize the Addressables system, if needed.
         /// </summary>
-        /// <remarks>
-        /// The Addressables system initializes itself at runtime the first time you call an Addressables API function.
-        /// You can call this function explicitly to initialize Addressables earlier. This function does nothing if
-        /// initialization has already occurred.
-        ///
-        /// The initialization process:
-        /// * Sets up the <see cref="ResourceManager"/> and <see cref="ResourceLocators"/>
-        /// * Loads the <see cref="Initialization.ResourceManagerRuntimeData"/> object, which is created by the Addressables build
-        /// * Executes <see cref="IInitializableObject"/> operations
-        /// * Optionally, checks for an updated content catalog (`true` by default)
-        /// * Loads the content catalog
-        ///
-        /// The `Result` object contained in the <see cref="AsyncOperationHandle{TObject}"/> returned by this function
-        /// contains a list of Addressable keys and a method that can be used to gather the <see cref="IResourceLocation"/>
-        /// instances for a given key and asset type. To access the `Result` object, use a <see cref="AsyncOperationHandle{TObject}.Completed"/>
-        /// event handler or set <paramref name="autoReleaseHandle"/> to `false`.
-        ///
-        /// Initializing Addressables manually can improve performance of your first loading operations since they do not
-        /// need to wait for initialization to complete. In addition, it can help when debugging early loading operations
-        /// by separating out the initialization process.
-        ///
-        /// See also:
-        /// * [Customizing initialization](xref:addressables-api-initialize-async)
-        /// * [Managing catalogs at runtime](xref:addressables-api-load-content-catalog-async)
-        /// </remarks>
-        /// <param name="autoReleaseHandle">If true, the handle is automatically released on completion.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <param name="autoReleaseHandle">Determines if the handle should be released on completion, or manually released.</param>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is an [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator)  object.</returns>
         public static AsyncOperationHandle<IResourceLocator> InitializeAsync(bool autoReleaseHandle)
         {
             return m_Addressables.InitializeAsync(autoReleaseHandle);
@@ -850,6 +920,7 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Initialization operation.  You can register a callback with this if you need to run code after Addressables is ready.  Any requests made before this operaton completes will automatically cahin to its result.
         /// </summary>
+        /// <seealso cref="Addressables.InitializeAsync"/>
         [Obsolete]
         public static AsyncOperationHandle<IResourceLocator> InitializationOperation => default;
 
@@ -859,6 +930,7 @@ namespace UnityEngine.AddressableAssets
         /// <typeparam name="TObject">The type of the asset.</typeparam>
         /// <param name="location">The location of the asset.</param>
         /// <returns>Returns the load operation.</returns>
+        /// <seealso cref="Addressables.LoadAssetAsync{TObject}(IResourceLocation)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadAssetAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<TObject> LoadAsset<TObject>(IResourceLocation location)
@@ -872,6 +944,7 @@ namespace UnityEngine.AddressableAssets
         /// <typeparam name="TObject">The type of the asset.</typeparam>
         /// <param name="key">The key of the location of the asset.</param>
         /// <returns>Returns the load operation.</returns>
+        /// <seealso cref="Addressables.LoadAssetAsync{TObject}(object)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadAssetAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<TObject> LoadAsset<TObject>(object key)
@@ -883,51 +956,40 @@ namespace UnityEngine.AddressableAssets
         /// Loads a single Addressable asset identified by an <see cref="IResourceLocation"/>.
         /// </summary>
         /// <remarks>
+        /// Loads an Addressable asset. If a `key` references multiple assets (i.e. a label that is assigned to multiple assets), only the first asset found will be loaded.
+        /// 
         /// When you load an Addressable asset, the system:
         /// * Gathers the asset's dependencies
         /// * Downloads any remote AssetBundles needed to load the asset or its dependencies
         /// * Loads the AssetBundles into memory
         /// * Populates the `Result` object of the <see cref="AsyncOperationHandle{TObject}"/> instance returned by this function.
-        ///
-        /// Use the `Result` object to access the loaded assets.
-        ///
-        /// See [Loading Addressable Assets](xref:addressables-api-load-asset-async) for more information and examples.
-        ///
-        /// See [Operations](xref:addressables-async-operation-handling) for information on handling the asynchronous operations used
-        /// to load Addressable assets.
         /// </remarks>
         /// <typeparam name="TObject">The type of the asset.</typeparam>
         /// <param name="location">The location of the asset.</param>
-        /// <returns>Returns the load operation.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is the loaded asset of the type `TObject`.</returns>
+        /// <seealso href="xref:addressables-api-load-asset-async">Loading Addressable Assets</seealso>
+        /// <seealso href="xref:addressables-async-operation-handling">Operations</seealso>
+        /// <example>
+        /// The example below loads a material using an <see cref="IResourceLocation"/>. The loaded material is assigned to a GameObject.
+        /// A reference to the operation handle is stored and can be released via <see cref="Addressables.Release(AsyncOperationHandle)"/>.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLoadAssetAsync.cs" region="SAMPLE_LOCATION"/>
+        /// </example>
+        /// <example>
+        /// The example below loads a material using a `key`, specifically an <see cref="AssetReference"/>. The loaded material is assigned to a GameObject. A reference to the
+        /// operation handle is stored and can be released via <see cref="Addressables.Release(AsyncOperationHandle)"/>.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLoadAssetAsync.cs" region="SAMPLE_KEY"/>
+        /// </example>
         public static AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(IResourceLocation location)
         {
             return m_Addressables.LoadAssetAsync<TObject>(location);
         }
 
         /// <summary>
-        /// Loads a single Addressable asset identified by a key such as an address or label.
+        /// Loads a single Addressable asset identified by an <see cref="IResourceLocation"/>.
         /// </summary>
-        /// <remarks>
-        /// When you load an Addressable asset, the system:
-        /// * Gathers the asset's dependencies
-        /// * Downloads any remote AssetBundles needed to load the asset or its dependencies
-        /// * Loads the AssetBundles into memory
-        /// * Populates the `Result` object of the <see cref="AsyncOperationHandle{TObject}"/> instance returned by this function.
-        ///
-        /// Use the `Result` object to access the loaded assets.
-        ///
-        /// Note that if you provide a key, such as a label, that maps to more than one asset, only the first object encountered by the
-        /// loading operation is returned. Use <see cref="LoadAssetsAsync{TObject}(object, Action{TObject})"/> or one of its overloads
-        /// to load multiple assets in a single operation.
-        ///
-        /// See [Loading Addressable Assets](xref:addressables-api-load-asset-async) for more information and examples.
-        ///
-        /// See [Operations](xref:addressables-async-operation-handling) for information on handling the asynchronous operations used
-        /// to load Addressable assets.
-        /// </remarks>
         /// <typeparam name="TObject">The type of the asset.</typeparam>
         /// <param name="key">The key of the location of the asset.</param>
-        /// <returns>Returns the load operation.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is the loaded asset of the type `TObject`.</returns>
         public static AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(object key)
         {
             return m_Addressables.LoadAssetAsync<TObject>(key);
@@ -1422,6 +1484,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         /// <returns>The operation handle for the request.</returns>
         /// <param name="key">The key of the asset(s) to get the download size of.</param>
+        /// <seealso cref="Addressables.GetDownloadSizeAsync"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> GetDownloadSizeAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<long> GetDownloadSize(object key)
@@ -1733,18 +1796,25 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Given the Id of an IResourceLocator, get the relevant content catalog data associated with it.
         /// </summary>
-        /// <param name="locatorId">The Id of the IResourceLocator</param>
-        /// <returns>Data pertaining to the content catalog used by the provided IResourceLocator</returns>
+        /// <remarks>
+        /// Retrieves the content catalog data associated with the specified [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator) id. The catalog data is stored as a [ResourceLocatorInfo](xref:UnityEngine.AddressableAssets.ResourceLocatorInfo) object.
+        /// </remarks>
+        /// <param name="locatorId">The identifier of an [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator) used to retrieve content catalog data.</param>
+        /// <returns>Container for content catalog data pertaining to the [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator) object.</returns>
+        /// <example>
+        /// The example below uses the identifiers of the resource locators loaded during Addressables initialization process to retrieve catalog data.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingGetLocatorInfo.cs" region="SAMPLE_1"/>
+        /// </example>
         public static ResourceLocatorInfo GetLocatorInfo(string locatorId)
         {
             return m_Addressables.GetLocatorInfo(locatorId);
         }
 
         /// <summary>
-        /// Given the Id of an IResourceLocator, get the relevant content catalog data associated with it.
+        /// Given an [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator), get the relevant content catalog data associated with it.
         /// </summary>
         /// <param name="locator">The resource locator you want to get content catalog data for.</param>
-        /// <returns>Data pertaining to the content catalog used by the provided IResourceLocator</returns>
+        /// <returns>Container for content catalog data pertaining to the [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator) object.</returns>
         public static ResourceLocatorInfo GetLocatorInfo(IResourceLocator locator)
         {
             return m_Addressables.GetLocatorInfo(locator.LocatorId);
@@ -1759,6 +1829,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="instantiateInWorldSpace">Option to retain world space when instantiated with a parent.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.InstantiateAsync(IResourceLocation, Transform, bool, bool)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InstantiateAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<GameObject> Instantiate(IResourceLocation location, Transform parent = null, bool instantiateInWorldSpace = false, bool trackHandle = true)
@@ -1775,6 +1846,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="parent">Parent transform for instantiated object.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.InstantiateAsync(IResourceLocation, Vector3, Quaternion, Transform, bool)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InstantiateAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<GameObject> Instantiate(IResourceLocation location, Vector3 position, Quaternion rotation, Transform parent = null, bool trackHandle = true)
@@ -1790,6 +1862,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="instantiateInWorldSpace">Option to retain world space when instantiated with a parent.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.InstantiateAsync(object, Transform, bool, bool)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InstantiateAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<GameObject> Instantiate(object key, Transform parent = null, bool instantiateInWorldSpace = false, bool trackHandle = true)
@@ -1806,6 +1879,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="parent">Parent transform for instantiated object.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.InstantiateAsync(object, Vector3, Quaternion, Transform, bool)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InstantiateAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<GameObject> Instantiate(object key, Vector3 position, Quaternion rotation, Transform parent = null, bool trackHandle = true)
@@ -1820,6 +1894,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="instantiateParameters">Parameters for instantiation.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.InstantiateAsync(object, InstantiationParameters, bool)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InstantiateAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<GameObject> Instantiate(object key, InstantiationParameters instantiateParameters, bool trackHandle = true)
@@ -1834,6 +1909,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="instantiateParameters">Parameters for instantiation.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.InstantiateAsync(IResourceLocation, InstantiationParameters, bool)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> InstantiateAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<GameObject> Instantiate(IResourceLocation location, InstantiationParameters instantiateParameters, bool trackHandle = true)
@@ -1845,15 +1921,34 @@ namespace UnityEngine.AddressableAssets
         /// Instantiate a single object.
         /// </summary>
         /// <remarks>
-        /// Note that the dependency loading is done asynchronously, but generally the actual instantiate is synchronous.
+        /// Loads a Prefab and instantiates a copy of the prefab into the active scene or parent GameObject. The Prefab and any resources associated with it
+        /// are loaded asynchronously, whereas the instantiation is executed synchronously. In the situation where the Prefab and resources are already loaded,
+        /// the entire operation is completed synchronously.
         ///
-        /// See [Instantiating objects from Addressables](xref:addressables-api-load-asset-async#instantiate) documentation for more details.
+        /// Most versions of the function shares the same parameters(position, rotation, etc.) as [Object.Instantiate](xref:UnityEngine.Object.Instantiate*).
+        /// You can create an [InstantiationParameters](xref:UnityEngine.ResourceManagement.ResourceProviders.InstantiationParameters) struct to store these
+        /// parameters, pass it into the function instead.
         /// </remarks>
         /// <param name="location">The location of the Object to instantiate.</param>
         /// <param name="parent">Parent transform for instantiated object.</param>
         /// <param name="instantiateInWorldSpace">Option to retain world space when instantiated with a parent.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
+        /// <example>
+        /// The example below instantiates a GameObject using by a `key`, specifically an <see cref="AssetReference"/>. By default `trackHandle` is set to `true`.
+        /// Since the instance is tracked, a reference from the instance to the handle is stored and released via <see cref="Addressables.ReleaseInstance(GameObject)"/>.
+        /// Alternatively a reference to the operation handle can be stored and released via <see cref="Release(AsyncOperationHandle)"/>, similar to the second example below.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInstantiateAsync.cs" region="SAMPLE_OBJECT_TRACKED"/>
+        /// </example>
+        /// <example>
+        /// The example below shows how to release a GameObject when `trackHandle` is set to `false`. The instance is not tracked and cannot be used to
+        /// release the object, instead a reference to the operation handle is stored and released via <see cref="Release(AsyncOperationHandle)"/>.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInstantiateAsync.cs" region="SAMPLE_OBJECT_UNTRACKED"/>
+        /// </example>
+        /// <example>
+        /// The example below instantiates a GameObject using an <see cref="IResourceLocation"/>.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInstantiateAsync.cs" region="SAMPLE_LOCATION"/>
+        /// </example>
         public static AsyncOperationHandle<GameObject> InstantiateAsync(IResourceLocation location, Transform parent = null, bool instantiateInWorldSpace = false, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(location, new InstantiationParameters(parent, instantiateInWorldSpace), trackHandle);
@@ -1862,17 +1957,12 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Instantiate a single object.
         /// </summary>
-        /// <remarks>
-        /// Note that the dependency loading is done asynchronously, but generally the actual instantiate is synchronous.
-        ///
-        /// See [Instantiating objects from Addressables](xref:addressables-api-load-asset-async#instantiate) documentation for more details.
-        /// </remarks>
         /// <param name="location">The location of the Object to instantiate.</param>
         /// <param name="position">The position of the instantiated object.</param>
         /// <param name="rotation">The rotation of the instantiated object.</param>
         /// <param name="parent">Parent transform for instantiated object.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
         public static AsyncOperationHandle<GameObject> InstantiateAsync(IResourceLocation location, Vector3 position, Quaternion rotation, Transform parent = null, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(location, position, rotation, parent, trackHandle);
@@ -1881,16 +1971,11 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Instantiate a single object.
         /// </summary>
-        /// <remarks>
-        /// Note that the dependency loading is done asynchronously, but generally the actual instantiate is synchronous.
-        ///
-        /// See [Instantiating objects from Addressables](xref:addressables-api-load-asset-async#instantiate) documentation for more details.
-        /// </remarks>
         /// <param name="key">The key of the location of the Object to instantiate.</param>
         /// <param name="parent">Parent transform for instantiated object.</param>
         /// <param name="instantiateInWorldSpace">Option to retain world space when instantiated with a parent.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
         public static AsyncOperationHandle<GameObject> InstantiateAsync(object key, Transform parent = null, bool instantiateInWorldSpace = false, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(key, parent, instantiateInWorldSpace, trackHandle);
@@ -1899,17 +1984,12 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Instantiate a single object.
         /// </summary>
-        /// <remarks>
-        /// Note that the dependency loading is done asynchronously, but generally the actual instantiate is synchronous.
-        ///
-        /// See [Instantiating objects from Addressables](xref:addressables-api-load-asset-async#instantiate) documentation for more details.
-        /// </remarks>
         /// <param name="key">The key of the location of the Object to instantiate.</param>
         /// <param name="position">The position of the instantiated object.</param>
         /// <param name="rotation">The rotation of the instantiated object.</param>
         /// <param name="parent">Parent transform for instantiated object.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
         public static AsyncOperationHandle<GameObject> InstantiateAsync(object key, Vector3 position, Quaternion rotation, Transform parent = null, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(key, position, rotation, parent, trackHandle);
@@ -1918,15 +1998,10 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Instantiate a single object.
         /// </summary>
-        /// <remarks>
-        /// Note that the dependency loading is done asynchronously, but generally the actual instantiate is synchronous.
-        ///
-        /// See [Instantiating objects from Addressables](xref:addressables-api-load-asset-async#instantiate) documentation for more details.
-        /// </remarks>
         /// <param name="key">The key of the location of the Object to instantiate.</param>
         /// <param name="instantiateParameters">Parameters for instantiation.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
         public static AsyncOperationHandle<GameObject> InstantiateAsync(object key, InstantiationParameters instantiateParameters, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(key, instantiateParameters, trackHandle);
@@ -1935,15 +2010,10 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Instantiate a single object.
         /// </summary>
-        /// <remarks>
-        /// Note that the dependency loading is done asynchronously, but generally the actual instantiate is synchronous.
-        ///
-        /// See [Instantiating objects from Addressables](xref:addressables-api-load-asset-async#instantiate) documentation for more details.
-        /// </remarks>
         /// <param name="location">The location of the Object to instantiate.</param>
         /// <param name="instantiateParameters">Parameters for instantiation.</param>
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
         public static AsyncOperationHandle<GameObject> InstantiateAsync(IResourceLocation location, InstantiationParameters instantiateParameters, bool trackHandle = true)
         {
             return m_Addressables.InstantiateAsync(location, instantiateParameters, trackHandle);
@@ -1957,6 +2027,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="activateOnLoad">If false, the scene will load but not activate (for background loading).  The SceneInstance returned has an Activate() method that can be called to do this at a later point.</param>
         /// <param name="priority">Async operation priority for scene loading.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.LoadSceneAsync(object, LoadSceneMode, bool, int)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadSceneAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<SceneInstance> LoadScene(object key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
@@ -1972,6 +2043,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="activateOnLoad">If false, the scene will load but not activate (for background loading).  The SceneInstance returned has an Activate() method that can be called to do this at a later point.</param>
         /// <param name="priority">Async operation priority for scene loading.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="Addressables.LoadSceneAsync(IResourceLocation, LoadSceneMode, bool, int)"/>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> LoadSceneAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<SceneInstance> LoadScene(IResourceLocation location, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
@@ -2002,13 +2074,6 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Loads an Addressable Scene asset.
         /// </summary>
-        /// <remarks>
-        /// The <paramref name="loadSceneParameters"/>, <paramref name="activateOnLoad"/>, and <paramref name="priority"/> parameters correspond to
-        /// the parameters used in the Unity [SceneManager.LoadSceneAsync](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.LoadSceneAsync.html)
-        /// method.
-        ///
-        /// See [Loading Scenes](xref:addressables-api-load-asset-async#loading-scenes) for more details.
-        /// </remarks>
         /// <param name="key">The key of the location of the scene to load.</param>
         /// <param name="loadSceneParameters">Scene load mode.</param>
         /// <param name="activateOnLoad">If false, the scene will load but not activate (for background loading).  The SceneInstance returned has an Activate() method that can be called to do this at a later point.</param>
@@ -2022,13 +2087,6 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Loads an Addressable Scene asset.
         /// </summary>
-        /// <remarks>
-        /// The <paramref name="loadMode"/>, <paramref name="activateOnLoad"/>, and <paramref name="priority"/> parameters correspond to
-        /// the parameters used in the Unity [SceneManager.LoadSceneAsync](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.LoadSceneAsync.html)
-        /// method.
-        ///
-        /// See [Loading Scenes](xref:addressables-api-load-asset-async#loading-scenes) for more details.
-        /// </remarks>
         /// <param name="location">The location of the scene to load.</param>
         /// <param name="loadMode">Scene load mode.</param>
         /// <param name="activateOnLoad">If false, the scene will load but not activate (for background loading).  The SceneInstance returned has an Activate() method that can be called to do this at a later point.</param>
@@ -2042,13 +2100,6 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Loads an Addressable Scene asset.
         /// </summary>
-        /// <remarks>
-        /// The <paramref name="loadSceneParameters"/>, <paramref name="activateOnLoad"/>, and <paramref name="priority"/> parameters correspond to
-        /// the parameters used in the Unity [SceneManager.LoadSceneAsync](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.LoadSceneAsync.html)
-        /// method.
-        ///
-        /// See [Loading Scenes](xref:addressables-api-load-asset-async#loading-scenes) for more details.
-        /// </remarks>
         /// <param name="location">The location of the scene to load.</param>
         /// <param name="loadSceneParameters">Scene load parameters.</param>
         /// <param name="activateOnLoad">If false, the scene will load but not activate (for background loading).  The SceneInstance returned has an Activate() method that can be called to do this at a later point.</param>
@@ -2065,6 +2116,8 @@ namespace UnityEngine.AddressableAssets
         /// <param name="scene">The SceneInstance to release.</param>
         /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="UnloadSceneAsync(SceneInstance, bool)"/>
+        /// <seealso href="xref:synchronous-addressables">Synchronous Addressables</seealso>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<SceneInstance> UnloadScene(SceneInstance scene, bool autoReleaseHandle = true)
@@ -2078,6 +2131,8 @@ namespace UnityEngine.AddressableAssets
         /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
         /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="UnloadSceneAsync(AsyncOperationHandle, bool)"/>
+        /// <seealso href="xref:synchronous-addressables">Synchronous Addressables</seealso>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<SceneInstance> UnloadScene(AsyncOperationHandle handle, bool autoReleaseHandle = true)
@@ -2091,6 +2146,8 @@ namespace UnityEngine.AddressableAssets
         /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
         /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="UnloadSceneAsync(AsyncOperationHandle{SceneInstance}, bool)"/>
+        /// <seealso href="xref:synchronous-addressables">Synchronous Addressables</seealso>
         //[Obsolete("We have added Async to the name of all asynchronous methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
         [Obsolete]
         public static AsyncOperationHandle<SceneInstance> UnloadScene(AsyncOperationHandle<SceneInstance> handle, bool autoReleaseHandle = true)
@@ -2101,10 +2158,36 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Release scene
         /// </summary>
-        /// <param name="scene">The SceneInstance to release.</param>
-        /// <param name="unloadOptions">If true, assets embedded in the scene will be unloaded as part of the scene unload process.</param>
+        /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
+        /// <param name="unloadOptions">Specify behavior for unloading embedded scene objecs</param>
         /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
         /// <returns>The operation handle for the request.</returns>
+        /// <seealso cref="UnloadSceneAsync(SceneInstance, UnloadSceneOptions, bool)"/>
+        /// <seealso href="xref:synchronous-addressables">Synchronous Addressables</seealso>
+        //[Obsolete("We have added Async to the name of all asycn methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
+        [Obsolete]
+        public static AsyncOperationHandle<SceneInstance> UnloadScene(AsyncOperationHandle<SceneInstance> handle, UnloadSceneOptions unloadOptions, bool autoReleaseHandle = true)
+        {
+            return UnloadSceneAsync(handle, unloadOptions, autoReleaseHandle);
+        }
+
+
+        /// <summary>
+        /// Release scene
+        /// </summary>
+        /// <remarks>
+        /// UnloadSceneAsync releases a previously loaded scene. The scene must have been activated to be unloaded.
+        ///
+        /// Passing UnloadSceneOptions.UnloadAllEmbeddedSceneObjects will unload assets embedded in the scene. The default is UploadSceneOptions.None
+        /// which will only unload the scene's GameObjects.
+        /// </remarks>
+        /// <param name="scene">The SceneInstance to release.</param>
+        /// <param name="unloadOptions">Specify behavior for unloading embedded scene objecs</param>
+        /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
+        /// <returns>The operation handle for the scene unload.</returns>
+        /// <example>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingUnloadSceneAsync.cs" region="SAMPLE"/>
+        /// </example>
         public static AsyncOperationHandle<SceneInstance> UnloadSceneAsync(SceneInstance scene, UnloadSceneOptions unloadOptions, bool autoReleaseHandle = true)
         {
             return m_Addressables.UnloadSceneAsync(scene, unloadOptions, autoReleaseHandle);
@@ -2114,9 +2197,9 @@ namespace UnityEngine.AddressableAssets
         /// Release scene
         /// </summary>
         /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
-        /// <param name="unloadOptions">If true, assets embedded in the scene will be unloaded as part of the scene unload process.</param>
+        /// <param name="unloadOptions">Specify behavior for unloading embedded scene objecs</param>
         /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>The operation handle for the scene unload.</returns>
         public static AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle handle, UnloadSceneOptions unloadOptions, bool autoReleaseHandle = true)
         {
             return m_Addressables.UnloadSceneAsync(handle, unloadOptions, autoReleaseHandle);
@@ -2125,23 +2208,9 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Release scene
         /// </summary>
-        /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
-        /// <param name="unloadOptions">If true, assets embedded in the scene will be unloaded as part of the scene unload process.</param>
-        /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
-        //[Obsolete("We have added Async to the name of all asycn methods (UnityUpgradable) -> UnloadSceneAsync(*)", true)]
-        [Obsolete]
-        public static AsyncOperationHandle<SceneInstance> UnloadScene(AsyncOperationHandle<SceneInstance> handle, UnloadSceneOptions unloadOptions, bool autoReleaseHandle = true)
-        {
-            return UnloadSceneAsync(handle, unloadOptions, autoReleaseHandle);
-        }
-
-        /// <summary>
-        /// Release scene
-        /// </summary>
         /// <param name="scene">The SceneInstance to release.</param>
         /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>The operation handle for the scene unload.</returns>
         public static AsyncOperationHandle<SceneInstance> UnloadSceneAsync(SceneInstance scene, bool autoReleaseHandle = true)
         {
             return m_Addressables.UnloadSceneAsync(scene, UnloadSceneOptions.None, autoReleaseHandle);
@@ -2152,7 +2221,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
         /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>The operation handle for the scene unload.</returns>
         public static AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle handle, bool autoReleaseHandle = true)
         {
             return m_Addressables.UnloadSceneAsync(handle, UnloadSceneOptions.None, autoReleaseHandle);
@@ -2163,7 +2232,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         /// <param name="handle">The handle returned by LoadSceneAsync for the scene to release.</param>
         /// <param name="autoReleaseHandle">If true, the handle will be released automatically when complete.</param>
-        /// <returns>The operation handle for the request.</returns>
+        /// <returns>The operation handle for the scene unload.</returns>
         public static AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle<SceneInstance> handle, bool autoReleaseHandle = true)
         {
             return m_Addressables.UnloadSceneAsync(handle, UnloadSceneOptions.None, autoReleaseHandle);
@@ -2210,11 +2279,23 @@ namespace UnityEngine.AddressableAssets
         /// have the original AssetBundles in memory after loading the updated ones. Enabling this option can also make the download size of content
         /// updates larger because typically more AssetBundles must be rebuilt.
         ///
-        /// See [Updating catalogs](xref:addressables-api-load-content-catalog-async#updating-catalogs) for more details.
+        /// You can call <see cref="UpdateCatalogs(bool, IEnumerable{string}, bool)"/> with the first value set to true to automtically remove any
+        /// nonreferenced bundles from the cache after updating the catalogs.
+        ///
         /// </remarks>
         /// <param name="catalogs">The set of catalogs to update.  If null, all catalogs that have an available update will be updated.</param>
         /// <param name="autoReleaseHandle">If true, the handle will automatically be released when the operation completes.</param>
         /// <returns>The operation with the list of updated content catalog data.</returns>
+        /// <example>
+        /// In this example all catalogs are checked for updates:
+        /// <code source="../Tests/Editor/DocExampleCode/MiscellaneousTopics.cs" region="doc_CheckCatalog"/>
+        /// </example>
+        ///
+        /// <example>
+        /// Alternatively you can directly get a list of catalogs and perform the updates:
+        /// <code source="../Tests/Editor/DocExampleCode/MiscellaneousTopics.cs" region="doc_CheckCatalog"/>
+        /// </example>
+        /// <seealso href="xref:addressables-api-load-content-catalog-async#updating-catalogs">Updating catalogs</seealso>
         public static AsyncOperationHandle<List<IResourceLocator>> UpdateCatalogs(IEnumerable<string> catalogs = null, bool autoReleaseHandle = true)
         {
             return m_Addressables.UpdateCatalogs(catalogs, autoReleaseHandle, false);
@@ -2223,24 +2304,6 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Update the specified catalogs.
         /// </summary>
-        /// <remarks>
-        /// When you call the UpdateCatalog function, all other Addressable requests are blocked until the operation is finished.
-        /// You can release the operation handle returned by UpdateCatalogs immediately after the operation finishes (or set the
-        /// autoRelease parameter to true).
-        ///
-        /// If you call UpdateCatalog without providing a list of catalogs, the Addressables system checks all of the currently
-        /// loaded catalogs for updates.
-        ///
-        /// If you update a catalog when you have already loaded content from the related AssetBundles, you can encounter conflicts
-        /// between the loaded AssetBundles and the updated versions. To avoid conflicts, update the catalog before loading assets or unload
-        /// the AssetBundles before the updating the catalog. You can enable the
-        /// [Unique Bundle Ids](xref:addressables-content-update-builds#unique-bundle-ids-setting)
-        /// option in your Addressable settings to avoid conflicts, but that can increase memory consumption since you will still
-        /// have the original AssetBundles in memory after loading the updated ones. Enabling this option can also make the download size of content
-        /// updates larger because typically more AssetBundles must be rebuilt.
-        ///
-        /// See [Updating catalogs](xref:addressables-api-load-content-catalog-async#updating-catalogs) for more details.
-        /// </remarks>
         /// <param name="autoCleanBundleCache">If true, removes any nonreferenced bundles in the cache.</param>
         /// <param name="catalogs">The set of catalogs to update.  If null, all catalogs that have an available update will be updated.</param>
         /// <param name="autoReleaseHandle">If true, the handle will automatically be released when the operation completes.</param>
@@ -2252,11 +2315,30 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// Add a resource locator.
+        /// Adds a ResourceLocator to the Addressables runtime.
         /// </summary>
+        /// <remarks>
+        /// Adds a ResourceLocator to the Addressables runtime.
+        ///
+        /// After adding the resource locator to Addressables it can then be used to locate Locations via Addressables loading APIs.
+        ///
+        /// Adding new resource locators can be used to add locations and manage asset files outside of the Addressables build system.
+        ///
+        /// In the following example we have a folder in the root folder called "dataFiles" containing some json files.
+        /// 
+        /// These json files are then loaded using TextDataProvider, which is a ResourceProvider used to load text files.
+        /// </remarks>
         /// <param name="locator">The locator object.</param>
         /// <param name="localCatalogHash">The hash of the local catalog. This can be null if the catalog cannot be updated.</param>
         /// <param name="remoteCatalogLocation">The location of the remote catalog. This can be null if the catalog cannot be updated.</param>
+        /// <example>
+        /// This example code creates ResourceLocationBase and adds it to the locator for each file.
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingAddResourceLocator.cs" region="SAMPLE_ADDLOCATOR"/>
+        /// </example>
+        /// <example>
+        /// Using Addressables API to load "dataFiles/settings.json" after adding the locator:
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingAddResourceLocator.cs" region="SAMPLE_LOADING"/>
+        /// </example>
         public static void AddResourceLocator(IResourceLocator locator, string localCatalogHash = null, IResourceLocation remoteCatalogLocation = null)
         {
             m_Addressables.AddResourceLocator(locator, localCatalogHash, remoteCatalogLocation);
@@ -2283,13 +2365,26 @@ namespace UnityEngine.AddressableAssets
         /// Removes any AssetBundles that are no longer referenced in the bundle cache. This can occur when a new, updated catalog excludes entries present in an older catalog.
         /// </summary>
         /// <remarks>
-        /// Note, that only AssetBundles loaded through UnityWebRequest are cached. If you want to purge the entire cache, use Caching.ClearCache instead.
-        /// In the Editor CleanBundleCache should only be called when using the "Use Existing Build (requires built groups)" playmode script as it loads content from bundles.
+        /// This is used to reduce the disk usage of the app by removing AssetBundles that are not needed.
+        /// 
+        /// Note, that only AssetBundles loaded through UnityWebRequest are cached. If you want to purge the entire cache, use [Caching.ClearCache](xref:UnityEngine.Cache.ClearCache) instead.
+        /// 
+        /// In the Editor, calling CleanBundleCache when not using the "Use Existing Build (requires built groups)" will clear all bundles. No bundles are used by "Use Asset Database (fastest)" or "Simulate Groups (advanced)" catalogs.
         ///
         /// See [AssetBundle caching](xref:addressables-remote-content-distribution#assetbundle-caching) for more details.
         /// </remarks>
         /// <param name="catalogsIds">The ids of catalogs whose bundle cache entries we want to preserve. If null, entries for all currently loaded catalogs will be preserved.</param>
         /// <returns>The operation handle for the request. Note, that it is user's responsibility to release the returned operation; this can be done before or after the operation completes.</returns>
+        /// <example>
+        /// Using CleanBundleCache to remove unused bundles from cache:
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingCleanBundleCache.cs" region="SAMPLE_ALL" />
+        /// </example>
+        /// <example>
+        /// The catalogIds parameter is used to set which cached bundles are preserved.Any bundles that are used in other catalogs or old bundles from the specified catalogs are removed.If null, all currently loaded catalogs will be preserved.
+        /// Note, Catalogs other than the main catalog must be loaded to be used for preserving bundles, see[LoadContentCatalogAsync] for more information.
+        /// Using CleanBundleCache to remove all unused bundles from cache that are not used in the current main catalog:
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingCleanBundleCache.cs" region="SAMPLE_SPECIFY" />
+        /// </example>
         public static AsyncOperationHandle<bool> CleanBundleCache(IEnumerable<string> catalogsIds = null)
         {
             return m_Addressables.CleanBundleCache(catalogsIds, false);

@@ -28,6 +28,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     [CreateAssetMenu(fileName = "BuildScriptVirtual.asset", menuName = "Addressables/Content Builders/Simulate Groups (advanced)")]
     public class BuildScriptVirtualMode : BuildScriptBase
     {
+        protected internal const string kCatalogExt =
+#if ENABLE_BINARY_CATALOG
+            ".bin";
+#else
+            ".json";
+#endif
         /// <inheritdoc />
         public override string Name
         {
@@ -39,34 +45,28 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             return typeof(T).IsAssignableFrom(typeof(AddressablesPlayModeBuildResult));
         }
+        string m_PathSuffix = "";
+        string GetCatalogPath(string relPath = "")
+        {
+            return $"{relPath}{Addressables.LibraryPath}catalog{m_PathSuffix}{kCatalogExt}";
+        }
+
+        string GetSettingsPath(string relPath = "")
+        {
+            return $"{relPath}{Addressables.LibraryPath}settings{m_PathSuffix}.json";
+        }
 
         /// <inheritdoc />
         public override void ClearCachedData()
         {
-            DeleteFile(string.Format(m_PathFormat, "", "catalog"));
-            DeleteFile(string.Format(m_PathFormat, "", "settings"));
+            DeleteFile(GetCatalogPath());
+            DeleteFile(GetSettingsPath());
         }
 
         /// <inheritdoc />
         public override bool IsDataBuilt()
         {
-            var catalogPath = string.Format(m_PathFormat, "", "catalog");
-            var settingsPath = string.Format(m_PathFormat, "", "settings");
-            return File.Exists(catalogPath) &&
-                   File.Exists(settingsPath);
-        }
-
-        private string m_pathFormatStore;
-
-        private string m_PathFormat
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(m_pathFormatStore))
-                    m_pathFormatStore = "{0}" + Addressables.LibraryPath + "{1}_BuildScriptVirtualMode.json";
-                return m_pathFormatStore;
-            }
-            set { m_pathFormatStore = value; }
+            return File.Exists(GetCatalogPath()) && File.Exists(GetSettingsPath());
         }
 
         List<ObjectInitializationData> m_ResourceProviderData;
@@ -82,7 +82,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             timer.Start();
             var aaSettings = builderInput.AddressableSettings;
 
-            m_PathFormat = builderInput.PathFormat;
+            m_PathSuffix = builderInput.PathSuffix;
 
 
             //gather entries
@@ -104,8 +104,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             aaContext.runtimeData.MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests;
             aaContext.runtimeData.CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout;
             aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
-                new[] {ResourceManagerRuntimeData.kCatalogAddress},
-                string.Format(m_PathFormat, "file://{UnityEngine.Application.dataPath}/../", "catalog"),
+                new[] { ResourceManagerRuntimeData.kCatalogAddress },
+                GetCatalogPath("file://{UnityEngine.Application.dataPath}/../"),
                 typeof(ContentCatalogProvider), typeof(ContentCatalogData)));
             aaContext.runtimeData.AddressablesVersion = PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version;
             m_CreatedProviderIds = new Dictionary<string, VirtualAssetBundleRuntimeData>();
@@ -241,9 +241,23 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     m_ResourceProviderData.Add(bundleProviderData);
                 }
             }
-
+#if ENABLE_BINARY_CATALOG
             var contentCatalog = new ContentCatalogData(ResourceManagerRuntimeData.kCatalogAddress);
-            contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList(), aaContext.Settings.OptimizeCatalogSize);
+
+            contentCatalog.ResourceProviderData.AddRange(m_ResourceProviderData);
+            foreach (var t in aaContext.providerTypes)
+                contentCatalog.ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(t));
+
+            contentCatalog.InstanceProviderData = ObjectInitializationData.CreateSerializedInitializationData(instanceProviderType.Value);
+            contentCatalog.SceneProviderData = ObjectInitializationData.CreateSerializedInitializationData(sceneProviderType.Value);
+
+            contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList());
+            //save catalog
+            WriteFile(GetCatalogPath(), contentCatalog.SerializeToByteArray(), builderInput.Registry);
+
+#else
+            var contentCatalog = new ContentCatalogData(ResourceManagerRuntimeData.kCatalogAddress);
+            contentCatalog.SetData(aaContext.locations.OrderBy(f => f.InternalId).ToList());
 
             contentCatalog.ResourceProviderData.AddRange(m_ResourceProviderData);
             foreach (var t in aaContext.providerTypes)
@@ -253,7 +267,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             contentCatalog.SceneProviderData = ObjectInitializationData.CreateSerializedInitializationData(sceneProviderType.Value);
 
             //save catalog
-            WriteFile(string.Format(m_PathFormat, "", "catalog"), JsonUtility.ToJson(contentCatalog), builderInput.Registry);
+            WriteFile(GetCatalogPath(), JsonUtility.ToJson(contentCatalog), builderInput.Registry);
+#endif
+
 
             foreach (var io in aaSettings.InitializationObjects)
             {
@@ -261,11 +277,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     aaContext.runtimeData.InitializationObjects.Add((io as IObjectInitializationDataProvider).CreateObjectInitializationData());
             }
 
-            var settingsPath = string.Format(m_PathFormat, "", "settings");
+            var settingsPath = GetSettingsPath();
             WriteFile(settingsPath, JsonUtility.ToJson(aaContext.runtimeData), builderInput.Registry);
 
             //inform runtime of the init data path
-            var runtimeSettingsPath = string.Format(m_PathFormat, "file://{UnityEngine.Application.dataPath}/../", "settings");
+            var runtimeSettingsPath = GetSettingsPath("file://{UnityEngine.Application.dataPath}/../");
             PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, runtimeSettingsPath);
             var result = AddressableAssetBuildResult.CreateResult<TResult>(settingsPath, aaContext.locations.Count);
             return result;

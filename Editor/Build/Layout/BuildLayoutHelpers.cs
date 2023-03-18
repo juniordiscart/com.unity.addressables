@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
-using UnityEngine.Audio;
-using UnityEngine.Video;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
@@ -22,6 +20,16 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public static IEnumerable<BuildLayout.ExplicitAsset> EnumerateAssets(BuildLayout layout)
         {
             return EnumerateBundles(layout).SelectMany(b => b.Files).SelectMany(f => f.Assets);
+        }
+
+        internal static IEnumerable<BuildLayout.DataFromOtherAsset> EnumerateImplicitAssets(BuildLayout layout)
+        {
+            return EnumerateBundles(layout).SelectMany(b => b.Files).SelectMany(f => f.Assets).SelectMany(a => a.InternalReferencedOtherAssets);
+        }
+
+        internal static IEnumerable<BuildLayout.DataFromOtherAsset> EnumerateImplicitAssets(BuildLayout.Bundle bundle)
+        {
+            return bundle.Files.SelectMany(f => f.OtherAssets);
         }
 
         /// <summary>
@@ -58,62 +66,86 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             return EnumerateBundles(layout).SelectMany(b => b.Files);
         }
 
-        static Type AnimationClipType = typeof(AnimationClip);
-        static Type AnimationControllerType = typeof(RuntimeAnimatorController);
-        static Type AvatarType = typeof(Avatar);
-        static Type AudioClipType = typeof(AudioClip);
-        static Type AudioMixerType = typeof(AudioMixer);
-        static Type ComputeShaderType = typeof(ComputeShader);
-        static Type FontType = typeof(Font);
-        static Type GUISkinType = typeof(GUISkin);
-        static Type MaterialType = typeof(Material);
-        static Type MeshType = typeof(Mesh);
-        static Type PhysicsMaterialType = typeof(PhysicMaterial);
-        static Type PhysicsMaterial2DType = typeof(PhysicsMaterial2D);
-        static Type ShaderType = typeof(Shader);
-        static Type SpriteType = typeof(Sprite);
-        static Type TextureType = typeof(Texture);
-        static Type Texture2DType = typeof(Texture2D);
-        static Type Texture3DType = typeof(Texture3D);
-        static Type VideoClipType = typeof(VideoClip);
-        static Type TextAssetType = typeof(TextAsset);
-        static Type GameObjectType = typeof(GameObject);
-        static Type ScriptableObjectType = typeof(ScriptableObject);
-        static Type SceneType = typeof(SceneAsset);
-        static Type MonoBehaviourType = typeof(MonoBehaviour);
-        static Type ComponentType = typeof(Component);
+        private static Dictionary<System.Type, AssetType> m_SystemTypeToAssetType = null;
+        private static Dictionary<System.Type, AssetType> SystemTypeToAssetType
+        {
+            get
+            {
+                if (m_SystemTypeToAssetType == null)
+                {
+                    m_SystemTypeToAssetType = new Dictionary<Type, AssetType>()
+                    {
+                        { typeof(SceneAsset), AssetType.Scene }
+                    };
+                }
+                return m_SystemTypeToAssetType;
+            }
+        }
 
+        private static List<(System.Type, AssetType)> m_AssignableSystemTypeToAssetType = null;
+        private static List<(System.Type, AssetType)> AssignableSystemTypeToAssetType
+        {
+            get
+            {
+                if (m_AssignableSystemTypeToAssetType == null)
+                {
+                    m_AssignableSystemTypeToAssetType = new List<(Type, AssetType)>()
+                    {
+                        (typeof(ScriptableObject), AssetType.ScriptableObject),
+                        (typeof(MonoBehaviour), AssetType.MonoBehaviour),
+                        (typeof(Component), AssetType.Component)
+                    };
+                }
+                return m_AssignableSystemTypeToAssetType;
+            }
+        }
+
+        private static Dictionary<System.Type, AssetType> m_RuntimeSystemTypeToAssetType = null;
+        private static Dictionary<System.Type, AssetType> RuntimeSystemTypeToAssetType
+        {
+            get
+            {
+                if (m_RuntimeSystemTypeToAssetType == null)
+                {
+                    m_RuntimeSystemTypeToAssetType = new Dictionary<Type, AssetType>()
+                    {
+                        { typeof(RuntimeAnimatorController), AssetType.AnimationController }
+                    };
+                }
+                return m_RuntimeSystemTypeToAssetType;
+            }
+        }
+
+        /// <summary>
+        /// Gets the enum AssetType associated with the param systemType ofType
+        /// </summary>
+        /// <param name="ofType">The Type of the asset</param>
+        /// <returns>An AssetType or <see cref="AssetType.Other" /> if null or unknown.</returns>
         public static AssetType GetAssetType(Type ofType)
         {
             if (ofType == null)
                 return AssetType.Other;
 
-            if (ofType == AnimationClipType) return AssetType.AnimationClip;
-            if (ofType == AvatarType) return AssetType.Avatar;
-            if (ofType == AudioClipType) return AssetType.AudioClip;
-            if (ofType == AudioMixerType) return AssetType.AudioMixer;
-            if (ofType == ComputeShaderType) return AssetType.ComputeShader;
-            if (ofType == FontType) return AssetType.Font;
-            if (ofType == GUISkinType) return AssetType.GUISkin;
-            if (ofType == MaterialType) return AssetType.Material;
-            if (ofType == MeshType) return AssetType.Mesh;
-            if (ofType == GameObjectType) return AssetType.GameObject;
-            if (ofType == PhysicsMaterialType) return AssetType.PhysicsMaterial;
-            if (ScriptableObjectType.IsAssignableFrom(ofType)) return AssetType.ScriptableObject;
-            if (ofType == ShaderType) return AssetType.Shader;
-            if (ofType == SpriteType) return AssetType.Sprite;
-            if (ofType == TextureType) return AssetType.Texture;
-            if (ofType == Texture2DType) return AssetType.Texture2D;
-            if (ofType == Texture3DType) return AssetType.Texture3D;
-            if (ofType == VideoClipType) return AssetType.VideoClip;
-            if (ofType == TextAssetType) return AssetType.TextAsset;
-            if (ofType == PhysicsMaterial2DType) return AssetType.PhysicsMaterial2D;
-            if (ofType == SceneType) return AssetType.Scene;
-            if (MonoBehaviourType.IsAssignableFrom(ofType)) return AssetType.MonoBehaviour;
-            if (ComponentType.IsAssignableFrom(ofType)) return AssetType.Component;
+            if (AssetType.TryParse(ofType.Name, out AssetType assetType))
+                return assetType;
+
+            // types where the class name doesn't equal the AssetType (legacy enum values)
+            if (SystemTypeToAssetType.TryGetValue(ofType, out assetType))
+                return assetType;
+
+            foreach ((Type, AssetType) typeAssignment in AssignableSystemTypeToAssetType)
+            {
+                if (typeAssignment.Item1.IsAssignableFrom(ofType))
+                    return typeAssignment.Item2;
+            }
 
             ofType = AddressableAssetUtility.MapEditorTypeToRuntimeType(ofType, false);
-            if (ofType == AnimationControllerType) return AssetType.AnimationController;
+            if (ofType == null)
+                return AssetType.Other;
+            if (SystemTypeToAssetType.TryGetValue(ofType, out assetType))
+                return assetType;
+            if (RuntimeSystemTypeToAssetType.TryGetValue(ofType, out assetType))
+                return assetType;
 
             return AssetType.Other;
         }

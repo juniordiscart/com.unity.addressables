@@ -8,7 +8,7 @@ The following topics provide an overview of the configuration options for settin
 
 * [Initialization](#initialization)
 * [System settings](#system-settings)
-* [Group settings](#group-settings)
+* [Group settings]
 * [Profiles](#profiles)
 * [Asset hosting service](#asset-hosting-service)
 * [Preferences](#unity-preferences)
@@ -83,10 +83,10 @@ See the following topics on more involved setup options:
 * [Customizing Addressables runtime initialization]
 
 
-[Groups window]: xref:addressables-groups#groups-window
+[Groups window]: xref:addressables-groups-window
 [Addressable system settings]: xref:addressables-asset-settings
 [Groups]: xref:addressables-groups
-[Group settings]: xref:addressables-group-settings
+[Group settings]: xref:addressables-group-schemas
 [Profiles]: xref:addressables-profiles
 [Asset hosting service]: xref:addressables-asset-hosting-services
 [Continuous integration]: xref:addressables-ci

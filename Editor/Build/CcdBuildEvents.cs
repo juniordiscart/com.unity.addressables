@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Unity.Services.Ccd.Management;
 using Unity.Services.Ccd.Management.Models;
@@ -10,6 +11,7 @@ using Unity.Services.Core;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
 
 namespace UnityEditor.AddressableAssets.Build
@@ -20,13 +22,16 @@ namespace UnityEditor.AddressableAssets.Build
     public class CcdBuildEvents
     {
         static CcdBuildEvents s_Instance;
-        
+
         /// <summary>
         /// The static instance of CcdBuildEvents.
         /// </summary>
-        public static CcdBuildEvents Instance { 
-            get {
-                if (s_Instance == null) {
+        public static CcdBuildEvents Instance
+        {
+            get
+            {
+                if (s_Instance == null)
+                {
                     s_Instance = new CcdBuildEvents();
                     s_Instance.RegisterNewBuildEvents();
                     s_Instance.RegisterUpdateBuildEvents();
@@ -34,17 +39,21 @@ namespace UnityEditor.AddressableAssets.Build
                 return s_Instance;
             }
         }
-        
+
         const string k_ContentStatePath = "addressables_content_state.bin";
 
-        internal void RegisterNewBuildEvents() {
+        internal void RegisterNewBuildEvents()
+        {
+            OnPreBuildEvents += s_Instance.VerifyBuildVersion;
             OnPreBuildEvents += s_Instance.RefreshDataSources;
             OnPreBuildEvents += s_Instance.VerifyTargetBucket;
             OnPostBuildEvents += s_Instance.UploadContentState;
             OnPostBuildEvents += s_Instance.UploadAndRelease;
         }
 
-        internal void RegisterUpdateBuildEvents() {
+        internal void RegisterUpdateBuildEvents()
+        {
+            OnPreUpdateEvents += s_Instance.VerifyBuildVersion;
             OnPreUpdateEvents += s_Instance.RefreshDataSources;
             OnPreUpdateEvents += s_Instance.DownloadContentStateBin;
             OnPreUpdateEvents += s_Instance.VerifyTargetBucket;
@@ -64,7 +73,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// <see cref="VerifyTargetBucket"/>
         /// </summary>
         public static event PreEvent OnPreBuildEvents;
-        
+
         /// <summary>
         /// Pre update build events.
         /// Default events:
@@ -87,7 +96,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// <see cref="UploadAndRelease"/>
         /// </summary>
         public static event PostEvent OnPostBuildEvents;
-        
+
         /// <summary>
         /// Post update build events.
         /// Default events:
@@ -97,8 +106,9 @@ namespace UnityEditor.AddressableAssets.Build
         public static event PostEvent OnPostUpdateEvents;
 
         internal async Task<bool> OnPreEvent(bool isUpdate, AddressablesDataBuilderInput input)
-        {   
-            if (isUpdate) {
+        {
+            if (isUpdate)
+            {
                 return await InvokePreEvent(OnPreUpdateEvents, input);
             }
             return await InvokePreEvent(OnPreBuildEvents, input);
@@ -108,7 +118,7 @@ namespace UnityEditor.AddressableAssets.Build
         {
             if (events == null)
             {
-                
+
                 return true;
             }
 
@@ -116,7 +126,7 @@ namespace UnityEditor.AddressableAssets.Build
             for (var i = 0; i < total; i++)
             {
                 var e = (PreEvent)events.GetInvocationList()[i];
-                var shouldContinue =  await e.Invoke(input);
+                var shouldContinue = await e.Invoke(input);
                 if (!shouldContinue)
                 {
                     return false;
@@ -124,11 +134,12 @@ namespace UnityEditor.AddressableAssets.Build
             }
             return true;
         }
-        
+
         internal async Task<bool> OnPostEvent(bool isUpdate, AddressablesDataBuilderInput input,
             AddressablesPlayerBuildResult result)
         {
-            if (isUpdate) {
+            if (isUpdate)
+            {
                 return await InvokePostEvent(OnPostUpdateEvents, input, result);
             }
             return await InvokePostEvent(OnPostBuildEvents, input, result);
@@ -139,15 +150,15 @@ namespace UnityEditor.AddressableAssets.Build
         {
             if (events == null)
                 return true;
-            
+
             var total = events.GetInvocationList().Length;
             for (var i = 0; i < total; i++)
             {
-                var e = (PostEvent) events.GetInvocationList()[i];
+                var e = (PostEvent)events.GetInvocationList()[i];
                 var shouldContinue = await e.Invoke(input, result);
                 if (!shouldContinue)
                 {
-                    // if a post-build step adds an error we have to log it manually 
+                    // if a post-build step adds an error we have to log it manually
                     if (result != null && result.Error != "")
                     {
                         Debug.LogError(result.Error);
@@ -172,7 +183,7 @@ namespace UnityEditor.AddressableAssets.Build
             if (oldEvents != null)
                 foreach (var t in oldEvents)
                 {
-                    OnPreBuildEvents += (PreEvent) (t);
+                    OnPreBuildEvents += (PreEvent)(t);
                 }
         }
 
@@ -187,7 +198,7 @@ namespace UnityEditor.AddressableAssets.Build
             if (oldEvents != null)
                 foreach (var t in oldEvents)
                 {
-                    OnPostBuildEvents += (PostEvent) (t);
+                    OnPostBuildEvents += (PostEvent)(t);
                 }
         }
 
@@ -202,7 +213,7 @@ namespace UnityEditor.AddressableAssets.Build
             if (oldEvents != null)
                 foreach (var t in oldEvents)
                 {
-                    OnPreUpdateEvents += (PreEvent) (t);
+                    OnPreUpdateEvents += (PreEvent)(t);
                 }
         }
 
@@ -217,8 +228,18 @@ namespace UnityEditor.AddressableAssets.Build
             if (oldEvents != null)
                 foreach (var t in oldEvents)
                 {
-                    OnPostUpdateEvents += (PostEvent) (t);
+                    OnPostUpdateEvents += (PostEvent)(t);
                 }
+        }
+
+        public async Task<bool> VerifyBuildVersion(AddressablesDataBuilderInput input)
+        {
+            if (string.IsNullOrWhiteSpace(input.AddressableSettings.OverridePlayerVersion))
+            {
+                Addressables.LogWarning("<b>When using CCD it is recommended that you set a 'Player Version Override' in Addressables Settings.</b> You can have it use the Player build version by setting it to [UnityEditor.PlayerSettings.bundleVersion].");
+                Addressables.LogWarning("Documentation on how to disable this warning is available in the example DisableBuildWarnings.cs.");
+            }
+            return true;
         }
 
         /// <summary>
@@ -226,15 +247,48 @@ namespace UnityEditor.AddressableAssets.Build
         /// </summary>
         /// <param name="input">Addressables data builder context</param>
         /// <returns></returns>
-        public async Task<bool> RefreshDataSources(AddressablesDataBuilderInput input) 
+        public async Task<bool> RefreshDataSources(AddressablesDataBuilderInput input)
         {
-	        try {
-                await ProfileDataSourceSettings.UpdateCCDDataSourcesAsync(CloudProjectSettings.projectId, true);
-            } catch(Exception e) {
+            try
+            {
+                var projectId = CloudProjectSettings.projectId;
+                await ProfileDataSourceSettings.UpdateCCDDataSourcesAsync(projectId, true);
+            }
+            catch (Exception e)
+            {
                 Debug.LogError(e.ToString());
                 return false;
             }
-			return true;
+            return true;
+        }
+
+        internal async Task<bool> LoopGroups(AddressableAssetSettings settings, Func<AddressableAssetSettings, AddressableAssetGroup, BundledAssetGroupSchema, Task<bool>> action)
+        {
+            var tasks = new List<Task<bool>>();
+            foreach (var group in settings.groups)
+            {
+                if (group == null)
+                {
+                    continue;
+                }
+
+                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                if (schema == null)
+                {
+                    continue;
+                }
+                tasks.Add(action(settings, group, schema));
+            }
+            var results = await Task.WhenAll(tasks.ToArray());
+            foreach (var result in results)
+            {
+                // if any fail, all fail
+                if (result == false)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -244,10 +298,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// <returns></returns>
         public async Task<bool> VerifyTargetBucket(AddressablesDataBuilderInput input)
         {
-            var settings = input.AddressableSettings;
-            var dataSourceSettings = ProfileDataSourceSettings.GetSettings();
-
-            if (settings == null)
+            if (input.AddressableSettings == null)
             {
                 string error;
                 if (EditorApplication.isUpdating)
@@ -260,56 +311,129 @@ namespace UnityEditor.AddressableAssets.Build
                 return false;
             }
 
-            AddressableAssetSettings.NullifyBundleFileIds(settings);
-
-            //Processing groups, checking for promotion buckets
-            var promotionOnly = GroupsContainPromotionOnlyBucket(settings);
-            if (promotionOnly)
+            if (!hasRemoteGroups(input.AddressableSettings))
             {
-                Debug.LogError("Cannot upload to Promotion Only bucket.");
-                return false;
+                Debug.LogWarning("No Addressable Asset Groups have been marked remote or the current profile is not using CCD.");
+                if (input.AddressableSettings.BuildRemoteCatalog)
+                {
+                    Debug.LogWarning("A remote catalog will be built without any remote Asset Bundles.");
+                }
+
             }
 
-            //Reclean directory before every build
+            // Reclean directory before every build
             if (Directory.Exists(AddressableAssetSettings.kCCDBuildDataPath))
             {
                 Directory.Delete(AddressableAssetSettings.kCCDBuildDataPath, true);
             }
 
+            return await LoopGroups(input.AddressableSettings, verifyTargetBucket);
+        }
 
-            //CcdManagedData should only be configured if ConfigState is Default
-            if (settings.m_CcdManagedData.State == CcdManagedData.ConfigState.Default)
+        internal bool hasRemoteGroups(AddressableAssetSettings settings)
+        {
+            foreach (var group in settings.groups)
             {
-                var existingGroupType = GetDefaultGroupType(dataSourceSettings);
-                settings.m_CcdManagedData.EnvironmentId = dataSourceSettings.currentEnvironment.id;
-                settings.m_CcdManagedData.EnvironmentName = dataSourceSettings.currentEnvironment.name;
+                if (group == null)
+                {
+                    continue;
+                }
 
+                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                if (schema == null)
+                {
+                    continue;
+                }
+                var foundGroupType = GetGroupType(settings, schema);
+                if (isCCDGroup(foundGroupType))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        internal bool isCCDGroup(ProfileGroupType groupType)
+        {
+
+            if (groupType == null)
+            {
+                return false;
+            }
+            if (IsUsingManager(groupType))
+            {
+                return true;
+            }
+            return groupType.GroupTypePrefix.StartsWith("CCD");
+        }
+
+        internal async Task<bool> verifyTargetBucket(AddressableAssetSettings settings, AddressableAssetGroup group, BundledAssetGroupSchema schema)
+        {
+            AddressableAssetSettings.NullifyBundleFileIds(group);
+
+            // if not using the manager try to lookup the bucket and verify it's not promotion only
+            var existingGroupType = GetDefaultGroupType(ProfileDataSourceSettings.GetSettings());
+            if (!IsUsingManager(settings, schema))
+            {
                 if (existingGroupType != null)
                 {
-                    settings.m_CcdManagedData.BucketId = existingGroupType
-                        .GetVariableBySuffix($"{nameof(CcdBucket)}{nameof(CcdBucket.Id)}").Value;
-                    settings.m_CcdManagedData.Badge = existingGroupType
-                        .GetVariableBySuffix($"{nameof(CcdBadge)}{nameof(CcdBadge.Name)}").Value;
-
-                }
-                else
-                {
-                    try
+                    var promotionOnly = IsPromotionOnlyBucket(settings, schema);
+                    if (promotionOnly)
                     {
-                        var api = CcdManagement.Instance;
-                        var createdBucket = await CreateManagedBucket(api, dataSourceSettings.currentEnvironment.id,
-                            EditorUserBuildSettings.activeBuildTarget.ToString());
-                        settings.m_CcdManagedData.BucketId = createdBucket.Id.ToString();
-                        settings.m_CcdManagedData.Badge = "latest";
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError(e.ToString());
+                        Debug.LogError("Cannot upload to Promotion Only bucket.");
                         return false;
                     }
                 }
+                return true;
             }
-            
+
+            // CcdManagedData.ConfigState.Override means it has been overriden by the customer at build time
+            if (settings.m_CcdManagedData.State == CcdManagedData.ConfigState.Override)
+            {
+                return true;
+            }
+
+            // Target bucket should only be verified if Automatic profile type
+            settings.m_CcdManagedData.EnvironmentId = ProfileDataSourceSettings.GetSettings().currentEnvironment.id;
+            settings.m_CcdManagedData.EnvironmentName = ProfileDataSourceSettings.GetSettings().currentEnvironment.name;
+
+            // existing automatic bucket loaded from cache
+            if (existingGroupType != null)
+            {
+                var promotionOnly = IsPromotionOnlyBucket(settings, schema);
+                if (promotionOnly)
+                {
+                    Debug.LogError("Cannot upload to Promotion Only bucket.");
+                    return false;
+                }
+                settings.m_CcdManagedData.BucketId = existingGroupType
+                    .GetVariableBySuffix($"{nameof(CcdBucket)}{nameof(CcdBucket.Id)}").Value;
+                settings.m_CcdManagedData.Badge = existingGroupType
+                    .GetVariableBySuffix($"{nameof(CcdBadge)}{nameof(CcdBadge.Name)}").Value;
+            }
+            // otherwise try to create
+            else
+            {
+                try
+                {
+                    var api = CcdManagement.Instance;
+                    var createdBucket = await CreateManagedBucket(api, ProfileDataSourceSettings.GetSettings().currentEnvironment.id,
+                        EditorUserBuildSettings.activeBuildTarget.ToString());
+                    if (createdBucket.Attributes.PromoteOnly)
+                    {
+                        Debug.LogError("Cannot upload to Promotion Only bucket.");
+                        return false;
+                    }
+                    settings.m_CcdManagedData.BucketId = createdBucket.Id.ToString();
+                    settings.m_CcdManagedData.Badge = "latest";
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e.ToString());
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -318,25 +442,53 @@ namespace UnityEditor.AddressableAssets.Build
         /// </summary>
         /// <param name="input">Addressables data builder context</param>
         /// <returns></returns>
-        public async Task<bool> DownloadContentStateBin(AddressablesDataBuilderInput input) 
+        public async Task<bool> DownloadContentStateBin(AddressablesDataBuilderInput input)
         {
+            if (!input.AddressableSettings.BuildRemoteCatalog)
+            {
+                Debug.LogWarning("Not downloading content state because 'Build Remote Catalog' is not checked in Addressable Asset Settings. This will disable content updates");
+                return true;
+            }
+
+            var settings = input.AddressableSettings;
+            var groupType = getRemoteCatalogGroupType(settings);
+            if (groupType == null)
+            {
+                Debug.LogError("Could not find remote catalog paths");
+                return false;
+            }
+
+            if (!this.isCCDGroup(groupType))
+            {
+                Debug.LogError("Content state could not be downloaded as the remote catalog is not targeting CCD");
+                return false;
+            }
+
             try
             {
-                var settings = input.AddressableSettings;
+                SetEnvironmentId(settings, groupType);
+                var bucketId = GetBucketId(settings, groupType);
+                if (bucketId == null)
+                {
+                    Debug.LogError("Content state could not be downloaded as no bucket was specified. This is populated for managed profiles in the VerifyBucket event.");
+                    return false;
+                }
                 var api = CcdManagement.Instance;
-                var ccdEntry = await GetEntryByPath(api, new Guid(settings.m_CcdManagedData.BucketId), k_ContentStatePath);
+                var ccdEntry = await GetEntryByPath(api, new Guid(bucketId), k_ContentStatePath);
                 if (ccdEntry != null)
                 {
-                    var contentStream = await api.GetContentAsync(new EntryOptions(new Guid(settings.m_CcdManagedData.BucketId),  ccdEntry.Entryid));
-                    
+                    var contentStream = await api.GetContentAsync(new EntryOptions(new Guid(bucketId), ccdEntry.Entryid));
+
                     var contentStatePath = Path.Combine(settings.GetContentStateBuildPath(), k_ContentStatePath);
                     if (!Directory.Exists(contentStatePath))
                         Directory.CreateDirectory(Path.GetDirectoryName(contentStatePath));
                     else if (File.Exists(contentStatePath))
                         File.Delete(contentStatePath);
-            
-                    using var fileStream = File.Create(contentStatePath);
-                    contentStream.CopyTo(fileStream);
+
+                    using (var fileStream = File.Create(contentStatePath))
+                    {
+                        contentStream.CopyTo(fileStream);
+                    }
                 }
             }
             catch (Exception e)
@@ -377,7 +529,7 @@ namespace UnityEditor.AddressableAssets.Build
 
                 //Creating a release for each bucket
                 var defaultEnvironmentId = ProfileDataSourceSettings.GetSettings().currentEnvironment.id;
-                
+
                 await UploadAndRelease(CcdManagement.Instance, input.AddressableSettings, defaultEnvironmentId, buildData);
             }
             catch (Exception e)
@@ -388,7 +540,17 @@ namespace UnityEditor.AddressableAssets.Build
 
             return true;
         }
-        
+
+        private ProfileGroupType getRemoteCatalogGroupType(AddressableAssetSettings settings)
+        {
+            var buildPath = settings.RemoteCatalogBuildPath;
+            var loadPath = settings.RemoteCatalogLoadPath;
+            var groupType = GetGroupType(settings, buildPath, loadPath);
+            return groupType;
+
+        }
+
+
         /// <summary>
         /// Upload addressables_content_state.bin to the CCD managed bucket.
         /// </summary>
@@ -396,29 +558,63 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="result">Addressables build result</param>
         /// <returns></returns>
         public async Task<bool> UploadContentState(AddressablesDataBuilderInput input,
-            AddressablesPlayerBuildResult result) 
+            AddressablesPlayerBuildResult result)
         {
+
+            if (!input.AddressableSettings.BuildRemoteCatalog)
+            {
+                Debug.LogWarning("Not uploading content state, because 'Build Remote Catalog' is not checked in Addressable Asset Settings. This will disable content updates");
+                return true;
+            }
+
+            var settings = input.AddressableSettings;
+            var groupType = getRemoteCatalogGroupType(settings);
+            if (groupType == null)
+            {
+                Debug.LogError("Could not find remote catalog paths");
+                return false;
+            }
+
+            if (!this.isCCDGroup(groupType))
+            {
+                Debug.LogError("Content state could not be uploaded as the remote catalog is not targeting CCD");
+                return false;
+            }
+
             try
             {
-                var settings = input.AddressableSettings;
-                var api = CcdManagement.Instance;
-                
-                var contentStatePath = Path.Combine(settings.GetContentStateBuildPath(), k_ContentStatePath);
-                var contentHash = AddressableAssetUtility.GetMd5Hash(contentStatePath);
-                
-                using var stream = File.OpenRead(contentStatePath);
-
-                var entryModelOptions = new EntryModelOptions(k_ContentStatePath, contentHash, (int)stream.Length)
+                SetEnvironmentId(settings, groupType);
+                var bucketId = GetBucketId(settings, groupType);
+                if (bucketId == null)
                 {
-                    UpdateIfExists = true
-                };
-                var createdEntry = await api.CreateOrUpdateEntryByPathAsync(
-                        new EntryByPathOptions(new Guid(settings.m_CcdManagedData.BucketId), k_ContentStatePath),
-                        entryModelOptions).ConfigureAwait(false);
-                
-                var uploadContentOptions = new UploadContentOptions(
-                    new Guid(settings.m_CcdManagedData.BucketId), createdEntry.Entryid, stream);
-                await api.UploadContentAsync(uploadContentOptions).ConfigureAwait(false);
+                    Debug.LogError("Content state could not be uploaded as no bucket was specified. This is populated for managed profiles in the VerifyBucket event.");
+                    return false;
+                }
+                var api = CcdManagement.Instance;
+
+                var contentStatePath = Path.Combine(settings.GetContentStateBuildPath(), k_ContentStatePath);
+                if (!File.Exists(contentStatePath))
+                {
+                    Debug.LogError($"Content state file is missing {contentStatePath}");
+                    return false;
+                }
+                var contentHash = AddressableAssetUtility.GetMd5Hash(contentStatePath);
+
+                using (var stream = File.OpenRead(contentStatePath))
+                {
+
+                    var entryModelOptions = new EntryModelOptions(k_ContentStatePath, contentHash, (int)stream.Length)
+                    {
+                        UpdateIfExists = true
+                    };
+                    var createdEntry = await api.CreateOrUpdateEntryByPathAsync(
+                            new EntryByPathOptions(new Guid(bucketId), k_ContentStatePath),
+                            entryModelOptions);
+
+                    var uploadContentOptions = new UploadContentOptions(
+                        new Guid(bucketId), createdEntry.Entryid, stream);
+                    await api.UploadContentAsync(uploadContentOptions);
+                }
             }
             catch (Exception e)
             {
@@ -428,42 +624,104 @@ namespace UnityEditor.AddressableAssets.Build
             return true;
         }
 
-        static bool GroupsContainPromotionOnlyBucket(AddressableAssetSettings settings)
+        internal bool IsPromotionOnlyBucket(AddressableAssetSettings settings, BundledAssetGroupSchema schema)
         {
-            foreach (var group in settings.groups)
+            if (schema != null)
             {
-                if (group == null)
-                    continue;
-
-                var schema = group.GetSchema<BundledAssetGroupSchema>();
-                if (schema != null)
+                var foundGroupType = GetGroupType(settings, schema);
+                if (foundGroupType != null && foundGroupType.GroupTypePrefix.StartsWith("CCD"))
                 {
-                    var buildPath = schema.BuildPath.GetValue(settings);
-                    var loadPath = schema.LoadPath.GetValue(settings);
-                    var groupType = new ProfileGroupType("temp");
-                    groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, buildPath));
-                    groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, loadPath));
-                    var foundGroupType = ProfileDataSourceSettings.GetSettings().FindGroupType(groupType);
-                    
-                    if (foundGroupType != null && foundGroupType.GroupTypePrefix.StartsWith("CCD"))
+                    if (bool.Parse(foundGroupType.GetVariableBySuffix(nameof(CcdBucket.Attributes.PromoteOnly)).Value))
                     {
-                        if (bool.Parse(foundGroupType.GetVariableBySuffix(nameof(CcdBucket.Attributes.PromoteOnly)).Value))
-                        {
-                            Debug.LogError("Cannot upload to Promotion Only bucket.");
-                            return true;
-                        }
+                        Debug.LogError("Cannot upload to Promotion Only bucket.");
+                        return true;
                     }
-
                 }
+
             }
             return false;
         }
-        
+
+        internal ProfileGroupType GetGroupType(AddressableAssetSettings settings, BundledAssetGroupSchema schema)
+        {
+
+            return GetGroupType(settings, schema.BuildPath, schema.LoadPath);
+        }
+
+        internal ProfileGroupType GetGroupType(AddressableAssetSettings settings, ProfileValueReference buildPath, ProfileValueReference loadPath)
+        {
+            // we need the "unresolved" value since we're tring to match it to its original type
+            Debug.Log("Loading from active profile id " + settings.activeProfileId);
+            var buildPathValue = settings.profileSettings.GetValueById(settings.activeProfileId, buildPath.Id);
+            var loadPathValue = settings.profileSettings.GetValueById(settings.activeProfileId, loadPath.Id);
+            Debug.Log(loadPathValue);
+            if (buildPathValue == null || loadPathValue == null)
+            {
+                return null;
+            }
+
+            var groupType = new ProfileGroupType("temp");
+            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, buildPathValue));
+            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, loadPathValue));
+            return ProfileDataSourceSettings.GetSettings().FindGroupType(groupType);
+        }
+
+
+        internal bool IsUsingManager(AddressableAssetSettings settings, BundledAssetGroupSchema schema)
+        {
+            var groupType = GetGroupType(settings, schema);
+            return IsUsingManager(groupType);
+        }
+
+        internal bool IsUsingManager(ProfileGroupType groupType)
+        {
+            if (groupType == null)
+            {
+                return false;
+            }
+            return groupType.GroupTypePrefix == AddressableAssetSettings.CcdManagerGroupTypePrefix;
+        }
+
+        internal void SetEnvironmentId(AddressableAssetSettings settings, ProfileGroupType groupType)
+        {
+            string environmentId = null;
+            if (!IsUsingManager(groupType))
+            {
+                // if not using the manager load the bucketID from the group type
+                environmentId = groupType.GetVariableBySuffix($"{nameof(ProfileDataSourceSettings.Environment)}{nameof(ProfileDataSourceSettings.Environment.id)}").Value;
+            }
+            else if (settings.m_CcdManagedData != null)
+            {
+                environmentId = settings.m_CcdManagedData.EnvironmentId;
+            }
+
+            if (environmentId == null)
+            {
+                throw new Exception("unable to determine environment ID.");
+            }
+
+            CcdManagement.SetEnvironmentId(environmentId);
+        }
+
+        internal string GetBucketId(AddressableAssetSettings settings, ProfileGroupType groupType)
+        {
+            if (!IsUsingManager(groupType))
+            {
+                // if not using the manager load the bucketID from the group type
+                return groupType.GetVariableBySuffix($"{nameof(CcdBucket)}{nameof(CcdBucket.Id)}").Value;
+            }
+            if (settings.m_CcdManagedData != null)
+            {
+                return settings.m_CcdManagedData.BucketId;
+            }
+            return null;
+        }
+
         static ProfileGroupType GetDefaultGroupType(ProfileDataSourceSettings dataSourceSettings)
         {
             //Find existing bucketId
             var groupTypes = dataSourceSettings.GetGroupTypesByPrefix(string.Join(
-                ProfileGroupType.k_PrefixSeparator.ToString(), "CCD", CloudProjectSettings.projectId,
+                ProfileGroupType.k_PrefixSeparator.ToString(), "CCD", dataSourceSettings.currentEnvironment.projectGenesisId,
                 dataSourceSettings.currentEnvironment.id));
             return groupTypes.FirstOrDefault(gt =>
                 gt.GetVariableBySuffix($"{nameof(CcdBucket)}{nameof(CcdBucket.Name)}").Value ==
@@ -475,7 +733,7 @@ namespace UnityEditor.AddressableAssets.Build
             CcdBucket ccdBucket;
             try
             {
-                CcdManagement.SetEnvironmentId(envId); 
+                CcdManagement.SetEnvironmentId(envId);
                 ccdBucket = await api.CreateBucketAsync(
                     new CreateBucketOptions(bucketName));
             }
@@ -543,7 +801,7 @@ namespace UnityEditor.AddressableAssets.Build
         void ReportProgress(int progressId, float progress, string message)
         {
 #if UNITY_2020_1_OR_NEWER
-            Progress.Report (progressId, progress, message);
+            Progress.Report(progressId, progress, message);
 #else
             Debug.Log($"[{progress}] {message}");
 #endif
@@ -553,22 +811,29 @@ namespace UnityEditor.AddressableAssets.Build
         async Task UploadAndRelease(ICcdManagementServiceSdk api, AddressableAssetSettings settings, string defaultEnvironmentId, CcdBuildDataFolder buildData)
         {
             var progressId = StartProgress("Upload and Release");
-            try {
+            try
+            {
                 foreach (var env in buildData.Environments)
                 {
                     CcdManagement.SetEnvironmentId(env.Name);
-            
+
                     if (env.Name == ProfileDataSourceSettings.MANAGED_ENVIRONMENT)
                     {
                         CcdManagement.SetEnvironmentId(defaultEnvironmentId);
                     }
-            
+
                     foreach (var bucket in env.Buckets)
                     {
                         Guid bucketId;
-                        bucketId = Guid.Parse(bucket.Name == ProfileDataSourceSettings.MANAGED_BUCKET
+                        var bucketIdString = bucket.Name == ProfileDataSourceSettings.MANAGED_BUCKET
                             ? settings.m_CcdManagedData.BucketId
-                            : bucket.Name);
+                            : bucket.Name;
+                        if (String.IsNullOrEmpty(bucketIdString))
+                        {
+                            Debug.LogError($"Invalid bucket ID for {bucket.Name}");
+                            continue;
+                        }
+                        bucketId = Guid.Parse(bucketIdString);
 
                         foreach (var badge in bucket.Badges)
                         {
@@ -578,36 +843,38 @@ namespace UnityEditor.AddressableAssets.Build
                             }
                             var entries = new List<CcdReleaseEntryCreate>();
                             var total = badge.Files.Count();
-                            for(var i = 0; i < total; i++)
+                            for (var i = 0; i < total; i++)
                             {
                                 var file = badge.Files[i];
                                 var contentHash = AddressableAssetUtility.GetMd5Hash(file.FullName);
-                                using var stream = File.OpenRead(file.FullName);
-                                var entryPath = file.Name;
-                                var entryModelOptions = new EntryModelOptions(entryPath, contentHash, (int)stream.Length)
+                                using (var stream = File.OpenRead(file.FullName))
                                 {
-                                    UpdateIfExists = true
-                                };
-                                ReportProgress (progressId, (i + 1) / total, $"Creating Entry {entryPath}");
-                                var createdEntry = await api.CreateOrUpdateEntryByPathAsync(new EntryByPathOptions(bucketId, entryPath),
-                                        entryModelOptions).ConfigureAwait(false);
-                                Debug.Log("Created Entry");
-                                    
-                                ReportProgress (progressId, (i + 1) / total, $"Uploading Entry {entryPath}");
-                                var uploadContentOptions = new UploadContentOptions(bucketId, createdEntry.Entryid, stream);
-                                await api.UploadContentAsync(uploadContentOptions).ConfigureAwait(false);
-            
-                                ReportProgress (progressId, (i + 1) / total, $"Uploaded Entry {entryPath}");
-                                entries.Add(new CcdReleaseEntryCreate(createdEntry.Entryid, createdEntry.CurrentVersionid));
+                                    var entryPath = file.Name;
+                                    var entryModelOptions = new EntryModelOptions(entryPath, contentHash, (int)stream.Length)
+                                    {
+                                        UpdateIfExists = true
+                                    };
+                                    ReportProgress(progressId, (i + 1) / total, $"Creating Entry {entryPath}");
+                                    var createdEntry = await api.CreateOrUpdateEntryByPathAsync(new EntryByPathOptions(bucketId, entryPath),
+                                            entryModelOptions).ConfigureAwait(false);
+                                    Debug.Log($"Created Entry {entryPath}");
+
+                                    ReportProgress(progressId, (i + 1) / total, $"Uploading Entry {entryPath}");
+                                    var uploadContentOptions = new UploadContentOptions(bucketId, createdEntry.Entryid, stream);
+                                    await api.UploadContentAsync(uploadContentOptions).ConfigureAwait(false);
+
+                                    ReportProgress(progressId, (i + 1) / total, $"Uploaded Entry {entryPath}");
+                                    entries.Add(new CcdReleaseEntryCreate(createdEntry.Entryid, createdEntry.CurrentVersionid));
+                                }
                             }
-                            
+
                             // Add content_sate.bin to release if present
                             var contentStateEntry = await GetEntryByPath(api, bucketId, k_ContentStatePath);
-                            if (contentStateEntry != null) 
+                            if (contentStateEntry != null)
                                 entries.Add(new CcdReleaseEntryCreate(contentStateEntry.Entryid, contentStateEntry.CurrentVersionid));
-                            
+
                             //Creating release
-                            ReportProgress (progressId, total, "Creating release");
+                            ReportProgress(progressId, total, "Creating release");
                             Debug.Log("Creating release.");
                             var release = await api.CreateReleaseAsync(new CreateReleaseOptions(bucketId)
                             {
@@ -615,11 +882,11 @@ namespace UnityEditor.AddressableAssets.Build
                                 Notes = $"Automated release created for {badge.Name}"
                             }).ConfigureAwait(false);
                             Debug.Log($"Release {release.Releaseid} created.");
-            
+
                             //Don't update latest badge (as it always updates)
                             if (badge.Name != "latest")
                             {
-                                ReportProgress (progressId, total, "Updating badge");
+                                ReportProgress(progressId, total, "Updating badge");
                                 Debug.Log("Updating badge.");
                                 var badgeRes = await api.AssignBadgeAsync(new AssignBadgeOptions(bucketId, badge.Name, release.Releaseid))
                                     .ConfigureAwait(false);
@@ -628,11 +895,14 @@ namespace UnityEditor.AddressableAssets.Build
                         }
                     }
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Debug.LogError(e.ToString());
-            } finally {
-                 RemoveProgress(progressId);
+            }
+            finally
+            {
+                RemoveProgress(progressId);
             }
         }
 

@@ -827,7 +827,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 
             AdvancedOptionsFoldout.IsActive = GUI.AddressablesGUIUtility.FoldoutWithHelp(AdvancedOptionsFoldout.IsActive, new GUIContent("Advanced Options"), () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("GroupSettings.html#advanced-options");
+                string url = AddressableAssetUtility.GenerateDocsURL("editor/groups/ContentPackingAndLoadingSchema.html#advanced-options");
                 Application.OpenURL(url);
             });
             if (AdvancedOptionsFoldout.IsActive)
@@ -860,7 +860,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             EditorGUI.BeginChangeCheck();
             AdvancedOptionsFoldout.IsActive = GUI.AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(AdvancedOptionsFoldout.IsActive, new GUIContent("Advanced Options"), () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("GroupSettings.html#advanced-options");
+                string url = AddressableAssetUtility.GenerateDocsURL("editor/groups/ContentPackingAndLoadingSchema.html#advanced-options");
                 Application.OpenURL(url);
             }, 10);
             if (AdvancedOptionsFoldout.IsActive)

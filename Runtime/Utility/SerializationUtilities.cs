@@ -157,14 +157,6 @@ namespace UnityEngine.AddressableAssets.Utility
                 return tmp.Length + 1;
             }
 
-            if (objectType == typeof(int))
-            {
-                byte[] tmp = BitConverter.GetBytes((UInt32)obj);
-                buffer.Add((byte)ObjectType.UInt32);
-                buffer.AddRange(tmp);
-                return tmp.Length + 1;
-            }
-
             if (objectType == typeof(Hash128))
             {
                 var guid = (Hash128)obj;

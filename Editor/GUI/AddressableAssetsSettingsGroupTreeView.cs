@@ -83,6 +83,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		void OnSortingChanged(MultiColumnHeader mch)
 		{
+            //This is where the sort happens in the groups view
 			SortChildren(rootItem);
 			Reload();
 		}

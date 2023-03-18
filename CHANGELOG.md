@@ -4,7 +4,31 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.21.2] - 2022-12-9
+## [1.21.9] - 2023-03-07
+- Removed code within WriteObjectToByteList that would never be reached
+- Fixed an issue where SceneOps would have update called on them twice per frame
+- Fixed an issue where in some circumstances an Operation would continue to have update called on it even after it finished.
+- Fixed an issue with Labels window after a domain reload causing a null reference exception.
+- Added Remove all unused labels option to labels popup window.
+- Fixed issue when not including the address and guid in catalog using content update workflow, would always indicate the asset as changed
+- Fixed Addressables profiler module help links to documentation.
+- Fixed issue where scenes unloaded due to another scene loading in single mode, would result in the profiler module still reporting the scene as loaded.
+- Groups window will now show labels of entries that are not a part of the settings.
+- Fixed 404s when uploading files with incorrect environment ID
+- Fixed issue where BuildLayoutGenerationTask would sometimes fail in large projects
+
+## [1.21.8] - 2023-02-09
+- Optimised PostProcessBundles
+- Fixed issue where having a runtime profile variable or property to evaluate web urls on Windows platforms can result in malformed urls.
+- Fixed possible `NullRefernceException` when importing new assets and `AddressableAssetUtility+SortedDelegate,Register` was called.
+- Fixed an issue where EditorGUI.changed would not be properly set in certain circumstances when updating AssetReferences using the inspector
+- Fixed CCD build and release to properly upload static groups
+- Fixed CCD build and release to allow both static and managed groups in the same profile
+- Include additional object dependency information in build layout report
+- Addressables Profiler module compatible with Unity Editor 2022.2+
+- Addressables Build Report window added. Compatible with Unity Editor 2022.2+
+
+## [1.21.2] - 2022-12-09
 - Fixed issue where folders in Groups window would display the subObjects of assets without expanding the assets.
 - Added the ability to copy a subAsset address to clipboard from right click.
 - Fixed bundle naming mode option names being unclear when selecting multiple groups.
@@ -13,7 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed issue where Addressables inspector would not show until Addressables settings have been initialised
 - Fixed issue where editor only assets would be marked as changed in the Check for Content Update restrictions window
 
-## [1.21.1] - 2022-10-5
+## [1.21.1] - 2022-10-05
 - Fixed issue where CcdManagedData State was not being set correctly
 - Added IP ping timeout to the Hosting Services window.
 - Fixed issue where loading cached bundles using WaitForCompletion in 2021.2+ results in an error.
@@ -1213,4 +1237,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.0.8-preview] - 2018-02-08
 - Initial submission for package distribution
+
 

@@ -168,10 +168,15 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     }
                     else
                     {
+#if ENABLE_BINARY_CATALOG
                         ResourceLocationBase location = new ResourceLocationBase(idToLoad, idToLoad,
-                            typeof(JsonAssetProvider).FullName, typeof(ContentCatalogData));
+                            typeof(BinaryAssetProvider<ContentCatalogData.Serializer>).FullName, typeof(ContentCatalogData));
                         location.Data = providerLoadRequestOptions;
-
+                        m_ProviderInterface.ResourceManager.ResourceProviders.Add(new BinaryAssetProvider<ContentCatalogData.Serializer>());
+#else
+                        ResourceLocationBase location = new ResourceLocationBase(idToLoad, idToLoad,
+                           typeof(JsonAssetProvider).FullName, typeof(ContentCatalogData));
+#endif
                         m_ContentCatalogDataLoadOp = m_ProviderInterface.ResourceManager.ProvideResource<ContentCatalogData>(location);
                         m_ContentCatalogDataLoadOp.Completed += CatalogLoadOpCompleteCallback;
                     }
@@ -345,6 +350,13 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 return m_ProviderInterface.ResourceManager.TransformInternalId(loc);
             }
 
+            const string kCatalogExt =
+#if ENABLE_BINARY_CATALOG
+            ".bin";
+#else
+            ".json";
+#endif
+
             internal string DetermineIdToLoad(IResourceLocation location, IList<object> dependencyObjects, bool disableCatalogUpdateOnStart = false)
             {
                 //default to load actual local source catalog
@@ -363,7 +375,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 #if ENABLE_CACHING
                         if (!string.IsNullOrEmpty(m_LocalHashValue) && !m_Retried && !string.IsNullOrEmpty(Application.persistentDataPath)) //cache exists and not forcing a retry state
                         {
-                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", ".json");
+                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", kCatalogExt);
                         }
                         else
                         {
@@ -377,15 +389,15 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     {
                         if (remoteHash == m_LocalHashValue && !m_Retried) //cache of remote is good and not forcing a retry state
                         {
-                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", ".json");
+                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", kCatalogExt);
                         }
                         else //remote is different than cache, or no cache
                         {
-                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Remote]).Replace(".hash", ".json");
+                            idToLoad = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Remote]).Replace(".hash", kCatalogExt);
                             m_RemoteHashValue = remoteHash;
 #if ENABLE_CACHING
                             if (!string.IsNullOrEmpty(Application.persistentDataPath))
-                                m_LocalDataPath = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", ".json");
+                                m_LocalDataPath = GetTransformedInternalId(location.Dependencies[(int)DependencyHashIndex.Cache]).Replace(".hash", kCatalogExt);
 #endif
                         }
                     }
@@ -399,6 +411,9 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 Addressables.LogFormat("Addressables - Content catalog load result = {0}.", ccd);
                 if (ccd != null)
                 {
+#if ENABLE_ADDRESSABLE_PROFILER
+                    ResourceManagement.Profiling.ProfilerRuntime.AddCatalog(Hash128.Parse(ccd.m_BuildResultHash));
+#endif
                     ccd.location = m_ProviderInterface.Location;
                     ccd.localHash = m_LocalHashValue;
                     if (!string.IsNullOrEmpty(m_RemoteHashValue) && !string.IsNullOrEmpty(m_LocalDataPath))
@@ -412,7 +427,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                                 Directory.CreateDirectory(dir);
                             File.WriteAllText(localCachePath, JsonUtility.ToJson(ccd));
-                            File.WriteAllText(localCachePath.Replace(".json", ".hash"), m_RemoteHashValue);
+                            File.WriteAllText(localCachePath.Replace(kCatalogExt, ".hash"), m_RemoteHashValue);
                         }
                         catch (UnauthorizedAccessException uae)
                         {
@@ -449,7 +464,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
                         //if the prev load path is cache, try to remove cache and reload from remote
                         var cachePath = GetTransformedInternalId(m_ProviderInterface.Location.Dependencies[(int)DependencyHashIndex.Cache]);
-                        if (m_ContentCatalogDataLoadOp.LocationName == cachePath.Replace(".hash", ".json"))
+                        if (m_ContentCatalogDataLoadOp.LocationName == cachePath.Replace(".hash", kCatalogExt))
                         {
                             try
                             {

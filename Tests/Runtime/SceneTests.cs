@@ -390,6 +390,39 @@ namespace SceneTests
             yield return op;
         }
 
+
+        [UnityTest]
+        public IEnumerator SceneTests_SceneOp_UpdateReceiverDoesNotRemainPastCompletion()
+        {
+            int startingReceiversCount = m_Addressables.ResourceManager.m_UpdateReceivers.Count + m_Addressables.ResourceManager.m_UpdateCallbacks.Count;
+            var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+
+            try
+            {
+                op.m_InternalOp.Executed += () =>
+                {
+                    if (op.m_InternalOp.HasExecuted && !op.m_InternalOp.IsDone)
+                    {
+                        Assert.AreEqual(startingReceiversCount + 1, m_Addressables.ResourceManager.m_UpdateReceivers.Count + m_Addressables.ResourceManager.m_UpdateCallbacks.Count,
+                            $"Expected {startingReceiversCount + 1} update receivers but was actually {m_Addressables.ResourceManager.m_UpdateReceivers.Count + m_Addressables.ResourceManager.m_UpdateCallbacks.Count}");
+                    }
+                };
+
+                yield return op;
+            }
+
+            finally
+            {
+                Assert.AreEqual(startingReceiversCount, m_Addressables.ResourceManager.m_UpdateReceivers.Count + m_Addressables.ResourceManager.m_UpdateCallbacks.Count);
+
+                m_Addressables.Release(op);
+
+                Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
+                Assert.IsFalse(op.IsValid());
+
+            }
+        }
+
         [UnityTest]
         public IEnumerator SceneTests_Release_ReleaseNotRefCountZeroWhileLoadingDoesntUnloadAfterLoadCompletes()
         {

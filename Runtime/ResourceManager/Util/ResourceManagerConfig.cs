@@ -400,7 +400,38 @@ namespace UnityEngine.ResourceManagement.Util
         }
 #pragma warning restore 0649
 
+#if ENABLE_BINARY_CATALOG
+        internal class Serializer : BinaryStorageBuffer.ISerializationAdapter<ObjectInitializationData>
+        {
+            struct Data
+            {
+                public uint id;
+                public uint type;
+                public uint data;
+            }
 
+            public IEnumerable<BinaryStorageBuffer.ISerializationAdapter> Dependencies => null;
+
+
+            public object Deserialize(BinaryStorageBuffer.Reader reader, Type t, uint offset)
+            {
+                var d = reader.ReadValue<Data>(offset);
+                return new ObjectInitializationData { m_Id = reader.ReadString(d.id), m_ObjectType = new SerializedType { Value = reader.ReadObject<Type>(d.type) }, m_Data = reader.ReadString(d.data) };
+            }
+
+            public uint Serialize(BinaryStorageBuffer.Writer writer, object val)
+            {
+                var oid = (ObjectInitializationData)val;
+                var d = new Data
+                {
+                    id = writer.WriteString(oid.m_Id),
+                    type = writer.WriteObject(oid.ObjectType.Value, false),
+                    data = writer.WriteString(oid.m_Data)
+                };
+                return writer.Write(d);
+            }
+        }
+#endif
         /// <summary>
         /// Converts information about the initialization data to a formatted string.
         /// </summary>
@@ -692,5 +723,14 @@ namespace UnityEngine.ResourceManagement.Util
             return tB.IsAssignableFrom(tA);
 #endif
         }
+    }
+
+    [System.Flags]
+    internal enum BundleSource
+    {
+        None = 0,
+        Local = 1,
+        Cache = 2,
+        Download = 4
     }
 }

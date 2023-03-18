@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -209,11 +209,11 @@ namespace UnityEditor.AddressableAssets.Settings
                 throw new ArgumentException("Group Type is not valid. Group Type must include a build path and load path variables");
             }
 
+            var buildPath = groupType.GetVariableBySuffix(AddressableAssetSettings.kBuildPath);
+            var loadPath = groupType.GetVariableBySuffix(AddressableAssetSettings.kLoadPath);
             foreach (ProfileGroupType settingsGroupType in profileGroupTypes)
             {
-                var buildPath = groupType.GetVariableBySuffix(AddressableAssetSettings.kBuildPath);
                 var foundBuildPath = settingsGroupType.ContainsVariable(buildPath);
-                var loadPath = groupType.GetVariableBySuffix(AddressableAssetSettings.kLoadPath);
                 var foundLoadPath = settingsGroupType.ContainsVariable(loadPath);
                 if (foundBuildPath && foundLoadPath)
                 {
@@ -244,11 +244,13 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>List of ProfileGroupType</returns>
         public static async Task<List<ProfileGroupType>> UpdateCCDDataSourcesAsync(string projectId, bool showInfoLog)
         {
+            var settings = GetSettings();
+
             if (showInfoLog)
             {
                 Addressables.Log("Syncing CCD Environments, Buckets, and Badges.");
             }
-            var settings = GetSettings();
+            
             var profileGroupTypes = new List<ProfileGroupType>();
 
             var environments = await GetEnvironments();
@@ -392,11 +394,13 @@ $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environme
 
 		internal static async Task<List<Environment>> GetEnvironments()
         {
+
+            var projectId = CloudProjectSettings.projectId;
             var authToken = await GetAuthToken();
             using (System.Net.Http.HttpClient client = new System.Net.Http.HttpClient())
             {
                 client.DefaultRequestHeaders.Add("Authorization", authToken);
-                var response = await client.GetAsync(String.Format("{0}/api/unity/legacy/v1/projects/{1}/environments", m_ServicesBasePath, CloudProjectSettings.projectId));
+                var response = await client.GetAsync(String.Format("{0}/api/unity/legacy/v1/projects/{1}/environments", m_ServicesBasePath, projectId));
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception(response.ReasonPhrase);

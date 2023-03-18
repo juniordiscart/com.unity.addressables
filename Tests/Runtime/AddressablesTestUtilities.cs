@@ -97,11 +97,15 @@ static class AddressablesTestUtility
         var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
         importer.textureType = TextureImporterType.Sprite;
         importer.spriteImportMode = SpriteImportMode.Multiple;
+
+#pragma warning disable 618
         importer.spritesheet = new SpriteMetaData[]
         {
             new SpriteMetaData() {name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16)},
             new SpriteMetaData() {name = "botright", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16)}
         };
+#pragma warning restore 618
+
         importer.SaveAndReimport();
 
         var spriteEntry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(spritePath), group, false, false);
@@ -187,11 +191,15 @@ static class AddressablesTestUtility
             var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Multiple;
+
+#pragma warning disable 618
             importer.spritesheet = new SpriteMetaData[]
             {
                 new SpriteMetaData() {name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16)},
                 new SpriteMetaData() {name = "botright", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16)}
             };
+#pragma warning restore 618
+
             importer.SaveAndReimport();
         }
 
@@ -234,19 +242,24 @@ static class AddressablesTestUtility
         UnityEngine.Object.DestroyImmediate(go, false);
         return AssetDatabase.AssetPathToGUID(assetPath);
     }
-
+    const string kCatalogExt =
+#if ENABLE_BINARY_CATALOG
+            ".bin";
+#else
+            ".json";
+#endif
     static void RunBuilder(AddressableAssetSettings settings, string testType, string suffix)
     {
         var buildContext = new AddressablesDataBuilderInput(settings);
         buildContext.RuntimeSettingsFilename = "settings" + suffix + ".json";
-        buildContext.RuntimeCatalogFilename = "catalog" + suffix + ".json";
-
+        buildContext.RuntimeCatalogFilename = "catalog" + suffix + kCatalogExt;
         foreach (var db in settings.DataBuilders)
         {
             var b = db as IDataBuilder;
             if (b.GetType().Name != testType)
                 continue;
-            buildContext.PathFormat = "{0}" + Addressables.LibraryPath + "{1}_" + testType + "_TEST_" + suffix + ".json";
+
+            buildContext.PathSuffix = "_TEST_" + suffix;
             b.BuildData<AddressableAssetBuildResult>(buildContext);
             PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath + testType, PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
         }

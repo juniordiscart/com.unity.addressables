@@ -85,6 +85,11 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
+        /// <summary>
+        /// Returns an empty array of locations.
+        /// </summary>
+        public IEnumerable<IResourceLocation> AllLocations => new IResourceLocation[0];
+
         public struct CacheKey : IEquatable<CacheKey>
         {
             public object m_key;

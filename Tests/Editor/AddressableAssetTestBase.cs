@@ -197,5 +197,12 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             return AssetDatabase.AssetPathToGUID(path);
         }
+
+        protected void ReloadSettings()
+        {
+            m_Settings = null;
+            EditorBuildSettings.RemoveConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName);
+            EditorBuildSettings.TryGetConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, out m_Settings);            
+        }
     }
 }

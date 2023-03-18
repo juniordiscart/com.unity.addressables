@@ -482,7 +482,11 @@ namespace UnityEngine.AddressableAssets
 
         public ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(string catalogLocation) where T : IResourceProvider
         {
+#if ENABLE_BINARY_CATALOG
+            string hashFilePath = catalogLocation.Replace(".bin", ".hash");
+#else
             string hashFilePath = catalogLocation.Replace(".json", ".hash");
+#endif
             return CreateCatalogLocationWithHashDependencies<T>(catalogLocation, hashFilePath);
         }
 
@@ -904,7 +908,13 @@ namespace UnityEngine.AddressableAssets
                                                                          $"but no dependencies pointing to a remote location could be found for location {catalogLoc.InternalId}. Catalog location dependencies can " +
                                                                          $"be setup using CreateCatalogLocationWithHashDependencies");
 
-            var uwr = new UnityWebRequest(catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote].InternalId.Replace(".hash", ".json"), UnityWebRequest.kHttpVerbHEAD);
+            var internalIdHash = catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote].InternalId;
+#if ENABLE_BINARY_CATALOG
+            var internalIdCat = internalIdHash.Replace(".hash", ".bin");
+#else
+            var internalIdCat = internalIdHash.Replace(".hash", ".json");
+#endif
+            var uwr = new UnityWebRequest(internalIdCat, UnityWebRequest.kHttpVerbHEAD);
             AsyncOperationBase<UnityWebRequest> uwrAsyncOp = new UnityWebRequestOperation(uwr);
 
             return ResourceManager.CreateChainOperation(ResourceManager.StartOperation(uwrAsyncOp, default(AsyncOperationHandle))

@@ -125,6 +125,8 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// </summary>
         protected internal bool HasExecuted = false;
 
+        internal event Action Executed;
+
         /// <summary>
         /// The number of references that are using this operation.
         /// When the ReferenceCount reaches 0, this operation is Destroyed.
@@ -536,8 +538,9 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             Execute();
             HasExecuted = true;
             IUpdateReceiver upOp = this as IUpdateReceiver;
-            if (upOp != null)
+            if (upOp != null && !IsDone)
                 m_UpdateCallbacks.Add(m_UpdateCallback);
+            Executed?.Invoke();
         }
 
         event Action<AsyncOperationHandle> IAsyncOperation.CompletedTypeless

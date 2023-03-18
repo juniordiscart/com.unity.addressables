@@ -138,37 +138,40 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <returns>An error string if there were any problems processing the groups</returns>
         protected virtual string ProcessAllGroups(AddressableAssetsBuildContext aaContext)
         {
-            if (aaContext == null ||
-                aaContext.Settings == null ||
-                aaContext.Settings.groups == null)
+            try
             {
-                return "No groups found to process in build script " + Name;
-            }
-
-            //intentionally for not foreach so groups can be added mid-loop.
-            for (int index = 0; index < aaContext.Settings.groups.Count; index++)
-            {
-                AddressableAssetGroup assetGroup = aaContext.Settings.groups[index];
-                if (assetGroup == null)
-                    continue;
-
-                if (assetGroup.Schemas.Find((x) => x.GetType() == typeof(PlayerDataGroupSchema)) &&
-                    assetGroup.Schemas.Find((x) => x.GetType() == typeof(BundledAssetGroupSchema)))
+                if (aaContext == null ||
+                    aaContext.Settings == null ||
+                    aaContext.Settings.groups == null)
                 {
-                    EditorUtility.ClearProgressBar();
-                    return $"Addressable group {assetGroup.Name} cannot have both a {typeof(PlayerDataGroupSchema).Name} and a {typeof(BundledAssetGroupSchema).Name}";
+                    return "No groups found to process in build script " + Name;
                 }
 
-                EditorUtility.DisplayProgressBar($"Processing Addressable Group", assetGroup.Name, (float)index / aaContext.Settings.groups.Count);
-                var errorString = ProcessGroup(assetGroup, aaContext);
-                if (!string.IsNullOrEmpty(errorString))
+                //intentionally for not foreach so groups can be added mid-loop.
+                for (int index = 0; index < aaContext.Settings.groups.Count; index++)
                 {
-                    EditorUtility.ClearProgressBar();
-                    return errorString;
+                    AddressableAssetGroup assetGroup = aaContext.Settings.groups[index];
+                    if (assetGroup == null)
+                        continue;
+
+                    if (assetGroup.Schemas.Find((x) => x.GetType() == typeof(PlayerDataGroupSchema)) &&
+                        assetGroup.Schemas.Find((x) => x.GetType() == typeof(BundledAssetGroupSchema)))
+                    {
+                        return $"Addressable group {assetGroup.Name} cannot have both a {typeof(PlayerDataGroupSchema).Name} and a {typeof(BundledAssetGroupSchema).Name}";
+                    }
+
+                    EditorUtility.DisplayProgressBar($"Processing Addressable Group", assetGroup.Name, (float)index / aaContext.Settings.groups.Count);
+                    var errorString = ProcessGroup(assetGroup, aaContext);
+                    if (!string.IsNullOrEmpty(errorString))
+                    {
+                        return errorString;
+                    }
                 }
+            } finally
+            {
+                EditorUtility.ClearProgressBar();
             }
 
-            EditorUtility.ClearProgressBar();
             return string.Empty;
         }
 
@@ -237,6 +240,32 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             catch (Exception ex)
             {
                 Debug.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Utility method to write a file.  The directory will be created if it does not exist.
+        /// </summary>
+        /// <param name="path">The path of the file to write.</param>
+        /// <param name="content">The content of the file.</param>
+        /// <param name="registry">The file registry used to track all produced artifacts.</param>
+        /// <returns>True if the file was written.</returns>
+        protected internal static bool WriteFile(string path, byte[] content, FileRegistry registry)
+        {
+            try
+            {
+                registry.AddFile(path);
+                var dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                File.WriteAllBytes(path, content);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                registry.RemoveFile(path);
+                return false;
             }
         }
 

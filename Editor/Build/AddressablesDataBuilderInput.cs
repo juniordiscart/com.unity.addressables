@@ -40,7 +40,7 @@ namespace UnityEditor.AddressableAssets.Build
         public FileRegistry Registry { get; private set; }
 
         //used only by tests to inject custom info into build...
-        internal string PathFormat = string.Empty;
+        internal string PathSuffix = string.Empty;
 
         /// <summary>
         /// The name of the default Runtime Settings file.
@@ -50,8 +50,12 @@ namespace UnityEditor.AddressableAssets.Build
         /// <summary>
         /// The name of the default Runtime Catalog file.
         /// </summary>
-        public string RuntimeCatalogFilename = "catalog.json";
-
+        public string RuntimeCatalogFilename =
+#if ENABLE_BINARY_CATALOG
+            "catalog.bin";
+#else
+            "catalog.json";
+#endif
         /// <summary>
         /// The asset content state of a previous build.  This allows detection of deltas with the current build content state.  This will be
         /// null in standard builds.  This is only set during content update builds.

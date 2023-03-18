@@ -22,7 +22,12 @@ namespace AddressableAssetsIntegrationTests
         List<object> m_PrefabKeysList = new List<object>();
 
         Action<AsyncOperationHandle, Exception> m_PrevHandler;
-
+        protected const string kCatalogExt =
+#if ENABLE_BINARY_CATALOG
+            ".bin";
+#else
+            ".json";
+#endif
         protected const string k_TestConfigName = "AddressableAssetSettings.Tests";
         protected const string k_TestConfigFolder = "Assets/AddressableAssetsData_AddressableAssetSettingsIntegrationTests";
 
@@ -37,12 +42,7 @@ namespace AddressableAssetsIntegrationTests
         {
             return string.Format("{0}" + Addressables.LibraryPath + "settings_{1}_TEST_{2}.json", "file://{UnityEngine.Application.dataPath}/../", testType, suffix);
         }
-
-        protected virtual string GetCatalogPath(string testType, string suffix)
-        {
-            return string.Format("{0}" + Addressables.LibraryPath + "catalog_{1}_TEST_{2}.json", "file://{UnityEngine.Application.dataPath}/../", testType, suffix);
-        }
-
+        
         protected virtual ILocationSizeData CreateLocationSizeData(string name, long size, uint crc, string hash)
         {
             return null;
@@ -224,6 +224,11 @@ namespace AddressableAssetsIntegrationTests
             get { return "BuildScriptVirtualMode"; }
         }
 
+        protected override string GetRuntimePath(string testType, string suffix)
+        {
+            return string.Format("{0}" + Addressables.LibraryPath + "settings_TEST_{1}.json", "file://{UnityEngine.Application.dataPath}/../", suffix);
+        }
+
         protected override ILocationSizeData CreateLocationSizeData(string name, long size, uint crc, string hash)
         {
             return new UnityEngine.ResourceManagement.ResourceProviders.Simulation.VirtualAssetBundleRequestOptions()
@@ -247,11 +252,6 @@ namespace AddressableAssetsIntegrationTests
         protected override string GetRuntimePath(string testType, string suffix)
         {
             return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + suffix + ".json";
-        }
-
-        protected override string GetCatalogPath(string testType, string suffix)
-        {
-            return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog" + suffix + ".json";
         }
 
         public override void Setup()
@@ -299,11 +299,6 @@ namespace AddressableAssetsIntegrationTests
             return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + suffix + ".json";
         }
 
-        protected override string GetCatalogPath(string testType, string suffix)
-        {
-            return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog" + suffix + ".json";
-        }
-
         protected override ILocationSizeData CreateLocationSizeData(string name, long size, uint crc, string hash)
         {
             return new AssetBundleRequestOptions()
@@ -335,3 +330,4 @@ namespace AddressableAssetsIntegrationTests
         }
     }
 }
+

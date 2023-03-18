@@ -17,6 +17,8 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIStyle m_ToggleMixed;
 
         GUIContent m_ManageLabelsButtonContent = EditorGUIUtility.TrIconContent("_Popup@2x", "Manage Labels");
+        GUIContent m_ManageLabelsMenuContent = new GUIContent("Manage Labels", "Opens the Labels window for managing adding and removing labels");
+        GUIContent m_RemoveUnusedLabelsMenuContent = new GUIContent("Remove Unused Labels", "Removes all unused labels from the Addressables settings");
         readonly GUIStyle m_ToolbarButtonStyle = "RL FooterButton";
 
         private GUIStyle m_HintLabelStyle;
@@ -100,6 +102,9 @@ namespace UnityEditor.AddressableAssets.GUI
 
         List<string> GetLabelNamesOrderedSelectedFirst()
         {
+            if (m_Entries == null || m_Entries.Count == 0)
+                return new List<string>();
+
             int count;
             var labels = new List<string>(m_Settings.labelTable.labelNames.Count);
             List<string> disabledLabels = new List<string>();
@@ -114,6 +119,24 @@ namespace UnityEditor.AddressableAssets.GUI
                     labels.Add(m_Settings.labelTable.labelNames[i]);
                 else
                     disabledLabels.Add(m_Settings.labelTable.labelNames[i]);
+            }
+
+            // find any labels that are not in settings
+            if (m_LabelCount != null)
+            {
+                foreach (string key in m_LabelCount.Keys)
+                {
+                    if (!m_Settings.labelTable.labelNames.Contains(key))
+                        labels.Add(key);
+                }
+            }
+            else
+            {
+                foreach (string key in m_Entries[0].labels)
+                {
+                    if (!m_Settings.labelTable.labelNames.Contains(key))
+                        labels.Add(key);
+                }
             }
 
             labels.AddRange(disabledLabels);
@@ -143,8 +166,17 @@ namespace UnityEditor.AddressableAssets.GUI
             plusRect.x = (barRect.width - plusRect.width) + 4;
             if (UnityEngine.GUI.Button(plusRect, m_ManageLabelsButtonContent, m_ToolbarButtonStyle))
             {
-                EditorWindow.GetWindow<LabelWindow>(true).Intialize(m_Settings);
-                editorWindow.Close();
+                GenericMenu menu = new GenericMenu();
+                menu.AddItem(m_ManageLabelsMenuContent, false, () =>
+                {
+                    EditorWindow.GetWindow<LabelWindow>(true).Intialize(m_Settings);
+                    editorWindow.Close();
+                });
+                menu.AddItem(m_RemoveUnusedLabelsMenuContent, false, () =>
+                {
+                    m_Settings.RemoveUnusedLabels();
+                });
+                menu.DropDown(plusRect);
             }
 
             Rect searchRect = barRect;
@@ -235,7 +267,10 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (!(count == 0 || count == m_Entries.Count))
                     EditorGUI.showMixedValue = true;
                 UnityEngine.GUI.SetNextControlName(labelName);
-                newState = EditorGUI.ToggleLeft(toggleRect, new GUIContent(labelName), oldState);
+
+                bool labelIsInSettings = m_Settings.labelTable.labelNames.Contains(labelName);
+                string label = labelIsInSettings ? labelName : AddressablesGUIUtility.ConvertTextToStrikethrough(labelName);
+                newState = EditorGUI.ToggleLeft(toggleRect, new GUIContent(label), oldState);
                 EditorGUI.showMixedValue = false;
 
                 if (oldState != newState)

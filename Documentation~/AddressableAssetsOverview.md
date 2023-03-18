@@ -135,8 +135,8 @@ The Addressables system provides a few tools and windows to help you manage your
 * [Hosting tool]: the Hosting tool provides a simple asset hosting service that runs from the Unity Editor to aide development and testing of your project.  
 * [Build layout report]: describes the AssetBundles produced by a content build.
 
-[Addressable Groups window]: xref:addressables-groups#groups-window
-[Addressables Groups]: xref:addressables-groups#groups-window
+[Addressable Groups window]: xref:addressables-groups-window
+[Addressables Groups]: xref:addressables-groups-window
 [Addressables Event Viewer]: xref:addressables-event-viewer
 [AnalyzeRule]: xref:UnityEditor.AddressableAssets.Build.AnalyzeRules.AnalyzeRule
 [Analyze tool]: xref:addressables-analyze-tool
@@ -151,11 +151,11 @@ The Addressables system provides a few tools and windows to help you manage your
 [Making an asset Addressable]: xref:addressables-getting-started#making-an-asset-addressable
 [Managing Assets]: xref:AssetWorkflow
 [Memory management]: xref:addressables-memory-management
-[Play mode Scripts]: xref:addressables-groups#play-mode-scripts
+[Play mode Scripts]: xref:addressables-groups-window#play-mode-scripts
 [Profiles window]: xref:addressables-profiles
 [Profiles]: xref:addressables-profiles
-[Releasing Addressable assets]: xref:addressables-api-load-asset-async#releasing-addressable-assets
-[Schemas]: xref:addressables-group-settings#schemas
+[Releasing Addressable assets]: xref:addressables-unloading
+[Schemas]: xref:addressables-group-schemas#schemas
 [Using AssetReferences]: xref:addressables-asset-references
 [AssetReference]: xref:addressables-asset-references
 [LoadAssetAsync]:  xref:UnityEngine.AddressableAssets.Addressables.LoadAssetAsync*

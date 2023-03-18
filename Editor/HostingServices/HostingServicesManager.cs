@@ -307,15 +307,20 @@ namespace UnityEditor.AddressableAssets.HostingServices
             m_Settings.OnModification += OnSettingsModification;
             m_Settings.profileSettings.RegisterProfileStringEvaluationFunc(EvaluateGlobalProfileVariableKey);
 
-            var contentRoots = GetAllContentRoots();
-            foreach (var svc in HostingServices)
+            // GetAllContentRoots can return unpredictable results when there are no hosting services
+            if (HostingServices.Count > 0)
             {
-                svc.Logger = m_Logger;
-                m_Settings.profileSettings.RegisterProfileStringEvaluationFunc(svc.EvaluateProfileString);
-                var baseSvc = svc as BaseHostingService;
-                svc.HostingServiceContentRoots.Clear();
-                svc.HostingServiceContentRoots.AddRange(contentRoots);
-                baseSvc?.OnEnable();
+                var contentRoots = GetAllContentRoots();
+                foreach (var svc in HostingServices)
+                {
+
+                    svc.Logger = m_Logger;
+                    m_Settings.profileSettings.RegisterProfileStringEvaluationFunc(svc.EvaluateProfileString);
+                    var baseSvc = svc as BaseHostingService;
+                    svc.HostingServiceContentRoots.Clear();
+                    svc.HostingServiceContentRoots.AddRange(contentRoots);
+                    baseSvc?.OnEnable();
+                }
             }
 
             LoadSessionStateKeysIfExists();
@@ -501,12 +506,15 @@ namespace UnityEditor.AddressableAssets.HostingServices
 
         void ConfigureAllHostingServices()
         {
-            var contentRoots = GetAllContentRoots();
-
-            foreach (var svc in HostingServices)
+            if (HostingServices.Count > 0)
             {
-                svc.HostingServiceContentRoots.Clear();
-                svc.HostingServiceContentRoots.AddRange(contentRoots);
+                var contentRoots = GetAllContentRoots();
+
+                foreach (var svc in HostingServices)
+                {
+                    svc.HostingServiceContentRoots.Clear();
+                    svc.HostingServiceContentRoots.AddRange(contentRoots);
+                }
             }
         }
 

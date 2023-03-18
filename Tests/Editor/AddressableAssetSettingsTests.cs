@@ -17,6 +17,7 @@ using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.TestTools;
+using static UnityEditor.AddressableAssets.Settings.AddressableAssetSettings;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
@@ -146,13 +147,22 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void HasDefaultVersionOverride()
+        {
+            Assert.AreEqual(kDefaultPlayerVersion, Settings.OverridePlayerVersion);
+        }
+
+        [Test]
         public void AddRemovelabel()
         {
+            var initialValue = Settings.currentHash;
             const string labelName = "Newlabel";
             Settings.AddLabel(labelName);
             Assert.Contains(labelName, Settings.labelTable.labelNames);
+            Assert.AreNotEqual(initialValue, Settings.currentHash);
             Settings.RemoveLabel(labelName);
             Assert.False(Settings.labelTable.labelNames.Contains(labelName));
+            Assert.AreEqual(initialValue, Settings.currentHash);
         }
 
         [Test]
@@ -235,6 +245,38 @@ namespace UnityEditor.AddressableAssets.Tests
             string name = "[label]";
             Settings.AddLabel(name);
             LogAssert.Expect(LogType.Error, $"Label name '{name}' cannot contain '[ ]'.");
+        }
+
+        [Test]
+        public void AddRemoveUnusedLabels()
+        {
+            var group = Settings.CreateGroup("NewGroupForUnusedLabelsTest", false, false, false, null);
+            Assert.IsNotNull(group);
+            var entry = Settings.CreateOrMoveEntry(m_AssetGUID, group);
+            Assert.IsNotNull(entry);
+
+            const string labelName = "LabelInUse";
+            const string labelName2 = "LabelNotInUse";
+
+            try
+            {
+                Settings.AddLabel(labelName);
+                entry.SetLabel(labelName, true, false, false);
+                Settings.AddLabel(labelName2);
+
+                Assert.Contains(labelName, Settings.labelTable.labelNames);
+                Assert.Contains(labelName2, Settings.labelTable.labelNames);
+
+                Settings.RemoveUnusedLabels();
+                Assert.Contains(labelName, Settings.labelTable.labelNames);
+                Assert.False(Settings.labelTable.labelNames.Contains(labelName2));
+            }
+            finally
+            {
+                Settings.RemoveAssetEntry(entry);
+                Settings.RemoveGroup(group);
+                Settings.RemoveLabel(labelName, false);
+            }
         }
 
         [Test]
@@ -1204,6 +1246,51 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void AddressableAssetSettings_HashChanges_WhenBuildSettingsChange()
+        {
+            var initialSetting = Settings.buildSettings.LogResourceManagerExceptions;
+            var initialHash = Settings.currentHash;
+            Settings.buildSettings.LogResourceManagerExceptions = !initialSetting;
+            Assert.AreNotEqual(Settings.currentHash, initialHash);
+            Settings.buildSettings.LogResourceManagerExceptions = initialSetting;
+            Assert.AreEqual(Settings.currentHash, initialHash);
+        }
+
+        [Test]
+        public void AddressableAssetSettings_HashChanges_HandleNullGroups()
+        {
+            var prevHash = Settings.currentHash;
+            var newGroup = Settings.CreateGroup("doesnt matter", true, false, false, null, typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema));
+            Assert.AreNotEqual(Settings.currentHash, prevHash);
+
+            var groupAddedHash = Settings.currentHash;
+
+            // so delete the file, then we should be able to iterate through groups and ensure we find a null reference
+            var groupFile = Settings.ConfigFolder + "/AssetGroups/doesnt matter.asset";
+            Assert.True(File.Exists(groupFile));
+            AssetDatabase.DeleteAsset(groupFile);
+
+            // SetDirty hasn't been called so the hash stays the same
+            Assert.AreEqual(Settings.currentHash, groupAddedHash);
+
+            // add a real null group, does not call SetDirty
+            Settings.groups.Add(null);
+            Assert.AreEqual(Settings.currentHash, groupAddedHash);
+
+            // calling SetDirty manually ignores both the deleted and null groups and we return to the initial hash
+            Settings.SetDirty(ModificationEvent.GroupAdded, null, true);
+            Assert.AreEqual(Settings.currentHash, prevHash);
+
+            // count does not count null groups so equal, SetDirty is called and reverts to original
+            Settings.RemoveGroup(newGroup);
+            Assert.AreEqual(Settings.currentHash, prevHash);
+
+            // count is the same, should be equal
+            Settings.RemoveGroup(null);
+            Assert.AreEqual(Settings.currentHash, prevHash);
+        }
+
+        [Test]
         public void CustomEntryCommand_WhenRegistered_InvokeIsCalled()
         {
             string notSet = null;
@@ -1378,6 +1465,14 @@ namespace UnityEditor.AddressableAssets.Tests
                     Assert.IsNull(entry.BundleFileId);
                 }
             }
+        }
+
+        [Test]
+        public void ReloadSettings_ClearVersionOverride()
+        {
+            Settings.OverridePlayerVersion = "";
+            ReloadSettings();
+            Assert.AreEqual("", Settings.OverridePlayerVersion);
         }
     }
 }

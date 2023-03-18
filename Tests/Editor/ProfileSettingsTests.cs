@@ -16,8 +16,11 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             //Arrange
             Assert.IsNotNull(Settings.profileSettings);
-            Settings.activeProfileId = null;
             var mainId = Settings.profileSettings.Reset();
+            Settings.activeProfileId = null;
+
+            var initialSettingsHash = Settings.currentHash;
+            var initialProfileHash = Settings.profileSettings.currentHash;
 
             //Act
             var secondId = Settings.profileSettings.AddProfile("TestProfile", mainId);
@@ -29,12 +32,16 @@ namespace UnityEditor.AddressableAssets.Tests
                 if (prof.profileName == "TestProfile")
                     foundIt = true;
             }
+            Settings.activeProfileId = secondId;
 
             Assert.IsTrue(foundIt);
             Assert.IsNotEmpty(secondId);
+            Assert.AreNotEqual(Settings.currentHash, initialSettingsHash);
+            Assert.AreNotEqual(Settings.profileSettings.currentHash, initialProfileHash);
 
             //Act again
             Settings.profileSettings.RemoveProfile(secondId);
+            Settings.activeProfileId = null;
 
             //Assert again
             foundIt = false;
@@ -45,6 +52,8 @@ namespace UnityEditor.AddressableAssets.Tests
             }
 
             Assert.IsFalse(foundIt);
+            Assert.AreEqual(Settings.profileSettings.currentHash, initialProfileHash);
+            Assert.AreEqual(Settings.currentHash, initialSettingsHash);
         }
 
         [Test]

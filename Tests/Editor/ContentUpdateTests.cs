@@ -88,11 +88,11 @@ namespace UnityEditor.AddressableAssets.Tests
 		}
 
 		[Test]
-		public void CreateCustomLocator_RetrunsLocatorWithUniqueId()
+        public void CreateCustomLocator_ReturnsLocatorWithUniqueId()
 		{
 			ContentCatalogData ccd = new ContentCatalogData();
 			ccd.SetData(new List<ContentCatalogDataEntry>());
-			ResourceLocationMap map = ccd.CreateCustomLocator("test");
+            IResourceLocator map = ccd.CreateCustomLocator("test");
 			Assert.AreEqual("test", map.LocatorId);
 		}
 
@@ -422,10 +422,14 @@ namespace UnityEditor.AddressableAssets.Tests
 		static IResourceLocator GetLocatorFromCatalog(IEnumerable<string> paths)
 		{
 			foreach (var p in paths)
-				if (p.EndsWith("catalog.json"))
-					return JsonUtility.FromJson<ContentCatalogData>(File.ReadAllText(p)).CreateLocator();
+            {
+                if(Path.GetFileNameWithoutExtension(p).EndsWith("catalog"))
+                    return ContentCatalogData.LoadFromFile(p).CreateCustomLocator();
+            }
 			return null;
 		}
+
+#if !ENABLE_BINARY_CATALOG
 
 		[Test]
 		public void WhenContentUpdated_NewCatalogRetains_OldCatalogBundleLoadData()
@@ -485,6 +489,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
 			Settings.RemoveGroup(group);
 		}
+#endif
 
 		[Test]
 		public void IsCacheDataValid_WhenNoPreviousRemoteCatalogPath_ReturnsFalseWithError()
@@ -1336,3 +1341,4 @@ namespace UnityEditor.AddressableAssets.Tests
 		}
 	}
 }
+

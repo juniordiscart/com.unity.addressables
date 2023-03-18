@@ -66,6 +66,21 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public List<AssetSummary> AssetSummaries = new List<AssetSummary>();
 
         /// <summary>
+        /// The total number of assets in a build, including implicit assets
+        /// </summary>
+        internal int TotalAssetCount = 0;
+
+        /// <summary>
+        /// The total number of explicitly added Addressable assets that were included in a build
+        /// </summary>
+        internal int ExplicitAssetCount = 0;
+
+        /// <summary>
+        /// The total number of implicitly added assets that were included in a build
+        /// </summary>
+        internal int ImplicitAssetCount = 0;
+
+        /// <summary>
         /// Generates a summary of the content used in a BuildLayout
         /// </summary>
         /// <param name="layout">BuildLayout to get a summary for</param>
@@ -84,6 +99,10 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
                     foreach (var file in bundle.Files)
                     {
+                        summary.TotalAssetCount += file.Assets.Count + file.OtherAssets.Count;
+                        summary.ExplicitAssetCount += file.Assets.Count;
+                        summary.ImplicitAssetCount += file.OtherAssets.Count;
+
                         foreach (var asset in file.Assets)
                             AppendObjectsToSummary(asset.MainAssetType, asset.SerializedSize + asset.StreamedSize, asset.Objects, summary.AssetSummaries);
                         foreach (var asset in file.OtherAssets)
@@ -92,6 +111,34 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 }
             }
 
+            return summary;
+        }
+
+        /// <summary>
+        /// Generates a summary of the content used in a BuildLayout, minus the asset type data.
+        /// </summary>
+        /// <param name="layout"></param>
+        /// <returns></returns>
+
+        internal static BuildLayoutSummary GetSummaryWithoutAssetTypes(BuildLayout layout)
+        {
+            BuildLayoutSummary summary = new BuildLayoutSummary();
+            foreach (var group in layout.Groups)
+            {
+                foreach (var bundle in group.Bundles)
+                {
+                    summary.BundleSummary.TotalCompressedSize += bundle.FileSize;
+                    summary.BundleSummary.TotalUncompressedSize += bundle.UncompressedFileSize;
+                    summary.BundleSummary.Count++;
+
+                    foreach (var file in bundle.Files)
+                    {
+                        summary.TotalAssetCount += file.Assets.Count + file.OtherAssets.Count;
+                        summary.ExplicitAssetCount += file.Assets.Count;
+                        summary.ImplicitAssetCount += file.OtherAssets.Count;
+                    }
+                }
+            }
             return summary;
         }
 

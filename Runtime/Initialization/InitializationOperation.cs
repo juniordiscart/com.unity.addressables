@@ -248,7 +248,7 @@ namespace UnityEngine.AddressableAssets.Initialization
                 if (remoteHashLocation != null)
                     data.location.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = remoteHashLocation;
 
-                ResourceLocationMap locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix);
+                IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix);
                 addressables.AddResourceLocator(locMap, data.localHash, data.location);
                 addressables.AddResourceLocator(new DynamicResourceLocator(addressables));
                 return addressables.ResourceManager.CreateCompletedOperation<IResourceLocator>(locMap, string.Empty);

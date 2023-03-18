@@ -740,7 +740,9 @@ namespace UnityEditor.AddressableAssets.GUI
             protected override void DoubleClickedItem(int id)
             {
                 var assetRefItem = FindItem(id, rootItem) as AssetRefTreeViewItem;
-                if (assetRefItem != null && !string.IsNullOrEmpty(assetRefItem.AssetPath))
+                if (assetRefItem != null && assetRefItem.Guid == m_GUID)
+                    m_Popup.ForceClose();
+                else if (assetRefItem != null && !string.IsNullOrEmpty(assetRefItem.AssetPath))
                 {
                     m_Drawer.newGuid = assetRefItem.Guid;
                     if (string.IsNullOrEmpty(m_Drawer.newGuid))
@@ -772,7 +774,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     }
 
                     SetFocus();
-                    if (m_Drawer.assetProperty != null)
+                    if (m_Drawer.assetProperty != null && oldGuid != null)
                         m_Drawer.ApplySelectionChanges(m_Drawer.assetProperty, AddressableAssetSettingsDefaultObject.Settings, ref oldGuid);
                 }
             }

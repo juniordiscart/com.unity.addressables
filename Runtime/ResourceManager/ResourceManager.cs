@@ -120,8 +120,19 @@ namespace UnityEngine.ResourceManagement
 
 		/// <summary>
 		/// Functor to transform internal ids before being used by the providers.
-		/// See the [TransformInternalId](xref:addressables-api-transform-internal-id) documentation for more details.
 		/// </summary>
+		/// <remarks>
+		/// Used to assign a function to the [ResourceManager](xref:UnityEngine.ResourceManagement.ResourceManager)  that replaces location identifiers used at runtime.
+		/// This is useful when you want to load assets from a different location than the one specified in the content catalog,
+		/// for example downloading a remote AssetBundle from a different URL.
+		///
+		/// Assigning this value through the <see cref="Addressables"/> object will set the value on the <see cref="ResourceManager"/>.
+		/// 
+		/// The example below instantiates a GameObject from a local AssetBundle. The location identifier of the bundle is replaced with a file URI, and so the bundle is loaded via UnityWebRequest. 
+		/// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingInternalIdTransformFunc.cs" region="SAMPLE"/>/// 
+		/// </remarks>
+		/// <value>A function taking an [IResourceLocation](xref:UnityEngine.ResourceManagement.ResourceLocations.IResourceLocation) and returning a transformed string location.</value>
+		/// <seealso href="xref:addressables-api-transform-internal-id">Transforming resource URLs</seealso>
 		public Func<IResourceLocation, string> InternalIdTransformFunc { get; set; }
 
 		/// <summary>
@@ -138,8 +149,18 @@ namespace UnityEngine.ResourceManagement
 		/// Delegate that can be used to override the web request options before being sent.
 		/// </summary>
 		/// <remarks>
-		/// The web request passed to this delegate has already been pre-configured internally. Override at your own risk.
+		/// You can assign a function to the <see cref="Addressables"/> object's WebRequestOverride property to individually modify the <see cref="UnityWebRequest"/> which is used to download files.
+		///
+		/// This can be used to add custom request headers or query strings.
+		///
+		/// This affects all downloads through Addressables including catalog files and asset bundles.
+		///
+		/// Assigning this value through the <see cref="Addressables"/> object will set the value on the <see cref="ResourceManager"/>.
+		/// 
+		/// For example you could add an Authorization header to authenticate with Cloud Content Delivery's private buckets.
+		/// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingWebRequestOverride.cs" region="SAMPLE" />
 		/// </remarks>
+		/// <seealso href="xref:addressables-api-transform-internal-id#webrequest-override">Transforming resource URLs</seealso>
 		public Action<UnityWebRequest> WebRequestOverride { get; set; }
 
 		internal bool CallbackHooksEnabled = true; // tests might need to disable the callback hooks to manually pump updating
@@ -148,7 +169,7 @@ namespace UnityEngine.ResourceManagement
 		IAllocationStrategy m_allocator;
 
 		// list of all the providers in s_ResourceProviders that implement IUpdateReceiver
-		ListWithEvents<IUpdateReceiver> m_UpdateReceivers = new ListWithEvents<IUpdateReceiver>();
+		internal ListWithEvents<IUpdateReceiver> m_UpdateReceivers = new ListWithEvents<IUpdateReceiver>();
 
 		List<IUpdateReceiver> m_UpdateReceiversToRemove = null;
 
@@ -172,9 +193,9 @@ namespace UnityEngine.ResourceManagement
 		internal Dictionary<int, IResourceProvider> m_providerMap = new Dictionary<int, IResourceProvider>();
 		Dictionary<IOperationCacheKey, IAsyncOperation> m_AssetOperationCache = new Dictionary<IOperationCacheKey, IAsyncOperation>();
 		HashSet<InstanceOperation> m_TrackedInstanceOperations = new HashSet<InstanceOperation>();
-		DelegateList<float> m_UpdateCallbacks = DelegateList<float>.CreateWithGlobalCache();
+		internal DelegateList<float> m_UpdateCallbacks = DelegateList<float>.CreateWithGlobalCache();
 		List<IAsyncOperation> m_DeferredCompleteCallbacks = new List<IAsyncOperation>();
-		HashSet<IResourceProvider> m_AssetBundleProviders = new HashSet<IResourceProvider>();
+		HashSet<IResourceProvider> m_AsestBundleProviders = new HashSet<IResourceProvider>();
 
 		bool m_InsideExecuteDeferredCallbacksMethod = false;
 		List<DeferredCallbackRegisterRequest> m_DeferredCallbacksToRegister = null;
@@ -261,6 +282,9 @@ namespace UnityEngine.ResourceManagement
 			m_ResourceProviders.OnElementAdded += OnObjectAdded;
 			m_ResourceProviders.OnElementRemoved += OnObjectRemoved;
 			m_UpdateReceivers.OnElementAdded += x => RegisterForCallbacks();
+#if ENABLE_ADDRESSABLE_PROFILER
+            Profiling.ProfilerRuntime.Initialise();
+#endif
 		}
 
 		private void OnObjectAdded(object obj)
@@ -484,12 +508,12 @@ namespace UnityEngine.ResourceManagement
 			bool isAssetBundleProvider = false;
 			if (provider != null)
 			{
-				if (m_AssetBundleProviders.Contains(provider))
+				if (m_AsestBundleProviders.Contains(provider))
 					isAssetBundleProvider = true;
 				else if (typeof(AssetBundleProvider).IsAssignableFrom(provider.GetType()))
 				{
 					isAssetBundleProvider = true;
-					m_AssetBundleProviders.Add(provider);
+					m_AsestBundleProviders.Add(provider);
 				}
 			}
 

@@ -110,6 +110,14 @@ namespace UnityEditor.AddressableAssets.Settings
 		}
 
 		/// <summary>
+        ///  Default bundle version.
+        /// </summary>
+        /// <remarks>
+        /// Used when generating the catalog name. When using the default, the version will be evaluated from the version set in Player Settings.
+        /// </remarks>
+        internal const string kDefaultPlayerVersion = "[UnityEditor.PlayerSettings.bundleVersion]";
+
+        /// <summary>
 		/// Build Path Name
 		/// </summary>
 		public const string kBuildPath = "BuildPath";
@@ -859,14 +867,19 @@ namespace UnityEditor.AddressableAssets.Settings
 			{
 				if (!m_GroupsHash.isValid)
 				{
-					var gc = m_GroupAssets.Count;
-					m_GroupsHash.Append(ref gc);
+                    int count = 0;
 					foreach (var g in m_GroupAssets)
 					{
+                        // this ignores both null values and deleted managed objects
+                        if (g != null)
+                        {
+                            count += 1;
 						var gah = g.currentHash;
 						m_GroupsHash.Append(ref gah);
 					}
 				}
+                    m_GroupsHash.Append(ref count);
+                }
 				return m_GroupsHash;
 			}
 		}
@@ -1431,6 +1444,31 @@ namespace UnityEditor.AddressableAssets.Settings
 				"Building Addressables content will clear this label from all entries. That action cannot be undone.", label);
 		}
 
+        /// <summary>
+        /// Removes all labels that are not in use by an entry.
+        /// </summary>
+        /// <param name="postEvent">Send modification event.</param>
+        internal void RemoveUnusedLabels(bool postEvent = true)
+        {
+            HashSet<string> usedLabels = new HashSet<string>();
+            foreach (AddressableAssetGroup assetGroup in groups)
+            {
+                foreach (AddressableAssetEntry entry in assetGroup.entries)
+                {
+                    foreach (string label in entry.labels)
+                        usedLabels.Add(label);
+                }
+            }
+
+            HashSet<string> unused = new HashSet<string>(m_LabelTable.labelNames);
+            unused.RemoveWhere(l => usedLabels.Contains(l));
+            if (unused.Count > 0)
+            {
+                foreach (string s in unused)
+                    RemoveLabel(s, postEvent);
+            }
+        }
+
 		[FormerlySerializedAs("m_activeProfileId")]
 		[SerializeField]
 		string m_ActiveProfileId;
@@ -1660,6 +1698,7 @@ namespace UnityEditor.AddressableAssets.Settings
 				// TODO: Uncomment after initial opt-in testing period
 				//aa.ContiguousBundles = true;
 				aa.BuildAddressablesWithPlayerBuild = PlayerBuildOption.PreferencesValue;
+                aa.OverridePlayerVersion = kDefaultPlayerVersion;
 
 				if (isPersisted)
 				{
@@ -1881,6 +1920,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			if (modificationEvent == ModificationEvent.ProfileRemoved && eventData as string == activeProfileId)
 				activeProfileId = null;
+
 			if (this != null)
 			{
 				if (postEvent)
@@ -2166,12 +2206,11 @@ namespace UnityEditor.AddressableAssets.Settings
 			if (targetParent == null || entry == null)
 				return;
 
-			entry.ReadOnly = readOnly;
-
 			if (entry.parentGroup != null && entry.parentGroup != targetParent)
 				entry.parentGroup.RemoveAssetEntry(entry, postEvent);
 
 			targetParent.AddAssetEntry(entry, postEvent);
+            entry.ReadOnly = readOnly;
 		}
 
 		/// <summary>
@@ -2747,12 +2786,17 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			foreach (AddressableAssetGroup group in settings.groups)
 			{
+                NullifyBundleFileIds(group);
+            }
+        }
+
+        internal static void NullifyBundleFileIds(AddressableAssetGroup group)
+        {
 				if (group == null)
-					continue;
+                return;
 				foreach (AddressableAssetEntry entry in group.entries)
 					entry.BundleFileId = null;
 			}
-		}
 
 		internal AddressablesPlayerBuildResult BuildPlayerContentImpl(AddressablesDataBuilderInput buildContext = null, bool buildAndRelease = false)
 		{

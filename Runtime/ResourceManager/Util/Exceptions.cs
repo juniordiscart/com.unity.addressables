@@ -178,7 +178,9 @@ namespace UnityEngine.ResourceManagement.Exceptions
             WebRequestResult = uwrResult;
         }
 
-        ///<inheritdoc/>
+        /// <summary>
+        /// Returns a string describing this exception.
+        /// </summary>
         public override string Message => this.ToString();
 
         /// <summary>

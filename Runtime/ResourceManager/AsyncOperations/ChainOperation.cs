@@ -140,6 +140,8 @@ namespace UnityEngine.ResourceManagement
 		Action<AsyncOperationHandle<TObject>> m_CachedOnWrappedCompleted;
 		bool m_ReleaseDependenciesOnFailure = true;
 
+        internal AsyncOperationHandle<TObject> WrappedOp => m_WrappedOp;
+
 		public ChainOperationTypelessDependency()
 		{
 			m_CachedOnWrappedCompleted = OnWrappedCompleted;

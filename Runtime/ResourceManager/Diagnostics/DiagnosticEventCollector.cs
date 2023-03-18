@@ -131,7 +131,7 @@ namespace UnityEngine.ResourceManagement.Diagnostics
                     m_lastFrame = Time.frameCount;
                     fpsAvg = (fpsAvg + fps) * .5f;
                     m_lastTickSent = Time.realtimeSinceStartup;
-                    int heapKB = (int)(Profiling.Profiler.GetMonoUsedSizeLong() / 1024);
+                    int heapKB = (int)(UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1024);
                     PostEvent(new DiagnosticEvent("FrameCount", "FPS", 2, 1, Time.frameCount, (int)fpsAvg, null));
                     PostEvent(new DiagnosticEvent("MemoryCount", "MonoHeap", 3, 2, Time.frameCount, heapKB, null));
                 }

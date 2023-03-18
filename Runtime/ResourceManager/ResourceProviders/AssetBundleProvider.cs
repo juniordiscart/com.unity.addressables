@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using UnityEngine.Networking;
+using UnityEngine.Profiling;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.ResourceLocations;
@@ -274,7 +275,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		bool m_WebRequestCompletedCallbackCalled = false;
 
 		int m_Retries;
-		bool m_IsLoadingFromCache;
+        BundleSource m_Source = BundleSource.None;
 		long m_BytesToDownload;
 		long m_DownloadedBytes;
 		bool m_Completed = false;
@@ -322,14 +323,22 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #endif
 
 			if (m_Options == null)
+            {
+                m_Source = BundleSource.Download;
+#if ENABLE_ADDRESSABLE_PROFILER
+                AddBundleToProfiler(Profiling.ContentStatus.Downloading, m_Source);
+#endif
                 return UnityWebRequestAssetBundle.GetAssetBundle(uri);
+            }
+
 			UnityWebRequest webRequest;
 			if (!string.IsNullOrEmpty(m_Options.Hash))
 			{
 				CachedAssetBundle cachedBundle = new CachedAssetBundle(m_Options.BundleName, Hash128.Parse(m_Options.Hash));
 #if ENABLE_CACHING
-				m_IsLoadingFromCache = Caching.IsVersionCached(cachedBundle);
-				if (m_Options.UseCrcForCachedBundle || !m_IsLoadingFromCache)
+                bool cached = Caching.IsVersionCached(cachedBundle);
+                m_Source = cached ? BundleSource.Cache : BundleSource.Download;
+                if (m_Options.UseCrcForCachedBundle || m_Source == BundleSource.Download)
                     webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, cachedBundle, m_Options.Crc);
 				else
                     webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, cachedBundle);
@@ -339,7 +348,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			}
 			else
 			{
-				m_IsLoadingFromCache = false;
+                m_Source = BundleSource.Download;
                 webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, m_Options.Crc);
 			}
 
@@ -428,8 +437,33 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				}
 			}
 
+#if ENABLE_ADDRESSABLE_PROFILER
+            AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
+#endif
 			return m_AssetBundle;
 		}
+
+#if ENABLE_ADDRESSABLE_PROFILER
+        private void AddBundleToProfiler(Profiling.ContentStatus status, BundleSource source)
+        {
+            if (!Profiler.enabled)
+                return;
+            if (!m_ProvideHandle.IsValid)
+                return;
+
+            if (status == Profiling.ContentStatus.Active && m_AssetBundle == null)
+                Profiling.ProfilerRuntime.BundleReleased(m_Options.BundleName);
+            else
+                Profiling.ProfilerRuntime.AddBundleOperation(m_ProvideHandle, m_Options, status, source);
+        }
+
+        private void RemoveBundleFromProfiler()
+        {
+            if (m_Options == null)
+                return;
+            Profiling.ProfilerRuntime.BundleReleased(m_Options.BundleName);
+        }
+#endif
 
 #if UNLOAD_BUNDLE_ASYNC
         void OnUnloadOperationComplete(AsyncOperation op)
@@ -501,7 +535,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				while (!UnityWebRequestUtilities.IsAssetBundleDownloaded(op))
 					System.Threading.Thread.Sleep(k_WaitForWebRequestMainThreadSleep);
 #if ENABLE_ASYNC_ASSETBUNDLE_UWR
-                if (m_IsLoadingFromCache)
+                if (m_Source == BundleSource.Cache)
                 {
                     var downloadHandler = (DownloadHandlerAssetBundle)op?.webRequest?.downloadHandler;
                     if (downloadHandler.autoLoadAssetBundle)
@@ -566,6 +600,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			}
 			else
 				loadType = LoadType.Local;
+
+            if (loadType == LoadType.Web)
+                path = path.Replace('\\', '/');
 		}
 
 		private void BeginOperation()
@@ -575,6 +612,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 			if (loadType == LoadType.Local)
 			{
+                m_Source = BundleSource.Local;
 #if !UNITY_2021_1_OR_NEWER
                 if (AsyncOperationHandle.IsWaitingForCompletion)
                     CompleteBundleLoad(AssetBundle.LoadFromFile(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc));
@@ -582,6 +620,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #endif
 				{
 					m_RequestOperation = AssetBundle.LoadFromFileAsync(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc);
+#if ENABLE_ADDRESSABLE_PROFILER
+                    AddBundleToProfiler(Profiling.ContentStatus.Loading, m_Source);
+#endif
 					AddCallbackInvokeIfDone(m_RequestOperation, LocalRequestOperationCompleted);
 				}
 			}
@@ -596,12 +637,20 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 				m_WebRequestQueueOperation = WebRequestQueue.QueueRequest(req);
 				if (m_WebRequestQueueOperation.IsDone)
+                {
 					BeginWebRequestOperation(m_WebRequestQueueOperation.Result);
-				else
-					m_WebRequestQueueOperation.OnComplete += asyncOp => BeginWebRequestOperation(asyncOp);
 			}
 			else
 			{
+#if ENABLE_ADDRESSABLE_PROFILER
+                    AddBundleToProfiler(Profiling.ContentStatus.Queue, m_Source);
+#endif
+                    m_WebRequestQueueOperation.OnComplete += asyncOp => BeginWebRequestOperation(asyncOp);
+                }
+            }
+            else
+            {
+                m_Source = BundleSource.None;
 				m_RequestOperation = null;
 				m_ProvideHandle.Complete<AssetBundleResource>(null, false,
 					new RemoteProviderException(string.Format("Invalid path in AssetBundleProvider: '{0}'.", m_TransformedInternalId), m_ProvideHandle.Location));
@@ -621,6 +670,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			{
 				if (m_Options.Timeout > 0)
 					m_ProvideHandle.ResourceManager.AddUpdateReceiver(this);
+#if ENABLE_ADDRESSABLE_PROFILER
+                AddBundleToProfiler(m_Source == BundleSource.Cache ? Profiling.ContentStatus.Loading : Profiling.ContentStatus.Downloading, m_Source );
+#endif
 				m_RequestOperation.completed += WebRequestOperationCompleted;
 			}
 		}
@@ -654,6 +706,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		private void CompleteBundleLoad(AssetBundle bundle)
 		{
 			m_AssetBundle = bundle;
+#if ENABLE_ADDRESSABLE_PROFILER
+            AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
+#endif
 			if (m_AssetBundle != null)
 				m_ProvideHandle.Complete(this, true, null);
 			else
@@ -679,6 +734,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			{
 				if (!m_Completed)
 				{
+#if ENABLE_ADDRESSABLE_PROFILER
+                    AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
+#endif
 					m_ProvideHandle.Complete(this, true, null);
 					m_Completed = true;
 				}
@@ -703,7 +761,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #if ENABLE_CACHING
 				if (!string.IsNullOrEmpty(m_Options.Hash))
 				{
-					if (m_IsLoadingFromCache)
+#if ENABLE_ADDRESSABLE_PROFILER
+                    if (m_Source == BundleSource.Cache)
+#endif
 					{
 						message = $"Web request failed to load from cache. The cached AssetBundle will be cleared from the cache and re-downloaded. Retrying...\n{uwrResult}";
 						Caching.ClearCachedVersion(m_Options.BundleName, Hash128.Parse(m_Options.Hash));
@@ -731,6 +791,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 						var exception = new RemoteProviderException($"Unable to load asset bundle from : {webReq.url}", m_ProvideHandle.Location, uwrResult);
 						m_ProvideHandle.Complete<AssetBundleResource>(null, false, exception);
 						m_Completed = true;
+#if ENABLE_ADDRESSABLE_PROFILER
+                        RemoveBundleFromProfiler();
+#endif
 					}
 				}
 			}
@@ -773,6 +836,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			}
 
 			m_RequestOperation = null;
+#if ENABLE_ADDRESSABLE_PROFILER
+            RemoveBundleFromProfiler();
+#endif
 #if UNLOAD_BUNDLE_ASYNC
             return unloadOp != null;
 #endif

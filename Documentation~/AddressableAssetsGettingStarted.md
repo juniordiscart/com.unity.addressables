@@ -359,13 +359,13 @@ After the build is complete, you can upload the files from your __RemoteBuildPat
 [Content update builds]: xref:addressables-content-update-builds
 [Content Updates]: xref:addressables-content-update-builds
 [Distributing remote content]: xref:addressables-remote-content-distribution
-[group settings]: xref:addressables-group-settings
+[group settings]: xref:addressables-group-schemas
 [Groups]: xref:addressables-groups
 [installed the Addressables package]: #installation
-[Loading a single asset]: xref:addressables-api-load-asset-async#loading-a-single-asset
-[Loading an AssetReference]: xref:addressables-api-load-asset-async#loading-an-assetreference
+[Loading a single asset]: xref:addressables-loading-single-asset
+[Loading an AssetReference]: xref:addressables-loading-asset-reference#loading-an-assetreference
 [Loading assets]: xref:addressables-api-load-asset-async
-[Loading multiple assets]: xref:addressables-api-load-asset-async#loading-multiple-assets
+[Loading multiple assets]: xref:addressables-loading-multiple-assets
 [Operations]: xref:addressables-async-operation-handling
 [Organizing Addressable Assets]: xref:addressables-assets-development-cycle#organizing-addressable-assets
 [Packages]: xref:PackagesList

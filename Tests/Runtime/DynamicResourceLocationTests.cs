@@ -52,6 +52,8 @@ namespace UnityEngine.AddressableAssets.DynamicResourceLocators
             public string LocatorId => "";
             public IEnumerable<object> Keys => null;
 
+            public IEnumerable<IResourceLocation> AllLocations => throw new NotImplementedException();
+
             public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
             {
                 return m_Locations.TryGetValue(new KeyType() {key = key, type = type}, out locations);
