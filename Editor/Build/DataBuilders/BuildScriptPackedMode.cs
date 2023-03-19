@@ -389,7 +389,46 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var sceneProviderData = ObjectInitializationData.CreateSerializedInitializationData(sceneProviderType.Value);
 
             var contentCatalogs = new List<ContentCatalogData>();
-            using (m_Log.ScopedStep(LogLevel.Info, "Generate Catalog"))
+#if ENABLE_BINARY_CATALOG
+            using (m_Log.ScopedStep(LogLevel.Info, "Generate Binary Catalog"))
+            {
+                foreach(var catalogInfo in GetContentCatalogs(builderInput, aaContext))
+                {
+                    var contentCatalog = new ContentCatalogData(ResourceManagerRuntimeData.kCatalogAddress);
+                    contentCatalogs.Add(contentCatalog);
+
+					if (addrResult != null)
+					{
+						List<object> hashingObjects = new List<object>(addrResult.AssetBundleBuildResults.Count);
+						for (int i = 0; i < addrResult.AssetBundleBuildResults.Count; ++i)
+						{
+							var hashingObject = addrResult.AssetBundleBuildResults[i];
+							if (catalogInfo.Locations.Exists(l => (l.ResourceType == typeof(IAssetBundleResource)) && l.InternalId.Equals(hashingObject.FilePath)))
+							{
+								hashingObjects.Add(addrResult.AssetBundleBuildResults[i].Hash);
+							}
+						}
+
+						string buildResultHash = HashingMethods.Calculate(hashingObjects.ToArray()).ToString();
+						contentCatalog.m_BuildResultHash = buildResultHash;
+					}
+
+					contentCatalog.SetData(catalogInfo.Locations.OrderBy(f => f.InternalId).ToList());
+					contentCatalog.ResourceProviderData.AddRange(resourceProviderData);
+					contentCatalog.InstanceProviderData = instanceProviderData;
+					contentCatalog.SceneProviderData = sceneProviderData;
+
+                    var bytes = contentCatalog.SerializeToByteArray();
+                    var contentHash = HashingMethods.Calculate(bytes).ToString();
+
+                    if (aaContext.Settings.BuildRemoteCatalog || ProjectConfigData.GenerateBuildLayout)
+                        contentCatalog.localHash = contentHash;
+
+                    CreateCatalogFiles(bytes, builderInput, aaContext, contentHash, catalogInfo);
+                }
+            }
+#else
+            using (m_Log.ScopedStep(LogLevel.Info, "Generate JSON Catalog"))
             {
                 foreach (var catalogInfo in GetContentCatalogs(builderInput, aaContext))
                 {
@@ -404,7 +443,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                             var hashingObject = addrResult.AssetBundleBuildResults[i];
                             if (catalogInfo.Locations.Exists(l => (l.ResourceType == typeof(IAssetBundleResource)) && l.InternalId.Equals(hashingObject.FilePath)))
                             {
-                                hashingObjects[i] = addrResult.AssetBundleBuildResults[i].Hash;
+                                hashingObjects.Add(addrResult.AssetBundleBuildResults[i].Hash);
                             }
                         }
 
@@ -412,14 +451,14 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         contentCatalog.m_BuildResultHash = buildResultHash;
                     }
 
-                    string jsonText = null;
-                    string contentHash = null;
 
                     contentCatalog.SetData(catalogInfo.Locations.OrderBy(f => f.InternalId).ToList());
                     contentCatalog.ResourceProviderData.AddRange(resourceProviderData);
                     contentCatalog.InstanceProviderData = instanceProviderData;
                     contentCatalog.SceneProviderData = sceneProviderData;
 
+                    string jsonText = null;
+                    string contentHash = null;
                     using (m_Log.ScopedStep(LogLevel.Info, "Generating Json"))
                         jsonText = JsonUtility.ToJson(contentCatalog);
 
@@ -432,6 +471,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     CreateCatalogFiles(jsonText, builderInput, aaContext, contentHash, catalogInfo);
                 }
             }
+#endif
 
             using (m_Log.ScopedStep(LogLevel.Info, "Generate link"))
             {
@@ -594,16 +634,18 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 
 #if ENABLE_BINARY_CATALOG
-        internal bool CreateCatalogFiles(byte[] data, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, string catalogHash = null)
+        internal bool CreateCatalogFiles(byte[] data, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, string catalogHash, ContentCatalogBuildInfo buildInfo)
         {
             if (data == null || data.Length == 0 || builderInput == null || aaContext == null)
             {
                 Addressables.LogError("Unable to create content catalog (Null arguments).");
                 return false;
             }
+
             // Path needs to be resolved at runtime.
-            string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + builderInput.RuntimeCatalogFilename;
-            m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, builderInput.RuntimeCatalogFilename);
+            var catalogFilename = buildInfo?.CatalogFilename ?? builderInput.RuntimeCatalogFilename;
+            string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + catalogFilename;
+            m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, catalogFilename);
 
             if (aaContext.Settings.BundleLocalCatalog)
             {
@@ -624,7 +666,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             string[] dependencyHashes = null;
             if (aaContext.Settings.BuildRemoteCatalog)
             {
-                dependencyHashes = CreateRemoteCatalog(data, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() { IgnoreFailures = true }, catalogHash);
+                if (buildInfo != null)
+                {
+                    dependencyHashes = CreateRemoteCatalog(data, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() { IgnoreFailures = true }, catalogHash);
+                }
+                else
+                {
+                    Addressables.LogError($"The {nameof(aaContext.Settings.BuildRemoteCatalog)} setting is currently not supported in this package.");
+                    return false;
+                }
             }
 
             aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
@@ -760,7 +810,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 
 #else
-        internal bool CreateCatalogFiles(string jsonText, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, string catalogHash, ContentCatalogBuildInfo buildInfo)
+    internal bool CreateCatalogFiles(string jsonText, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, string catalogHash, ContentCatalogBuildInfo buildInfo)
         {
             if (string.IsNullOrEmpty(jsonText) || builderInput == null || aaContext == null)
             {
@@ -769,7 +819,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             // Path needs to be resolved at runtime.
-            var catalogFilename = buildInfo?.JsonFilename ?? builderInput.RuntimeCatalogFilename;
+            var catalogFilename = buildInfo?.CatalogFilename ?? builderInput.RuntimeCatalogFilename;
             string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + catalogFilename;
             m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, catalogFilename);
 
@@ -798,7 +848,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
                 else
                 {
-                    Debug.LogError("BuildRemoteCatalog is currently not supported");
+                    Addressables.LogError($"The {nameof(aaContext.Settings.BuildRemoteCatalog)} setting is currently not supported in this package.");
+                    return false;
                 }
             }
 
@@ -813,11 +864,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             return true;
-        }
-
-        internal static string GetProjectName()
-        {
-            return new DirectoryInfo(Path.GetDirectoryName(Application.dataPath)).Name;
         }
 
         internal ReturnCode CreateCatalogBundle(string filepath, string jsonText, AddressablesDataBuilderInput builderInput)
@@ -945,8 +991,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 #endif
 
-        internal static void SetAssetEntriesBundleFileIdToCatalogEntryBundleFileId(ICollection<AddressableAssetEntry> assetEntries, Dictionary<string, string> bundleNameToInternalBundleIdMap,
-            IBundleWriteData writeData, Dictionary<string, ContentCatalogDataEntry> locationIdToCatalogEntryMap)
+		internal static string GetProjectName()
+        {
+            return new DirectoryInfo(Path.GetDirectoryName(Application.dataPath)).Name;
+        }
+
+        internal static void SetAssetEntriesBundleFileIdToCatalogEntryBundleFileId(ICollection<AddressableAssetEntry> assetEntries, Dictionary<string, string> bundleNameToInternalBundleIdMap, IBundleWriteData writeData, Dictionary<string, ContentCatalogDataEntry> locationIdToCatalogEntryMap)
         {
             foreach (var loc in assetEntries)
             {
@@ -1088,7 +1138,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #if UNITY_2022_1_OR_NEWER
             string loadPath = schema.LoadPath.GetValue(aaContext.Settings);
             if (loadPath.StartsWith("http://", StringComparison.Ordinal) && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
-                Addressables.LogWarning($"Addressable group {assetGroup.Name} uses insecure http for its load path.  To allow http connections for UnityWebRequests, change your settings in Edit > Project Settings > Player > Other Settings > Configuration > Allow downloads over HTTP.");
+                Addressables.LogWarning($"Addressable group {assetGroup.Name} uses insecure http for its load path. To allow http connections for UnityWebRequests, change your settings in Edit > Project Settings > Player > Other Settings > Configuration > Allow downloads over HTTP.");
 #endif
             if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && aaContext.runtimeData.BuildTarget == BuildTarget.WebGL.ToString())
                 Addressables.LogWarning($"Addressable group {assetGroup.Name} uses LZMA compression, which cannot be decompressed on WebGL. Use LZ4 compression instead.");
@@ -1143,6 +1193,16 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             string buildPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.BuildPath.Id);
             string loadPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.LoadPath.Id);
+
+            if (string.IsNullOrEmpty(buildPath))
+            {
+                buildPath = schema.BuildPath.Id;
+            }
+
+            if (string.IsNullOrEmpty(loadPath))
+            {
+                loadPath = schema.LoadPath.Id;
+            }
 
             bool buildLocal = AddressableAssetUtility.StringContains(buildPath, "[UnityEngine.AddressableAssets.Addressables.BuildPath]", StringComparison.Ordinal);
             bool loadLocal = AddressableAssetUtility.StringContains(loadPath, "{UnityEngine.AddressableAssets.Addressables.RuntimePath}", StringComparison.Ordinal);
@@ -1389,7 +1449,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             var path = schema.BuildPath.GetValue(assetGroup.Settings);
             if (string.IsNullOrEmpty(path))
-                return;
+            {
+                path = aaContext.Settings.profileSettings.EvaluateString(aaContext.Settings.activeProfileId, schema.BuildPath.Id);
+                if (string.IsNullOrEmpty(path))
+                    return;
+            }
 
             List<string> builtBundleNames = aaContext.assetGroupToBundles[assetGroup];
             List<string> outputBundleNames = null;

@@ -4,7 +4,7 @@ The Addressables package by Unity provides a novel way of managing and packing a
 
 This variant forked from the original Addressables-project adds support for building your assets across several catalogs in one go and provides several other benefits, e.g. reduced build times and build size, as well as keeping the buildcache intact.
 
-This package currently tracks version `1.21.2` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
+This package currently tracks version `1.21.9` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
 
 **Note**: this repository does not track every available version of the _vanilla_ Addressables package. It's only kept up-to-date sporadically.
 
@@ -24,25 +24,27 @@ So, does Addressables support DLC packages as defined above? Yes, it's supported
 
 In the vanilla implementation of Addressables, only one content catalog file is built at a time, and only the assets as defined to be included in the current build will be packed and saved. Any implicit dependency of an asset will get included in that build too, however. This creates several major problems:
 
-* Each build (one for the base game, and one for each DLC package) will include each and every asset it relies on. This is expected for the base game, but not for the DLC package. This essentially creates unnecessary large DLC packages, and in the end, your running game will include the same assets multiple times on the player's system, and perhaps even in memory at runtime.
+* Each content build (one for the base game, and one for each DLC package) will include each and every asset it relies on. This is expected for the base game, but not for the DLC package. This essentially creates unnecessary large DLC packages, and in the end, your running game will include the same assets multiple times on the player's system, and perhaps even in memory at runtime.
 * No build caching can be used, since each build done for a DLC package is considered a whole new build for the Addressables system, and will invalidate any prior caching done. This significantly increases build times.
 * Build caching and upload systems as those used by Steam for example, can't fully differentiate between the changes properly of subsequent builds. This results in longer and larger uploads, and consequently, in bigger updates for players to download.
 
 ## The solution
 
-The solution comes in the form of performing the build process of the base game and all DLC packages in one step. In essence, what this implementation does is, have the Addressables build-pipeline perform one large build of all assets tracked by the base game and each of its DLC packages, and afterwards, extract the contents per defined DLC package and create a separate content catalog for each of them. Finally, Addressables creates the final content catalog file for the left-over asset groups, those that remain for the base game.
+The solution comes in the form of performing the build process of the base game and all DLC packages in one step. In essence, what this implementation does is, have the Addressables build-pipeline perform one large build of all assets tracked by the base game and each of the included DLC packages.
+
+Afterwards, the contents for each external catalog are extracted to their proper location and their content catalog file is created based on the content they require.
 
 ## Installation
 
 This package is best installed using Unity's Package Manager. Fill in the URL found below in the package manager's input field for git-tracked packages:
 
-> https://github.com/juniordiscart/com.unity.addressables.git
+> <https://github.com/juniordiscart/com.unity.addressables.git>
 
 ### Updating a vanilla installation
 
 When you've already set up Addressables in your project and adjusted the settings to fit your project's needs, it might be cumbersome to set everything back. In that case, it might be better to update your existing settings with the new objects rather than starting with a clean slate:
 
-1. Remove the currently tracked Addressables package from the Unity Package manager and track this version instead as defined by the [Installation section](#installation). However, __don't delete__ the `Assets/AddressableAssetsData` folder from your project!
+1. Remove the currently tracked Addressables package from the Unity Package manager and track this version instead as defined by the [Installation section](#installation). However, **don't delete** the `Assets/AddressableAssetsData` folder from your project!
 
 2. In your project's `Assets/AddressableAssetsData/DataBuilders` folder, create a new 'multi-catalog' data builder:
 
@@ -75,6 +77,8 @@ With the multi-catalog system installed, additional catalogs can now be created 
 
 3. Assign the Addressable asset groups that belong to this package.
 
+   **Note**: Addressable asset groups that are assigned to an external catalog, but still have their `BuildPath` and `LoadPath` values set to point to the main/default catalog's build and load path, will have them replaced with that of the external catalog during build time. So you don't have to perform specific actions with regards to the Addressable asset groups themselves, unless you wish to have them build to a specific other location other than next to the external catalog file.
+
 4. Now, select the `BuildScriptPackedMultiCatalogMode` data builder object and assign your external catalog object(s).
 
    ![Assign external catalogs to data builder](Documentation~/images/multi_catalogs/AssignCatalogsToDataBuilder.png)
@@ -84,6 +88,8 @@ With the multi-catalog system installed, additional catalogs can now be created 
 With everything set up and configured, it's time to build the project's contents!
 
 In your Addressable Groups window, tick all 'Include in build' boxes of those groups that should be built. From the build tab, there's a new `Default build script - Multi-Catalog` option. Select this one to start a content build with the multi-catalog setup.
+
+**Note**: built-in content is automatically included along with the player build as a post-build process. External catalogs and their content are built and moved to their location when they are build. It's up to the user to configure the build and load paths of these external catalogs so that they are properly placed next to the player build or into a location that can be picked up by the content distribution system, e.g. Valve's SteamPipe for Steam.
 
 ## Loading the external catalogs
 

@@ -16,9 +16,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 		[SerializeField, Tooltip("Assets groups that belong to this catalog. Entries found in these will get extracted from the default catalog.")]
 		private List<AddressableAssetGroup> assetGroups = new List<AddressableAssetGroup>();
 		[SerializeField, Tooltip("Build path for the produced files associated with this catalog.")]
-		private string buildPath = string.Empty;
+		private ProfileValueReference buildPath = new ProfileValueReference();
 		[SerializeField, Tooltip("Runtime load path for assets associated with this catalog.")]
-		private string runtimeLoadPath = string.Empty;
+		private ProfileValueReference runtimeLoadPath = new ProfileValueReference();
 		[SerializeField, Tooltip("Catalog name. This will also be the name of the exported catalog file.")]
 		private string catalogName = string.Empty;
 
@@ -28,13 +28,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			set => catalogName = value;
 		}
 
-		public string BuildPath
+		public ProfileValueReference BuildPath
 		{
 			get => buildPath;
 			set => buildPath = value;
 		}
 
-		public string RuntimeLoadPath
+		public ProfileValueReference RuntimeLoadPath
 		{
 			get => runtimeLoadPath;
 			set => runtimeLoadPath = value;

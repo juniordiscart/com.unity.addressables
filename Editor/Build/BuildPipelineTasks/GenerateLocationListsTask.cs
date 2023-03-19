@@ -77,7 +77,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 aaContext.GuidToCatalogLocation = output.GuidToLocation;
             else foreach (KeyValuePair<GUID,List<ContentCatalogDataEntry>> pair in output.GuidToLocation)
                 aaContext.GuidToCatalogLocation[pair.Key] = pair.Value;
-            
+
             aaContext.assetGroupToBundles = output.AssetGroupToBundles;
             if (aaContext.providerTypes == null)
                 aaContext.providerTypes = output.ProviderTypes;
@@ -349,10 +349,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             loadPath = loadPath.Replace('\\', '/');
             if (loadPath.EndsWith("/"))
                 loadPath += name;
-            else
+            else if (!string.IsNullOrEmpty(loadPath))
                 loadPath = loadPath + "/" + name;
+            else
+				loadPath = name;
 
-            if (!string.IsNullOrEmpty(bagSchema.UrlSuffix))
+			if (!string.IsNullOrEmpty(bagSchema.UrlSuffix))
                 loadPath += bagSchema.UrlSuffix;
             if (!ResourceManagerConfig.ShouldPathUseWebRequest(loadPath) && !bagSchema.UseUnityWebRequestForLocalBundles)
             {

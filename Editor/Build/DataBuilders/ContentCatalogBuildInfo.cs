@@ -20,7 +20,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         ///
         /// Note that the default main catalog is written to "catalog.json"
         /// </summary>
-        public readonly string JsonFilename;
+        public readonly string CatalogFilename;
 
         /// <summary>
         /// The locations, i.e., the addressable assets, contained in this catalog.
@@ -39,11 +39,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// Construct an empty catalog build info.
         /// </summary>
         /// <param name="identifier">the identifier</param>
-        /// <param name="jsonFilename">the json filename</param>
-        public ContentCatalogBuildInfo(string identifier, string jsonFilename)
+        /// <param name="catalogFileName">the json filename</param>
+        public ContentCatalogBuildInfo(string identifier, string catalogFileName)
         {
             Identifier = identifier;
-            JsonFilename = jsonFilename;
+            CatalogFilename = catalogFileName;
         }
     }
 }
