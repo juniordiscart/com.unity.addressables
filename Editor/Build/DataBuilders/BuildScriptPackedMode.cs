@@ -130,8 +130,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             var list = new List<ContentCatalogBuildInfo>(1);
             var catalog = new ContentCatalogBuildInfo(ResourceManagerRuntimeData.kCatalogAddress, builderInput.RuntimeCatalogFilename);
+            catalog.BuildPath = Addressables.BuildPath;
+            catalog.LoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}";
             catalog.Locations.AddRange(aaContext.locations);
             list.Add(catalog);
+
+            m_CatalogBuildPath = Path.Combine(catalog.BuildPath, catalog.CatalogFilename);
             return list;
         }
 
@@ -397,26 +401,26 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     var contentCatalog = new ContentCatalogData(ResourceManagerRuntimeData.kCatalogAddress);
                     contentCatalogs.Add(contentCatalog);
 
-					if (addrResult != null)
-					{
-						List<object> hashingObjects = new List<object>(addrResult.AssetBundleBuildResults.Count);
-						for (int i = 0; i < addrResult.AssetBundleBuildResults.Count; ++i)
-						{
-							var hashingObject = addrResult.AssetBundleBuildResults[i];
-							if (catalogInfo.Locations.Exists(l => (l.ResourceType == typeof(IAssetBundleResource)) && l.InternalId.Equals(hashingObject.FilePath)))
-							{
-								hashingObjects.Add(addrResult.AssetBundleBuildResults[i].Hash);
-							}
-						}
+                    if (addrResult != null)
+                    {
+                        List<object> hashingObjects = new List<object>(addrResult.AssetBundleBuildResults.Count);
+                        for (int i = 0; i < addrResult.AssetBundleBuildResults.Count; ++i)
+                        {
+                            var hashingObject = addrResult.AssetBundleBuildResults[i];
+                            if (catalogInfo.Locations.Exists(l => (l.ResourceType == typeof(IAssetBundleResource)) && l.InternalId.Equals(hashingObject.FilePath)))
+                            {
+                                hashingObjects.Add(addrResult.AssetBundleBuildResults[i].Hash);
+                            }
+                        }
 
-						string buildResultHash = HashingMethods.Calculate(hashingObjects.ToArray()).ToString();
-						contentCatalog.m_BuildResultHash = buildResultHash;
-					}
+                        string buildResultHash = HashingMethods.Calculate(hashingObjects.ToArray()).ToString();
+                        contentCatalog.m_BuildResultHash = buildResultHash;
+                    }
 
-					contentCatalog.SetData(catalogInfo.Locations.OrderBy(f => f.InternalId).ToList());
-					contentCatalog.ResourceProviderData.AddRange(resourceProviderData);
-					contentCatalog.InstanceProviderData = instanceProviderData;
-					contentCatalog.SceneProviderData = sceneProviderData;
+                    contentCatalog.SetData(catalogInfo.Locations.OrderBy(f => f.InternalId).ToList());
+                    contentCatalog.ResourceProviderData.AddRange(resourceProviderData);
+                    contentCatalog.InstanceProviderData = instanceProviderData;
+                    contentCatalog.SceneProviderData = sceneProviderData;
 
                     var bytes = contentCatalog.SerializeToByteArray();
                     var contentHash = HashingMethods.Calculate(bytes).ToString();
@@ -643,16 +647,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             // Path needs to be resolved at runtime.
-            var catalogFilename = buildInfo?.CatalogFilename ?? builderInput.RuntimeCatalogFilename;
-            string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + catalogFilename;
-            m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, catalogFilename);
+            string loadPath = $"{buildInfo.LoadPath}/{buildInfo.CatalogFilename}";
+            string buildPath = Path.Combine(buildInfo.BuildPath, buildInfo.CatalogFilename);
 
             if (aaContext.Settings.BundleLocalCatalog)
             {
-                localLoadPath = localLoadPath.Replace(".bin", ".bundle");
-                m_CatalogBuildPath = m_CatalogBuildPath.Replace(".bin", ".bundle");
-                var returnCode = CreateCatalogBundle(m_CatalogBuildPath, data, builderInput);
-                if (returnCode != ReturnCode.Success || !File.Exists(m_CatalogBuildPath))
+                loadPath = loadPath.Replace(".bin", ".bundle");
+                buildPath = buildPath.Replace(".bin", ".bundle");
+                var returnCode = CreateCatalogBundle(buildPath, data, builderInput);
+                if (returnCode != ReturnCode.Success || !File.Exists(buildPath))
                 {
                     Addressables.LogError($"An error occurred during the creation of the content catalog bundle (return code {returnCode}).");
                     return false;
@@ -660,7 +663,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
             else
             {
-                WriteFile(m_CatalogBuildPath, data, builderInput.Registry);
+                WriteFile(buildPath, data, builderInput.Registry);
             }
 
             string[] dependencyHashes = null;
@@ -679,7 +682,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
                 new[] { ResourceManagerRuntimeData.kCatalogAddress },
-                localLoadPath,
+                loadPath,
                 typeof(ContentCatalogProvider),
                 typeof(ContentCatalogData),
                 dependencyHashes));
@@ -810,7 +813,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 
 #else
-    internal bool CreateCatalogFiles(string jsonText, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, string catalogHash, ContentCatalogBuildInfo buildInfo)
+        internal bool CreateCatalogFiles(string jsonText, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, string catalogHash, ContentCatalogBuildInfo buildInfo)
         {
             if (string.IsNullOrEmpty(jsonText) || builderInput == null || aaContext == null)
             {
@@ -819,16 +822,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             // Path needs to be resolved at runtime.
-            var catalogFilename = buildInfo?.CatalogFilename ?? builderInput.RuntimeCatalogFilename;
-            string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + catalogFilename;
-            m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, catalogFilename);
+            string loadPath = $"{buildInfo.LoadPath}/{buildInfo.CatalogFilename}";
+            string buildPath = Path.Combine(buildInfo.BuildPath, buildInfo.CatalogFilename);
 
             if (aaContext.Settings.BundleLocalCatalog)
             {
-                localLoadPath = localLoadPath.Replace(".json", ".bundle");
-                m_CatalogBuildPath = m_CatalogBuildPath.Replace(".json", ".bundle");
-                var returnCode = CreateCatalogBundle(m_CatalogBuildPath, jsonText, builderInput);
-                if (returnCode != ReturnCode.Success || !File.Exists(m_CatalogBuildPath))
+                loadPath = loadPath.Replace(".json", ".bundle");
+                buildPath = buildPath.Replace(".json", ".bundle");
+                var returnCode = CreateCatalogBundle(buildPath, jsonText, builderInput);
+                if (returnCode != ReturnCode.Success || !File.Exists(buildPath))
                 {
                     Addressables.LogError($"An error occurred during the creation of the content catalog bundle (return code {returnCode}).");
                     return false;
@@ -836,7 +838,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
             else
             {
-                WriteFile(m_CatalogBuildPath, jsonText, builderInput.Registry);
+                WriteFile(buildPath, jsonText, builderInput.Registry);
             }
 
             string[] dependencyHashes = null;
@@ -857,7 +859,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
                 new[] { ResourceManagerRuntimeData.kCatalogAddress },
-                    localLoadPath,
+                    loadPath,
                     typeof(ContentCatalogProvider),
                     typeof(ContentCatalogData),
                     dependencyHashes));
@@ -991,7 +993,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 #endif
 
-		internal static string GetProjectName()
+        internal static string GetProjectName()
         {
             return new DirectoryInfo(Path.GetDirectoryName(Application.dataPath)).Name;
         }

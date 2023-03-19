@@ -28,12 +28,22 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         public readonly List<ContentCatalogDataEntry> Locations = new List<ContentCatalogDataEntry>();
 
         /// <summary>
-        /// Determines whether the catalog is going to be registered in settings.json.
-        ///
-        /// Registered catalogs are automatically loaded on application startup.
-        /// Use "false" for catalogs that are to be loaded dynamicaly.
+        /// The directory path this catalog is expected to be build.
         /// </summary>
-        public bool Register = true;
+		public string BuildPath;
+
+        /// <summary>
+        /// The directory path this catalog is expected to be loaded from.
+        /// </summary>
+		public string LoadPath;
+
+		/// <summary>
+		/// Determines whether the catalog is going to be registered in settings.json.
+		///
+		/// Registered catalogs are automatically loaded on application startup.
+		/// Use "false" for catalogs that are to be loaded dynamicaly.
+		/// </summary>
+		public bool Register = true;
 
         /// <summary>
         /// Construct an empty catalog build info.

@@ -5,8 +5,6 @@ using System.Linq;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
@@ -21,8 +19,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 		/// <summary>
 		/// Move a file, deleting it first if it exists.
 		/// </summary>
-		/// <param name="src">the file to move</param>
-		/// <param name="dst">the destination</param>
 		private static void FileMoveOverwrite(string src, string dst)
 		{
 			if (src == dst)
@@ -34,6 +30,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			{
 				File.Delete(dst);
 			}
+
 			File.Move(src, dst);
 		}
 
@@ -59,12 +56,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			catalogSetups.Clear();
 
 			// Prepare catalogs
-			var defaultCatalog = new ContentCatalogBuildInfo(ResourceManagerRuntimeData.kCatalogAddress, builderInput.RuntimeCatalogFilename);
+			var defaultCatalog = base.GetContentCatalogs(builderInput, aaContext).First();
+			defaultCatalog.Locations.Clear(); // This will get filled up again below, but filtered by external catalog setups.
 			foreach (ExternalCatalogSetup catalogContentGroup in externalCatalogs)
 			{
 				if (catalogContentGroup != null)
 				{
-					catalogSetups.Add(new CatalogSetup(catalogContentGroup, builderInput));
+					catalogSetups.Add(new CatalogSetup(catalogContentGroup, builderInput, aaContext));
 				}
 			}
 
@@ -91,7 +89,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
 						// If the group's load path is set to be the global local load path, then it is switched out for the one defined by the external catalog.
 						var schema = group.GetSchema<BundledAssetGroupSchema>();
-						var loadPath = (schema.LoadPath.Id != defaultLoadPathData.Id) ? schema.LoadPath : preferredCatalog.CatalogContentGroup.RuntimeLoadPath;
+						var loadPath = (schema.LoadPath.Id != defaultLoadPathData?.Id) ? schema.LoadPath : preferredCatalog.CatalogContentGroup.RuntimeLoadPath;
 
 						// Evaluate the load path, and if it amounts to nothing, then pick the Id itself as the load path, as it might be a custom one.
 						var runtimeLoadPath = loadPath.GetValue(profileSettings, profileId);
@@ -107,6 +105,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
 						runtimeLoadPath += Path.GetFileName(loc.InternalId);
 						preferredCatalog.BuildInfo.Locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), runtimeLoadPath, loc.Provider, loc.Keys, loc.Dependencies, loc.Data));
+						preferredCatalog.catalogBundles.Add(loc);
 					}
 					else
 					{
@@ -162,7 +161,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			catalogs.Add(defaultCatalog);
 			foreach (var setup in catalogSetups)
 			{
-				if (!setup.Empty)
+				if (!setup.IsEmpty)
 				{
 					catalogs.Add(setup.BuildInfo);
 				}
@@ -180,48 +179,19 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			foreach (var setup in catalogSetups)
 			{
 				// Empty catalog setups are not added/built.
-				if (setup.Empty)
+				if (setup.IsEmpty)
 				{
 					continue;
 				}
 
-				var builtInShaderBundleName = GetBuiltInShaderBundleNamePrefix(aaContext) + "_unitybuiltinshaders";
 				var profileSettings = aaContext.Settings.profileSettings;
 				var activeProfileId = aaContext.Settings.activeProfileId;
 				var defaultBuildPathData = profileSettings.GetProfileDataByName(AddressableAssetSettings.kLocalBuildPath);
 				var globalBuildPath = profileSettings.EvaluateString(activeProfileId, profileSettings.GetValueById(activeProfileId, defaultBuildPathData.Id));
 
-				// Move the catalog to its destination.
-				var catalogBuildPath = setup.CatalogContentGroup.BuildPath.GetValue(profileSettings, activeProfileId);
-				if (string.IsNullOrEmpty(catalogBuildPath))
+				foreach (var loc in setup.catalogBundles)
 				{
-					catalogBuildPath = setup.CatalogContentGroup.BuildPath.Id;
-
-					if (string.IsNullOrWhiteSpace(catalogBuildPath))
-					{
-						throw new Exception("The catalog build path for external catalog " + setup.CatalogContentGroup.name + " is empty.");
-					}
-				}
-
-				Directory.CreateDirectory(catalogBuildPath);
-				FileMoveOverwrite(Path.Combine(Addressables.BuildPath, setup.BuildInfo.CatalogFilename), Path.Combine(catalogBuildPath, setup.BuildInfo.CatalogFilename));
-
-				foreach (var loc in setup.BuildInfo.Locations)
-				{
-					if (loc.ResourceType != typeof(IAssetBundleResource))
-					{
-						continue;
-					}
-
 					var bundleRequestOptions = loc.Data as AssetBundleRequestOptions;
-
-					// Skip the built-in shader collection. That one needs to remain in the main catalog.
-					// This one may end up in here because it is a dependency of a lot of location data entries.
-					if (bundleRequestOptions.BundleName.Equals(builtInShaderBundleName))
-					{
-						continue;
-					}
-
 					var bundleId = bundleRequestOptions.BundleName + ".bundle";
 					var group = aaContext.Settings.FindGroup(g => (g != null) && (g.Guid == aaContext.bundleToAssetGroup[bundleId]));
 					var schema = group.GetSchema<BundledAssetGroupSchema>();
@@ -238,7 +208,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 					// Move the bundle out of the default build location.
 					var bundleName = Path.GetFileName(loc.InternalId);
 					var bundleSrcPath = Path.Combine(globalBuildPath, bundleName);
-					var bundleDstPath = Path.Combine(catalogBuildPath, bundleName);
+					var bundleDstPath = Path.Combine(setup.BuildInfo.BuildPath, bundleName);
 					FileMoveOverwrite(bundleSrcPath, bundleDstPath);
 				}
 			}
@@ -305,16 +275,42 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 			/// <summary>
 			/// Tells whether the catalog is empty.
 			/// </summary>
-			public bool Empty
-			{
-				get => BuildInfo.Locations.Count == 0;
-			}
+			public bool IsEmpty => BuildInfo.Locations.Count == 0;
 
-			public CatalogSetup(ExternalCatalogSetup buildCatalog, AddressablesDataBuilderInput builderInput)
+			/// <summary>
+			/// The list of bundles that are associated with this catalog setup.
+			/// </summary>
+			public readonly List<ContentCatalogDataEntry> catalogBundles = new List<ContentCatalogDataEntry>();
+
+			public CatalogSetup(ExternalCatalogSetup buildCatalog, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext)
 			{
 				this.CatalogContentGroup = buildCatalog;
-				string catalogFileName = string.Format("{0}{1}", buildCatalog.CatalogName, Path.GetExtension(builderInput.RuntimeCatalogFilename));
+
+				var profileSettings = aaContext.Settings.profileSettings;
+				var profileId = aaContext.Settings.activeProfileId;
+				var catalogFileName = $"{buildCatalog.CatalogName}{Path.GetExtension(builderInput.RuntimeCatalogFilename)}";
+				
 				BuildInfo = new ContentCatalogBuildInfo(buildCatalog.CatalogName, catalogFileName);
+
+				// Set the build path.
+				BuildInfo.BuildPath = buildCatalog.BuildPath.GetValue(profileSettings, profileId);
+				if (string.IsNullOrEmpty(BuildInfo.BuildPath))
+				{
+					BuildInfo.BuildPath = profileSettings.EvaluateString(profileId, buildCatalog.BuildPath.Id);
+
+					if (string.IsNullOrWhiteSpace(BuildInfo.BuildPath))
+					{
+						throw new Exception($"The catalog build path for external catalog '{buildCatalog.name}' is empty.");
+					}
+				}
+
+				// Set the load path.
+				BuildInfo.LoadPath = buildCatalog.RuntimeLoadPath.GetValue(profileSettings, profileId);
+				if (string.IsNullOrEmpty(BuildInfo.LoadPath))
+				{
+					BuildInfo.LoadPath = profileSettings.EvaluateString(profileId, buildCatalog.RuntimeLoadPath.Id);
+				}
+
 				BuildInfo.Register = false;
 			}
 		}

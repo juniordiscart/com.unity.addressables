@@ -71,5 +71,21 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 				return false;
 			}
 		}
+
+		private void OnEnable()
+		{
+			buildPath.OnValueChanged += OnProfileValueChanged;
+			runtimeLoadPath.OnValueChanged += OnProfileValueChanged;
+		}
+
+		private void OnDisable() {
+			buildPath.OnValueChanged -= OnProfileValueChanged;
+			runtimeLoadPath.OnValueChanged -= OnProfileValueChanged;
+		}
+
+		private void OnProfileValueChanged(ProfileValueReference valueReference)
+		{
+			EditorUtility.SetDirty(this);
+		}
 	}
 }
