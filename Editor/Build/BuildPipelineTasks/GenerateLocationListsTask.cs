@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
@@ -345,25 +346,62 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 return string.Empty;
             }
 
-            string loadPath = bagSchema.LoadPath.GetValue(group.Settings);
-            loadPath = loadPath.Replace('\\', '/');
-            if (loadPath.EndsWith("/"))
-                loadPath += name;
-            else if (!string.IsNullOrEmpty(loadPath))
-                loadPath = loadPath + "/" + name;
-            else
-				loadPath = name;
+            return GetLoadPath(group, bagSchema.LoadPath, name, target);
+        }
 
-			if (!string.IsNullOrEmpty(bagSchema.UrlSuffix))
-                loadPath += bagSchema.UrlSuffix;
-            if (!ResourceManagerConfig.ShouldPathUseWebRequest(loadPath) && !bagSchema.UseUnityWebRequestForLocalBundles)
+        internal static string GetLoadPath(AddressableAssetGroup group, ProfileValueReference loadPath, string name, BuildTarget target)
+        {
+            var bagSchema = group.GetSchema<BundledAssetGroupSchema>();
+            if (bagSchema == null || loadPath == null)
+            {
+                Debug.LogError("Unable to determine load path for " + name + ". Check that your default group is not '" + AddressableAssetSettings.PlayerDataGroupName + "'");
+                return string.Empty;
+            }
+
+            string loadPathValue = loadPath.GetValue(group.Settings);
+            if (string.IsNullOrEmpty(loadPathValue))
+            {
+                var profile = group.Settings.profileSettings;
+                var activeProfile = group.Settings.activeProfileId;
+                loadPathValue = profile.EvaluateString(activeProfile, loadPath.Id);
+            }
+
+            loadPathValue = loadPathValue.Replace('\\', '/');
+            if (loadPathValue.EndsWith("/"))
+                loadPathValue += name;
+            else if (!string.IsNullOrEmpty(loadPathValue))
+                loadPathValue = loadPathValue + "/" + name;
+            else
+                loadPathValue = name;
+
+            if (!string.IsNullOrEmpty(bagSchema.UrlSuffix))
+                loadPathValue += bagSchema.UrlSuffix;
+            if (!ResourceManagerConfig.ShouldPathUseWebRequest(loadPathValue) && !bagSchema.UseUnityWebRequestForLocalBundles)
             {
                 char separator = PathSeparatorForPlatform(target);
                 if (separator != '/')
-                    loadPath = loadPath.Replace('/', separator);
+                    loadPathValue = loadPathValue.Replace('/', separator);
             }
 
-            return loadPath;
+            return loadPathValue;
+        }
+
+        internal static string GetFileName(string path, BuildTarget target)
+        {
+            char directorySeparatorChar = PathSeparatorForPlatform(target);
+
+            if (path != null)
+            {
+                int length = path.Length;
+                for (int i = length; --i >= 0;)
+                {
+                    char ch = path[i];
+                    if (ch == directorySeparatorChar)
+                        return path.Substring(i + 1, length - i - 1);
+                }
+            }
+
+            return path;
         }
 
         internal static char PathSeparatorForPlatform(BuildTarget target)

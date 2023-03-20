@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
@@ -89,21 +90,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
 						// If the group's load path is set to be the global local load path, then it is switched out for the one defined by the external catalog.
 						var schema = group.GetSchema<BundledAssetGroupSchema>();
-						var loadPath = (schema.LoadPath.Id != defaultLoadPathData?.Id) ? schema.LoadPath : preferredCatalog.CatalogContentGroup.RuntimeLoadPath;
+						var loadPath =
+							(schema.LoadPath.Id == defaultLoadPathData?.Id) ?
+							preferredCatalog.CatalogContentGroup.RuntimeLoadPath :
+							schema.LoadPath;
 
-						// Evaluate the load path, and if it amounts to nothing, then pick the Id itself as the load path, as it might be a custom one.
-						var runtimeLoadPath = loadPath.GetValue(profileSettings, profileId);
-						if (string.IsNullOrEmpty(runtimeLoadPath))
-						{
-							runtimeLoadPath = profileSettings.EvaluateString(profileId, loadPath.Id);
-						}
+						// Generate a new load path based on the settings of the external catalog or the schema's custom defined values.
+						var filename = GenerateLocationListsTask.GetFileName(loc.InternalId, builderInput.Target);
+						var runtimeLoadPath = GenerateLocationListsTask.GetLoadPath(group, loadPath, filename, builderInput.Target);
 
-						if (!string.IsNullOrEmpty(runtimeLoadPath) && !runtimeLoadPath.EndsWith('/'))
-						{
-							runtimeLoadPath += '/';
-						}
-
-						runtimeLoadPath += Path.GetFileName(loc.InternalId);
 						preferredCatalog.BuildInfo.Locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), runtimeLoadPath, loc.Provider, loc.Keys, loc.Dependencies, loc.Data));
 						preferredCatalog.catalogBundles.Add(loc);
 					}
@@ -191,8 +186,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
 				foreach (var loc in setup.catalogBundles)
 				{
-					var bundleRequestOptions = loc.Data as AssetBundleRequestOptions;
-					var bundleId = bundleRequestOptions.BundleName + ".bundle";
+					var bundleId = (loc.Data as AssetBundleRequestOptions).BundleName + ".bundle";
 					var group = aaContext.Settings.FindGroup(g => (g != null) && (g.Guid == aaContext.bundleToAssetGroup[bundleId]));
 					var schema = group.GetSchema<BundledAssetGroupSchema>();
 
