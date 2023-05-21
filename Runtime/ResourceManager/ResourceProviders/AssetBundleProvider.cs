@@ -265,14 +265,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		}
 
 		AssetBundle m_AssetBundle;
-		DownloadHandlerAssetBundle m_downloadHandler;
 		AsyncOperation m_RequestOperation;
 		WebRequestQueueOperation m_WebRequestQueueOperation;
 		internal ProvideHandle m_ProvideHandle;
 		internal AssetBundleRequestOptions m_Options;
 
 		[NonSerialized]
-		bool m_WebRequestCompletedCallbackCalled = false;
+        bool m_RequestCompletedCallbackCalled = false;
 
 		int m_Retries;
         BundleSource m_Source = BundleSource.None;
@@ -423,23 +422,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		/// <returns>The asset bundle.</returns>
 		public AssetBundle GetAssetBundle()
 		{
-			if (m_AssetBundle == null)
-			{
-				if (m_downloadHandler != null)
-				{
-					m_AssetBundle = m_downloadHandler.assetBundle;
-					m_downloadHandler.Dispose();
-					m_downloadHandler = null;
-				}
-				else if (m_RequestOperation is AssetBundleCreateRequest)
-				{
-					m_AssetBundle = (m_RequestOperation as AssetBundleCreateRequest).assetBundle;
-				}
-			}
-
-#if ENABLE_ADDRESSABLE_PROFILER
-            AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
-#endif
 			return m_AssetBundle;
 		}
 
@@ -491,9 +473,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		{
 			m_Retries = 0;
 			m_AssetBundle = null;
-			m_downloadHandler = null;
 			m_RequestOperation = null;
-			m_WebRequestCompletedCallbackCalled = false;
+            m_RequestCompletedCallbackCalled = false;
 			m_ProvideHandle = provideHandle;
 			m_Options = m_ProvideHandle.Location.Data as AssetBundleRequestOptions;
 			m_BytesToDownload = -1;
@@ -542,14 +523,24 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         m_AssetBundle = downloadHandler.assetBundle;
 			}
 #endif
-                if (!m_WebRequestCompletedCallbackCalled)
+                if (!m_RequestCompletedCallbackCalled)
 			{
-				WebRequestOperationCompleted(m_RequestOperation);
 				m_RequestOperation.completed -= WebRequestOperationCompleted;
+                    WebRequestOperationCompleted(m_RequestOperation);
+                }
+            }
+
+            if (!m_Completed && m_Source == BundleSource.Local) {
+
+                // we don't have to check for done with local files as calling
+                // m_requestOperation.assetBundle is blocking and will wait for the file to load
+                if (!m_RequestCompletedCallbackCalled)
+                {
+                    m_RequestOperation.completed -= LocalRequestOperationCompleted;
+                    LocalRequestOperationCompleted(m_RequestOperation);
 			}
             }
 
-			var assetBundle = GetAssetBundle();
 			if (!m_Completed && m_RequestOperation.isDone)
 			{
 				m_ProvideHandle.Complete(this, m_AssetBundle != null, null);
@@ -628,7 +619,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			}
 			else if (loadType == LoadType.Web)
 			{
-				m_WebRequestCompletedCallbackCalled = false;
 				var req = CreateWebRequest(m_TransformedInternalId);
 #if ENABLE_ASYNC_ASSETBUNDLE_UWR
 				((DownloadHandlerAssetBundle)req.downloadHandler).autoLoadAssetBundle = !(m_ProvideHandle.Location is DownloadOnlyLocation);
@@ -700,6 +690,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 		private void LocalRequestOperationCompleted(AsyncOperation op)
 		{
+            if (m_RequestCompletedCallbackCalled)
+            {
+                return;
+            }
+
+            m_RequestCompletedCallbackCalled = true;
 			CompleteBundleLoad((op as AssetBundleCreateRequest).assetBundle);
 		}
 
@@ -719,16 +715,17 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 		private void WebRequestOperationCompleted(AsyncOperation op)
 		{
-			if (m_WebRequestCompletedCallbackCalled)
+            if (m_RequestCompletedCallbackCalled)
 				return;
+
+            m_RequestCompletedCallbackCalled = true;
 
 			if (m_Options.Timeout > 0)
 				m_ProvideHandle.ResourceManager.RemoveUpdateReceiver(this);
 
-			m_WebRequestCompletedCallbackCalled = true;
 			UnityWebRequestAsyncOperation remoteReq = op as UnityWebRequestAsyncOperation;
 			var webReq = remoteReq?.webRequest;
-			m_downloadHandler = webReq?.downloadHandler as DownloadHandlerAssetBundle;
+            var downloadHandler = webReq?.downloadHandler as DownloadHandlerAssetBundle;
 			UnityWebRequestResult uwrResult = null;
 			if (webReq != null && !UnityWebRequestUtilities.RequestHasErrors(webReq, out uwrResult))
 			{
@@ -737,6 +734,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #if ENABLE_ADDRESSABLE_PROFILER
                     AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
 #endif
+                    m_AssetBundle = downloadHandler.assetBundle;
+                    downloadHandler.Dispose();
+                    downloadHandler = null;
 					m_ProvideHandle.Complete(this, true, null);
 					m_Completed = true;
 				}
@@ -753,9 +753,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				if (uwrResult == null)
 					uwrResult = new UnityWebRequestResult(m_WebRequestQueueOperation.m_WebRequest);
 
-				m_downloadHandler = webReq.downloadHandler as DownloadHandlerAssetBundle;
-				m_downloadHandler.Dispose();
-				m_downloadHandler = null;
+                downloadHandler = webReq.downloadHandler as DownloadHandlerAssetBundle;
+                downloadHandler.Dispose();
+                downloadHandler = null;
 				bool forcedRetry = false;
 				string message = $"Web request failed, retrying ({m_Retries}/{m_Options.RetryCount})...\n{uwrResult}";
 #if ENABLE_CACHING
@@ -768,7 +768,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 						message = $"Web request failed to load from cache. The cached AssetBundle will be cleared from the cache and re-downloaded. Retrying...\n{uwrResult}";
 						Caching.ClearCachedVersion(m_Options.BundleName, Hash128.Parse(m_Options.Hash));
 						// When attempted to load from cache we always retry on first attempt and failed
-						if (m_Retries == 0)
+                        if (m_Retries == 0 && uwrResult.ShouldRetryDownloadError())
 						{
 							Debug.LogFormat(message);
 							BeginOperation();
@@ -829,12 +829,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				m_AssetBundle = null;
 			}
 #endif
-			if (m_downloadHandler != null)
-			{
-				m_downloadHandler.Dispose();
-				m_downloadHandler = null;
-			}
-
 			m_RequestOperation = null;
 #if ENABLE_ADDRESSABLE_PROFILER
             RemoveBundleFromProfiler();

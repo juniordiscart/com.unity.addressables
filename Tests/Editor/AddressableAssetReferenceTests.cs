@@ -168,6 +168,19 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void AssetReferenceAtlasedSprite_SetEditorAsset_CorrectlySetsAtlas()
+        {
+            AssetReferenceAtlasedSprite atlasedSpriteAssetReference = new AssetReferenceAtlasedSprite("badguid");
+            var atlas = AssetDatabase.LoadAssetAtPath(m_SpriteAtlasPath, typeof(SpriteAtlas));
+            atlasedSpriteAssetReference.SetEditorAsset(atlas);
+            Assert.AreEqual(atlas, atlasedSpriteAssetReference.editorAsset, "When using an AssetReferenceAtlasedSprite, the editor asset can only be set to a SpriteAtlas.");
+
+            atlasedSpriteAssetReference.CachedAsset = null;
+            Assert.AreEqual(atlas, ((AssetReference)atlasedSpriteAssetReference).editorAsset,
+                "When an AssetReferenceSprite has its editor asset set to a SpriteAtlas, the base class editor asset accessor should be a SpriteAtlas.");
+        }
+
+        [Test]
         public void AssetReferenceEditorAssetForSubObject_DifferentType()
         {
             var guid = AssetDatabase.AssetPathToGUID(m_ScriptableObjectPath);

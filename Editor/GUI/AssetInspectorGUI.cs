@@ -18,6 +18,12 @@ namespace UnityEditor.AddressableAssets.GUI
 
         static GUIContent s_SystemSettingsGUIContent = new GUIContent("System Settings", "View Addressable Asset Settings");
 
+        static GUIContent s_GroupsDropdownLabelContent = new GUIContent("Group", "The Addressable Group that this asset is assigned to.");
+
+        static string s_GroupsDropdownControlName = nameof(AddressableAssetInspectorGUI) + ".GroupsPopupField";
+        static Texture s_GroupsCaretTexture = null;
+        static Texture s_FolderTexture = null;
+
         static AddressableAssetInspectorGUI()
         {
             s_ToggleMixed = null;
@@ -220,6 +226,10 @@ namespace UnityEditor.AddressableAssets.GUI
 
                     DrawSelectEntriesButton(targetInfos);
                     GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    DrawGroupsDropdown(aaSettings, targetInfos);
+                    GUILayout.EndHorizontal();
                 }
                 else // mixed addressable selected
                 {
@@ -332,6 +342,130 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             UnityEngine.GUI.enabled = prevGuiEnabled;
+        }
+
+        static void DrawGroupsDropdown(AddressableAssetSettings settings, List<TargetInfo> targets)
+        {
+            bool canEditGroup = true;
+            bool mixedGroups = false;
+            AddressableAssetGroup displayGroup = null;
+            var entries = new List<AddressableAssetEntry>();
+            foreach (TargetInfo info in targets)
+            {
+                AddressableAssetEntry entry = info.MainAssetEntry;
+                if (entry == null)
+                {
+                    canEditGroup = false;
+                }
+                else
+                {
+                    entries.Add(entry);
+                    if (entry.ReadOnly || entry.parentGroup.ReadOnly)
+                    {
+                        canEditGroup = false;
+                    }
+
+                    if (displayGroup == null)
+                        displayGroup = entry.parentGroup;
+                    else if (entry.parentGroup != displayGroup)
+                    {
+                        mixedGroups = true;
+                    }
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(!canEditGroup))
+            {
+                GUILayout.Label(s_GroupsDropdownLabelContent);
+                if (mixedGroups)
+                    EditorGUI.showMixedValue = true;
+
+                UnityEngine.GUI.SetNextControlName(s_GroupsDropdownControlName);
+
+                float iconHeight = EditorGUIUtility.singleLineHeight - EditorGUIUtility.standardVerticalSpacing * 3;
+                Vector2 iconSize = EditorGUIUtility.GetIconSize();
+                EditorGUIUtility.SetIconSize(new Vector2(iconHeight, iconHeight));
+                if (s_FolderTexture == null)
+                {
+                    s_FolderTexture = EditorGUIUtility.IconContent("Folder Icon").image;
+                }
+
+                GUIContent groupGUIContent = new GUIContent(displayGroup.Name, s_FolderTexture);
+                Rect groupFieldRect = GUILayoutUtility.GetRect(groupGUIContent, EditorStyles.objectField);
+                EditorGUI.DropdownButton(groupFieldRect, groupGUIContent, FocusType.Keyboard, EditorStyles.objectField);
+                EditorGUIUtility.SetIconSize(new Vector2(iconSize.x, iconSize.y));
+
+                if (mixedGroups)
+                    EditorGUI.showMixedValue = false;
+
+                float pickerWidth = 12f;
+                Rect groupFieldRectNoPicker = new Rect(groupFieldRect);
+                groupFieldRectNoPicker.xMax = groupFieldRect.xMax - pickerWidth * 1.33f;
+
+                Rect pickerRect = new Rect(groupFieldRectNoPicker.xMax, groupFieldRectNoPicker.y, pickerWidth, groupFieldRectNoPicker.height);
+                bool isPickerPressed = Event.current.clickCount == 1 && pickerRect.Contains(Event.current.mousePosition);
+
+                DrawCaret(pickerRect);
+
+                if (canEditGroup)
+                {
+                    bool isEnterKeyPressed = Event.current.type == EventType.KeyDown && Event.current.isKey && (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return);
+                    bool enterKeyRequestsPopup = isEnterKeyPressed && (s_GroupsDropdownControlName == UnityEngine.GUI.GetNameOfFocusedControl());
+                    if (isPickerPressed || enterKeyRequestsPopup)
+                    {
+                        EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group").Initialize(settings, entries, !mixedGroups, true, Event.current.mousePosition, AddressableAssetUtility.MoveEntriesToGroup);
+                    }
+
+                    bool isDragging = Event.current.type == EventType.DragUpdated && groupFieldRectNoPicker.Contains(Event.current.mousePosition);
+                    bool isDropping = Event.current.type == EventType.DragPerform && groupFieldRectNoPicker.Contains(Event.current.mousePosition);
+                    HandleDragAndDrop(settings, entries, isDragging, isDropping);
+                }
+
+                if (!mixedGroups)
+                {
+                    if (Event.current.clickCount == 1 && groupFieldRectNoPicker.Contains(Event.current.mousePosition))
+                    {
+                        UnityEngine.GUI.FocusControl(s_GroupsDropdownControlName);
+                        AddressableAssetsWindow.Init();
+                        var window = EditorWindow.GetWindow<AddressableAssetsWindow>();
+                        window.SelectGroupInGroupEditor(displayGroup, false);
+                    }
+
+                    if (Event.current.clickCount == 2 && groupFieldRectNoPicker.Contains(Event.current.mousePosition))
+                    {
+                        AddressableAssetsWindow.Init();
+                        var window = EditorWindow.GetWindow<AddressableAssetsWindow>();
+                        window.SelectGroupInGroupEditor(displayGroup, true);
+                    }
+                }
+            }
+        }
+
+        static void DrawCaret(Rect pickerRect)
+        {
+            if (s_GroupsCaretTexture == null)
+            {
+                s_GroupsCaretTexture = EditorGUIUtility.IconContent("d_pick").image;
+            }
+            UnityEngine.GUI.DrawTexture(pickerRect, s_GroupsCaretTexture, ScaleMode.ScaleToFit);
+        }
+
+        static void HandleDragAndDrop(AddressableAssetSettings settings, List<AddressableAssetEntry> aaEntries, bool isDragging, bool isDropping)
+        {
+            var groupItems = DragAndDrop.GetGenericData("AssetEntryTreeViewItem") as List<AssetEntryTreeViewItem>;
+            if (isDragging)
+            {
+                bool canDragGroup = groupItems != null && groupItems.Count == 1 && groupItems[0].IsGroup && !groupItems[0].group.ReadOnly;
+                DragAndDrop.visualMode = canDragGroup ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
+            }
+            else if (isDropping)
+            {
+                if (groupItems != null)
+                {
+                    var group = groupItems[0].group;
+                    AddressableAssetUtility.MoveEntriesToGroup(settings, aaEntries, group);
+                }
+            }
         }
 
         internal class TargetInfo

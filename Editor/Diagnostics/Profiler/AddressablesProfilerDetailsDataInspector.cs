@@ -214,7 +214,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCaching);
 #else
                 if (bundleData.CachingEnabled)
-                    m_HelpManager.MakeHelp(DownloadWithoutCachingEnabled);
+                    m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCachingEnabled);
 #endif
                 if (bundleData.CachingEnabled && !bundleData.CheckSumEnabled)
                     m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCRC, new List<ContentData>(), "editor/groups/ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");

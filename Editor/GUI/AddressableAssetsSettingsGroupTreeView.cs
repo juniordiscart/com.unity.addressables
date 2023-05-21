@@ -934,6 +934,7 @@ namespace UnityEditor.AddressableAssets.GUI
 					}
 
 					hasReadOnly |= item.entry.ReadOnly;
+                    hasReadOnly |= item.entry.parentGroup.ReadOnly;
 					isEntry = true;
 					resourceCount += item.entry.IsInResources ? 1 : 0;
 					isMissingPath |= string.IsNullOrEmpty(item.entry.AssetPath);
@@ -950,11 +951,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			GenericMenu menu = new GenericMenu();
 			if (isResourcesHeader)
 			{
-				foreach (var g in m_Editor.settings.groups)
-				{
-					if (!g.ReadOnly)
-						menu.AddItem(new GUIContent("Move ALL Resources to group/" + g.Name), false, MoveAllResourcesToGroup, g);
-				}
+                menu.AddItem(new GUIContent("Move All Resources to Group..."), false, MoveAllResourcesToGroup, Event.current);
 			}
 			else if (!hasReadOnly)
 			{
@@ -979,19 +976,8 @@ namespace UnityEditor.AddressableAssets.GUI
 				}
 				else if (isEntry)
 				{
-					foreach (var g in m_Editor.settings.groups)
-					{
-						if (g != null && !g.ReadOnly)
-							menu.AddItem(new GUIContent("Move Addressables to Group/" + g.Name), false, MoveEntriesToGroup, g);
-					}
-
-					var groups = new HashSet<AddressableAssetGroup>();
-					foreach (var n in selectedNodes)
-						groups.Add(n.entry.parentGroup);
-					foreach (var g in groups)
-						menu.AddItem(new GUIContent("Move Addressables to New Group/With settings from: " + g.Name), false, MoveEntriesToNewGroup,
-							new KeyValuePair<string, AddressableAssetGroup>(AddressableAssetSettings.kNewGroupName, g));
-
+                    menu.AddItem(new GUIContent("Move Addressables to Group..."), false, MoveEntriesToGroup, new Tuple<Event, List<AssetEntryTreeViewItem>>(Event.current, selectedNodes));
+                    menu.AddItem(new GUIContent("Move Addressables to New Group with settings from..."), false, MoveEntriesToNewGroupWithSettings, new Tuple<Event, List<AssetEntryTreeViewItem>>(Event.current, selectedNodes));
 
 					menu.AddItem(new GUIContent("Remove Addressables"), false, RemoveEntry, selectedNodes);
 					menu.AddItem(new GUIContent("Simplify Addressable Names"), false, SimplifyAddresses, selectedNodes);
@@ -1016,19 +1002,7 @@ namespace UnityEditor.AddressableAssets.GUI
 				{
 					if (resourceCount == selectedNodes.Count)
 					{
-						foreach (var g in m_Editor.settings.groups)
-						{
-							if (!g.ReadOnly)
-								menu.AddItem(new GUIContent("Move Resources to group/" + g.Name), false, MoveResourcesToGroup, g);
-						}
-					}
-					else if (resourceCount == 0)
-					{
-						foreach (var g in m_Editor.settings.groups)
-						{
-							if (!g.ReadOnly)
-								menu.AddItem(new GUIContent("Move Addressables to group/" + g.Name), false, MoveEntriesToGroup, g);
-						}
+                            menu.AddItem(new GUIContent("Move Resources to Group..."), false, MoveResourcesToGroup, new Tuple<Event, List<AssetEntryTreeViewItem>>(Event.current, selectedNodes));
 					}
                     }
 
@@ -1077,12 +1051,29 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		void MoveAllResourcesToGroup(object context)
 		{
+            var mouseEvent = context as Event;
+            var entries = new List<AddressableAssetEntry>();
+
 			var targetGroup = context as AddressableAssetGroup;
 			var firstId = GetSelection().First();
 			var item = FindItemInVisibleRows(firstId);
 			if (item != null && item.children != null)
 			{
-				SafeMoveResourcesToGroup(targetGroup, item.children.ConvertAll(instance => (AssetEntryTreeViewItem)instance));
+                foreach(AssetEntryTreeViewItem child in item.children)
+                {
+                    entries.Add(child.entry);
+                }
+            }
+            else
+                Debug.LogWarning("No Resources found to move");
+
+            if (entries.Count > 0)
+            {
+                var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
+                if (mouseEvent == null)
+                    window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, SafeMoveResourcesToGroup);
+                else
+                    window.Initialize(m_Editor.settings, entries, false, false, mouseEvent.mousePosition, SafeMoveResourcesToGroup);
 			}
 			else
 				Debug.LogWarning("No Resources found to move");
@@ -1090,54 +1081,87 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		void MoveResourcesToGroup(object context)
 		{
-			var targetGroup = context as AddressableAssetGroup;
-			var itemList = new List<AssetEntryTreeViewItem>();
-			foreach (var nodeId in GetSelection())
+            var pair = context as Tuple<Event, List<AssetEntryTreeViewItem>>;
+            var entries = new List<AddressableAssetEntry>();
+            foreach (AssetEntryTreeViewItem item in pair.Item2)
 			{
-				var item = FindItemInVisibleRows(nodeId);
-				if (item != null)
-					itemList.Add(item);
+                if (item.entry != null)
+                    entries.Add(item.entry);
 			}
 
-			SafeMoveResourcesToGroup(targetGroup, itemList);
+            var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
+            if (pair.Item1 == null)
+                window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, SafeMoveResourcesToGroup);
+            else
+                window.Initialize(m_Editor.settings, entries, false, false, pair.Item1.mousePosition, SafeMoveResourcesToGroup);
 		}
 
-		bool SafeMoveResourcesToGroup(AddressableAssetGroup targetGroup, List<AssetEntryTreeViewItem> itemList)
+        void SafeMoveResourcesToGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
 		{
 			var guids = new List<string>();
 			var paths = new List<string>();
-			foreach (AssetEntryTreeViewItem child in itemList)
+            foreach (AddressableAssetEntry entry in entries)
 			{
-				if (child != null)
+                if (entry != null)
 				{
-					guids.Add(child.entry.guid);
-					paths.Add(child.entry.AssetPath);
+                    guids.Add(entry.guid);
+                    paths.Add(entry.AssetPath);
 				}
 			}
+            AddressableAssetUtility.SafeMoveResourcesToGroup(settings, group, paths, guids);
+        }
 
-			return AddressableAssetUtility.SafeMoveResourcesToGroup(m_Editor.settings, targetGroup, paths, guids);
+        void MoveEntriesToNewGroupWithSettings(object context)
+        {
+            var pair = context as Tuple<Event, List<AssetEntryTreeViewItem>>;
+            var entries = new List<AddressableAssetEntry>();
+            foreach(AssetEntryTreeViewItem item in pair.Item2)
+            {
+                if (item.entry != null)
+                    entries.Add(item.entry);
 		}
 
-		void MoveEntriesToNewGroup(object context)
+            var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
+            if (pair.Item1 == null)
+                window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, MoveEntriesToNewGroupWithSettings);
+            else
+                window.Initialize(m_Editor.settings, entries, false, false, pair.Item1.mousePosition, MoveEntriesToNewGroupWithSettings);
+        }
+
+        void MoveEntriesToNewGroupWithSettings(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
 		{
-			var k = (KeyValuePair<string, AddressableAssetGroup>)context;
-			var g = m_Editor.settings.CreateGroup(k.Key, false, false, true, k.Value.Schemas);
-			MoveEntriesToGroup(g);
+            var newGroup = settings.CreateGroup(AddressableAssetSettings.kNewGroupName, false, false, true, group.Schemas);
+            foreach (AddressableAssetEntry entry in entries)
+            {
+                settings.MoveEntry(entry, newGroup, entry.ReadOnly, true);
+            }
 		}
 
 		void MoveEntriesToGroup(object context)
 		{
-			var targetGroup = context as AddressableAssetGroup;
+            var pair = context as Tuple<Event, List<AssetEntryTreeViewItem>>;
 			var entries = new List<AddressableAssetEntry>();
-			foreach (var nodeId in GetSelection())
+            bool mixedGroups = false;
+            AddressableAssetGroup displayGroup = null;
+            foreach (AssetEntryTreeViewItem item in pair.Item2)
+            {
+                if (item.entry != null)
 			{
-				var item = FindItemInVisibleRows(nodeId);
-				if (item != null)
 					entries.Add(item.entry);
+                    if (displayGroup == null)
+                        displayGroup = item.entry.parentGroup;
+                    else if (item.entry.parentGroup != displayGroup)
+                    {
+                        mixedGroups = true;
+                    }
+                }
 			}
 
-			if (entries.Count > 0)
-				m_Editor.settings.MoveEntries(entries, targetGroup);
+            var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
+            if (pair.Item1 == null)
+                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, Vector2.zero, AddressableAssetUtility.MoveEntriesToGroup);
+            else
+                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, pair.Item1.mousePosition, AddressableAssetUtility.MoveEntriesToGroup);
 		}
 
 		internal void CreateNewGroup(object context)
@@ -1380,7 +1404,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			foreach (var id in args.draggedItemIDs)
 			{
 				var item = FindItemInVisibleRows(id);
-				if (item.entry != null || (item.parent == rootItem && item.@group != null))
+                if (item.entry != null || item.@group != null)
 					selectedNodes.Add(item);
 			}
 
@@ -1420,11 +1444,13 @@ namespace UnityEditor.AddressableAssets.GUI
 			if (draggedNodes != null && draggedNodes.Count > 0)
 			{
 				visualMode = DragAndDropVisualMode.Copy;
-				bool isDraggingGroup = draggedNodes.First().parent == rootItem;
+                AssetEntryTreeViewItem firstItem = draggedNodes.First();
+                bool isDraggingGroup = firstItem.IsGroup;
+                bool isDraggingNestedGroup = isDraggingGroup && firstItem.parent != rootItem;
 				bool dropParentIsRoot = args.parentItem == rootItem || args.parentItem == null;
 				bool parentGroupIsReadOnly = target?.@group != null && target.@group.ReadOnly;
 
-				if (isDraggingGroup && !dropParentIsRoot || !isDraggingGroup && dropParentIsRoot || parentGroupIsReadOnly)
+                if (isDraggingNestedGroup || isDraggingGroup && !dropParentIsRoot || !isDraggingGroup && dropParentIsRoot || parentGroupIsReadOnly)
 					visualMode = DragAndDropVisualMode.Rejected;
 
 				if (args.performDrop)
@@ -1461,20 +1487,24 @@ namespace UnityEditor.AddressableAssets.GUI
 
 						if (parent != null)
 						{
-							if (draggedNodes.First().entry.IsInResources)
+                            var entries = new List<AddressableAssetEntry>();
+                            foreach (AssetEntryTreeViewItem node in draggedNodes)
 							{
-								SafeMoveResourcesToGroup(parent, draggedNodes);
+                                entries.Add(node.entry);
+                            }
+
+                            if (entries.First().IsInResources)
+                            {
+                                SafeMoveResourcesToGroup(m_Editor.settings, entries, parent);
 							}
 							else
 							{
-								var entries = new List<AddressableAssetEntry>();
-								HashSet<AddressableAssetGroup> modifiedGroups = new HashSet<AddressableAssetGroup>();
+                                var modifiedGroups = new HashSet<AddressableAssetGroup>();
 								modifiedGroups.Add(parent);
-								foreach (var node in draggedNodes)
+                                foreach (AddressableAssetEntry entry in entries)
 								{
-									modifiedGroups.Add(node.entry.parentGroup);
-									m_Editor.settings.MoveEntry(node.entry, parent, false, false);
-									entries.Add(node.entry);
+                                    modifiedGroups.Add(entry.parentGroup);
+                                    m_Editor.settings.MoveEntry(entry, parent, false, false);
 								}
 
 								foreach (AddressableAssetGroup modifiedGroup in modifiedGroups)

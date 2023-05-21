@@ -573,7 +573,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             genericResult.LocationCount = aaContext.locations.Count;
             genericResult.OutputPath = settingsPath;
 
-            if (ProjectConfigData.GenerateBuildLayout)
+            if (ProjectConfigData.GenerateBuildLayout && extractData.BuildContext != null)
             {
                 using (var progressTracker = new UnityEditor.Build.Pipeline.Utilities.ProgressTracker())
                 {

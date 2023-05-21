@@ -60,6 +60,13 @@ namespace UnityEditor.AddressableAssets.GUI
 			m_GroupEditor.SelectEntries(entries);
 		}
 
+        internal void SelectGroupInGroupEditor(AddressableAssetGroup group, bool fireSelectionChanged)
+        {
+            if (m_GroupEditor == null)
+                m_GroupEditor = new AddressableAssetsSettingsGroupEditor(this);
+            m_GroupEditor.SelectGroup(group, fireSelectionChanged);
+        }
+
 		public void OnEnable()
 		{
 			AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow, true);

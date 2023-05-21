@@ -573,6 +573,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (entry.guid == AddressableAssetEntry.EditorSceneListName || entry.guid == AddressableAssetEntry.ResourcesName)
                     continue;
 
+                processed.Add(path);
                 var reference = new ImplicitAssetEntry()
                 {
                     address = entry.address,

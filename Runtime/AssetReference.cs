@@ -241,6 +241,26 @@ namespace UnityEngine.AddressableAssets
         {
         }
 
+#if UNITY_EDITOR
+        internal override Object GetEditorAssetInternal()
+        {
+            if (CachedAsset != null || string.IsNullOrEmpty(m_AssetGUID))
+                return CachedAsset;
+
+            var assetPath = AssetDatabase.GUIDToAssetPath(m_AssetGUID);
+            Object asset = AssetDatabase.LoadAssetAtPath(assetPath, typeof(SpriteAtlas));
+
+            if (asset == null)
+                Debug.LogWarning($"Assigned editorAsset does not match type {typeof(SpriteAtlas)}. EditorAsset will be null.");
+            return CachedAsset = asset;
+        }
+
+        internal override bool SetEditorAssetInternal(Object value)
+        {
+            return OnSetEditorAsset(value, typeof(SpriteAtlas));
+        }
+#endif
+
         /// <inheritdoc/>
         public override bool ValidateAsset(Object obj)
         {

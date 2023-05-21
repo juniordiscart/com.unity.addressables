@@ -159,6 +159,9 @@ namespace UnityEngine.ResourceManagement.Util
                 Error == "Header name contains invalid characters" ||
                 Error == "Header value contains invalid characters" ||
                 Error == "Cannot override system-specified headers"
+#if UNITY_2022_1_OR_NEWER
+                || Error == "Insecure connection not allowed"
+#endif
                )
                 return false;
 

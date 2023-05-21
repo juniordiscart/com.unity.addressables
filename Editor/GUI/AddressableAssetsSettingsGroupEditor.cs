@@ -168,6 +168,44 @@ namespace UnityEditor.AddressableAssets.GUI
 			m_EntryTree.SetSelection(selectedIDs);
 		}
 
+        public void SelectGroup(AddressableAssetGroup group, bool fireSelectionChanged)
+        {
+            Stack<AssetEntryTreeViewItem> items = new Stack<AssetEntryTreeViewItem>();
+
+            if (m_EntryTree == null || m_EntryTree.Root == null)
+                InitialiseEntryTree();
+
+            foreach (TreeViewItem item in m_EntryTree.Root.children)
+            {
+                if (item is AssetEntryTreeViewItem i)
+                    items.Push(i);
+            }
+
+            while (items.Count > 0)
+            {
+                AssetEntryTreeViewItem item = items.Pop();
+
+                if (item.IsGroup && item.group.Guid == group.Guid)
+                {
+                    m_EntryTree.FrameItem(item.id);
+                    var selectedIds = new List<int>(){ item.id };
+                    if (fireSelectionChanged)
+                        m_EntryTree.SetSelection(selectedIds, TreeViewSelectionOptions.FireSelectionChanged);
+                    else
+                        m_EntryTree.SetSelection(selectedIds);
+                    return;
+                }
+                else if (!string.IsNullOrEmpty(item.folderPath) && item.hasChildren)
+                {
+                    foreach (TreeViewItem child in item.children)
+                    {
+                        if (child is AssetEntryTreeViewItem c)
+                            items.Push(c);
+                    }
+                }
+            }
+        }
+
 		void OnSettingsModification(AddressableAssetSettings s, AddressableAssetSettings.ModificationEvent e, object o)
 		{
 			if (m_EntryTree == null)

@@ -745,5 +745,16 @@ namespace UnityEditor.AddressableAssets.Settings
                 return (m_SortedInvocationList != null ? m_SortedInvocationList.GetHashCode() : 0);
             }
         }
+
+        internal static void MoveEntriesToGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
+        {
+            foreach (AddressableAssetEntry entry in entries)
+            {
+                if (entry.parentGroup != group)
+                {
+                    settings.MoveEntry(entry, group, entry.ReadOnly, true);
+                }
+            }
+        }
     }
 }

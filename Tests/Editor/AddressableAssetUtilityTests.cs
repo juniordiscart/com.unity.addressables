@@ -472,5 +472,33 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             calledOrder.Add(2);
         }
+
+        [Test]
+        public void CanMoveEntriesToGroup()
+        {
+            string guid1 = "guid1";
+            string guid2 = "guid2";
+            string guid3 = "guid3";
+            var oldGroup = Settings.CreateGroup("MoveEntriesToGroup_Old", false, false, true, new List<AddressableAssetGroupSchema>());
+            var newGroup = Settings.CreateGroup("MoveEntriesToGroup_New", false, false, true, new List<AddressableAssetGroupSchema>());
+
+            var entries = new List<AddressableAssetEntry>();
+            entries.Add(Settings.CreateEntry(guid1, "addr1", oldGroup, false));
+            entries.Add(Settings.CreateEntry(guid2, "addr2", oldGroup, false));
+            entries.Add(Settings.CreateEntry(guid3, "addr3", oldGroup, false));
+
+            AddressableAssetUtility.MoveEntriesToGroup(Settings, entries, newGroup);
+
+            Assert.IsTrue(oldGroup.GetAssetEntry(guid1) == null);
+            Assert.IsTrue(oldGroup.GetAssetEntry(guid2) == null);
+            Assert.IsTrue(oldGroup.GetAssetEntry(guid3) == null);
+
+            Assert.IsTrue(newGroup.GetAssetEntry(guid1) != null);
+            Assert.IsTrue(newGroup.GetAssetEntry(guid2) != null);
+            Assert.IsTrue(newGroup.GetAssetEntry(guid3) != null);
+
+            Settings.RemoveGroup(oldGroup);
+            Settings.RemoveGroup(newGroup);
+        }
     }
 }
