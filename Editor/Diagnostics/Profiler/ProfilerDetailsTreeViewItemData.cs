@@ -211,6 +211,16 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         public readonly BuildLayout.ExplicitAsset ReportExplicitData;
         public readonly BuildLayout.DataFromOtherAsset ReportImplicitData;
 
+        public List<BuildLayout.ObjectData> ReportObjects
+        {
+            get
+            {
+                if (ReportExplicitData != null)
+                    return ReportExplicitData.Objects;
+                return ReportImplicitData.Objects;
+            }
+        }
+
          // if empty = all
         public HashSet<int> LoadedObjectIndices = new HashSet<int>();
         public Dictionary<long, int> LocalIdToChildIndex = new Dictionary<long, int>();

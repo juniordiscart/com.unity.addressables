@@ -158,12 +158,13 @@ public class RevertUnchangedAssetsToPreviousAssetState
             if (entry.parentGroup.Guid != previousAssetState.groupGuid)
                 continue;
 
+            var hashChanged = AssetDatabase.GetAssetDependencyHash(entry.AssetPath) != previousAssetState.asset.hash;
             //If the asset hash has changed and the group is not a static content update group we don't want to revert it to its previous state
-            if (AssetDatabase.GetAssetDependencyHash(entry.AssetPath) != previousAssetState.asset.hash && !groupIsStaticContentGroup)
+            if (hashChanged && !groupIsStaticContentGroup)
                 continue;
 
             //If the previous asset state has the same bundle file id as the current build we don't want to revert it to its previous state
-            if (catalogBundleEntry.InternalId == previousAssetState.bundleFileId)
+            if (!hashChanged && catalogBundleEntry.InternalId == previousAssetState.bundleFileId)
                 continue;
 
             var schema = group.GetSchema<BundledAssetGroupSchema>();
@@ -179,12 +180,13 @@ public class RevertUnchangedAssetsToPreviousAssetState
             }
 
             string previousBundlePath = BundleIdToBuildPath(previousAssetState.bundleFileId, loadPath, buildPath);
-            if (!File.Exists(previousBundlePath))
+            if (!File.Exists(previousBundlePath) || hashChanged && groupIsStaticContentGroup)
             {
                 //Logging this as a warning because users may choose to delete their bundles on disk which will trigger this state.
                 Addressables.LogWarning($"CachedAssetState found for {entry.AssetPath} but the previous bundle at {previousBundlePath} cannot be found. " +
                                         $"This will not affect loading the bundle in previously built players, but loading the missing bundle in Play Mode using the play mode script " +
-                                        $"\"Use Existing Build (requires built groups)\" will fail.");
+                                        $"\"Use Existing Build (requires built groups)\" will fail. This most often occurs because you are running a content update on a build where you " +
+                                        $"made changes to a group marked with \"Prevent Updates\"");
             }
 
             string builtBundlePath = BundleIdToBuildPath(contentUpdateContext.BundleToInternalBundleIdMap[fullInternalBundleName], loadPath, buildPath);

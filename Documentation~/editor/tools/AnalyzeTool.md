@@ -11,19 +11,19 @@ In the Editor, open the **Addressables Analyze** window (**Window** > **Asset Ma
 
 The Analyze window displays a list of Analyze rules, along with the following operations:
 
-![](images/addr_analyze_window.png)
+![](../../images/addr_analyze_window.png)
 
-![](images/A.png)<br/>Starts the analysis for any selected rules or their children.
+![](../../images/A.png)<br/>Starts the analysis for any selected rules or their children.
 
-![](images/B.png)<br/>Performs the fix action for any selected rules or their children (must be a Fixable rule).
+![](../../images/B.png)<br/>Performs the fix action for any selected rules or their children (must be a Fixable rule).
 
-![](images/C.png)<br/>Opens the clear options to clear the results for any selected rules or their children.
+![](../../images/C.png)<br/>Opens the clear options to clear the results for any selected rules or their children.
 
-![](images/D.png)<br/>Opens the options to import a saved analysis result or export results to disk.
+![](../../images/D.png)<br/>Opens the options to import a saved analysis result or export results to disk.
 
-![](images/E.png)<br/>Fixable rules are displayed under the "Fixable Rules" item.
+![](../../images/E.png)<br/>Fixable rules are displayed under the "Fixable Rules" item.
 
-![](images/F.png)<br/>unfixable rules are displayed under the "Unfixable Rules" item.
+![](../../images/F.png)<br/>unfixable rules are displayed under the "Unfixable Rules" item.
 
 ### The analyze operation
 The analyze operation gathers the information needed by the rule. Run this action on a rule or set of rules to gather data about the build, dependency maps, and more. Each rule must gather any required data and report it back as a list of [AnalyzeResult] objects.

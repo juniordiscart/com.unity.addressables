@@ -9,15 +9,16 @@ namespace UnityEngine.ResourceManagement.Profiling
     [System.Flags]
     internal enum ContentStatus
     {
-        // keep 8 and 32 reserved for potential equality check additional entries later
         None = 0,
-        Released = 1,
+        // 1
         Queue = 2,
         Downloading = 4,
         // 8
-        Loading = 16,
+        Released = 16,
         // 32
-        Active = 64,
+        Loading = 64,
+        // 128
+        Active = 256,
     }
 
     [System.Flags]

@@ -80,7 +80,6 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         private List<MissingReport> m_MissingReportElements = new List<MissingReport>();
 
         private List<GroupData> m_RootGroupsContentData = null;
-        private List<AssetData> m_AllAssetData = null;
 
         public AddressablesProfilerDetailsView(ProfilerWindow profilerWindow)
         {
@@ -416,76 +415,12 @@ namespace UnityEditor.AddressableAssets.Diagnostics
 
         private void GenerateContentDataForFrame(FrameData frameData)
         {
-            if (m_AllAssetData != null)
-                m_AllAssetData.Clear();
-            else
-                m_AllAssetData = new List<AssetData>(512);
-
             Dictionary<BuildLayout.Bundle, BundleData> reportBundleToBundleData = new Dictionary<BuildLayout.Bundle, BundleData>();
             List<BundleData> bundleContent = GenerateBundleRoots(frameData.BundleValues, reportBundleToBundleData);
             GenerateAssetData(bundleContent, frameData.AssetValues, frameData.SceneValues);
-            CalculateUsageState(bundleContent);
             List<GroupData> groupContent = CollectGroups(bundleContent);
             m_RootGroupsContentData = groupContent;
         }
-
-        private void CalculateUsageState(List<BundleData> bundleContent)
-        {
-            HashSet<ContentData> visited = new HashSet<ContentData>(128);
-            foreach (BundleData bundleData in bundleContent)
-            {
-                foreach (ContentData bundleDataChild in bundleData.Children)
-                {
-                    if (visited.Contains(bundleDataChild))
-                        continue;
-                    CheckForStatus(visited, bundleDataChild);
-                }
-            }
-        }
-
-        private static ContentStatus CheckForStatus(HashSet<ContentData> visited, ContentData data)
-        {
-            if (data is not AssetData obj)
-                return ContentStatus.None;
-            if (visited.Contains(obj))
-                return obj.Status;
-            visited.Add(data);
-
-            if (obj.AddressableHandles > 0)
-            {
-                // directly managed
-                return obj.Status;
-            }
-            else if (obj.ReferencesToThis.Count == 0)
-            {
-                obj.Status = ContentStatus.Released; // or none?
-            }
-            else
-            {
-                bool loading = false;
-                // if any other the references to this are in use then this is, else this not in use
-                foreach (ContentData refTo in obj.ReferencesToThis)
-                {
-                    var refSt = CheckForStatus(visited, refTo);
-                    if (refSt == ContentStatus.Active)
-                    {
-                        obj.Status = ContentStatus.Active;
-                        return obj.Status;
-                    }
-
-                    if (refSt == ContentStatus.Loading)
-                        loading = true;
-                }
-
-                if (loading)
-                    obj.Status = ContentStatus.Loading;
-                else
-                    obj.Status = ContentStatus.Released;
-            }
-
-            return obj.Status;
-        }
-
 
         List<BundleData> GenerateBundleRoots(in NativeArray<BundleFrameData> bundleValues, in Dictionary<BuildLayout.Bundle, BundleData> reportBundleToBundleData)
         {
@@ -518,7 +453,6 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 if (assetData != null)
                 {
                     addressableLoadedAssets.Add(assetData);
-                    m_AllAssetData.Add(assetData);
                 }
             }
             foreach (AssetFrameData frameData in sceneValues)
@@ -527,14 +461,15 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 if (assetData != null)
                 {
                     addressableLoadedAssets.Add(assetData);
-                    m_AllAssetData.Add(assetData);
                 }
             }
 
-            HashSet<BuildLayout.ObjectReference> processedObjects = new HashSet<BuildLayout.ObjectReference>();
-            foreach (AssetData assetData in addressableLoadedAssets)
-                ProcessObjectReferencesForAsset(assetData, bundleCodeToData, processedObjects);
+            ProcessAssetReferences(addressableLoadedAssets, bundleCodeToData);
+            GatherNonLoadedAssets(bundleDatas);
+        }
 
+        private static void GatherNonLoadedAssets(List<BundleData> bundleDatas)
+        {
             foreach (BundleData bundleData in bundleDatas)
             {
                 HashSet<string> activeGuids = new HashSet<string>();
@@ -578,27 +513,47 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             return assetData;
         }
 
-        private void ProcessObjectReferencesForAsset(AssetData assetData, Dictionary<int, BundleData> bundleCodeToData, HashSet<BuildLayout.ObjectReference> processedObjectReferences)
+        private void ProcessAssetReferences(List<AssetData> activeAddressableAssets, Dictionary<int, BundleData> bundleCodeToData)
         {
-            BuildLayout.ExplicitAsset explicitAsset = assetData.ReportExplicitData;
-            BundleData parentBundle = bundleCodeToData[((BundleData)assetData.Parent).BundleCode];
-            foreach (BuildLayout.ObjectData objectData in explicitAsset.Objects)
+            // instead get a stack
+            Stack<AssetData> assetsToBeProcessed = new Stack<AssetData>(activeAddressableAssets);
+            HashSet<AssetData> processedAssets = new HashSet<AssetData>();
+            HashSet<BuildLayout.ObjectReference> processedObjectReferences = new HashSet<BuildLayout.ObjectReference>();
+
+            while (assetsToBeProcessed.Count > 0)
             {
-                ObjectData objData = assetData.GetOrCreateObjectData(objectData);
-                objData.Status = assetData.Status;
-                foreach (BuildLayout.ObjectReference objectReference in objectData.References)
+                AssetData assetData = assetsToBeProcessed.Pop();
+                if(!processedAssets.Add(assetData))
+                    continue; // not needed
+
+                BundleData parentBundle = bundleCodeToData[((BundleData)assetData.Parent).BundleCode];
+                foreach (BuildLayout.ObjectData objectData in assetData.ReportObjects)
                 {
-                    if (processedObjectReferences.Add(objectReference))
+                    // get or create object for self, this may have already been made from a reference
+                    ObjectData objData = assetData.GetOrCreateObjectData(objectData);
+
+                    if (assetData.Status < ContentStatus.Active || activeAddressableAssets.Contains(assetData))
+                        objData.Status = assetData.Status;
+                    else if (objData.Status < ContentStatus.Released)
+                        objData.Status = ContentStatus.Released;
+
+                    foreach (BuildLayout.ObjectReference objectReference in objectData.References)
                     {
-                        ProcessReference(assetData, objData, objectReference, parentBundle, bundleCodeToData, processedObjectReferences);
+                        if (processedObjectReferences.Add(objectReference))
+                        {
+                            AssetData appendAsset = ProcessReference(assetData, objData, objectReference, parentBundle, bundleCodeToData);
+                            if (appendAsset != null && !processedAssets.Contains(appendAsset) && !assetsToBeProcessed.Contains(appendAsset))
+                            {
+                                assetsToBeProcessed.Push(appendAsset);
+                            }
+                        }
                     }
                 }
             }
         }
 
-        private void ProcessReference(AssetData referencingAssetData, ObjectData referencingObjectData, BuildLayout.ObjectReference objectReference,
-            BundleData parentBundle, Dictionary<int, BundleData> bundleCodeToData,
-            HashSet<BuildLayout.ObjectReference> processedObjectReferences)
+        private AssetData ProcessReference(AssetData referencingAssetData, ObjectData referencingObjectData,
+            BuildLayout.ObjectReference objectReference, BundleData parentBundle, Dictionary<int, BundleData> bundleCodeToData)
         {
             BuildLayout.File file = referencingAssetData.IsImplicit ? referencingAssetData.ReportImplicitData.File : referencingAssetData.ReportExplicitData.File;
             BundleData bundleContainingReferencedObj = parentBundle;
@@ -606,9 +561,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             int assetId = objectReference.AssetId;
             if (assetId < file.OtherAssets.Count)
             {
-                BuildLayout.DataFromOtherAsset asset = file.OtherAssets[assetId];
-                if (bundleContainingReferencedObj.GetOrCreateAssetData(asset, out referencedAssetData))
-                    m_AllAssetData.Add(referencedAssetData);
+                bundleContainingReferencedObj.GetOrCreateAssetData(file.OtherAssets[assetId], out referencedAssetData);
             }
             else
             {
@@ -629,11 +582,15 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     bundleContainingReferencedObj = bundleCodeToData[bundleCode];
                 }
 
-                if (bundleContainingReferencedObj.GetOrCreateAssetData(referencedReportAsset, out referencedAssetData))
-                    m_AllAssetData.Add(referencedAssetData);
+                bundleContainingReferencedObj.GetOrCreateAssetData(referencedReportAsset, out referencedAssetData);
             }
 
-            // push indices to ad.LoadedObjects
+            if (referencedAssetData == null)
+                return null;
+
+            if (referencedAssetData.Status < referencingObjectData.Status)
+                referencedAssetData.Status = referencingObjectData.Status;
+
             referencedAssetData.AddLoadedObjects(objectReference.ObjectIds);
             List<BuildLayout.ObjectData> layoutObjects = referencedAssetData.IsImplicit ?
                 referencedAssetData.ReportImplicitData.Objects : referencedAssetData.ReportExplicitData.Objects;
@@ -650,19 +607,16 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     referencingObjectData.AddReferenceTo(referencedObjectData);
                     referencedObjectData.AddReferenceBy(referencingObjectData);
                 }
-
-                foreach (BuildLayout.ObjectReference refData in referencedLayoutObject.References)
-                {
-                    if (processedObjectReferences.Add(refData))
-                        ProcessReference(referencedAssetData, referencedObjectData, refData, bundleContainingReferencedObj, bundleCodeToData, processedObjectReferences);
-                }
             }
 
             if (referencedAssetData != referencingAssetData)
             {
                 referencingAssetData.AddReferenceTo(referencedAssetData);
                 referencedAssetData.AddReferenceBy(referencingAssetData);
+                return referencedAssetData;
             }
+
+            return null;
         }
 
         private static void GenerateBundleDependencies(List<BundleData> bundleDatas, in Dictionary<BuildLayout.Bundle, BundleData> reportBundleToBundleData)

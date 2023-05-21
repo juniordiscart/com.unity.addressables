@@ -891,7 +891,33 @@ namespace UnityEditor.AddressableAssets.Tests
 			var ops = RevertUnchangedAssetsToPreviousAssetState.DetermineRequiredAssetEntryUpdates(group, context);
 			LogAssert.Expect(LogType.Warning, $"CachedAssetState found for {assetEntry.AssetPath} but the previous bundle at {k_ContentUpdateTestCachedBundlePath} cannot be found. " +
 				$"This will not affect loading the bundle in previously built players, but loading the missing bundle in Play Mode using the play mode script " +
-				$"\"Use Existing Build (requires built groups)\" will fail.");
+                                              $"\"Use Existing Build (requires built groups)\" will fail. This most often occurs because you are running a content update on a build where you " +
+                                              $"made changes to a group marked with \"Prevent Updates\"");
+            Assert.IsTrue(ops.Count == 1);
+
+            Settings.RemoveGroup(group);
+        }
+
+        [Test]
+        public void DetermineRequiredAssetEntryUpdates_WithIdenticalBundleId_LogsWarningAndReturnsRevertOperation()
+        {
+            var group = Settings.CreateGroup("ContentUpdateTests", false, false, false, null, typeof(BundledAssetGroupSchema), typeof(ContentUpdateGroupSchema));
+            string contentUpdateTestGroupGuid = group.Guid;
+
+            group.GetSchema<ContentUpdateGroupSchema>().StaticContent = true;
+            var assetEntry = CreateAssetEntry(m_ContentUpdateTestAssetGUID, group);
+            assetEntry.m_cachedAssetPath = "path";
+            group.AddAssetEntry(assetEntry);
+
+            var context = GetContentUpdateContext(m_ContentUpdateTestAssetGUID, k_ContentUpdateTestCachedAssetHash,
+                k_ContentUpdateTestNewInternalBundleName, k_ContentUpdateTestNewBundleName,
+                k_ContentUpdateTestNewBundleName, contentUpdateTestGroupGuid, k_ContentUpdateTestFileName);
+
+            var ops = RevertUnchangedAssetsToPreviousAssetState.DetermineRequiredAssetEntryUpdates(group, context);
+            LogAssert.Expect(LogType.Warning, $"CachedAssetState found for {assetEntry.AssetPath} but the previous bundle at {k_ContentUpdateTestNewBundleName} cannot be found. " +
+                $"This will not affect loading the bundle in previously built players, but loading the missing bundle in Play Mode using the play mode script " +
+                $"\"Use Existing Build (requires built groups)\" will fail. This most often occurs because you are running a content update on a build where you " +
+                $"made changes to a group marked with \"Prevent Updates\"");
 			Assert.IsTrue(ops.Count == 1);
 
 			Settings.RemoveGroup(group);

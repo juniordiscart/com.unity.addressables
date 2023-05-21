@@ -88,8 +88,10 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             else if (contentData is ObjectData objectData)
             {
                 assetData = objectData.Parent as AssetData;
-                SetLabel(objectData.Name, assetData.IsImplicit,
-                    assetData.Status != ContentStatus.Released && assetData.Status != ContentStatus.None);
+                bool isEnabled = assetData.Status != ContentStatus.Released && assetData.Status != ContentStatus.None;
+                if (isEnabled && objectData.Status == ContentStatus.Released)
+                    isEnabled = false;
+                SetLabel(objectData.Name, assetData.IsImplicit, isEnabled);
 
                 if (objectData.AssetType == AssetType.Component)
                     SetIcon(objectData.ComponentName);

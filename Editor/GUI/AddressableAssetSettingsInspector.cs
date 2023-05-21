@@ -220,7 +220,7 @@ namespace UnityEditor.AddressableAssets.GUI
 #endif
 
 #if UNITY_2019_4_OR_NEWER
-        GUIContent m_CCDEnabled = new GUIContent("Enable Experimental CCD Features", "If enabled, will unlock experimental CCD features");
+        GUIContent m_CCDEnabled = new GUIContent("Enable CCD Features", "If enabled, will add options to upload bundles to CCD.");
 #endif
 #if UNITY_2021_2_OR_NEWER
         GUIContent m_BuildAddressablesWithPlayerBuild =

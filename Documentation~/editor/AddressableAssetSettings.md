@@ -4,9 +4,9 @@ uid: addressables-asset-settings
 
 # Addressable Asset Settings
 
-You can access the main Addressable system option on the __Addressable Asset Settings__ Inspector (menu: __Window > Asset Management > Addressables > Settings__). 
+You can access the main Addressable system option on the __Addressable Asset Settings__ Inspector (menu: __Window > Asset Management > Addressables > Settings__).
 
-The Addressables system stores the settings asset in the AddressableSettingsData folder (under your Project Assets folder). If this folder doesn't exist yet, you must initialize the Addressables system from the __Groups__ window  (menu: __Window > Asset Management > Addressables > Groups__). 
+The Addressables system stores the settings asset in the AddressableSettingsData folder (under your Project Assets folder). If this folder doesn't exist yet, you must initialize the Addressables system from the __Groups__ window  (menu: __Window > Asset Management > Addressables > Groups__).
 
 ![](../images/addr_settings_0.png)
 
@@ -17,7 +17,7 @@ The Inspector contains the following sections:
 * [Profile](#profile)
 * [Diagnostics]
 * [Catalog]
-* [Content Update]
+* [Update a Previous Build](#update-a-previous-build)
 * [Downloads]
 * [Build]
 * [Build and Play Mode Scripts]
@@ -30,7 +30,7 @@ You can click the __Manage Groups__ button to open the [Groups window].
 
 ![](../images/addr_settings_profiles.png)<br/>*Profile settings*
 
-Use the __Profile in Use__ list to choose the active profile. The active profile determines the value of variables used by the Addressables build scripts. 
+Use the __Profile in Use__ list to choose the active profile. The active profile determines the value of variables used by the Addressables build scripts.
 
 Click the __Manage Profiles__ button to open the __Profiles__ window where you can create new profiles and change profile variables.
 
@@ -46,6 +46,7 @@ See [Profiles] for more information about profiles.
 | __Log Runtime Exceptions__| Logs runtime exceptions for asset loading operations (in addition to recording the error to the [AsyncOperationHandle.OperationException] property). |
 
 ### Enable all logging
+
 By default, Addressable Assets only logs warnings and errors. You can enable detailed logging by opening the **Player** settings window (menu: **Edit** > **Project Settings...** > **Player**), navigating to the **Other Settings** > **Configuration** section, and adding "`ADDRESSABLES_LOG_ALL`" to the **Scripting Define Symbols** field.
 
 ## Catalog
@@ -58,9 +59,13 @@ Settings related to the Addressables Catalog, which maps the address of an asset
 |:---|:---|
 | __Player Version Override__| Overrides the timestamp used to formulate the remote catalog name. If set, the remote catalog is named, `Catalog_<Player Version Override>.json`. If left blank, then the timestamp is used. Note that when you use a unique remote catalog name for every new build, you can host multiple versions of your content at the same base URL. If you use the same override string for every build, then all players will load the new catalog. Note also that player update builds always use the same remote catalog name as the build they are updating (see [Content update builds]). |
 | __Compress Local Catalog__| Builds the catalog in a compressed AssetBundle file.<br/>Reduces the storage size of the catalog, but increases the time to build and to load the catalog. |
-| _Optimize Catalog Size_| Reduces the size of the catalog by creating a lookup table for internal IDs. Can increase the time required to load the catalog. |
+| __Build Remote Catalog__| Enable to build a remote catalog. |
+| __Build & Load Paths__ | Where to build and load the remote catalog. Choose a [Profile] path pair from the list or select `<custom>` if you want to set the build and load paths separately.<br/>Only visible when you enable **Build Remote Catalog**.|
+| __Build Path__| Where to build the remote catalog. Typically, you should use the _RemoteBuildPath_ [Profile] variable.<br/></br/>Only shown if you set __Build & Load Paths__ to `<custom>`.|
+| __Load Path__| The URL at which to access the remote catalog. Typically, you should use the _RemoteLoadPath_ [Profile] variable.<br/></br/>Only shown if you set __Build & Load Paths__ to `<custom>`.|
+| __Only update catalogs manually__| Disables the automatic check for an updated remote catalog when the Addressables system initializes at runtime. You can manually [check for an updated catalog]. |
 
-## Content Update
+## Update a Previous Build
 
 ![](../images/addr_settings_content_update.png)<br/>*Content update settings*
 
@@ -68,12 +73,8 @@ Settings that control remote content builds and updates.
 
 | Property| Function |
 |:---|:---|
-| __Only update catalogs manually__| Disables the automatic check for an updated remote catalog when the Addressables system initializes at runtime. You can manually [check for an updated catalog]. |
+
 | __Content State Build Path__|Where to build the content state file produced by the default build script.|
-| __Build Remote Catalog__| Enable to build a remote catalog. |
-| __Build & Load Paths__ | Where to build and load the remote catalog. Choose a [Profile] path pair from the list or select `<custom>` if you want to set the build and load paths separately.<br/>Only visible when you enable **Build Remote Catalog**.|
-| __Build Path__| Where to build the remote catalog. Typically, you should use the _RemoteBuildPath_ [Profile] variable.<br/></br/>Only shown if you set __Build & Load Paths__ to `<custom>`.|
-| __Load Path__| The URL at which to access the remote catalog. Typically, you should use the _RemoteLoadPath_ [Profile] variable.<br/></br/>Only shown if you set __Build & Load Paths__ to `<custom>`.|
 
 ## Downloads
 
@@ -140,7 +141,7 @@ See [Group templates] for information on creating custom templates.
 
 ![](../images/addr_settings_init_objects.png)<br/>*Configured InitializationObjects*
 
-Configures the initialization objects for the project. Initialization objects are ScriptableObject classes that implement the [IObjectInitializationDataProvider] interface. You can create these objects to pass data to the Addressables initialization process at runtime. 
+Configures the initialization objects for the project. Initialization objects are ScriptableObject classes that implement the [IObjectInitializationDataProvider] interface. You can create these objects to pass data to the Addressables initialization process at runtime.
 
 > [!NOTE]
 > Initialization objects are ScriptableObject assets. Follow the instructions in the [ScriptableObject manual page] to create a ScriptableObject asset for a initialization object.
@@ -149,6 +150,17 @@ To add an initialization object, click on the __+__ button and select the Script
 
 See [Customizing initialization] for more information.
 
+## Cloud Content Delivery
+
+![](../images/addr_settings_enable_ccd.png)<br/>*Enable CCD Features checkbox*
+
+| Property| Function |
+|:---|:---|
+| __Enable CCD Features__| Use features from the Cloud Content Delivery package to build and upload Addressables content to the cloud. |
+
+Enable this property to use Cloud Content Delivery features with Addressables. These features enable you to integrate an asset pipeline from the Unity Editor into a Cloud Content Delivery space. This requires the [CCD Management](https://docs.unity3d.com/Packages/com.unity.services.ccd.management@latest/index.html?subfolder=/manual/index.html) package to be installed.
+
+For more information, see [Welcome to Cloud Content Delivery](https://docs.unity.com/ccd/en/manual/UnityCCD) and [CCD + Addressables Walkthrough](https://docs.unity.com/ccd/en/manual/UnityCCDWalkthrough).
 
 [Diagnostics]: #diagnostics
 [Content Update]: #content-update
@@ -183,3 +195,4 @@ See [Customizing initialization] for more information.
 [Custom Build Scripting]: xref:addressables-api-build-player-content#custom-build-scripting
 [Unity Editor Preferences]: xref:addressables-configuration#unity-preferences
 [Building content]: xref:addressables-builds#build-with-player
+

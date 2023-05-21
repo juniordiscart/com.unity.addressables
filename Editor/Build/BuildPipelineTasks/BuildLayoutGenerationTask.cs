@@ -166,6 +166,16 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         {
             LayoutLookupTables lookup = new LayoutLookupTables();
 
+            Dictionary<ObjectIdentifier, Type[]> objectTypes = new Dictionary<ObjectIdentifier, Type[]>(1024);
+            foreach (KeyValuePair<GUID, AssetResultData> assetResult in m_Results.AssetResults)
+            {
+                foreach (var resultEntry in assetResult.Value.ObjectTypes)
+                {
+                    if(!objectTypes.ContainsKey(resultEntry.Key))
+                        objectTypes.Add(resultEntry.Key, resultEntry.Value);
+                }
+            }
+
             foreach (string bundleName in m_WriteData.FileToBundle.Values.Distinct())
             {
                 BuildLayout.Bundle bundle = new BuildLayout.Bundle();
@@ -286,17 +296,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         b = GetOrCreate(buckets, eAsset.Guid); // some assets might not pull in any objects
                     b.ExplictAsset = eAsset;
                 });
-
-                // Cache all object types from results to find type for when implicit asset
-                Dictionary<ObjectIdentifier, Type[]> objectTypes = new Dictionary<ObjectIdentifier, Type[]>(1024);
-                foreach (KeyValuePair<GUID, AssetResultData> assetResult in m_Results.AssetResults)
-                {
-                    foreach (var resultEntry in assetResult.Value.ObjectTypes)
-                    {
-                        if(!objectTypes.ContainsKey(resultEntry.Key))
-                            objectTypes.Add(resultEntry.Key, resultEntry.Value);
-                    }
-                }
 
                 // Create entries for buckets that are implicitly pulled in
                 Dictionary<string, BuildLayout.DataFromOtherAsset> guidToOtherData = new Dictionary<string, BuildLayout.DataFromOtherAsset>();

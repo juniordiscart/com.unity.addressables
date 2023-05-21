@@ -112,7 +112,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #if UNITY_2022_2_OR_NEWER
             if (result != null && !Application.isBatchMode && ProjectConfigData.AutoOpenAddressablesReport && ProjectConfigData.GenerateBuildLayout)
             {
-                BuildReportWindow.ShowWindow();
+                BuildReportWindow.ShowWindowAfterBuild();
             }
 #endif
             return result;

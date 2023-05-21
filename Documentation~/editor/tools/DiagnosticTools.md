@@ -1,5 +1,5 @@
 ---
-uid: addressables-diagnoxtic-tools
+uid: addressables-diagnostic-tools
 ---
 
 # Diagnostic tools

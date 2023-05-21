@@ -481,7 +481,7 @@ namespace UnityEditor.AddressableAssets.Settings
         {
 #if !ENABLE_CCD
             var confirm = EditorUtility.DisplayDialog("Install CCD Management SDK Package",
-                "Are you sure you want to install the CCD Management SDK package and enable experimental CCD features within Addressables?\nTo remove this package and its related features, please use the Package manager.  Alternatively, uncheck the Addressable Asset Settings > Cloud Content Delivery > Enable Experimental CCD Features toggle to remove the package.",
+                "Are you sure you want to install the CCD Management SDK package and enable CCD features within Addressables?\nTo remove this package and its related features please use the Package manager, or uncheck the Addressable Asset Settings > Cloud Content Delivery > Enable CCD Features toggle.",
                 "Yes", "No");
             if (confirm)
             {

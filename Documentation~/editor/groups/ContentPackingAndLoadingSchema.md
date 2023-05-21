@@ -34,7 +34,7 @@ See [Profiles] for more information.
 
 | Setting| Purpose |
 |:---|:---| 
-| __Asset Bundle Compression__| The compression type for all bundles produced from the group. LZ4 is usually the most efficient option, but other options can be better in specific circumstances. See [AssetBundle Compression] for more information. |
+| __Asset Bundle Compression__| The compression type for all bundles produced from the group. LZ4 is usually the most efficient option, but other options can be better in specific circumstances. For more information, see the [AssetBundle compression manual page]. |
 | __Include In Build__| Whether to include assets in this group in a content build.  |
 | __Force Unique Provider__| Whether Addressables uses unique instances of Resource Provider classes for this group. Enable this option if you have custom Provider implementations for the asset types in this group and instances of those Providers must not be shared between groups. |
 | __Use Asset Bundle Cache__| Whether to cache remotely distributed bundles. |
@@ -81,7 +81,7 @@ Corruption is likely to only happen during a download, disk storage is generally
 
 For __local__ AssetBundles, if the application download performs a check on the download before saving to disk. Then consider setting this to __Disabled__ as the download will have already been checked.
 
-For __remote__ AssetBundles, __Enabled, Excluding cache__ is a good default. When downloading and caching an AssetBundle to disk, the bytes are decompressed and a CRC calculation is done during file saving. This will not impact performance and the corruption is most likely to occur during this phase from the download. __including cache__ is good to use where the data needs to be checked everytime such as settings values.
+For __remote__ AssetBundles, __Enabled, Excluding cache__ is a good default. When downloading and caching an AssetBundle to disk, the bytes are decompressed and a CRC calculation is done during file saving. This will not impact performance and the corruption is most likely to occur during this phase from the download. __including cache__ is good to use where the data needs to be checked every time such as settings values.
 
 ### Asset Load Mode
 
@@ -113,7 +113,6 @@ Even though all the Assets in a group and any dependencies are loaded in memory 
 [Addressables system settings]: xref:addressables-asset-settings
 [Analyze]: xref:addressables-analyze-tool
 [Asset Load Mode]: #asset-load-mode
-[AssetBundle Compression]: xref:addressables-group-settings#assetbundle-compression
 [AssetBundle compression manual page]: xref:AssetBundles-Cache
 [AssetReference]: xref:addressables-asset-references
 [Build scripts]: xref:addressables-builds#build-commands

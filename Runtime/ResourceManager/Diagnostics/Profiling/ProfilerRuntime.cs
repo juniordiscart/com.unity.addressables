@@ -123,8 +123,17 @@ namespace UnityEngine.ResourceManagement.Profiling
 
             string containingBundleName = GetContainingBundleNameForLocation(handle.Location);
 
+            string assetId;
+            if (handle.Location.InternalId.EndsWith(']'))
+            {
+                int start = handle.Location.InternalId.IndexOf('[');
+                assetId = handle.Location.InternalId.Remove(start);
+            }
+            else
+                assetId = handle.Location.InternalId;
+
             AssetFrameData profileObject = new AssetFrameData();
-            profileObject.AssetCode = handle.Location.InternalId.GetHashCode();
+            profileObject.AssetCode = assetId.GetHashCode();
             profileObject.ReferenceCount = assetLoadOperation.ReferenceCount;
             profileObject.BundleCode = containingBundleName.GetHashCode();
             profileObject.Status = status;

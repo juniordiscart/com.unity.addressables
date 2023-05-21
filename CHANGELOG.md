@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.21.10] - 2023-04-10
+- Fixed Addressables profiler not correctly displaying loaded Asset subObjects where a Asset was loaded due to a direct reference to one of its subObjects.
+- Fixed an issue where bundles built with the Append Hash to FIlename bundle naming option had strange interactions with the Prevent Updates option
+- Improved performance of BuildLayoutGenerationTask 
+
 ## [1.21.9] - 2023-03-07
 - Removed code within WriteObjectToByteList that would never be reached
 - Fixed an issue where SceneOps would have update called on them twice per frame

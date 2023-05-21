@@ -15,15 +15,15 @@ When you initiate a content build, the build scripts create AssetBundles contain
 
 ## Managing groups
 
-To manage your groups and Addressables assets, open the Addressables Groups window by going to **Window** &gt **Asset Management** &gt ** Addressables** &gt **Groups**. See [Addressables Groups window] for details about the  features of this window.
+To manage your groups and Addressables assets, open the Addressables Groups window by going to **Window** &gt; **Asset Management** &gt; ** Addressables** &gt; **Groups**. See [Addressables Groups window] for details about the  features of this window.
 
 ### Create a group
 
 To create a group:
 
-1. Open the Addressables Groups window - to **Window** &gt **Asset Management** &gt ** Addressables** and select **Groups**.
+1. Open the Addressables Groups window - to **Window** &gt; **Asset Management** &gt; **Addressables** and select **Groups**.
 2. Select **Create** in the toolbar to open the Create menu.
-3. Select **Group** &gt **Packed Asset** to create a new group. (If you have created your own [Group Templates], they are also displayed in the menu.)
+3. Select **Group** &gt; **Packed Asset** to create a new group. (If you have created your own [Group Templates], they are also displayed in the menu.)
 4. Select the new group and right-click (mac: cmd + click) to open its context menu.
 5. Select **Rename** and assign the desired name.
 6. Open the context menu again and select **Inspect Group Settings**.

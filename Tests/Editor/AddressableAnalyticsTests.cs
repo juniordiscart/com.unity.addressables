@@ -109,12 +109,55 @@ namespace Tests.Editor
                 group.ClearSchemas(true, false);
         }
 
+
+        internal AddressableAssetBuildResult CreateTestResult(double duration, bool isPlayMode, string err, long bundleCount = 0)
+        {
+            if (isPlayMode)
+                return CreatePlaymodeResult(duration, err);
+            else
+            {
+                return CreatePlayerBuildResult(duration, err, bundleCount);
+            }
+        }
+
+        /// <summary>
+        /// Dummy constructor for analytics testing purposes
+        /// </summary>
+        /// <param name="duration"></param>
+        /// <param name="err"></param>
+        /// <param name="bundleCount"></param>
+        private AddressablesPlayerBuildResult CreatePlayerBuildResult(double duration, string err, long bundleCount)
+        {
+            var result = new AddressablesPlayerBuildResult();
+            result.Duration = duration;
+            result.Error = err;
+            for (int i = 0; i < bundleCount; i++)
+            {
+                result.m_AssetBundleBuildResults.Add(null);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Dummy constructor for analytics testing purposes
+        /// </summary>
+        /// <param name="duration"></param>
+        /// <param name="err"></param>
+        private AddressablesPlayModeBuildResult CreatePlaymodeResult(double duration, string err)
+        {
+            var result = new AddressablesPlayModeBuildResult();
+            result.Duration = duration;
+            result.Error = err;
+            return result;
+        }
+
         [Test]
         public void GenerateBuildData_CorrectlyAcquiresCompressionTypes()
         {
             builderInput.IsBuildAndRelease = false;
             builderInput.IsContentUpdateBuild = false;
-            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.Inconclusive);
+            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.Inconclusive);
 
             Assert.NotNull(buildData, "GenerateBuildData should not return a null value.");
             Assert.AreEqual(numberOfGroups, buildData.NumberOfGroups, "GenerateBuildData incorrectly retrieves number of groups");
@@ -128,7 +171,7 @@ namespace Tests.Editor
         {
             builderInput.IsBuildAndRelease = false;
             builderInput.IsContentUpdateBuild = false;
-            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.Inconclusive);
+            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.Inconclusive);
 
             Assert.NotNull(buildData, "GenerateBuildData should not return a null value.");
             Assert.AreEqual(numberOfGroups, buildData.NumberOfGroups, "GenerateBuildData incorrectly retrieves number of groups");
@@ -146,7 +189,7 @@ namespace Tests.Editor
 
             builderInput.IsBuildAndRelease = false;
             builderInput.IsContentUpdateBuild = false;
-            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.Inconclusive);
+            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.Inconclusive);
 
             Assert.NotNull(buildData, "GenerateBuildData should not return a null value.");
             Assert.AreEqual(numberOfGroups, buildData.NumberOfGroups, "GenerateBuildData incorrectly retrieves number of groups");
@@ -163,7 +206,7 @@ namespace Tests.Editor
 
             builderInput.IsBuildAndRelease = false;
             builderInput.IsContentUpdateBuild = false;
-            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.Inconclusive);
+            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.Inconclusive);
             Assert.NotNull(buildData, "GenerateBuildData should not return a null value.");
             Assert.AreEqual(numberOfGroups, buildData.NumberOfGroups, "GenerateBuildData incorrectly retrieves number of groups");
             Assert.AreEqual(numberOfGroups * 20, buildData.NumberOfAddressableAssets, "GenerateBuildData incorrectly retrieves number of AddressableAssets");
@@ -196,7 +239,7 @@ namespace Tests.Editor
 
             builderInput.IsBuildAndRelease = false;
             builderInput.IsContentUpdateBuild = false;
-            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.Inconclusive);
+            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.Inconclusive);
             Assert.NotNull(buildData, "GenerateBuildData should not return a null value.");
             Assert.AreEqual(30, buildData.MaxNumberOfAddressableAssetsInAGroup, "GenerateBuildData does not properly retrieve Max number of addressable assets in a group");
             Assert.AreEqual(1, buildData.MinNumberOfAddressableAssetsInAGroup, "GenerateBuildData does not properly retrieve min number of addressable assets in a group");
@@ -207,7 +250,7 @@ namespace Tests.Editor
         {
             builderInput.IsBuildAndRelease = true;
             builderInput.IsContentUpdateBuild = false;
-            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.Inconclusive);
+            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.Inconclusive);
             Assert.IsTrue(buildData.BuildAndRelease, "Value of BuildAndRelease is not properly set");
         }
 
@@ -216,11 +259,11 @@ namespace Tests.Editor
         {
             builderInput.IsBuildAndRelease = false;
             builderInput.IsContentUpdateBuild = false;
-            var buildData1 = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.Inconclusive);
+            var buildData1 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.Inconclusive);
             Assert.AreEqual(-1, buildData1.IsIncrementalBuild, "BuildType not correctly set by analytics, ensure that an Inconclusive build is associated with an IsIncrementalBuild value of -1");
-            var buildData2 = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.CleanBuild);
+            var buildData2 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.CleanBuild);
             Assert.AreEqual(0, buildData2.IsIncrementalBuild, "BuildType not correctly set by analytics, ensure that a clean build is associated with an IsIncrementalBuild value of 0");
-            var buildData3 = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.IncrementalBuild);
+            var buildData3 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.IncrementalBuild);
             Assert.AreEqual(1, buildData3.IsIncrementalBuild, "BuildType not correctly set by analytics, ensure that a clean build is associated with an IsIncrementalBuild value of 1");
         }
 
@@ -229,7 +272,7 @@ namespace Tests.Editor
         {
             builderInput.IsBuildAndRelease = false;
             builderInput.IsContentUpdateBuild = false;
-            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, 0, true, null, AddressableAnalytics.BuildType.Inconclusive);
+            var buildData = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.Inconclusive);
             Assert.IsTrue(buildData.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
             Assert.AreEqual(0, buildData.NumberOfGroups, "BuildData should be initialized to 0 for play mode builds.");
         }
@@ -244,22 +287,22 @@ namespace Tests.Editor
                 ProjectConfigData.ActivePlayModeIndex = 1;
                 builderInput.IsBuildAndRelease = false;
                 builderInput.IsContentUpdateBuild = false;
-                var buildData1 = AddressableAnalytics.GenerateBuildData(builderInput, 0, true, null, AddressableAnalytics.BuildType.CleanBuild);
+                var buildData1 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.CleanBuild);
                 Assert.IsTrue(buildData1.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
                 Assert.AreEqual(2, buildData1.BuildScript, "Fast Mode should correspond to a BuildData.BuildScript value of 2.");
                 //FastMode
                 ProjectConfigData.ActivePlayModeIndex = 2;
-                var buildData2 = AddressableAnalytics.GenerateBuildData(builderInput, 0, true, null, AddressableAnalytics.BuildType.CleanBuild);
+                var buildData2 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.CleanBuild);
                 Assert.IsTrue(buildData2.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
                 Assert.AreEqual(3, buildData2.BuildScript, "Virtual mode should correspond to a BuildData.BuildScript value of 3.");
                 //VirtualMode
                 ProjectConfigData.ActivePlayModeIndex = 3;
-                var buildData3 = AddressableAnalytics.GenerateBuildData(builderInput, 0, true, null, AddressableAnalytics.BuildType.CleanBuild);
+                var buildData3 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.CleanBuild);
                 Assert.IsTrue(buildData3.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
                 Assert.AreEqual(1, buildData3.BuildScript, "Packed PlayMode should correspond to a BuildData.BuildScript value of 1.");
                 //Custom
                 ProjectConfigData.ActivePlayModeIndex = 4;
-                var buildData4 = AddressableAnalytics.GenerateBuildData(builderInput, 0, true, null, AddressableAnalytics.BuildType.CleanBuild);
+                var buildData4 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.CleanBuild);
                 Assert.IsTrue(buildData4.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
                 Assert.AreEqual(4, buildData4.BuildScript, "A custom build script should correspond to a BuildData.BuildScript value of 4.");
             }
@@ -272,7 +315,7 @@ namespace Tests.Editor
         [Test]
         public void GenerateBuildData_ProperlyCollectsDataIfNotPlayModeBuild()
         {
-            var buildData1 = AddressableAnalytics.GenerateBuildData(builderInput, 0, false, null, AddressableAnalytics.BuildType.CleanBuild);
+            var buildData1 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, false, null), AddressableAnalytics.BuildType.CleanBuild);
             Assert.AreEqual(0, buildData1.BuildScript, "BuildData should correspond to a BuildData.BuildScript value of 0 because we're using packed mode.");
             Assert.IsFalse(buildData1.IsPlayModeBuild, "IsPlayModeBuild should be false on player builds.");
             Assert.AreNotEqual(0, buildData1.NumberOfGroups, "Data should be fully collected in player builds.");

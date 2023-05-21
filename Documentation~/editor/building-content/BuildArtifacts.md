@@ -24,15 +24,16 @@ For a full list of platform names, see [AddressablesPlatform].
 Files used for remote content should be uploaded to a hosting server. By default these files are located in the `ServerData` folder. 
 
 The files are:
+
 * Remote AssetBundles (`.bundle`): according to your group, profile, and platform settings. By default these files are located in the [BuildTarget] subfolder. To change the build location of the files produced by a group, modify the [Build & Load Paths] setting.
-* `catalog_{timestamp or player version}.json`: a remote catalog which when downloaded will override the local catalog. This file is only created if the __Build Remote Catalogs__ option in [Content update settings] is enabled. To change the build location of this file modify the __Build & Load Paths__ in Content update settings. By default the filename includes the timestamp of the build. To use a version number instead, specify the value of the __Player Version Override__ in [Catalog settings]. For more information about catalogs, see [Content catalogs]. 
-* `catalog_{timestamp or player version}.hash`: a file used to check whether the remote catalog has changed since the last time a client app downloaded it. Just like the remote catalog file, this file is only created if the __Build Remote Catalogs__ option in [Content update settings] is enabled.  To change the build location of this file modify the __Build & Load Paths__ in Content update settings. By default the filename includes the timestamp of the build. To use a version number instead, specify the value of the __Player Version Override__ in [Catalog settings]. For more information about catalogs, see [Content catalogs].
+* `catalog_{timestamp or player version}.json`: a remote catalog which when downloaded will override the local catalog. This file is only created if the __Build Remote Catalogs__ option in [Catalog settings] is enabled. To change the build location of this file modify the __Build & Load Paths__ in [Catalog settings]. By default, the filename includes the timestamp of the build. To use a version number instead, specify the value of the __Player Version Override__ in [Catalog settings]. For more information about catalogs, see [Content catalogs].
+* `catalog_{timestamp or player version}.hash`: a file used to check whether the remote catalog has changed since the last time a client app downloaded it. Just like the remote catalog file, this file is only created if the __Build Remote Catalogs__ option in [Catalog settings] is enabled.  To change the build location of this file, modify the __Build & Load Paths__ in [Catalog settings]. By default, the filename includes the timestamp of the build. To use a version number instead, specify the value of the __Player Version Override__ in [Catalog settings]. For more information about catalogs, see [Content catalogs].
 
 ### Content State File
 
 The `addressables_content_state.bin` file is used for making a [content update build]. If you are supporting dynamic content updates, you must save this file after each full content build that you release. Otherwise, you can ignore this file. 
 
-By default this file is located in `Assets/AddressableAssetsData/<AddressablesPlatform>`. See [AddressablesPlatform] for all platform names. To change the build location of the file specify the value of the __Content State Build Path__ in [Content update settings]. 
+By default this file is located in `Assets/AddressableAssetsData/<AddressablesPlatform>`. See [AddressablesPlatform] for all platform names. To change the build location of the file specify the value of the __Content State Build Path__ in [Update a Previous Build].
 
 > [!NOTE]
 > It is recommended to check this file into version control and create a new branch each time a player build is released.
@@ -59,9 +60,7 @@ Although Addressables produces one content catalog per project, you can load cat
 
 ### Catalog settings
 
-There are a variety of settings used for catalogs:
-* [Catalog settings]: options used to configure local and remote catalogs
-* [Content update settings]: options used to configure the remote catalog only
+Use [Catalog settings] to configure local and remote catalogs.
 
 To minimize the catalog size, use the following settings:
 1. Compress the local catalog.  If your primary concern is how big the catalog is in your build, there is an option in [Catalog settings] called **Compress Local Catalog**. This option builds catalog that ships with your game into an AssetBundle. Compressing the catalog makes the file itself smaller, but note that this does increase catalog load time.  
@@ -90,11 +89,11 @@ Shared AssetBundles derive their build options from the default `AddressableAsse
 [content build]: xref:addressables-builds
 [Content catalogs]: #content-catalogs
 [content update build]: xref:addressables-content-update-builds
-[Content update settings]: xref:addressables-asset-settings#content-update
 [Enabling the remote catalog]: xref:addressables-remote-content-distribution#enabling-the-remote-catalog
 [Importing assets]: xref:ImportingAssets
 [Managed Code Stripping]: xref:ManagedCodeStripping	
 [Managing catalogs at runtime]: xref:addressables-api-load-content-catalog-async
 [Profiles]: xref:addressables-profiles
 [StreamingAssets]: xref:StreamingAssets
+[Update a Previous Build]: xref:addressables-asset-settings#update-a-previous-build
 [Update Restriction]: xref:addressables-content-update-builds#group-update-restriction-settings
