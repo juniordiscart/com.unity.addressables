@@ -30,7 +30,7 @@ public class ChainOperationTests
     public void ChainOperationWithTypelessDependency_DoesNotReturnInvalidDependencyHandles()
     {
         //Setup
-        ChainOperationTypelessDepedency<object> chainOp = new ChainOperationTypelessDepedency<object>();
+        ChainOperationTypelessDependency<object> chainOp = new ChainOperationTypelessDependency<object>();
         AsyncOperationHandle<object> chainOpHandle = new AsyncOperationHandle<object>(new ProviderOperation<object>());
         chainOp.Init(chainOpHandle, null, false);
 

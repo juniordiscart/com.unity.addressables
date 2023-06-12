@@ -533,7 +533,7 @@ namespace SceneTests
             yield return unloadHandle;
 
             //Assert
-            Assert.AreEqual(typeof(ChainOperationTypelessDepedency<SceneInstance>), unloadHandle.m_InternalOp.GetType(),
+            Assert.AreEqual(typeof(ChainOperationTypelessDependency<SceneInstance>), unloadHandle.m_InternalOp.GetType(),
                 "Unload a scene while a Load is in progress should have resulted in the unload being chained behind the load op, but wasn't");
             Addressables.Release(unloadHandle);
         }

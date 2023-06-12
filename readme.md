@@ -4,9 +4,11 @@ The Addressables package by Unity provides a novel way of managing and packing a
 
 This variant forked from the original Addressables-project adds support for building your assets across several catalogs in one go and provides several other benefits, e.g. reduced build times and build size, as well as keeping the buildcache intact.
 
-This package currently tracks version `1.21.9` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
+This package currently tracks version `1.21.12` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
 
 **Note**: this repository does not track every available version of the _vanilla_ Addressables package. It's only kept up-to-date sporadically.
+
+**Upgrade note:** when upgrading from Addressables version `1.21.2` to `1.21.9` or later, please read the upgrade notes for [migration help](#from-1212-to-1219-and-later) with breaking changes.
 
 For additional features found in this fork of Addressables, check the [Additional features](#additional-features) section.
 
@@ -106,3 +108,11 @@ Below you'll find additional features in this fork of Addressables that were con
 When merging scenes using `SceneManager.MergeScenes`, the source scene will be unloaded by Unity. If this source scene is a scene loaded by Addressables, then its loading handle will be disposed off and releasing all assets associated with the scene. This will cause all merged assets from the source scene that were handled by this single handle be unloaded as well. This may cause several assets to not show up properly anymore, e.g. the well known pink missing material, no meshes, audio clips, etc. will all be missing.
 
 This is resolved by adding a `MergeScenes` method to `Addressables`, similar to `SceneManager.MergeScenes`, but will keep the Addressable scene's loading handle alive until the destination scene is unloaded. This process can be repeated multiple times, passing the loading handle until it's current bearer is unloaded.
+
+## Migration Notes
+
+### From 1.21.2 to 1.21.9 and later
+
+If you're updating from a multi-catalog version of Addressables with version number `1.21.2` or earlier to version `1.21.9` or later, then please read the notes below carefully to restore your project's build.
+
+* `ExternalCatalogSetup` has had its `buildPath` and `runtimeLoadPath` values be changed in type. This will result in empty values on your external catalog objects upon upgrading, and content builds failing. The types have been updated to work with Addressables' `ProfileValueReference` framework. This allows to work with the built-in string evaluation functions and profile-defined variables in a more transparent way as it also properly previews the result in the inspector window.

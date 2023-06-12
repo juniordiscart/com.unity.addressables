@@ -1,5 +1,6 @@
 {
     "name": "Unity.Addressables.Editor",
+    "rootNamespace": "",
     "references": [
         "Unity.Addressables",
         "Unity.ResourceManager",
@@ -32,6 +33,11 @@
             "name": "com.unity.profiling.core",
             "expression": "[1.0.2,3.0.0)",
             "define": "ENABLE_ADDRESSABLE_PROFILER"
+        },
+        {
+            "name": "Unity",
+            "expression": "2022.3.1",
+            "define": "DISABLE_LEGACY_SEARCH_STYLE_ID"
         }
     ],
     "noEngineReferences": false

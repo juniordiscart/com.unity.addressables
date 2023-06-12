@@ -187,7 +187,7 @@ namespace UnityEngine.ResourceManagement.Profiling
 
         public static void SceneReleased(AsyncOperationHandle<SceneInstance> handle)
         {
-            if (handle.InternalOp is ChainOperationTypelessDepedency<SceneInstance> chainOp)
+            if (handle.InternalOp is ChainOperationTypelessDependency<SceneInstance> chainOp)
             {
                 if (m_SceneData.Remove(chainOp.WrappedOp.InternalOp))
                     SceneLoadCounter.Value -= 1;
