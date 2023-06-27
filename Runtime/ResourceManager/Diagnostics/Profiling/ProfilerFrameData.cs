@@ -7,11 +7,22 @@ namespace UnityEngine.ResourceManagement.Profiling
 {
     internal class ProfilerFrameData<T1,T2>
     {
-        private Dictionary<T1, T2> m_Data = new Dictionary<T1, T2>();
+        private Dictionary<T1, T2> m_Data;
+        internal Dictionary<T1, T2> Data => m_Data;
 
         private T2[] m_Array;
         private uint m_Version;
         private uint m_ArrayVersion;
+
+        public ProfilerFrameData()
+        {
+            m_Data = new Dictionary<T1, T2>(32);
+        }
+
+        public ProfilerFrameData(int count)
+        {
+            m_Data = new Dictionary<T1, T2>(count);
+        }
 
         public bool Add(T1 key, T2 value)
         {

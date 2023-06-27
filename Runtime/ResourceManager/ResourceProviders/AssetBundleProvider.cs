@@ -121,7 +121,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		/// </summary>
 		public int RedirectLimit
 		{
-			get { return m_RedirectLimit; }
+            get { return m_RedirectLimit > 128 ? 128 : m_RedirectLimit; }
 			set { m_RedirectLimit = value; }
 		}
 

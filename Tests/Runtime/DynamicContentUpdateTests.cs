@@ -124,6 +124,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         public IEnumerator CheckForUpdates_Initializes_Addressables()
         {
             m_Addressables.hasStartedInitialization = false;
+            PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, m_RuntimeSettingsPath);
             yield return m_Addressables.CheckForCatalogUpdates();
             Assert.IsTrue(m_Addressables.hasStartedInitialization);
         }

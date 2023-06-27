@@ -47,7 +47,8 @@ namespace UnityEngine.AddressableAssets.Utility
             foreach (var d in deps)
                 unchecked
                 {
-                    sumOfDependencyHashes += d.DebugName.GetHashCode() + SumDependencyNameHashCodes(d);
+                    if(d.IsValid())
+                        sumOfDependencyHashes += d.DebugName.GetHashCode() + SumDependencyNameHashCodes(d);
                 }
 
             return sumOfDependencyHashes;

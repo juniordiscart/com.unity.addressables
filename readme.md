@@ -4,7 +4,7 @@ The Addressables package by Unity provides a novel way of managing and packing a
 
 This variant forked from the original Addressables-project adds support for building your assets across several catalogs in one go and provides several other benefits, e.g. reduced build times and build size, as well as keeping the buildcache intact.
 
-This package currently tracks version `1.21.12` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
+This package currently tracks version `1.21.14` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
 
 **Note**: this repository does not track every available version of the _vanilla_ Addressables package. It's only kept up-to-date sporadically.
 

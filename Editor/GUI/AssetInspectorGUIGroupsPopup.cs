@@ -29,17 +29,12 @@ namespace UnityEditor.AddressableAssets.GUI
         }
 
         public void Initialize(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, bool setInitialSelection, bool stayOpenAfterSelection,
-            Vector2 mouseLocation, Action<AddressableAssetSettings, List<AddressableAssetEntry>, AddressableAssetGroup> action)
+            Action<AddressableAssetSettings, List<AddressableAssetEntry>, AddressableAssetGroup> action)
         {
             m_Settings = settings;
             m_Entries = entries;
             m_SetInitialSelection = setInitialSelection;
             m_StayOpenAfterSelection = stayOpenAfterSelection;
-
-            Rect rect = position;
-            mouseLocation = GUIUtility.GUIToScreenPoint(mouseLocation);
-            rect.position = mouseLocation;
-            position = rect;
 
             m_Action = action;
 
@@ -53,6 +48,14 @@ namespace UnityEditor.AddressableAssets.GUI
             m_FolderTexture = EditorGUIUtility.IconContent("Folder Icon").image as Texture2D;
 
             m_ShouldClose = false;
+        }
+
+        public void SetPosition(Vector2 location)
+        {
+            Rect currentRect = position;
+            Vector2 newPos = GUIUtility.GUIToScreenPoint(location);
+            currentRect.position = new Vector2(Math.Max(newPos.x, 0), newPos.y);
+            position = currentRect;
         }
 
         private void OnLostFocus()

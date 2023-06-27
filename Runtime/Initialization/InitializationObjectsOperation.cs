@@ -82,10 +82,11 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 return;
             }
 
+#if UNITY_EDITOR
             string buildLogsPath = m_Addressables.ResolveInternalId(PlayerPrefs.GetString(Addressables.kAddressablesRuntimeBuildLogPath));
             if (LogRuntimeWarnings(buildLogsPath))
                 File.Delete(buildLogsPath);
-
+#endif
             List<AsyncOperationHandle> initOperations = new List<AsyncOperationHandle>();
             foreach (var i in rtd.InitializationObjects)
             {

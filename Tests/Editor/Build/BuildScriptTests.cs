@@ -260,6 +260,21 @@ namespace UnityEditor.AddressableAssets.Tests
                 // cleanup
             }
 
+            [Test]
+            public void AddressablesBuildPlayerProcessor_AddPathToStreamingAssetsCallbackWorks()
+            {
+                string path = Addressables.BuildPath;
+                Directory.CreateDirectory(path);
+                AddressablesPlayerBuildProcessor.AddPathToStreamingAssets = (string path) => false;
+                var paths = AddressablesPlayerBuildProcessor.GetStreamingAssetPaths();
+                Assert.AreEqual(0, paths.Count, "StreamingAssets paths are expected to be empty");
+                AddressablesPlayerBuildProcessor.AddPathToStreamingAssets = (string path) => true;
+                paths = AddressablesPlayerBuildProcessor.GetStreamingAssetPaths();
+                Assert.AreEqual(1, paths.Count, "StreamingAssets paths expected to include Addressables.BuildPath");
+
+                // cleanup
+                Directory.Delete(path, true);
+            }
 #endif
         }
 

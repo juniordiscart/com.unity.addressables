@@ -533,6 +533,19 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void CatalogLocationData_IsNotNull_ForAnyCatalogLocation()
+        {
+            var fileName = m_BuilderInput.RuntimeCatalogFilename;
+            var jsonText = "Some text in catalog file";
+
+            var result = m_BuildScript.CreateCatalogFiles(jsonText, m_BuilderInput, m_BuildContext);
+            Assert.IsTrue(result);
+
+            foreach (var catalogLoc in m_BuildContext.runtimeData.CatalogLocations)
+                Assert.IsNotNull(catalogLoc.Data);
+        }
+
+        [Test]
         public void CreateCatalogFiles_DefaultOptions_ShouldCreateLocalJsonCatalogFile()
         {
             var fileName = m_BuilderInput.RuntimeCatalogFilename;

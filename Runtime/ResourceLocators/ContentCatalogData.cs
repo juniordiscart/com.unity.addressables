@@ -289,7 +289,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 return headerOffset;
             }
         }
-        
+
         internal static ContentCatalogData LoadFromFile(string path, int cacheSize = 1024)
         {
             return new ContentCatalogData(new BinaryStorageBuffer.Reader(File.ReadAllBytes(path), cacheSize, new Serializer()));
@@ -987,7 +987,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 }
                 if (type == null || type == typeof(object))
                 {
-                    locations = locs;
+                    locations = new List<IResourceLocation>(locs);
                     m_Cache.TryAdd(cacheKey, locations);
                     return true;
                 }
@@ -1005,7 +1005,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
                 if (validTypeCount == locs.Length)
                 {
-                    locations = locs;
+                    locations = new List<IResourceLocation>(locs);
                     m_Cache.TryAdd(cacheKey, locations);
                     return true;
                 }
@@ -1017,7 +1017,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                         locations.Add(l);
                 }
                 m_Cache.TryAdd(cacheKey, locations);
-                locations = locs;
                 return locations != null;
             }
         }
@@ -1097,17 +1096,24 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             {
                 var options = obj as AssetBundleRequestOptions;
                 var hash = Hash128.Parse(options.Hash);
+
+                // ensure the correct values for casting to smaller
+                short timeout = (short)Mathf.Clamp(options.Timeout, short.MinValue, short.MaxValue);
+                byte retryCount = options.RetryCount < 0 ? (byte)32 : (byte)Mathf.Clamp(options.RetryCount, 0, 128);
+                byte redirectLimit = (byte)Mathf.Clamp(options.RetryCount, 0, 128);
+
                 var sd = new SerializedData
                 {
                     hashId = writer.Write(hash),
                     bundleNameId = writer.WriteString(options.BundleName, '_'),
                     crc = options.Crc,
                     bundleSize = (uint)options.BundleSize,
+
                     commonId = writer.Write(new SerializedData.Common
                     {
-                        timeout = (short)options.Timeout,
-                        redirectLimit = (byte)options.RedirectLimit,
-                        retryCount = (byte)options.RetryCount,
+                        timeout = timeout,
+                        redirectLimit = redirectLimit,
+                        retryCount = retryCount,
                         assetLoadMode = options.AssetLoadMode,
                         chunkedTransfer = options.ChunkedTransfer,
                         clearOtherCachedVersionsWhenLoaded = options.ClearOtherCachedVersionsWhenLoaded,

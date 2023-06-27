@@ -60,12 +60,13 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             {
                 if (m_RightPaneCollapse)
                 {
+                    AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportDetailsOpen);
                     middleRightPaneSplitter.UnCollapse();
                     mainToolbarCollapseRightPaneButtonIcon.image = inspectorIcon;
-
                 }
                 else
                 {
+                    AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.BuildReportDetailsClose);
                     middleRightPaneSplitter.CollapseChild(1);
                     mainToolbarCollapseRightPaneButtonIcon.image = inspectorIcon;
                 }

@@ -287,7 +287,9 @@ namespace SceneTests
         public IEnumerator SceneTests_LoadSceneWithChainHandle_MatchesTrackedHandle()
         {
             AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
-            var op = m_Addressables.LoadSceneWithChain(impl.InitializeAsync(), sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
+            var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
+            var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return op;
 
             Assert.AreEqual(1, m_Addressables.m_SceneInstances.Count);
@@ -301,7 +303,9 @@ namespace SceneTests
         public IEnumerator SceneTests_UnloadScene_RemovesTrackedInstanceOp()
         {
             AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
-            var op = m_Addressables.LoadSceneWithChain(impl.InitializeAsync(), sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
+            var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
+            var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return op;
 
             Assert.AreEqual(1, m_Addressables.m_SceneInstances.Count);
@@ -315,7 +319,9 @@ namespace SceneTests
         public IEnumerator SceneTests_UnloadSceneAsync_CanUnloadBaseHandle()
         {
             AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
-            var op = m_Addressables.LoadSceneWithChain(impl.InitializeAsync(), sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
+            var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
+            var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return op;
 
             Assert.AreEqual(1, m_Addressables.m_SceneInstances.Count);

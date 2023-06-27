@@ -126,10 +126,13 @@ namespace UnityEngine.AddressableAssets
         void DetermineCacheDirsNotInUse(HashSet<string> cacheDirsInUse)
         {
             m_CacheDirsForRemoval = new List<string>();
-            foreach (var cacheDir in Directory.EnumerateDirectories(m_BaseCachePath, "*", SearchOption.TopDirectoryOnly))
+            if (Directory.Exists(m_BaseCachePath))
             {
-                if (!cacheDirsInUse.Contains(cacheDir))
-                    m_CacheDirsForRemoval.Add(cacheDir);
+                foreach (var cacheDir in Directory.EnumerateDirectories(m_BaseCachePath, "*", SearchOption.TopDirectoryOnly))
+                {
+                    if (!cacheDirsInUse.Contains(cacheDir))
+                        m_CacheDirsForRemoval.Add(cacheDir);
+                }
             }
         }
 

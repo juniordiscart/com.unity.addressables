@@ -24,6 +24,15 @@ namespace UnityEditor.AddressableAssets.GUI
         static Texture s_GroupsCaretTexture = null;
         static Texture s_FolderTexture = null;
 
+        static int s_MaxLabelCharCount = 35;
+        static GUIContent s_ConfigureLabelsGUIContent = new GUIContent("", "Configure Addressables Labels");
+        static int s_RemoveButtonWidth = 8;
+        static GUIContent s_RemoveButtonGUIContent = new GUIContent("", EditorGUIUtility.IconContent("toolbarsearchCancelButtonActive").image);
+
+        static GUIStyle s_AssetLabelStyle = null;
+        static GUIStyle s_AssetLabelIconStyle = null;
+        static GUIStyle s_AssetLabelXButtonStyle = null;
+
         static AddressableAssetInspectorGUI()
         {
             s_ToggleMixed = null;
@@ -230,6 +239,8 @@ namespace UnityEditor.AddressableAssets.GUI
                     GUILayout.BeginHorizontal();
                     DrawGroupsDropdown(aaSettings, targetInfos);
                     GUILayout.EndHorizontal();
+
+                    DrawLabels(targetInfos, aaSettings, editor);
                 }
                 else // mixed addressable selected
                 {
@@ -246,6 +257,116 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 UnityEngine.GUI.enabled = prevEnabledState;
             }
+        }
+
+        private static void DrawLabels(List<TargetInfo> entryInfos, AddressableAssetSettings aaSettings, Editor editor)
+        {
+            var entries = new List<AddressableAssetEntry>();
+            var labelNameToFreqCount = new Dictionary<string, int>();
+            var nonEditableLabels = new HashSet<string>();
+
+            for (int i = 0; i < entryInfos.Count; ++i)
+            {
+                AddressableAssetEntry entry = aaSettings.FindAssetEntry(entryInfos[i].Guid);
+                if (entry == null)
+                    continue;
+
+                entries.Add(entry);
+                foreach (string label in entry.labels)
+                {
+                    labelNameToFreqCount.TryGetValue(label, out int labelCount);
+                    labelCount++;
+                    labelNameToFreqCount[label] = labelCount;
+
+                    if (entry.ReadOnly || entry.IsSubAsset)
+                        nonEditableLabels.Add(label);
+                }
+            }
+
+            int totalNumLabels = labelNameToFreqCount.Count;
+            Rect rowRect = EditorGUILayout.GetControlRect(true, 0f);
+            float totalRowWidth = rowRect.width; // must be called outside of Begin/EndHoriziontal scope to get correct width
+
+            GUILayout.BeginHorizontal();
+            if (s_AssetLabelIconStyle == null)
+                s_AssetLabelIconStyle = UnityEngine.GUI.skin.FindStyle("AssetLabel Icon") ?? EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle("AssetLabel Icon");
+            var buttonRect = GUILayoutUtility.GetRect(s_ConfigureLabelsGUIContent, s_AssetLabelIconStyle);
+            if (totalRowWidth > 1) // in some frames totalRowWidth is 1 only
+                buttonRect.x = (totalRowWidth - buttonRect.width) + 3;
+
+            GUIContent labelCountGUIContent = new GUIContent($"({totalNumLabels})");
+            var labelCountRect = GUILayoutUtility.GetRect(labelCountGUIContent, EditorStyles.miniLabel);
+            if (totalRowWidth > 1)
+            {
+                // in some frames totalRowWidth is 1 only
+                labelCountRect.x = buttonRect.x - (labelCountRect.width + 2);
+            }
+
+            float xOffset = s_RemoveButtonWidth + labelCountRect.width + buttonRect.width;
+            float xMax = labelCountRect.x;
+
+            // Draw modifiable (shared) labels
+            var disabledLabels = new List<string>();
+            foreach (KeyValuePair<string, int> pair in labelNameToFreqCount)
+            {
+                string label = pair.Key;
+                if (!nonEditableLabels.Contains(label) && entries.Count == labelNameToFreqCount[label])
+                    DrawLabel(entries, aaSettings, label, xOffset, xMax);
+                else
+                    disabledLabels.Add(label);
+            }
+
+            // Draw disabled labels
+            using (new EditorGUI.DisabledGroupScope(true))
+            {
+                foreach (string label in disabledLabels)
+                {
+                    DrawLabel(entries, aaSettings, label, xOffset, xMax);
+                }
+            }
+
+            GUILayout.FlexibleSpace();
+            EditorGUI.LabelField(labelCountRect, labelCountGUIContent, EditorStyles.miniLabel);
+            if (EditorGUI.DropdownButton(buttonRect, s_ConfigureLabelsGUIContent, FocusType.Passive, s_AssetLabelIconStyle))
+            {
+                PopupWindow.Show(buttonRect, new LabelMaskPopupContent(rowRect, aaSettings, entries, labelNameToFreqCount, editor));
+            }
+
+            GUILayout.EndHorizontal();
+        }
+
+        private static void DrawLabel(List<AddressableAssetEntry> entries, AddressableAssetSettings aaSettings, string label, float xOffset, float xMax)
+        {
+            GUIContent labelGUIContent = GetGUIContentForLabel(label, s_MaxLabelCharCount);
+            if (s_AssetLabelStyle == null)
+                s_AssetLabelStyle = UnityEngine.GUI.skin.FindStyle("AssetLabel") ?? EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle("AssetLabel");
+            Rect labelRect = GUILayoutUtility.GetRect(labelGUIContent, s_AssetLabelStyle);
+
+            labelRect.x -= xOffset;
+            if (labelRect.xMax + s_RemoveButtonWidth < xMax)
+            {
+                EditorGUI.LabelField(labelRect, labelGUIContent, s_AssetLabelStyle);
+
+                if (s_AssetLabelXButtonStyle == null)
+                {
+                    s_AssetLabelXButtonStyle = UnityEngine.GUI.skin.FindStyle("IconButton") ?? EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle("IconButton");
+                }
+                Rect removeButtonRect = GUILayoutUtility.GetRect(s_RemoveButtonWidth, s_RemoveButtonWidth, s_AssetLabelXButtonStyle);
+                removeButtonRect.x = labelRect.xMax - 4; // overlap the button on the pill-shaped label
+                if (EditorGUI.DropdownButton(removeButtonRect, s_RemoveButtonGUIContent, FocusType.Passive, s_AssetLabelXButtonStyle))
+                    aaSettings.SetLabelValueForEntries(entries, label, false);
+            }
+        }
+
+        private static GUIContent GetGUIContentForLabel(string labelName, int charCount)
+        {
+            string displayText;
+            int maxLabelCharCount = charCount - 3; // account for length of "..."
+            if (labelName.Length > maxLabelCharCount)
+                displayText = labelName.Substring(0, maxLabelCharCount) + "...";
+            else
+                displayText = labelName;
+            return new GUIContent(displayText, labelName);
         }
 
         // Caching due to Gathering TargetInfos is an expensive operation
@@ -413,7 +534,9 @@ namespace UnityEditor.AddressableAssets.GUI
                     bool enterKeyRequestsPopup = isEnterKeyPressed && (s_GroupsDropdownControlName == UnityEngine.GUI.GetNameOfFocusedControl());
                     if (isPickerPressed || enterKeyRequestsPopup)
                     {
-                        EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group").Initialize(settings, entries, !mixedGroups, true, Event.current.mousePosition, AddressableAssetUtility.MoveEntriesToGroup);
+                        var popupWindow = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group", true);
+                        popupWindow.Initialize(settings, entries, !mixedGroups, true, AddressableAssetUtility.MoveEntriesToGroup);
+                        popupWindow.SetPosition(new Vector2(pickerRect.xMax - popupWindow.position.width, pickerRect.position.y));
                     }
 
                     bool isDragging = Event.current.type == EventType.DragUpdated && groupFieldRectNoPicker.Contains(Event.current.mousePosition);

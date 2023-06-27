@@ -255,7 +255,7 @@ namespace UnityEditor.AddressableAssets.GUI
             GUILayout.Space(12);
             ProfilesFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(ProfilesFoldout.IsActive, m_ProfilesHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#profile");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#profile");
                 Application.OpenURL(url);
             });
             if (ProfilesFoldout.IsActive)
@@ -303,7 +303,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             DiagnosticsFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(DiagnosticsFoldout.IsActive, m_DiagnosticsHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#diagnostics");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#diagnostics");
                 Application.OpenURL(url);
             });
             if (DiagnosticsFoldout.IsActive)
@@ -320,7 +320,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             CatalogFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(CatalogFoldout.IsActive, m_CatalogsHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#catalog");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#catalog");
                 Application.OpenURL(url);
             });
             if (CatalogFoldout.IsActive)
@@ -359,7 +359,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             ContentUpdateFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(ContentUpdateFoldout.IsActive, m_ContentUpdateHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#content-update");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#content-update");
                 Application.OpenURL(url);
             });
             if (ContentUpdateFoldout.IsActive)
@@ -469,7 +469,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             DownloadsFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(DownloadsFoldout.IsActive, m_DownloadsHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#downloads");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#downloads");
                 Application.OpenURL(url);
             });
             if (DownloadsFoldout.IsActive)
@@ -491,7 +491,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             BuildFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(BuildFoldout.IsActive, m_BuildHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#build");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#build");
                 Application.OpenURL(url);
             });
             if (BuildFoldout.IsActive)
@@ -569,7 +569,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             DataBuildersFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(DataBuildersFoldout.IsActive, m_DataBuildersHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#build-and-play-mode-scripts");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#build-and-play-mode-scripts");
                 Application.OpenURL(url);
             });
             if (DataBuildersFoldout.IsActive)
@@ -582,7 +582,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             GroupTemplateObjectsFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(GroupTemplateObjectsFoldout.IsActive, m_GroupTemplateObjectsHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#asset-group-templates");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#asset-group-templates");
                 Application.OpenURL(url);
             });
             if (GroupTemplateObjectsFoldout.IsActive)
@@ -595,7 +595,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             InitObjectsFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(InitObjectsFoldout.IsActive, m_InitObjectsHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/AddressableAssetSettings.html#initialization-object-list");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressableAssetSettings.html#initialization-object-list");
                 Application.OpenURL(url);
             });
             if (InitObjectsFoldout.IsActive)
@@ -609,7 +609,7 @@ namespace UnityEditor.AddressableAssets.GUI
 #if UNITY_2019_4_OR_NEWER
             CCDEnabledFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(CCDEnabledFoldout.IsActive, m_CCDEnabledHeader, () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("content-distribution/AddressablesCCD.html");
+                string url = AddressableAssetUtility.GenerateDocsURL("AddressablesCCD.html");
                 Application.OpenURL(url);
             });
             if (CCDEnabledFoldout.IsActive)

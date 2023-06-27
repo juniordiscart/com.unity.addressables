@@ -82,7 +82,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 				}
 
 				// If no entry was found, it may refer to a folder asset.
-				return assetGroups.Exists(ag => ag.entries.Any(e => e.IsFolder && e.BundleFileId.Equals(loc.InternalId)));
+				return assetGroups.Exists(ag => ag.entries.Any(e => e.IsFolder && string.Equals(e.BundleFileId, loc.InternalId)));
 			}
 			else
 			{

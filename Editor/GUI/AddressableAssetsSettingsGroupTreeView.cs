@@ -1071,9 +1071,15 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
                 if (mouseEvent == null)
-                    window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, SafeMoveResourcesToGroup);
+                {
+                    window.Initialize(m_Editor.settings, entries, false, false, SafeMoveResourcesToGroup);
+                    window.SetPosition(Vector2.zero);
+                }
                 else
-                    window.Initialize(m_Editor.settings, entries, false, false, mouseEvent.mousePosition, SafeMoveResourcesToGroup);
+                {
+                    window.Initialize(m_Editor.settings, entries, false, false, SafeMoveResourcesToGroup);
+                    window.SetPosition(mouseEvent.mousePosition);
+                }
 			}
 			else
 				Debug.LogWarning("No Resources found to move");
@@ -1091,9 +1097,15 @@ namespace UnityEditor.AddressableAssets.GUI
 
             var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
             if (pair.Item1 == null)
-                window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, SafeMoveResourcesToGroup);
+            {
+                window.Initialize(m_Editor.settings, entries, false, false, SafeMoveResourcesToGroup);
+                window.SetPosition(Vector2.zero);
+            }
             else
-                window.Initialize(m_Editor.settings, entries, false, false, pair.Item1.mousePosition, SafeMoveResourcesToGroup);
+            {
+                window.Initialize(m_Editor.settings, entries, false, false, SafeMoveResourcesToGroup);
+                window.SetPosition(pair.Item1.mousePosition);
+            }
 		}
 
         void SafeMoveResourcesToGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
@@ -1123,9 +1135,16 @@ namespace UnityEditor.AddressableAssets.GUI
 
             var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
             if (pair.Item1 == null)
-                window.Initialize(m_Editor.settings, entries, false, false, Vector2.zero, MoveEntriesToNewGroupWithSettings);
+            {
+                window.Initialize(m_Editor.settings, entries, false, false, MoveEntriesToNewGroupWithSettings);
+                window.SetPosition(Vector2.zero);
+
+            }
             else
-                window.Initialize(m_Editor.settings, entries, false, false, pair.Item1.mousePosition, MoveEntriesToNewGroupWithSettings);
+            {
+                window.Initialize(m_Editor.settings, entries, false, false, MoveEntriesToNewGroupWithSettings);
+                window.SetPosition(pair.Item1.mousePosition);
+            }
         }
 
         void MoveEntriesToNewGroupWithSettings(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
@@ -1159,9 +1178,15 @@ namespace UnityEditor.AddressableAssets.GUI
 
             var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
             if (pair.Item1 == null)
-                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, Vector2.zero, AddressableAssetUtility.MoveEntriesToGroup);
+            {
+                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, AddressableAssetUtility.MoveEntriesToGroup);
+                window.SetPosition(Vector2.zero);
+            }
             else
-                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, pair.Item1.mousePosition, AddressableAssetUtility.MoveEntriesToGroup);
+            {
+                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, AddressableAssetUtility.MoveEntriesToGroup);
+                window.SetPosition(pair.Item1.mousePosition);
+            }
 		}
 
 		internal void CreateNewGroup(object context)

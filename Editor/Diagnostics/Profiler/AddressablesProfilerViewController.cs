@@ -36,6 +36,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             {
                 view.OnReinitialise();
             }
+
+            AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.ProfileModuleViewCreated);
             return view.RootVisualElement;
         }
 

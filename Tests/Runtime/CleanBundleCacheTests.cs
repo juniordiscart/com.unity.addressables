@@ -44,8 +44,12 @@ namespace AddressableAssetsIntegrationTests
             RunBuilder(settings, m_UniqueTestName + kOldBuildId);
 
             settings = AddressableAssetSettings.Create(Path.Combine(tempAssetFolder, "Settings" + kNewBuildId), "AddressableAssetSettings.Tests", false, true);
+
+            bool temp = ProjectConfigData.PostProfilerEvents;
+            ProjectConfigData.PostProfilerEvents = true;
             CreateGroup(settings, tempAssetFolder, kNewBuildId, GetRefAsset);
             RunBuilder(settings, m_UniqueTestName + kNewBuildId);
+            ProjectConfigData.PostProfilerEvents = temp;
         }
 
         AddressableAssetGroup CreateGroup(AddressableAssetSettings settings, string tempAssetFolder, string buildId, Func<int, string> objNaming)

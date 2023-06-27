@@ -159,7 +159,7 @@ namespace UnityEditor.AddressableAssets.Build
                 if (!shouldContinue)
                 {
                     // if a post-build step adds an error we have to log it manually
-                    if (result != null && result.Error != "")
+                    if (result != null && !string.IsNullOrEmpty(result.Error))
                     {
                         Debug.LogError(result.Error);
                     }

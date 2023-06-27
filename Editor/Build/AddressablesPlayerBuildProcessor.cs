@@ -144,12 +144,17 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     }
 
     /// <summary>
+    /// Allows to filter paths which should be added to StreamingAssets during build. Should return true if path should be added to Streaming Assets.
+    /// </summary>
+    internal static Func<string, bool> AddPathToStreamingAssets { get; set; }
+
+    /// <summary>
     /// Gets a list of StreamingAsset files managed through Addressables, and relative path in StreamingAssets.
     /// </summary>
     internal static List<KeyValuePair<string, string>> GetStreamingAssetPaths()
     {
         List<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>(1);
-        if (Directory.Exists(Addressables.BuildPath))
+        if (Directory.Exists(Addressables.BuildPath) && (AddPathToStreamingAssets != null ? AddPathToStreamingAssets.Invoke(Addressables.BuildPath) : true))
             pairs.Add(new KeyValuePair<string, string>(Addressables.BuildPath, "aa"));
         return pairs;
     }

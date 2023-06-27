@@ -22,6 +22,7 @@ namespace UnityEditor.AddressableAssets.GUI
         string m_OldName;
 
         private const string k_RemoveLabelsOptAlwaysKey = "labelsWindowRemoveLabelFromEntries";
+        GUIContent m_RemoveUnusedLabelsMenuContent = new GUIContent("Remove Unused Labels", "Removes all unused labels from the Addressables settings");
 
         /// <summary>
         /// Creates a new LabelWindow instance and retrieves label names from the given settings object.
@@ -62,8 +63,17 @@ namespace UnityEditor.AddressableAssets.GUI
                     return;
                 }
             }
+
             GUILayout.BeginVertical(EditorStyles.label);
             GUILayout.Space(m_BorderSpacing);
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(m_RemoveUnusedLabelsMenuContent))
+            {
+                m_Settings.RemoveUnusedLabels();
+            }
+            GUILayout.EndHorizontal();
+
             m_ScrollPosition = GUILayout.BeginScrollView(m_ScrollPosition);
             m_LabelNamesRl.DoLayoutList();
             GUILayout.EndScrollView();
@@ -128,7 +138,7 @@ namespace UnityEditor.AddressableAssets.GUI
             AddressableAssetUtility.OpenAssetIfUsingVCIntegration(m_Settings);
 
             if (EditorUtility.DisplayDialog("Remove Label", "Also remove label from all entries?",
-                    "Yes", "No", DialogOptOutDecisionType.ForThisMachine, k_RemoveLabelsOptAlwaysKey))
+                "Yes", "No", DialogOptOutDecisionType.ForThisMachine, k_RemoveLabelsOptAlwaysKey))
             {
                 foreach (AddressableAssetGroup assetGroup in m_Settings.groups)
                 {

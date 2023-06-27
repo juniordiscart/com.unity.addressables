@@ -10,7 +10,7 @@
 
     <uie:Toolbar style="justify-content: flex-end; align-self: stretch; align-items: center;">
         <ui:Label text="(Experimental Profiler Module)" tabindex="-1" style="white-space: normal; flex-wrap: wrap; -unity-font-style: bold;" />
-        <addr:DocumentationButton page="editor/tools/ProfilerModule.html" display-tooltip-when-elided="true" tooltip="Open documentation in browser" />
+        <addr:DocumentationButton page="ProfilerModule.html" display-tooltip-when-elided="true" tooltip="Open documentation in browser" />
     </uie:Toolbar>
 
     <ui:VisualElement name="MainContainer" style="align-items: stretch; flex-grow: 1; flex-shrink: 1;">
@@ -44,7 +44,7 @@
                                                                  name="ReferencedByButton"
                                                                  tooltip="Displays a list of the content that the selection has references to."
                                                                  style="flex-grow: 1; display: flex;"/>
-                    <addr:DocumentationButton name="DocsButton" page="runtime/MemoryManagement.html#memory-implications-of-loading-assetbundle-dependencies" display-tooltip-when-elided="true" tooltip="Open documentation in browser" />
+                    <addr:DocumentationButton name="DocsButton" page="MemoryManagement.html#memory-implications-of-loading-assetbundle-dependencies" display-tooltip-when-elided="true" tooltip="Open documentation in browser" />
                 </addr:Ribbon>
                 <ui:VisualElement style="border-left-color: rgb(25, 25, 25); border-right-color: rgb(25, 25, 25); border-top-color: rgb(25, 25, 25); border-bottom-color: rgb(25, 25, 25); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; margin-right: 8px; padding-left: 5px; padding-right: 5px; padding-top: 5px; padding-bottom: 5px;">
                     <ui:TreeView view-data-key="unity-tree-view" focusable="true" name="ReferencesTree" style="max-height: none; min-height: 70px;" />

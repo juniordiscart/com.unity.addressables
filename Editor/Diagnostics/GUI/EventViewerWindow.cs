@@ -37,6 +37,15 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
         private GUIContent m_ClearEventsGUIContent = new GUIContent("Clear Events", "Clear all data displayed in the window");
         private GUIContent m_CurrentFrameGUIContent = new GUIContent("Current", "View the latest frame");
 
+        private const string k_EventViewerInfoText = "Event Viewer is deprecated and replaced with Addressables Profiler Module.";
+        private GUIContent m_OpenProfilerButtonGUI = new GUIContent("Open Profiler");
+        private GUIContent m_ProfilerDocsButtonGUI = new GUIContent("More Info");
+
+#if !ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
+        private const string k_InstallCorePackageTitle = "Profiling core Required";
+        private const string k_InstallCorePackageMessage = "The package Profiling core is required to run the Addressables module. Install now?";
+#endif
+
         EventDataPlayerSession activeSession
         {
             get { return m_EventData == null ? null : m_EventData.GetSessionByIndex(m_PlayerSessionIndex); }
@@ -243,6 +252,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
                 }
             }
 
+            DrawProfilerInformer();
             DrawToolBar(activeSession);
 
             var r = EditorGUILayout.GetControlRect();
@@ -359,6 +369,41 @@ namespace UnityEditor.AddressableAssets.Diagnostics.GUI
                 SetInspectFrame(m_LatestFrame);
 
             GUILayout.EndHorizontal();
+        }
+
+        void DrawProfilerInformer()
+        {
+#if UNITY_2022_2_OR_NEWER
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.HelpBox(k_EventViewerInfoText, MessageType.Info);
+
+            EditorGUILayout.BeginVertical();
+
+            if (GUILayout.Button(m_OpenProfilerButtonGUI))
+            {
+#if !ENABLE_ADDRESSABLE_PROFILER
+                bool install = EditorUtility.DisplayDialog(k_InstallCorePackageTitle, k_InstallCorePackageMessage, "Install", "Cancel");
+                if (install)
+                {
+                    UnityEditor.PackageManager.Client.Add("com.unity.profiling.core@1.0.2");
+                    EditorApplication.ExecuteMenuItem("Window/Analysis/Profiler");
+                    Close();
+                }
+#else
+                EditorApplication.ExecuteMenuItem("Window/Analysis/Profiler");
+                Close();
+#endif
+            }
+            if (GUILayout.Button(m_ProfilerDocsButtonGUI))
+            {
+                string page = "editor/tools/ProfilerModule.html";
+                string url = AddressableAssetUtility.GenerateDocsURL(page);
+                Application.OpenURL(url);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            GUILayout.EndHorizontal();
+#endif
         }
 
         protected virtual void OnGetColumns(List<string> columnNames, List<string> tooltips, List<float> columnSizes)

@@ -116,7 +116,17 @@ namespace UnityEditor.AddressableAssets
             BuildReportViewByLabels = 23,
             BuildReportViewByGroup = 24,
             BuildReportViewByDuplicatedAssets = 25,
-            BuildReportImportedManually = 26
+            BuildReportImportedManually = 26,
+            BuildReportOpenRefsTo = 27,
+            BuildReportOpenRefsBy = 28,
+            BuildReportDrillDownRefsTo = 29,
+            BuildReportDrillDownRefsBy = 30,
+            BuildReportDetailsSelectInGroup = 31,
+            BuildReportDetailsSelectInEditor = 32,
+            BuildReportDetailsSelectInBundle = 33,
+            BuildReportDetailsClose = 34,
+            BuildReportDetailsOpen = 35,
+            ProfileModuleViewCreated = 36
         }
 
         internal enum BuildScriptType

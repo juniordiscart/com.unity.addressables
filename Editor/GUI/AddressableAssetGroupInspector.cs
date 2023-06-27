@@ -169,9 +169,9 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 string helpUrl = null;
                 if (schemaType == typeof(BundledAssetGroupSchema))
-                    helpUrl = AddressableAssetUtility.GenerateDocsURL("editor/groups/ContentPackingAndLoadingSchema.html");
+                    helpUrl = AddressableAssetUtility.GenerateDocsURL("ContentPackingAndLoadingSchema.html");
                 if (schemaType == typeof(ContentUpdateGroupSchema))
-                    helpUrl = AddressableAssetUtility.GenerateDocsURL("editor/groups/UpdateRestrictionSchema.html");
+                    helpUrl = AddressableAssetUtility.GenerateDocsURL("UpdateRestrictionSchema.html");
                 Action helpAction = () => { Application.OpenURL(helpUrl); };
 
                 Action<Rect> menuAction = rect =>

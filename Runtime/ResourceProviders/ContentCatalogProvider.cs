@@ -176,6 +176,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 #else
                         ResourceLocationBase location = new ResourceLocationBase(idToLoad, idToLoad,
                            typeof(JsonAssetProvider).FullName, typeof(ContentCatalogData));
+                        location.Data = providerLoadRequestOptions;
 #endif
                         m_ContentCatalogDataLoadOp = m_ProviderInterface.ResourceManager.ProvideResource<ContentCatalogData>(location);
                         m_ContentCatalogDataLoadOp.Completed += CatalogLoadOpCompleteCallback;

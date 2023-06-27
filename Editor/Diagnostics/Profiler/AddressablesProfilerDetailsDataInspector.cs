@@ -188,24 +188,24 @@ namespace UnityEditor.AddressableAssets.Diagnostics
 
                 if (referencingAssets.Count > 0)
                 {
-                    m_HelpManager.MakeHelp(ProfilerStrings.BundleReferencingWithDependencies, new List<ContentData>(referencingAssets), "editor/building-content/AssetDependencies.html", "Learn more: About Dependencies");
+                    m_HelpManager.MakeHelp(ProfilerStrings.BundleReferencingWithDependencies, new List<ContentData>(referencingAssets), "AssetDependencies.html", "Learn more: About Dependencies");
                 }
 
                 if (bundlesReferencingWithoutLoadingReferencingAsset.Count > 0)
                 {
-                    m_HelpManager.MakeHelp(ProfilerStrings.BundleReferencingWithNoLoadedDependencies, new List<ContentData>(bundlesReferencingWithoutLoadingReferencingAsset), "editor/building-content/AssetDependencies.html", "Learn more: About Dependencies");
+                    m_HelpManager.MakeHelp(ProfilerStrings.BundleReferencingWithNoLoadedDependencies, new List<ContentData>(bundlesReferencingWithoutLoadingReferencingAsset), "AssetDependencies.html", "Learn more: About Dependencies");
                 }
             }
 
             if (bundleData.Source == BundleSource.Local)
             {
                 if (bundleData.CheckSumEnabled)
-                    m_HelpManager.MakeHelp(ProfilerStrings.LocalBundleUsingCRC, new List<ContentData>(), "editor/groups/ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
+                    m_HelpManager.MakeHelp(ProfilerStrings.LocalBundleUsingCRC, new List<ContentData>(), "ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
             }
             else if (bundleData.Source == BundleSource.Cache)
             {
                 if (bundleData.CheckSumEnabled)
-                    m_HelpManager.MakeHelp(ProfilerStrings.CachedBundleUsingCRC, new List<ContentData>(), "editor/groups/ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
+                    m_HelpManager.MakeHelp(ProfilerStrings.CachedBundleUsingCRC, new List<ContentData>(), "ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
             }
             else if (bundleData.Source == BundleSource.Download)
             {
@@ -217,7 +217,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCachingEnabled);
 #endif
                 if (bundleData.CachingEnabled && !bundleData.CheckSumEnabled)
-                    m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCRC, new List<ContentData>(), "editor/groups/ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
+                    m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCRC, new List<ContentData>(), "ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
             }
         }
 

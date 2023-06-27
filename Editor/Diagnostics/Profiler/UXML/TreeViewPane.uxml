@@ -12,7 +12,7 @@
             <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); width: 20px; max-width: 20px;" />
             <uie:ToolbarMenu name="SearchMenu" tabindex="-1" display-tooltip-when-elided="true" tooltip="Filter the Asset TreeView" text="Filter"/>
             <uie:ToolbarSearchField name="SearchField" focusable="true" display-tooltip-when-elided="true" tooltip="Filter what is visible in the content tree" style="min-width: 200px; align-self: flex-end;" />
-            <addr:DocumentationButton page="editor/tools/ProfilerModule.html#filtering-content" display-tooltip-when-elided="true" tooltip="Open documentation in browser" />
+            <addr:DocumentationButton page="ProfilerModule.html#filtering-content" display-tooltip-when-elided="true" tooltip="Open documentation in browser" />
         </uie:Toolbar>
     </ui:VisualElement>
     <ui:MultiColumnTreeView name="TreeView" fixed-item-height="20" sorting-enabled="true" reorderable="true" show-alternating-row-backgrounds="ContentOnly" display-tooltip-when-elided="true" tooltip="">

@@ -416,16 +416,22 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         [FormerlySerializedAs("m_timeout")]
         [SerializeField]
         [Tooltip("Attempt to abort after the number of seconds in timeout have passed, where the UnityWebRequest has received no data. (Only applies to remote asset bundles)")]
+        [Min(0)]
         int m_Timeout;
 
         /// <summary>
         /// Attempt to abort after the number of seconds in timeout have passed, where the UnityWebRequest has received no data.
+        /// Use 0 for no timeout
         /// </summary>
         public int Timeout
         {
             get => m_Timeout;
             set
             {
+                if (value < 0)
+                    value = 0;
+                if (value > short.MaxValue)
+                    value = short.MaxValue;
                 if (m_Timeout != value)
                 {
                     m_Timeout = value;
@@ -459,6 +465,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         [FormerlySerializedAs("m_redirectLimit")]
         [SerializeField]
         [Tooltip("Indicates the number of redirects which this UnityWebRequest will follow before halting with a “Redirect Limit Exceeded” system error. (Only applies to remote asset bundles)")]
+        [Range(-1, 128)]
         int m_RedirectLimit = -1;
 
         /// <summary>
@@ -469,6 +476,10 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             get => m_RedirectLimit;
             set
             {
+                if (value < -1)
+                    value = -1;
+                if (value > 128)
+                    value = 128;
                 if (m_RedirectLimit != value)
                 {
                     m_RedirectLimit = value;
@@ -480,7 +491,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         [FormerlySerializedAs("m_retryCount")]
         [SerializeField]
         [Tooltip("Indicates the number of times the request will be retried.")]
-        int m_RetryCount;
+        [Range(0,128)]
+        int m_RetryCount = 0;
 
         /// <summary>
         /// Indicates the number of times the request will be retried.
@@ -490,6 +502,10 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             get => m_RetryCount;
             set
             {
+                if (value < 0)
+                    value = 0;
+                if (value > 128)
+                    value = 128;
                 if (m_RetryCount != value)
                 {
                     m_RetryCount = value;
@@ -827,7 +843,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 
             AdvancedOptionsFoldout.IsActive = GUI.AddressablesGUIUtility.FoldoutWithHelp(AdvancedOptionsFoldout.IsActive, new GUIContent("Advanced Options"), () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/groups/ContentPackingAndLoadingSchema.html#advanced-options");
+                string url = AddressableAssetUtility.GenerateDocsURL("ContentPackingAndLoadingSchema.html#advanced-options");
                 Application.OpenURL(url);
             });
             if (AdvancedOptionsFoldout.IsActive)
@@ -860,7 +876,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             EditorGUI.BeginChangeCheck();
             AdvancedOptionsFoldout.IsActive = GUI.AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(AdvancedOptionsFoldout.IsActive, new GUIContent("Advanced Options"), () =>
             {
-                string url = AddressableAssetUtility.GenerateDocsURL("editor/groups/ContentPackingAndLoadingSchema.html#advanced-options");
+                string url = AddressableAssetUtility.GenerateDocsURL("ContentPackingAndLoadingSchema.html#advanced-options");
                 Application.OpenURL(url);
             }, 10);
             if (AdvancedOptionsFoldout.IsActive)

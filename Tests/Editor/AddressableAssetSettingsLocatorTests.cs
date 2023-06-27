@@ -103,7 +103,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.NotNull(locations.FirstOrDefault(s => s.InternalId == e), $"Locations do not contain entry with internal id of {e}");
         }
 
-        [UnityTest]
+        [UnityTest, Ignore("Instability, sometimes main thread locks up. https://jira.unity3d.com/browse/ADDR-3397")]
         public IEnumerator CanLoadAssetAsync_InEditMode()
         {
             var entry = m_Settings.CreateOrMoveEntry(CreateAsset("x", GetPath("x.asset")), m_Settings.DefaultGroup).address = "x";
