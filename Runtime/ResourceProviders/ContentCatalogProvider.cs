@@ -275,7 +275,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     }
                     else
                     {
-                        m_LoadBundleRequest = AssetBundle.LoadFromFileAsync(m_BundlePath);
+#if ENABLE_ASSETBUNDLE_SYNC
+						m_CatalogAssetBundle = AssetBundle.LoadFromFile(m_BundlePath);
+						var textAssets = m_CatalogAssetBundle.LoadAllAssets<TextAsset>();
+						LoadTextAssetRequestComplete(textAssets[0]);
+#else
+						m_LoadBundleRequest = AssetBundle.LoadFromFileAsync(m_BundlePath);
                         m_LoadBundleRequest.completed += loadOp =>
                         {
                             if (loadOp is AssetBundleCreateRequest createRequest && createRequest.assetBundle != null)
@@ -292,6 +297,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                                 m_OpInProgress = false;
                             }
                         };
+#endif
                     }
                 }
 
@@ -334,6 +340,22 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     Unload();
                     m_OpInProgress = false;
                 }
+
+				void LoadTextAssetRequestComplete(TextAsset textAsset)
+				{
+					if (textAsset.text != null)
+					{
+						m_CatalogData = JsonUtility.FromJson<ContentCatalogData>(textAsset.text);
+						OnLoaded?.Invoke(m_CatalogData);
+					}
+					else
+					{
+						Addressables.LogError($"No catalog text assets where found in bundle {m_BundlePath}");
+					}
+
+					Unload();
+					m_OpInProgress = false;
+				}
 
                 public bool WaitForCompletion()
                 {
