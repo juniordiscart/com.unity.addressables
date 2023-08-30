@@ -228,11 +228,16 @@ namespace UnityEditor.AddressableAssets.GUI
 			}
 		}
 
-		GUIStyle GetStyle(string styleName)
+		GUIStyle GetStyle(string styleName, string altStyleName = null)
 		{
 			GUIStyle s = UnityEngine.GUI.skin.FindStyle(styleName);
+
+			if ((s == null) && !string.IsNullOrWhiteSpace(altStyleName))
+				s = UnityEngine.GUI.skin.FindStyle(altStyleName);
+
 			if (s == null)
 				s = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle(styleName);
+
 			if (s == null)
 			{
 				Addressables.LogError("Missing built-in guistyle " + styleName);
@@ -256,15 +261,9 @@ namespace UnityEditor.AddressableAssets.GUI
 			if (m_SearchStyles == null)
 			{
 				m_SearchStyles = new List<GUIStyle>();
-#if DISABLE_LEGACY_SEARCH_STYLE_ID
-				m_SearchStyles.Add(GetStyle("ToolbarSearchTextFieldPopup")); //GetStyle("ToolbarSeachTextField");
-				m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButton"));
-				m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButtonEmpty"));
-#else
-				m_SearchStyles.Add(GetStyle("ToolbarSeachTextFieldPopup")); //GetStyle("ToolbarSeachTextField");
-				m_SearchStyles.Add(GetStyle("ToolbarSeachCancelButton"));
-				m_SearchStyles.Add(GetStyle("ToolbarSeachCancelButtonEmpty"));
-#endif
+				m_SearchStyles.Add(GetStyle("ToolbarSearchTextFieldPopup", "ToolbarSeachTextFieldPopup")); //GetStyle("ToolbarSeachTextField");
+				m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButton", "ToolbarSeachCancelButton"));
+				m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButtonEmpty", "ToolbarSeachCancelButtonEmpty"));
 			}
 
 			if (m_ButtonStyle == null)
