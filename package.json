@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "1.21.14",
+  "version": "1.21.15",
   "unity": "2019.4",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "1.21.7",
+    "com.unity.scriptablebuildpipeline": "1.21.8",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -20,16 +20,16 @@
     "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
   },
   "_upm": {
-    "changelog": "- Fixed an issue where CleanBundleCache was giving an invalid handle error when Send Profiler Events was turned on\n- Fixed issue where provider data wasn't set for catalog downloads, so web request timeouts would default to 0 instead of the given value\n- Added the ability to manage Addressables labels from the asset inspector\n- Fixed an issue where the Addressables build cache would get cleared even if you pressed no in the popup window.\n- Optimised gc allocations with Addressables profiling module data transfer.\n- Fixed issue with binary catalog and asset bundle download redirect limit causing an error when set to -1 (default)\n- Fixed issue where player preferences for logging runtime exceptions weren't being compiled out using the Editor scripting define\n- Fixed an issue where in some cases sprites would not load properly when using a binary catalog"
+    "changelog": "- Fixed an issue where using binary catalogs causes a crash on Android with ARM7.\n- DownloadDepedenciesAsync no longer loads asset bundles into memory\n- Fixed a bug where a GUI style was misspelled in the Editor and was recently fixed\n- Fixed an exception getting thrown in the Addressables Report when drilling into a bundle chain"
   },
   "upmCi": {
-    "footprint": "2acf73f99a6740ed573e7f4b0848f76d80d36424"
+    "footprint": "a496399c62cdf3d27472d69157ce7da743931d28"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@1.21/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "cca77c1bbecdfe2a0204e60d45fbe3a5b6b4b811"
+    "revision": "b6e4f321768265894baab72ca85cb8b8877ffbd4"
   },
   "samples": [
     {

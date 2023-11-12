@@ -54,7 +54,7 @@ static class AddressablesTestUtility
     public const int kPrefabCount = 10;
     public const int kMaxWebRequestCount = 5;
 
-    static public void Setup(string testType, string pathFormat, string suffix)
+    static public void Setup(string testType, string pathFormat, string suffix, bool useUnityWebRequestForLocalBundles)
     {
 #if UNITY_EDITOR
         bool currentIgnoreState = LogAssert.ignoreFailingMessages;
@@ -71,6 +71,7 @@ static class AddressablesTestUtility
         if (group == null)
             group = settings.CreateGroup("TestStuff" + suffix, true, false, false, null, typeof(BundledAssetGroupSchema));
         group.GetSchema<BundledAssetGroupSchema>().BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.OnlyHash;
+        group.GetSchema<BundledAssetGroupSchema>().UseUnityWebRequestForLocalBundles = useUnityWebRequestForLocalBundles;
         settings.DefaultGroup = group;
         for (int i = 0; i < kPrefabCount; i++)
         {

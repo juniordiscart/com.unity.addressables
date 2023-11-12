@@ -427,7 +427,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                         {
                             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                                 Directory.CreateDirectory(dir);
+#if ENABLE_BINARY_CATALOG
+                            ccd.CopyToFile(localCachePath);
+#else
                             File.WriteAllText(localCachePath, JsonUtility.ToJson(ccd));
+#endif
                             File.WriteAllText(localCachePath.Replace(kCatalogExt, ".hash"), m_RemoteHashValue);
                         }
                         catch (UnauthorizedAccessException uae)

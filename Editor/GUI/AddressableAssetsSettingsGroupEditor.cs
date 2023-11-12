@@ -228,12 +228,9 @@ namespace UnityEditor.AddressableAssets.GUI
 			}
 		}
 
-		GUIStyle GetStyle(string styleName, string altStyleName = null)
+		GUIStyle GetStyle(string styleName)
 		{
 			GUIStyle s = UnityEngine.GUI.skin.FindStyle(styleName);
-
-			if ((s == null) && !string.IsNullOrWhiteSpace(altStyleName))
-				s = UnityEngine.GUI.skin.FindStyle(altStyleName);
 
 			if (s == null)
 				s = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle(styleName);
@@ -256,15 +253,22 @@ namespace UnityEditor.AddressableAssets.GUI
 		[NonSerialized]
 		Texture2D m_CogIcon;
 
-		void TopToolbar(Rect toolbarPos)
-		{
-			if (m_SearchStyles == null)
-			{
-				m_SearchStyles = new List<GUIStyle>();
-				m_SearchStyles.Add(GetStyle("ToolbarSearchTextFieldPopup", "ToolbarSeachTextFieldPopup")); //GetStyle("ToolbarSeachTextField");
-				m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButton", "ToolbarSeachCancelButton"));
-				m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButtonEmpty", "ToolbarSeachCancelButtonEmpty"));
-			}
+        void TopToolbar(Rect toolbarPos)
+        {
+            if (m_SearchStyles == null)
+            {
+                m_SearchStyles = new List<GUIStyle>();
+
+#if UNITY_2023_2_OR_NEWER
+                m_SearchStyles.Add(GetStyle("ToolbarSearchTextFieldPopup")); //GetStyle("ToolbarSearchTextField");
+                m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButton"));
+                m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButtonEmpty"));
+#else
+                m_SearchStyles.Add(GetStyle("ToolbarSeachTextFieldPopup")); //GetStyle("ToolbarSearchTextField");
+                m_SearchStyles.Add(GetStyle("ToolbarSeachCancelButton"));
+                m_SearchStyles.Add(GetStyle("ToolbarSeachCancelButtonEmpty"));
+#endif
+            }
 
 			if (m_ButtonStyle == null)
 				m_ButtonStyle = GetStyle("ToolbarButton");

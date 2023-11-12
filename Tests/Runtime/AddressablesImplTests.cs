@@ -18,6 +18,11 @@ namespace AddressableAssetsIntegrationTests
     {
         Action<AsyncOperationHandle, Exception> m_prevHandler;
 
+        protected virtual int ExpectedOpCount { get { return 2; } }
+        protected virtual int ExpectedAssetBundlesLoadedCount { get { return 0; } }
+
+        protected virtual bool UseUnityWebRequestForLocalBundles { get { return false; } }
+
         [SetUp]
         public void SetUp()
         {
@@ -39,14 +44,31 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
             Assert.IsTrue(op.IsValid());
             var opList = (List<IAssetBundleResource>)op.Result;
-            Assert.AreEqual(2, opList.Count);
+            Assert.AreEqual(ExpectedOpCount, opList.Count); // includes Monoscript and UnityBuiltInAssets bundle requests
+
+            // assert that only the expected asset bundles are loaded by default
+            var bundles = AssetBundle.GetAllLoadedAssetBundles();
+            int loadedBundleCount = 0;
+            foreach (var bundle in bundles)
+            {
+                loadedBundleCount++;
+            }
+            Assert.AreEqual(ExpectedAssetBundlesLoadedCount, loadedBundleCount); // only the Monoscript and UnityBuildInAssets bundles should be loaded
+
+            // assert that we can load downloaded asset bundles after the fact
+            var opLoadedBundleCount = 0;
             if (opList.Count > 0)
             {
                 foreach (var resultBundle in opList)
                 {
-                    Assert.NotNull(resultBundle.GetAssetBundle());
+
+                    if (resultBundle.GetAssetBundle() != null)
+                    {
+                        opLoadedBundleCount++;
+                    }
                 }
             }
+            Assert.AreEqual(ExpectedAssetBundlesLoadedCount, opLoadedBundleCount);
         }
 
         [UnityTest]

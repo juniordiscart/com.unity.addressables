@@ -322,19 +322,13 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> GetAssetsThatLinkToBundleMap(BuildLayout.Bundle bundle, BuildLayout.ExplicitAsset asset)
         {
             Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>> bundlesLinkedToAsset = new Dictionary<BuildLayout.Bundle, List<BuildLayout.ExplicitAsset>>();
-            foreach(var bDep in bundle.BundleDependencies)
+            foreach (var externalAsset in asset.ExternallyReferencedAssets)
             {
-                foreach (var depAsset in bDep.AssetDependencies)
-                {
-                    if (depAsset.rootAsset == asset)
-                    {
-                        var depBundle = depAsset.dependencyAsset.Bundle;
-                        if (!bundlesLinkedToAsset.ContainsKey(depBundle))
-                            bundlesLinkedToAsset[depBundle] = new List<BuildLayout.ExplicitAsset>();
+                var depBundle = externalAsset.Bundle;
+                if (!bundlesLinkedToAsset.ContainsKey(depBundle))
+                    bundlesLinkedToAsset[depBundle] = new List<BuildLayout.ExplicitAsset>();
 
-                        bundlesLinkedToAsset[depBundle].Add(depAsset.dependencyAsset);
-                    }
-                }
+                bundlesLinkedToAsset[depBundle].Add(externalAsset);
             }
             return bundlesLinkedToAsset;
         }

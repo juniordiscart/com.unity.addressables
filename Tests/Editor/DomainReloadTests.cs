@@ -8,7 +8,7 @@ namespace UnityEditor.AddressableAssets.Tests
 {
     public class DomainReloadTests
     {
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2022_1_OR_NEWER
         bool savedState;
         EnterPlayModeOptions savedOptions;
 
@@ -23,6 +23,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Assert.False(Application.isPlaying);
             yield return new EnterPlayMode(false);
+
         }
 
         [UnityTearDown]
@@ -36,19 +37,15 @@ namespace UnityEditor.AddressableAssets.Tests
 #endif
             Assert.False(Application.isPlaying);
         }
-#endif
 
         [Test]
-        [Platform(Exclude = "OSX")]
         public void DomainReloadTests_ReInitAddressablesFlagIsSetCorrectly_WhenExitingPlaymode()
         {
-#if !UNITY_2020_2_OR_NEWER
-            Assert.Ignore($"Skipping Domain Reload test {nameof(DomainReloadTests_ReInitAddressablesFlagIsSetCorrectly_WhenExitingPlaymode)}, Domain Reload tests supported from 2020.2+");
-#else
             Assert.True(Application.isPlaying);
             Addressables.ResolveInternalId("DummyString"); //just need this so m_Addressables property gets called
             Assert.IsFalse(Addressables.reinitializeAddressables);
-#endif
         }
+#endif
     }
 }
+

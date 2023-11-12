@@ -459,7 +459,6 @@ namespace UnityEngine.ResourceManagement
 			{
 				op.IncrementReferenceCount();
 				return new AsyncOperationHandle(op, location.ToString());
-				;
 			}
 
 			Type provType;
@@ -620,7 +619,11 @@ namespace UnityEngine.ResourceManagement
 			Allocator.Release(o.GetType().GetHashCode(), o);
 			var cachable = o as ICachable;
 			if (cachable?.Key != null)
+            {
 				RemoveOperationFromCache(cachable.Key);
+                cachable.Key = null;
+            }
+
 		}
 
 		internal T CreateOperation<T>(Type actualType, int typeHash, IOperationCacheKey cacheKey, Action<IAsyncOperation> onDestroyAction) where T : IAsyncOperation

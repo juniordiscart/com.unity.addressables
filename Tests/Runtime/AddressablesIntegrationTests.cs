@@ -42,7 +42,7 @@ namespace AddressableAssetsIntegrationTests
         {
             return string.Format("{0}" + Addressables.LibraryPath + "settings_{1}_TEST_{2}.json", "file://{UnityEngine.Application.dataPath}/../", testType, suffix);
         }
-        
+
         protected virtual ILocationSizeData CreateLocationSizeData(string name, long size, uint crc, string hash)
         {
             return null;
@@ -55,7 +55,7 @@ namespace AddressableAssetsIntegrationTests
 
         public virtual void Setup()
         {
-            AddressablesTestUtility.Setup(TypeName, PathFormat, "BASE");
+            AddressablesTestUtility.Setup(TypeName, PathFormat, "BASE", false);
         }
 
         [OneTimeTearDown]
@@ -206,6 +206,10 @@ namespace AddressableAssetsIntegrationTests
 #if UNITY_EDITOR
     class AddressablesIntegrationTestsFastMode : AddressablesIntegrationTests
     {
+        // Fast mode doesn't do any async loading
+        protected override int ExpectedOpCount { get { return 0; } }
+
+
         protected override string TypeName
         {
             get { return "BuildScriptFastMode"; }
@@ -256,8 +260,8 @@ namespace AddressableAssetsIntegrationTests
 
         public override void Setup()
         {
-            AddressablesTestUtility.Setup("BuildScriptPackedMode", PathFormat, "BASE");
-            AddressablesTestUtility.Setup(TypeName, PathFormat, "BASE");
+            AddressablesTestUtility.Setup("BuildScriptPackedMode", PathFormat, "BASE", UseUnityWebRequestForLocalBundles);
+            AddressablesTestUtility.Setup(TypeName, PathFormat, "BASE", UseUnityWebRequestForLocalBundles);
         }
 
         public override void DeleteTempFiles()
@@ -272,12 +276,13 @@ namespace AddressableAssetsIntegrationTests
             return GetDownloadSize_CalculatesCachedBundlesInternal();
         }
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator GetDownloadSize_WithList_CalculatesCachedBundles()
         {
             return GetDownloadSize_WithList_CalculatesCachedBundlesInternal();
         }
+#endif
 
         [UnityTest]
         public IEnumerator GetDownloadSize_WithList_CalculatesCorrectSize_WhenAssetsReferenceSameBundle()
@@ -285,13 +290,36 @@ namespace AddressableAssetsIntegrationTests
             return GetDownloadSize_WithList_CalculatesCorrectSize_WhenAssetsReferenceSameBundleInternal();
         }
     }
+
+    class AddressablesIntegrationTestsPlayerUseUwr : AddressablesIntegrationPlayer
+    {
+        protected override string TypeName
+        {
+            get { return "BuildScriptPackedPlayerModeUwr"; }
+        }
+
+        // using UWR should just download and not load the asset bundles
+
+        protected override bool UseUnityWebRequestForLocalBundles { get { return true; } }
+    }
+
+    class AddressablesIntegrationTestsPackedPlayModeUseUwr : AddressablesIntegrationTestsPackedPlayMode
+    {
+        protected override string TypeName
+        {
+            get { return "BuildScriptPackedModeUwr"; }
+        }
+
+        protected override bool UseUnityWebRequestForLocalBundles { get { return true; } }
+    }
 #endif
+
 
     class AddressablesIntegrationPlayer : AddressablesIntegrationTests
     {
         protected override string TypeName
         {
-            get { return "BuildScriptPackedMode"; }
+            get { return "BuildScriptPackedPlayerMode"; }
         }
 
         protected override string GetRuntimePath(string testType, string suffix)
@@ -316,12 +344,13 @@ namespace AddressableAssetsIntegrationTests
             return GetDownloadSize_CalculatesCachedBundlesInternal();
         }
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator GetDownloadSize_WithList_CalculatesCachedBundles()
         {
             return GetDownloadSize_WithList_CalculatesCachedBundlesInternal();
         }
+#endif
 
         [UnityTest]
         public IEnumerator GetDownloadSize_WithList_CalculatesCorrectSize_WhenAssetsReferenceSameBundle()

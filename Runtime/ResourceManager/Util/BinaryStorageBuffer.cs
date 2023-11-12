@@ -246,6 +246,11 @@ namespace UnityEngine.ResourceManagement.Util
                 Init(data, maxCachedObjects, adapters);
             }
 
+            internal byte[] GetBuffer()
+            {
+                return m_Buffer;
+            }
+
 
             public Reader(Stream inputStream, uint bufferSize, int maxCachedObjects, params ISerializationAdapter[] adapters)
             {
@@ -369,8 +374,12 @@ namespace UnityEngine.ResourceManagement.Util
                 if (id >= m_Buffer.Length)
                     throw new Exception($"Data offset {id} is out of bounds of buffer with length of {m_Buffer.Length}.");
 
-                fixed (byte *pData = m_Buffer)
-                    return *(T*)&pData[id];
+                fixed (byte* pData = m_Buffer)
+                {
+                    T val;
+                    UnsafeUtility.MemCpy(&val, pData + id, sizeof(T));
+                    return val;
+                }
             }
 
             public string ReadString(uint id, char sep = (char)0, bool cacheValue = true)
@@ -577,7 +586,7 @@ namespace UnityEngine.ResourceManagement.Util
             }
 
             public uint Reserve<T>(uint count) where T : unmanaged => ReserveInternal((uint)sizeof(T) * count, true);
-            
+
             public uint Write<T>(T[] values, bool hashElements = true) where T : unmanaged
             {
                 fixed (T* pData = values)
@@ -595,7 +604,7 @@ namespace UnityEngine.ResourceManagement.Util
                         UnsafeUtility.MemCpy(&pChunkData[sizeof(uint)], pData, size);
                         var addedBytes = size + sizeof(uint);
 
-                   
+
                         totalBytes += addedBytes;
                         chunk.position += addedBytes;
                         existingValues[hash] = id;

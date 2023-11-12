@@ -59,9 +59,16 @@ namespace UnityEditor.AddressableAssets.GUI
             m_SearchField = new SearchField();
             m_ActivatorRect = activatorRect;
             m_SearchStyles = new List<GUIStyle>();
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachTextField"));
+
+#if UNITY_2023_2_OR_NEWER
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSearchTextField")); //GetStyle("ToolbarSearchTextField");
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSearchCancelButton"));
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSearchCancelButtonEmpty"));
+#else
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachTextField")); //GetStyle("ToolbarSearchTextField");
             m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachCancelButton"));
             m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachCancelButtonEmpty"));
+#endif
 
             m_HintLabelStyle = new GUIStyle(UnityEngine.GUI.skin.label);
             m_HintLabelStyle.fontSize = 10;

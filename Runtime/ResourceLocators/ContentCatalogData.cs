@@ -172,6 +172,12 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             m_Reader = null;
         }
 
+        internal void CopyToFile(string path)
+        {
+            byte[] bytes = m_Reader.GetBuffer();
+            File.WriteAllBytes(path, bytes);
+        }
+
 
 #if UNITY_EDITOR
         /// <summary>
@@ -896,6 +902,11 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     Dependencies = r.ReadObjectArray<ResourceLocation>(d.dependencySetOffset, true);
                     DependencyHashCode = (int)d.dependencySetOffset;
                     ResourceType = r.ReadObject<Type>(d.typeId);
+                }
+
+                public override string ToString()
+                {
+                    return InternalId;
                 }
 
                 public string PrimaryKey { private set; get; }

@@ -234,7 +234,8 @@ namespace UnityEditor.AddressableAssets.GUI
                 return;
 
             Rect toolbarRect = new Rect(16, 5, position.width - 32, 70);
-            Rect contentRect = new Rect(16, 75, position.width - 32, position.height - 55);
+            float buttonAreaRectY = position.height - 50;
+            Rect contentRect = new Rect(16, 75, position.width - 32, buttonAreaRectY - 75);
 
             if (m_Tree == null)
             {
@@ -282,7 +283,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 m_Tree.OnGUI(contentRect);
             }
 
-            GUILayout.BeginArea(new Rect(0, position.height - 50, position.width, 50));
+            GUILayout.BeginArea(new Rect(0, buttonAreaRectY, position.width, 50));
             GUILayout.BeginHorizontal();
             bool hasPostApplyCallback = m_ApplyChangesCallback != null;
 

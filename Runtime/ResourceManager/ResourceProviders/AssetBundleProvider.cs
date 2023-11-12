@@ -422,6 +422,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		/// <returns>The asset bundle.</returns>
 		public AssetBundle GetAssetBundle()
 		{
+            if (m_ProvideHandle.IsValid)
+            {
+                Debug.Assert(!(m_ProvideHandle.Location is DownloadOnlyLocation), "GetAssetBundle does not return a value when an AssetBundle is download only.");
+            }
+
 			return m_AssetBundle;
 		}
 
@@ -474,7 +479,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			m_Retries = 0;
 			m_AssetBundle = null;
 			m_RequestOperation = null;
-            m_RequestCompletedCallbackCalled = false;
 			m_ProvideHandle = provideHandle;
 			m_Options = m_ProvideHandle.Location.Data as AssetBundleRequestOptions;
 			m_BytesToDownload = -1;
@@ -598,7 +602,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 		private void BeginOperation()
 		{
+            // retrying a failed request will call BeginOperation multiple times. Any member variables 
+            // should be reset at the beginning of the operation
 			m_DownloadedBytes = 0;
+            m_RequestCompletedCallbackCalled = false;
 			GetLoadInfo(m_ProvideHandle, out LoadType loadType, out m_TransformedInternalId);
 
 			if (loadType == LoadType.Local)
@@ -734,7 +741,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #if ENABLE_ADDRESSABLE_PROFILER
                     AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
 #endif
+                    if (!(m_ProvideHandle.Location is DownloadOnlyLocation))
+                    {
+                        // this loads the bundle into memory which we don't want to do with download only bundles
                     m_AssetBundle = downloadHandler.assetBundle;
+                    }
                     downloadHandler.Dispose();
                     downloadHandler = null;
 					m_ProvideHandle.Complete(this, true, null);
