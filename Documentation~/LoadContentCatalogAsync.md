@@ -14,9 +14,9 @@ If you want to change the default catalog update behavior of the Addressables sy
 
 Use [`Addressables.LoadContentCatalogAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadContentCatalogAsync*) to load additional content catalogs, either from a hosting service or from the local file system. You need to supply the location of the catalog you want to load. After the operation to load the catalog is complete, you can call any Addressables loading functions using the keys in the new catalog.
 
-If you give the catalog hash file at the same URL as the catalog, Addressables caches the secondary catalog. When the client application loads the catalog, it only downloads a new version of the catalog if the hash changes.
+If you supply the catalog hash file at the same URL as the catalog, Addressables caches the secondary catalog. When the client application loads the catalog, it only downloads a new version of the catalog if the hash changes.
 
-The hash file needs to be in the same location and have the same name as the catalog. The only difference to the path should be the extension.
+The hash file needs to be in the same location and have the same name as the catalog file. The only difference between the file path for the catalog and the hash file is the file extension.
 
 `LoadContentCatalogAsync` comes with a parameter `autoReleaseHandle`. In order for the system to download a new remote catalog, any prior calls to `LoadContentCatalogAsync` that point to the catalog you want to load need to be released. Otherwise, the system picks up the content catalog load operation from the operation cache. If the cached operation is picked up, the new remote catalog isn't downloaded. If set to true, the parameter `autoReleaseHandle` makes sure that the operation doesn't stay in the operation cache after completing.
 

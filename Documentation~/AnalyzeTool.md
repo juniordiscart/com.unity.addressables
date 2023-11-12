@@ -4,31 +4,32 @@ uid: addressables-analyze-tool
 
 # Analyze tool
 
-Analyze is a tool that gathers information on your Projects' Addressables layout. In some cases, Analyze may take appropriate actions to clean up the state of your Project. In others, Analyze is purely an informational tool that allows you to make more informed decisions about your Addressables layout.
+Analyze is a tool that gathers information on your Projects' Addressables layout. In some cases, Analyze might take appropriate actions to clean up the state of your Project. In others, Analyze is purely an informational tool that allows you to make more informed decisions about your Addressables layout.
 
 ## Using Analyze
-In the Editor, open the **Addressables Analyze** window (**Window** > **Asset Management** > **Addressables** > **Analyze**), or open it via the **Addressables Groups** window by clicking  the **Tools** > **Window** > **Analyze** button.
+
+In the Unity Editor, open the **Addressables Analyze** window (**Window** > **Asset Management** > **Addressables** > **Analyze**), or open it via the **Addressables Groups** window by clicking  the **Tools** > **Window** > **Analyze** button.
 
 The Analyze window displays a list of Analyze rules, along with the following operations:
 
-![](../../images/addr_analyze_window.png)
+![](images/addr_analyze_window.png)
 
-![](../../images/A.png)<br/>Starts the analysis for any selected rules or their children.
+__A__: Starts the analysis for any selected rules or their children.
 
-![](../../images/B.png)<br/>Performs the fix action for any selected rules or their children (must be a Fixable rule).
+__B__: Performs the fix action for any selected rules or their children (must be a Fixable rule).
 
-![](../../images/C.png)<br/>Opens the clear options to clear the results for any selected rules or their children.
+__C__: Opens the clear options to clear the results for any selected rules or their children.
 
-![](../../images/D.png)<br/>Opens the options to import a saved analysis result or export results to disk.
+__D:__ Opens the options to import a saved analysis result or export results to disk.
 
-![](../../images/E.png)<br/>Fixable rules are displayed under the "Fixable Rules" item.
+__E__: Fixable rules are displayed under the "Fixable Rules" item.
 
-![](../../images/F.png)<br/>unfixable rules are displayed under the "Unfixable Rules" item.
+__F__: Unfixable rules are displayed under the "Unfixable Rules" item.
 
 ### The analyze operation
 The analyze operation gathers the information needed by the rule. Run this action on a rule or set of rules to gather data about the build, dependency maps, and more. Each rule must gather any required data and report it back as a list of [AnalyzeResult] objects.
 
-No action should be taken to modify any data or the state of the Project during the analyze step. Based on the data gathered in this step, the [fix] operation may be the appropriate course of action. Some rules, however, only contain an analyze step, as no reasonably appropriate and universal action can be taken based on the information gathered. [Check Scene to Addressable Duplicate Dependencies] and [Check Resources to Addressable Duplicate Dependencies] are examples of such rules.
+No action should be taken to modify any data or the state of the Project during the analyze step. Based on the data gathered in this step, the [fix] operation might be the appropriate course of action. Some rules, however, only contain an analyze step, as no reasonably appropriate and universal action can be taken based on the information gathered. [Check Scene to Addressable Duplicate Dependencies] and [Check Resources to Addressable Duplicate Dependencies] are examples of such rules.
 
 Rules that are purely informational and contain no fix operation are categorized as **Unfixable Rules**. Those that do have a fix operation are categorized as **Fixable Rules**.
 
@@ -36,13 +37,16 @@ Rules that are purely informational and contain no fix operation are categorized
 The clear operation removes any data gathered by the analysis and updates the `TreeView` accordingly.
 
 ### The fix operation
-For **Fixable Rules**, you may choose to run the fix operation. The fix operation uses data gathered during the analyze step to perform any necessary modifications and resolve the issues.
+For **Fixable Rules**, you might choose to run the fix operation. The fix operation uses data gathered during the analyze step to perform any necessary modifications and resolve the issues.
 
 The provided [Check Duplicate Bundle Dependencies] rule is an example of a fixable rule. Problems detected by this rule's analysis can be fixed because there is a reasonably appropriate action that can be taken to resolve them.
 
 ## Provided Analyze rules
+
 ### Fixable rules
+
 #### Check Duplicate Bundle Dependencies
+
 This rule checks for potentially duplicated assets, by scanning all groups with [BundledAssetGroupSchemas] and projecting the asset group layout. This essentially requires triggering a full build, so this check is time-consuming and performance-intensive.
 
 **Issues**: Duplicated assets result from assets in different groups sharing dependencies, for example two Prefabs that share a material existing in different Addressable groups. That material (and any of its dependencies) would be pulled into both groups containing the Prefabs. To prevent this, the material must be marked as Addressable, either with one of the Prefabs, or in its own space, thereby putting the material and its dependencies in a separate Addressable group.
@@ -51,10 +55,12 @@ This rule checks for potentially duplicated assets, by scanning all groups with 
 
 **Exceptions**: If you have an asset containing multiple objects, it is possible for different groups to only pull in portions of the asset, and not actually duplicate. An FBX with many meshes is an example of this. If one mesh is in "GroupA" and another is in "GroupB", this rule will think that the FBX is shared, and extract it into its own group if you run the fix operation. In this edge case, running the fix operation is actually harmful, as neither group would have the full FBX asset.
 
-Also note that duplicate assets may not always be an issue. If assets will never be requested by the same set of users (for example, region-specific assets), then duplicate dependencies may be desired, or at least be inconsequential. Each Project is unique, so fixing duplicate asset dependencies should be evaluated on a case-by-case basis.
+Also note that duplicate assets might not always be an issue. If assets will never be requested by the same set of users (for example, region-specific assets), then you might want duplicate dependencies, or they might be inconsequential. Each Project is unique, so decide whether to fix duplicate asset dependencies on a case-by-case basis.
 
 ### Unfixable rules
+
 #### Check Resources to Addressable Duplicate Dependencies
+
 This rule detects if any assets or asset dependencies are duplicated between built Addressable data and assets residing in a `Resources` folder.
 
 **Issues**: These duplicates mean that data will be included in both the application build and the Addressables build.
@@ -62,6 +68,7 @@ This rule detects if any assets or asset dependencies are duplicated between bui
 **Resolution**: This rule is unfixable, because no appropriate action exists. It is purely informational, alerting you to the redundancy. You must decide how to proceed and what action to take, if any. One example of a possible manual fix is to move the offending asset(s) out of the `Resources` folder, and make them Addressable.
 
 #### Check Scene to Addressable Duplicate Dependencies
+
 This rule detects any assets or asset dependencies that are shared between the Scenes in the Editor Scene list and Addressables.
 
 **Issues**: These duplicates mean that data will be included in both the application build and the Addressables build.
@@ -69,17 +76,20 @@ This rule detects any assets or asset dependencies that are shared between the S
 **Resolution**: It is purely informational, alerting you to the redundancy. You must decide how to proceed and what action to take, if any. One example of a possible manual fix is to pull the built-in Scene(s) with duplicated references out of Build Settings and make it an Addressable Scene.
 
 #### Bundle Layout Preview
-This rule will show how assets explicitly marked as Addressable will be laid out in the Addressable build.  Given these explicit assets, we also show what assets are implicitly referenced by, and therefore will be pulled into, the build.
 
-Data gathered by this rule does not indicate any particular issues.  It is purely informational.
+This rule will show how assets explicitly marked as Addressable will be laid out in the Addressable build. Given these explicit assets, the tool also shows what assets are implicitly referenced by, and so will be included in, the build.
+
+Data gathered by this rule doesn't indicate any particular issues and is only intended to provide extra information.
 
 ## Extending Analyze
-Each unique Project may require additional Analyze rules beyond what comes pre-packaged. The Addressable Assets System allows you to create your own custom rule classes.
 
-See the [Custom analyze rule project] in the [Addressables-Sample] repository for an example.
+Each unique Project might require additional Analyze rules beyond what comes pre-packaged. The Addressable Assets System allows you to create your own custom rule classes.
+
+Refer to the [Custom analyze rule project] in the [Addressables-Sample] repository for an example.
 
 
 ### AnalyzeRule objects
+
 Create a new child class of the [AnalyzeRule] class, overriding the following properties:
 
 * [CanFix] tells Analyze if the rule is deemed fixable or not.
@@ -95,20 +105,24 @@ You'll also need to override the following methods, which are detailed below:
 > If your rule is designated unfixable, you don't have to override the `FixIssues` method.
 
 #### RefreshAnalysis
+
 This is your analyze operation. In this method, perform any calculations you'd like and cache any data you might need for a potential fix. The return value is a `List<AnalyzeResult>` list. After you'd gathered your data, create a new [AnalyzeResult] for each entry in your analysis, containing the data as a string for the first parameter and a [MessageType] for the second (to optionally designate the message type as a warning or error). Return the list of objects you create.
 
 If you need to make child elements in the `TreeView` for a particular [AnalyzeResult] object, you can delineate the parent item and any children with [kDelimiter]. Include the delimiter between the parent and child items.
 
 #### FixIssues
+
 This is your fix operation. If there is an appropriate action to take in response to the analyze step, execute it here.
 
 #### ClearAnalysis
+
 This is your clear operation. Any data you cached in the analyze step can be cleaned or removed in this function. The `TreeView` will update to reflect the lack of data.
 
 ### Adding custom rules to the GUI
-A custom rule must register itself with the GUI class using `AnalyzeSystem.RegisterNewRule<RuleType>()`, in order to show up in the **Analyze** window. For example:
 
-[!code-cs[sample](../../../Tests/Editor/DocExampleCode/MyRule.cs#doc_CustomRule)]
+A custom rule must register itself with the GUI class using `AnalyzeSystem.RegisterNewRule<RuleType>()`, to appear in the **Analyze** window. For example:
+
+[!code-cs[sample](../Tests/Editor/DocExampleCode/MyRule.cs#doc_CustomRule)]
 
 <!--
 ```
@@ -125,6 +139,7 @@ class RegisterMyRule
 -->
 
 #### AnalyzeRule classes
+
 In order to make it faster to setup custom rules, Addressables includes the following classes, which inherit from [AnalyzeRule]:
 
 * [BundleRuleBase] is a base class for handling [AnalyzeRule] tasks. It includes some basic methods to retrieve information about bundle and resource dependencies.

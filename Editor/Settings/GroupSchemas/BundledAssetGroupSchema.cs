@@ -657,17 +657,17 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 m_BundledAssetProviderType.Value = typeof(BundledAssetProvider);
         }
 
-        internal string GetAssetLoadPath(string assetPath, HashSet<string> otherLoadPaths, Func<string, string> pathToGUIDFunc)
+        internal string GetAssetLoadPath(string assetPath, HashSet<string> otherLoadPaths, Func<string, string> pathToGUIDFunc, bool isScene)
         {
             switch (InternalIdNamingMode)
             {
                 case AssetNamingMode.FullPath: return assetPath;
-                case AssetNamingMode.Filename: return assetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase) ? System.IO.Path.GetFileNameWithoutExtension(assetPath) : System.IO.Path.GetFileName(assetPath);
+                case AssetNamingMode.Filename: return isScene ? System.IO.Path.GetFileNameWithoutExtension(assetPath) : System.IO.Path.GetFileName(assetPath);
                 case AssetNamingMode.GUID: return pathToGUIDFunc(assetPath);
                 case AssetNamingMode.Dynamic:
                 {
                     var g = pathToGUIDFunc(assetPath);
-                    if (otherLoadPaths == null)
+                    if (isScene || otherLoadPaths == null)
                         return g;
                     var len = 1;
                     var p = g.Substring(0, len);

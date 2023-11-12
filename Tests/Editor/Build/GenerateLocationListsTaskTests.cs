@@ -224,18 +224,19 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
 
     //static
     [Test]
-    [TestCase("abc", BuildTarget.XboxOne, @"\abc")]
-    [TestCase("abc", BuildTarget.StandaloneWindows64, @"\abc")]
-    [TestCase("abc", BuildTarget.iOS, @"/abc")]
-    [TestCase("abc", BuildTarget.Android, @"/abc")]
-    [TestCase("abc", BuildTarget.StandaloneLinux64, @"/abc")]
-    [TestCase("abc", BuildTarget.Switch, @"/abc")]
-    [TestCase("abc", BuildTarget.StandaloneOSX, @"/abc")]
+    [TestCase("folder/abc", BuildTarget.XboxOne, @"\folder\abc")]
+    [TestCase("folder/abc", BuildTarget.StandaloneWindows64, @"\folder\abc")]
+    [TestCase("folder/abc", BuildTarget.iOS, @"/folder/abc")]
+    [TestCase("folder/abc", BuildTarget.Android, @"/folder/abc")]
+    [TestCase("folder/abc", BuildTarget.StandaloneLinux64, @"/folder/abc")]
+    [TestCase("folder/abc", BuildTarget.Switch, @"/folder/abc")]
+    [TestCase("folder/abc", BuildTarget.StandaloneOSX, @"/folder/abc")]
     public void WhenBuildTargetIsWindowsOrXBox_BackSlashUsedInLoadPath(string id, BuildTarget target, string expected)
     {
         AddressableAssetGroup group = m_Settings.CreateGroup($"xyz", false, false, false, null, typeof(BundledAssetGroupSchema));
         var bag = group.GetSchema<BundledAssetGroupSchema>();
-        var expectedPath = $"{bag.LoadPath.GetValue(m_Settings)}{expected}".Replace('/', GenerateLocationListsTask.PathSeparatorForPlatform(target));
+        var platformSpecificResourcePath = bag.LoadPath.GetValue(m_Settings).Replace('/', GenerateLocationListsTask.PathSeparatorForPlatform(target));
+        var expectedPath = $"{platformSpecificResourcePath}{expected}";
         var path = GenerateLocationListsTask.GetLoadPath(group, id, target);
         Assert.AreEqual(expectedPath, path);
         m_Settings.RemoveGroup(group);

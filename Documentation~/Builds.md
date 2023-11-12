@@ -2,7 +2,7 @@
 uid: addressables-builds
 ---
 
-# Build content overview
+# Build content
 
 A content build processes Addressables [groups](groups-intro.md) to produce the [content catalog](build-content-catalogs.md), runtime settings, and the [AssetBundles](xref:AssetBundlesIntro) that contain your assets.
 

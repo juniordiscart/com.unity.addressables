@@ -260,7 +260,7 @@ namespace UnityEngine.AddressableAssets
         public string ResolveInternalId(string id)
         {
             var path = AddressablesRuntimeProperties.EvaluateString(id);
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_WSA || UNITY_XBOXONE || UNITY_GAMECORE || UNITY_PS5 || UNITY_PS4 || UNITY_ANDROID
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_WSA || UNITY_XBOXONE || UNITY_GAMECORE || UNITY_PS5 || UNITY_PS4
             if (path.Length >= 260 && path.StartsWith(Application.dataPath, StringComparison.Ordinal))
                 path = path.Substring(Application.dataPath.Length + 1);
 #endif

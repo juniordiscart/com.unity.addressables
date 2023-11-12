@@ -192,7 +192,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
     }
 
     [UnityTest]
-    [UnityPlatform(exclude = new[] {RuntimePlatform.XboxOne,  RuntimePlatform.GameCoreXboxOne, RuntimePlatform.PS5, RuntimePlatform.Android})]
+    [UnityPlatform(exclude = new[] {RuntimePlatform.XboxOne,  RuntimePlatform.GameCoreXboxOne, RuntimePlatform.PS5})]
     public IEnumerator CacheInitializationObject_FullySetsCachingData()
     {
 #if ENABLE_CACHING
@@ -205,7 +205,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
             MaximumCacheSize = Caching.currentCacheForWriting.maximumAvailableStorageSpace
         };
 
-        string cacheDirectoryOverride = "TestDirectory";
+        string cacheDirectoryOverride = Application.persistentDataPath + "/TestDirectory";
         //int expirationDelay = 4321;
         long maxCacheSize = 9876;
         bool compressionEnabled = !preTestCacheData.CompressionEnabled;

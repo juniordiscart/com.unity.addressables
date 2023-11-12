@@ -1,8 +1,13 @@
 # Content update builds overview
 
-When you distribute content remotely, you can make content changes without needing to rebuild and republish your entire application. When the Addressables system initializes at runtime, it checks for an updated content catalog. If one exists, the system downloads the new catalog and, when it loads assets, downloads the newer versions of all your AssetBundles.
+When you distribute content remotely, you can make content changes without needing to rebuild and republish your entire application. Content update builds enables you to publish remote bundles that only contain assets that you've changed since the last update.
 
-However, when you rebuild all your content with a new [content catalog](build-content-catalogs.md), installed players must also download all the remote AssetBundles again, whether the assets in them have changed or not. If you have a large amount of content, then downloading everything again can take a significant amount of time and might hurt player retention. To make this process more efficient, the Addressables package provides tools that you can run to identify changed assets and to produce a content update build. 
+When the Addressables system initializes at runtime, it checks for an updated content catalog. If one exists, the system downloads the new catalog and, when it loads assets, downloads the newer versions of all your AssetBundles.
+
+> [!IMPORTANT]
+> You must enable the [Build Remote Catalog](xref:addressables-asset-settings) option before you publish a player build if you want to have the option to publish incremental updates. Without a remote catalog, an installed application doesn't check for updates.
+
+However, when you rebuild all your content with a new [content catalog](build-content-catalogs.md), installed players must also download all the remote AssetBundles again, whether the assets in them have changed or not. If you have a large amount of content, then downloading everything again can take a long time and might impact player retention. To make this process more efficient, the Addressables package provides tools that you can run to identify changed assets and to produce a content update build. 
 
 The following diagram illustrates how you can use the Addressables tools to produce smaller content updates that only require your players to download new or changed content:
 
@@ -13,6 +18,9 @@ The following diagram illustrates how you can use the Addressables tools to prod
 When you release your full application, you first build the Addressables content and then make a player build. The player build contains local AssetBundles and you upload the remote AssetBundles to the Content Delivery Network (CDN) or other hosting service.
 
 The default build script that produces the Addressables content build always creates the `addressables_content_state.bin` file, which is required to efficiently publish content-only updates. You must save this file for each published full application release on every platform.
+
+> [!IMPORTANT]
+> Addressables uses the `addressables_content_state.bin` file to identify which assets you changed. You must preserve a copy of this file for each published build. Without the file, you can only create a full content build, not an update.
 
 Between full application releases, which require your users to download and install a new player build, you can make changes to your Addressable assets in the project. Because AssetBundles don't include code, don't make code changes in the version of your project that you use to develop your asset changes. You can change both local and remote assets. 
 

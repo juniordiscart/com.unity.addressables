@@ -4,17 +4,22 @@ uid: addressables-home
 
 # Addressables package
 
-The Addressables package provides tools and scripts to organize and package content for your application, and an API to load and release assets at runtime.
+The Addressables package builds on Unity's [AssetBundles](xref:AssetBundlesIntro) system and provides a user interface to manage your AssetBundles. When you make an asset Addressable, you can use that asset's address to load it from anywhere. The Addressable system locates and returns the asset whether it's available in the local application or stored on a remote content delivery network. 
 
-When you make an asset Addressable, you can use that asset's address to load it from anywhere. Whether that asset resides in the local application or on a content delivery network, the Addressable system locates and returns it. 
+You can use this package to distribute content remotely, manage content loading at runtime, control where your application's assets are hosted, and manage dependencies between assets.
 
-Adopt the Addressables system to help improve your project in the following areas:
+| **Topic**                | **Description**             |
+| :----------------------- | :-------------------------- |
+| **[Get started](xref:addressables-getting-started)**| Install the Addressables package, learn key concepts and find samples.|
+| **[Manage Addressables](xref:addressables-assets-development-cycle)**|Organize your assets into Groups and use Profiles to manage your Groups.|
+| **[Build content](xref:addressables-builds)**|Process your Addressables Groups into a content catalog and create the AssetBundles that contain the assets.|
+| **[Distribute remote content](xref:addressables-remote-content-distribution)**|Use remote hosting or Cloud Content Delivery (CCD) to load new assets or distribute new content.|
+| **[Use Addressables at runtime](xref:addressable-runtime)**|Manage catalogs, memory, modification events, and use asset addresses while your application runs.|
+| **[Load Addressable assets](xref:addressables-api-load-asset-async)**|How to load and unload Addressables assets, load across multiple Unity projects, load asynchronously, and manage pre-load dependencies.|
+| **[Diagnostic tools](xref:addressables-diagnostic-tools)**|Use built in tools to asses the setup and performance of your Addressable assets.|
 
-* __Flexibility__: Addressables give you the flexibility to adjust where you host your assets. You can install assets with your application or download them on demand. You can change where you access a specific asset at any stage in your project without rewriting any game code. 
-* __Dependency management__: The system automatically loads all dependencies of any assets you load, so that all meshes, shaders, animations, and other assets load before the system returns the content to you.
-* __Memory management__: The system unloads and loads assets, and counts references automatically. The Addressables package also provides a Profiler to help you identify potential memory problems.
-* __Content packing__: Because the system maps and understands complex dependency chains, it package AssetBundles efficiently, even when you move or rename assets. You can prepare assets for both local and remote deployment, to support downloadable content and reduced application size.
-
-> [!NOTE]
-> The Addressables system builds on Unity's [AssetBundles](xref:AssetBundlesIntro). If you want to use AssetBundles in your projects without writing your own detailed management code, you should use Addressables.
-
+## Additional resources
+ 
+- Unity's [Addressables: Planning and best practices](https://blog.unity.com/engine-platform/addressables-planning-and-best-practices) blog post.
+- [AssetBundles documentation](xref:AssetBundlesIntro).
+- [Why use Addressables?](https://learn.unity.com/tutorial/why-use-addressables?courseId=64255c01edbc2a268fb0b800#) - Unity Learn course.

@@ -256,11 +256,14 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         }
 
         [UnityTest]
-        [UnityPlatform(exclude = new[] {RuntimePlatform.Android})]
         public IEnumerator BundledCatalog_WhenCatalogIsRemote_LoadCatalogFromBundle_ShouldLoadCatalogAndUnloadResources()
         {
             string localBundleFilePath = Path.Combine(Addressables.RuntimePath, m_RuntimeCatalogFilename);
             string bundleFilePath = "file:///" + Path.GetFullPath(localBundleFilePath);
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                bundleFilePath = localBundleFilePath;
+            }
 
             var bundledCatalog = new ContentCatalogProvider.InternalOp.BundledCatalog(bundleFilePath);
             bundledCatalog.LoadCatalogFromBundleAsync();

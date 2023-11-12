@@ -92,7 +92,7 @@ For most platforms and collection of content, you should use __Requested Asset a
 
 This prevents situations where Assets are loaded into memory that aren't used.
 
-Performance in situations where you load all Assets that are packed together, such as a loading screen. Most types of content have either have similar or improved performance when loading each individually using __Requested Asset and Dependencies__ mode. This mode sequentially reads entire bundle files, which may be more preferrable in some platforms.
+Performance in situations where you load all Assets that are packed together, such as a loading screen. Most types of content have either have similar or improved performance when loading each individually using __Requested Asset and Dependencies__ mode. This mode sequentially reads entire bundle files, which may be more preferable in some platforms.
 
 > [!NOTE]
 > The examples below apply to desktop and mobile platforms. Performance might differ between platforms. The __All Packed Assets and Dependencies__ mode typically performs better than loading assets individually on the Nintendo Switch due its hardware and memory reading limitations.

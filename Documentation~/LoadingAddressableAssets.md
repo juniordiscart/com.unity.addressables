@@ -14,6 +14,7 @@ The [`Addressables`](xref:UnityEngine.AddressableAssets.Addressables) class prov
 |[Load assets by location](load-assets-location.md)| Load assets by address, label, or AssetReference.|
 |[Load a scene](LoadingScenes.md)|Load and make a scene Addressable.|
 |[Load AssetBundles](LoadingAssetBundles.md)| Control how AssetBundles load.|
+|[Safely edit loaded assets](safely-edit-loaded-asset.md)| Learn how to edit an asset safely while it's loaded. |
 |[Unload Addressable assets](UnloadingAddressableAssets.md)|How to unload Addressable assets.|
 |[Change resource URLs](TransformInternalId.md)|How to change the URLs that assets are loaded from.|
 |[Preload dependencies](DownloadDependenciesAsync.md)|Understand how to set loading dependencies.|

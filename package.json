@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "1.21.17",
+  "version": "1.21.18",
   "unity": "2019.4",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "1.21.9",
+    "com.unity.scriptablebuildpipeline": "1.21.20",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -20,16 +20,16 @@
     "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
   },
   "_upm": {
-    "changelog": "- Fixed issue where sprite is missing normal texture when using \"Use Existing Build\" build mode\n- Fixed a bug where a GUI style was misspelled in the Editor and was recently fixed\n- Fixed an issue where asset loading would occasionally stop working if domain reload was disabled"
+    "changelog": "- Fixed an issue where scene InternalId collisions were very likely when using dynamic internal asset naming"
   },
   "upmCi": {
-    "footprint": "4dc1715b88796c91001041527ff35409734bc7b2"
+    "footprint": "e4f16f68eef363509a30f614cb47f6df06f839c2"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@1.21/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "e66f4cab999f27fcbd7c08e8a6e7734a3a987875"
+    "revision": "258a622874bed1fce148ed59cb0960165dff5e86"
   },
   "samples": [
     {

@@ -465,32 +465,24 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>Return the runtime path that should be used to load this entry.</returns>
         public string GetAssetLoadPath(bool isBundled, HashSet<string> otherLoadPaths)
         {
+            if(isBundled)
+                return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchema>().GetAssetLoadPath(AssetPath, otherLoadPaths, p => guid, IsScene);
             if (!IsScene)
             {
                 if (IsInResources)
-                {
                     return GetResourcesPath(AssetPath);
-                }
                 else
-                {
-                    if (isBundled)
-                        return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchema>().GetAssetLoadPath(AssetPath, otherLoadPaths, p => guid);
                     return AssetPath;
-                }
             }
-            else
-            {
-                if (isBundled)
-                    return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchema>().GetAssetLoadPath(AssetPath, otherLoadPaths, p => guid);
-                var path = AssetPath;
-                int i = path.LastIndexOf(".unity", StringComparison.OrdinalIgnoreCase);
-                if (i > 0)
-                    path = path.Substring(0, i);
-                i = path.IndexOf("assets/", StringComparison.OrdinalIgnoreCase);
-                if (i == 0)
-                    path = path.Substring("assets/".Length);
-                return path;
-            }
+
+            var path = AssetPath;
+            int i = path.LastIndexOf(".unity", StringComparison.OrdinalIgnoreCase);
+            if (i > 0)
+                path = path.Substring(0, i);
+            i = path.IndexOf("assets/", StringComparison.OrdinalIgnoreCase);
+            if (i == 0)
+                path = path.Substring("assets/".Length);
+            return path;
         }
 
         static string GetResourcesPath(string path)

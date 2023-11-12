@@ -16,7 +16,7 @@ The `BuildPath` and `LoadPath` variables stored in [Profiles](profiles-create.md
 
 If necessary, create a new profile for publishing builds to CCD on the [Profiles window](addressables-profiles-window.md). Configure the remote path variables in this profile to access your content at the correct URL.
 
-You can set the remote `BuildPath` to a convenient value. If you have multiple profiles, consider using a unique build path for each of them so that the build artifacts do not get mixed together, especially if you are hosting them from a different remote URL.
+You can set the remote `BuildPath` to a convenient value. If you have multiple profiles, consider using a unique build path for each of them so that the build artifacts don't get mixed together, especially if you're hosting them from a different remote URL.
 
 Set the remote `LoadPath` to one of the following two paths:
 
@@ -40,7 +40,7 @@ Set the remote `LoadPath` to one of the following two paths:
 * `(ReleaseID)` is the ID of a specific release within a bucket
 * `(BadgeName)` is the name of the specific CCD badge
 
-See [Profiles](profiles-introduction.md) for information about how to create and edit profiles.
+Refer to [Profiles](profiles-introduction.md) for information about how to create and edit profiles.
 
 > [!IMPORTANT]
 > You must perform a full rebuild your Addressables content when you change the remote load path.
@@ -64,11 +64,11 @@ To set up a Profile variable to use the CCD bundle location:
 
 Make this the active profile when building content for delivery with CCD.
 
-See [Profiles](profiles-introduction.md) for information about how to modify profiles.
+Refer to [Profiles](profiles-introduction.md) for information about how to modify profiles.
 
 ## Configure groups with CCD URL
 
-Configure groups to use __Remote__ as their __Build & Load Path__ in the inspector window.
+Configure groups to use __Remote__ as their __Build & Load Path__ in the Inspector window.
 
 Refer to [Groups](Groups.md) for information about how to modify groups.
 
@@ -80,8 +80,8 @@ To generate and upload Addressable content to your CCD project:
 
 1. Set the profile you have set up for CCD as the active profile.
 2. Build your Addressables content. 
-   * If you are making a full content build, see [Building your Addressable content](builds-full-build.md).
-   * If your are updating an existing build with modified remote content, see [Building for content updates](content-update-build-create.md).
+   * If you are making a full content build, refer to [Building your Addressable content](builds-full-build.md).
+   * If your are updating an existing build with modified remote content, refer to [Building for content updates](content-update-build-create.md).
 3. Upload the files created at the remote build path using the [CCD dashboard](https://docs.unity.com/ccd/Content/UnityCCDDashboard.htm) or [command-line interface](https://docs.unity.com/ccd/Content/UnityCCDCLI.htm).
 4. Create a release and update the badge using the CCD dashboard or command-line interface.
 
@@ -104,7 +104,7 @@ Finally, the management package will a create release for those remote target an
 
 #### CcdManager
 
-When setting up the project profile path pairs and utilizing CCD, there is an option to use `Automatic`. This option utilizes the `CcdManager` to set static properties at Runtime to tell Addressables which Environment, Bucket, and Badge to reach out to for loading assets. The `CcdManager` has the following properties: `EnvironmentName`, `BucketId`, and `Badge`. Setting these properties at runtime before Addressables initializes will tell Addressables to look at these locations within CCD. To learn more about environments, buckets, and badges see [CCD organization](https://docs.unity.com/ccd/UnityCCD.html#CCD_organization).
+When setting up the project profile path pairs and utilizing CCD, there is an option to use `Automatic`. This option utilizes the `CcdManager` to set static properties at Runtime to tell Addressables which Environment, Bucket, and Badge to reach out to for loading assets. The `CcdManager` has the following properties: `EnvironmentName`, `BucketId`, and `Badge`. Setting these properties at runtime before Addressables initializes will tell Addressables to look at these locations within CCD. To learn more about environments, buckets, and badges, refer to [CCD organization](https://docs.unity.com/ccd/UnityCCD.html#CCD_organization).
 
 Example Snippet of setting CcdManager Properties:
 ```c#

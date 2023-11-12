@@ -25,13 +25,15 @@ Your project's [group settings](xref:addressables-group-schemas) determine which
 
 ## Start a build
 
-You can start builds from a script or from the __Groups__ window. Refer to [Build scripting](xref:addressables-api-build-player-content) for more information on how to extend building Addressable content. 
+You can start builds from a script or from the __Groups__ window. 
+
+Refer to [Create a build](BuildingContent.md) for more information about builds from the Groups window, or to [Build scripting](xref:addressables-api-build-player-content) for more information on how to extend building Addressable content through scripts.
 
 The Addressables system includes the following build scripts:
 
 * __Default Build Script__: Performs a full content build based on Group, Profile, and Addressables system settings.
-* __Update a Previous Build__: Performs a differential content build to update a previously created build.
-* __Play Mode scripts__: The Play Mode scripts are technically build scripts and control how the Editor accesses your content in Play Mode. Refer to [Play Mode Scripts](xref:addressables-groups-window) for more information.
+* __Update a Previous Build__: Performs a differential content build to update an existing build.
+* __Play mode scripts__: The Play mode scripts are technically build scripts and control how the Editor accesses your content in Play mode. Refer to [Play mode Scripts](xref:addressables-groups-window) for more information.
 
 The build scripts also provide a function to clear the cached files they create. You can run these functions from the __Build > Clean Build__ menu of the [Groups window](GroupsWindow.md).
 

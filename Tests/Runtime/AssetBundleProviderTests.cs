@@ -73,6 +73,8 @@ namespace AddressableTests.SyncAddressables
 #if ENABLE_CACHING
             Caching.ClearCache();
 #endif
+            MonoBehaviourCallbackHooks.DestroySingleton();
+            AssetBundle.UnloadAllAssetBundles(true);
             if (m_Addressables != null)
                 m_Addressables.WebRequestOverride = null;
         }
@@ -130,21 +132,57 @@ namespace AddressableTests.SyncAddressables
             AsyncOperationHandle<GameObject> h = m_Addressables.LoadAssetAsync<GameObject>(GetForceUWRAddrName(0));
             Assert.AreEqual(1, WebRequestQueue.s_ActiveRequests.Count);
             yield return h;
+            Assert.NotNull(h.Result);
             h.Release();
         }
 #endif
-
 
 #if !UNITY_PS5
+        /*
+         * this is verifying code coverage for the first shortcircuit in AssetBundleProvider::BeginWebRequestOperation. If the bundle completes immediately we short-circuit. This sometimes
+         * happens in a CI and sometimes does not. This test verifies that we always test the intial short-circuit route.
+         * It does this by enqueuing the request. Waiting for the webrequest to finish, and THEN adding the web request handlers which immediately trigger the callback.
+         */
         [UnityTest]
-        public IEnumerator WhenAssetBundleIsLocal_AndForceUWRIsDisabled_UWRIsNotUsed()
+        public IEnumerator WhenAssetBundleIsComplete_ReturnImmediately()
         {
-            AsyncOperationHandle<GameObject> h = m_Addressables.LoadAssetAsync<GameObject>("testprefab");
-            Assert.AreEqual(0, WebRequestQueue.s_ActiveRequests.Count);
-            yield return h;
-            h.Release();
+            var bundleName = GetForceUWRAddrName(0);
+            AssetBundleResource abr = new AssetBundleResource();
+
+            IList<IResourceLocation> locations = new List<IResourceLocation>();
+            m_Addressables.GetResourceLocations(GetForceUWRAddrName(0), typeof(GameObject), out locations);
+            // the test will fail if the dependencies change so just validating here to make future troubleshooting easier
+            Assert.AreEqual(1, locations.Count);
+            Assert.AreEqual(2, locations[0].Dependencies.Count);
+
+            var providerOp = new ProviderOperation<AssetBundleResource>();
+            providerOp.Init(m_Addressables.ResourceManager, new BundledAssetProvider(), locations[0].Dependencies[0], new AsyncOperationHandle<IList<AsyncOperationHandle>>());
+            abr.m_ProvideHandle = new ProvideHandle(m_Addressables.ResourceManager, providerOp);
+            abr.m_Options = new AssetBundleRequestOptions()
+            {
+                BundleName = bundleName,
+                UseUnityWebRequestForLocalBundles = true,
+            };
+            var op = new AsyncOperationHandle<AssetBundleResource>(providerOp, 1);
+
+            var path = locations[0].Dependencies[0].InternalId;
+            if (Application.platform != RuntimePlatform.Android)
+            {
+                path = Path.GetFullPath(locations[0].Dependencies[0].InternalId);
+                path = "file:///" + path;
+            }
+
+            var queueOp = abr.EnqueueWebRequest(path);
+            abr.m_WebRequestQueueOperation = queueOp;
+            // we always want the web request to complete before we add the request handlers
+            yield return queueOp.Result;
+
+            abr.AddBeginWebRequestHandler(queueOp);
+            yield return abr.m_ProvideHandle;
+            op.Release();
         }
 #endif
+
 
 #if !UNITY_PS5
         [UnityTest]
@@ -202,15 +240,18 @@ namespace AddressableTests.SyncAddressables
 
 #if !UNITY_PS5
         [Test]
-        [TestCase("Relative/Local/Path", true, false)]
-        [TestCase("Relative/Local/Path", true, true)]
-        [TestCase("http://127.0.0.1/Web/Path", false, true)]
-        [TestCase("jar:file://Local/Path", true, false)]
-        [TestCase("jar:file://Local/Path", true, true)]
-        public void AssetBundleLoadPathsCorrectForGetLoadInfo(string internalId, bool isLocal, bool useUnityWebRequestForLocalBundles)
+        [TestCase("Relative/Local/Path","Relative/Local/Path", true, false, RuntimePlatform.LinuxEditor, RuntimePlatform.LinuxPlayer, RuntimePlatform.OSXEditor, RuntimePlatform.OSXPlayer)]
+        [TestCase("Relative\\Local\\Path","Relative\\Local\\Path", true, false, RuntimePlatform.WindowsEditor, RuntimePlatform.WindowsPlayer, RuntimePlatform.GameCoreXboxSeries)]
+        [TestCase("Relative\\Local\\Path","file:///<<RELATIVE_BASE>>/Relative/Local/Path", true, true, RuntimePlatform.WindowsEditor, RuntimePlatform.WindowsPlayer, RuntimePlatform.GameCoreXboxSeries)]
+        [TestCase("Relative/Local/Path","file:///<<RELATIVE_BASE>>/Relative/Local/Path", true, true, RuntimePlatform.LinuxEditor, RuntimePlatform.LinuxPlayer, RuntimePlatform.OSXEditor, RuntimePlatform.OSXPlayer)]
+        [TestCase("http://127.0.0.1/Web/Path","http://127.0.0.1/Web/Path", false, true)]
+        [TestCase("jar:file:///Local/Path", "jar:file:///Local/Path", true, false, RuntimePlatform.Android)]
+        [TestCase("jar:file:///Local/Path", "jar:file:///Local/Path",true, true, RuntimePlatform.Android)]
+        public void AssetBundleLoadPathsCorrectForGetLoadInfo(string internalId, string expectedPath, bool isLocal, bool useUnityWebRequestForLocalBundles, params RuntimePlatform[] applicablePlatforms)
         {
-            if (internalId.StartsWith("jar") && Application.platform != RuntimePlatform.Android)
-                Assert.Ignore($"Skipping test {TestContext.CurrentContext.Test.Name} due jar based tests are only for running on Android Platform.");
+            // if not platforms are specified all are used
+            if (applicablePlatforms.Length > 0 && !applicablePlatforms.Contains(Application.platform))
+                Assert.Ignore($"Skipping test {TestContext.CurrentContext.Test.Name} due to platform not being in the list of applicable platforms.");
 
             var loc = new ResourceLocationBase("dummy", internalId, "dummy", typeof(Object));
             loc.Data = new AssetBundleRequestOptions {UseUnityWebRequestForLocalBundles = useUnityWebRequestForLocalBundles};
@@ -221,13 +262,14 @@ namespace AddressableTests.SyncAddressables
             AssetBundleResource.GetLoadInfo(h, out AssetBundleResource.LoadType loadType, out string path);
             var expectedLoadType = isLocal ? useUnityWebRequestForLocalBundles ? AssetBundleResource.LoadType.Web : AssetBundleResource.LoadType.Local : AssetBundleResource.LoadType.Web;
             Assert.AreEqual(expectedLoadType, loadType, "Incorrect load type found for internalId " + internalId);
-            var expectedPath = internalId;
-            if (isLocal && useUnityWebRequestForLocalBundles)
-            {
-                expectedPath = internalId.StartsWith("jar") ? internalId : "file:///" + Path.GetFullPath(internalId);
-                expectedPath = expectedPath.Replace('\\', '/');
-            }
 
+            // we can't do this in the definition so we have to do it here
+            var relativeBase = Path.GetFullPath(".");
+            if (applicablePlatforms.Contains(RuntimePlatform.WindowsEditor))
+            {
+                relativeBase = relativeBase.Replace("\\", "/");
+            }
+            expectedPath = expectedPath.Replace("<<RELATIVE_BASE>>", relativeBase);
             Assert.AreEqual(expectedPath, path);
         }
 #endif

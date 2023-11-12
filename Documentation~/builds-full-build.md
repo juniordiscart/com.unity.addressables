@@ -20,7 +20,7 @@ For most projects, you only need multiple profiles when you support remote conte
 
 Windows has a file path limit of 260 characters. If the build path of your content ends up creating a path that meets or exceeds the limit on Windows, the build fails. 
 
-You might run into a file path limit issue if your project is located in a directory that is close to the character limit. The Scriptable Build Pipeline creates AssetBundles in a temporary directory during the build. This temporary path is a sub-directory of your project and can end up generating a `string` that goes over the Windows limit.
+You might run into a file path limit issue if your project is located in a directory that is close to the character limit. The Scriptable Build Pipeline creates AssetBundles in a temporary directory during the build. This temporary path is a subdirectory of your project and the process can generate a `string` longer than the Windows limit.
 If the Addressables content build fails with a `Could not find a part of the path` error, and you're on Windows, this might be the cause.
 
 ### Default local paths
@@ -40,10 +40,10 @@ Addressables sets the default remote build path to an arbitrarily chosen folder 
 
 The default remote load path is `http://localhost/` appended with the current profile BuildTarget variable. You must change this path to the base URL at which you plan to load your Addressable assets. 
 
-Use different [profiles](profiles-introduction.md) to set up the remote load path as appropriate for the type of development, testing, or publishing you are doing. For example, you could have a profile that loads assets from a localhost server for general development builds, a profile that loads assets from a staging environment for QA builds, and one that loads assets from your Content Delivery Network (CDN) for release builds. Refer to [Hosting](AddressableAssetsHostingServices.md) for more information about configuring hosting.
+Use different [profiles](profiles-introduction.md) to set up the remote load path as appropriate for the type of development, testing, or publishing you are doing. For example, you might have a profile that loads assets from a localhost server for general development builds, a profile that loads assets from a staging environment for QA builds, and one that loads assets from your Content Delivery Network (CDN) for release builds.
 
 > [!NOTE]
-> When running your game in the Editor, you can use the __Use Asset Database__ Play Mode Script to bypass loading assets through the remote or local load paths. This can be convenient, especially when you don't have a localhost server set up. However, it can hide group configuration and asset assignment mistakes.
+> When running your game in the Editor, you can use the __Use Asset Database__ Play mode Script to bypass loading assets through the remote or local load paths. This can be convenient, especially when you don't have a localhost server set up. However, it can hide group configuration and asset assignment mistakes.
 
 ## Set up remote content builds
 
@@ -55,7 +55,7 @@ The __BuildPath__ and __LoadPath__ settings for the catalog must be the same as 
 3. For each group that you want to build as remote content, set the __BuildPath__ and __LoadPath__ to the RemoteBuildPath and RemoteLoadPath profile variables (or a custom value if desired).
 4. Open the [Profiles window]  (menu: __Window > Asset Management > Addressables > Profiles__).
 5. Set the RemoteLoadPath variable to the URL where you plan to host your remote content. 
-If you require different URLs for different types of builds, create a new Profile for each build type. See [Profiles] and [Hosting] for more information. 
+If you require different URLs for different types of builds, create a new Profile for each build type. Refer to [Profiles] and [Hosting] for more information. 
 
 Refer to [Remote content distribution](RemoteContentDistribution.md) for additional information.
 

@@ -48,7 +48,7 @@ The default values for the build and load paths are:
 * Local build path: `[UnityEditor.EditorUserBuildSettings.activeBuildTarget]`
 * Local load path: `[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]`
 * Remote build path: `ServerData/[BuildTarget]`
-* Remote load path: `http://localhost/[BuildTarget]`
+* Remote load path: <undefined>
 
 Usually, you shouldn't need to change the local path values. The Unity build system expects the AssetBundles and other files to exist in the default location. If you change the local paths, you must copy the files from the build path to the load path before making your Player build. The load path must always be within the Unity `StreamingAssets` folder.
 

@@ -4,7 +4,7 @@ uid: addressables-and-sprite-atlases
 
 # Build sprite atlases
 
-Some `SpriteAtlas` options can change how Unity loads sprites. This is important to consider if you want to use the **Use Asset Database** [Play Mode Script](xref:addressables-groups-window).
+Some `SpriteAtlas` options can change how Unity loads sprites. This is important to consider if you want to use the **Use Asset Database** [Play mode Script](xref:addressables-groups-window).
 
 The following examples explain how Addressables handles a `SpriteAtlas` differently than other assets:
 

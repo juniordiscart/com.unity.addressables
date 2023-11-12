@@ -266,7 +266,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 		AssetBundle m_AssetBundle;
 		AsyncOperation m_RequestOperation;
-		WebRequestQueueOperation m_WebRequestQueueOperation;
+        internal WebRequestQueueOperation m_WebRequestQueueOperation;
 		internal ProvideHandle m_ProvideHandle;
 		internal AssetBundleRequestOptions m_Options;
 
@@ -610,6 +610,26 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 			if (loadType == LoadType.Local)
 			{
+                LoadLocalBundle();
+                return;
+            }
+
+            if (loadType == LoadType.Web)
+            {
+                m_WebRequestQueueOperation = EnqueueWebRequest(m_TransformedInternalId);
+                AddBeginWebRequestHandler(m_WebRequestQueueOperation);
+                return;
+            }
+
+            m_Source = BundleSource.None;
+            m_RequestOperation = null;
+            m_ProvideHandle.Complete<AssetBundleResource>(null, false,
+                new RemoteProviderException(string.Format("Invalid path in AssetBundleProvider: '{0}'.", m_TransformedInternalId), m_ProvideHandle.Location));
+            m_Completed = true;
+        }
+
+        private void LoadLocalBundle()
+        {
                 m_Source = BundleSource.Local;
 #if !UNITY_2021_1_OR_NEWER
                 if (AsyncOperationHandle.IsWaitingForCompletion)
@@ -624,34 +644,30 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 					AddCallbackInvokeIfDone(m_RequestOperation, LocalRequestOperationCompleted);
 				}
 			}
-			else if (loadType == LoadType.Web)
+
+        internal WebRequestQueueOperation EnqueueWebRequest(string internalId)
 			{
-				var req = CreateWebRequest(m_TransformedInternalId);
+            var req = CreateWebRequest(internalId);
 #if ENABLE_ASYNC_ASSETBUNDLE_UWR
 				((DownloadHandlerAssetBundle)req.downloadHandler).autoLoadAssetBundle = !(m_ProvideHandle.Location is DownloadOnlyLocation);
 #endif
 				req.disposeDownloadHandlerOnDispose = false;
 
-				m_WebRequestQueueOperation = WebRequestQueue.QueueRequest(req);
-				if (m_WebRequestQueueOperation.IsDone)
+            return WebRequestQueue.QueueRequest(req);
+        }
+
+        internal void AddBeginWebRequestHandler(WebRequestQueueOperation webRequestQueueOperation)
                 {
-					BeginWebRequestOperation(m_WebRequestQueueOperation.Result);
+            if (webRequestQueueOperation.IsDone)
+            {
+                BeginWebRequestOperation(webRequestQueueOperation.Result);
 			}
 			else
 			{
 #if ENABLE_ADDRESSABLE_PROFILER
                     AddBundleToProfiler(Profiling.ContentStatus.Queue, m_Source);
 #endif
-                    m_WebRequestQueueOperation.OnComplete += asyncOp => BeginWebRequestOperation(asyncOp);
-                }
-            }
-            else
-            {
-                m_Source = BundleSource.None;
-				m_RequestOperation = null;
-				m_ProvideHandle.Complete<AssetBundleResource>(null, false,
-					new RemoteProviderException(string.Format("Invalid path in AssetBundleProvider: '{0}'.", m_TransformedInternalId), m_ProvideHandle.Location));
-				m_Completed = true;
+                webRequestQueueOperation.OnComplete += asyncOp => BeginWebRequestOperation(asyncOp);
 			}
 		}
 

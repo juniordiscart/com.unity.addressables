@@ -16,3 +16,7 @@ The main way to organize and manage addressables is to use [groups](Groups.md) a
 |[Asset references overview](AssetReferences.md)| Use asset references to customize `MonoBehaviour` and `ScriptableObject` scripts.|
 |[Addressables Asset Settings reference](AddressableAssetSettings.md)|Reference information for Addressable Asset Settings|
 |[Addressables Preferences reference](addressables-preferences.md)|Reference information for the Addressables Preferences window.|
+
+## Further resources
+
+* [Organize Addressable assets](organize-addressable-assets.md)
