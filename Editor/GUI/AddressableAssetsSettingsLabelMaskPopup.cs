@@ -60,15 +60,20 @@ namespace UnityEditor.AddressableAssets.GUI
             m_ActivatorRect = activatorRect;
             m_SearchStyles = new List<GUIStyle>();
 
-#if UNITY_2023_2_OR_NEWER
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSearchTextField")); //GetStyle("ToolbarSearchTextField");
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSearchCancelButton"));
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSearchCancelButtonEmpty"));
-#else
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachTextField")); //GetStyle("ToolbarSearchTextField");
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachCancelButton"));
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachCancelButtonEmpty"));
-#endif
+            string toolbarSearchTextField = "ToolbarSearchTextField";
+            string toolbarSearchCancelButton = "ToolbarSearchCancelButton";
+            string toolbarSearchCancelButtonEmpty = "ToolbarSearchCancelButtonEmpty";
+
+            if (!AddressablesGUIUtility.HasStyle(toolbarSearchTextField))
+            {
+                toolbarSearchTextField = "ToolbarSeachTextField";
+                toolbarSearchCancelButton = "ToolbarSeachCancelButton";
+                toolbarSearchCancelButtonEmpty = "ToolbarSeachCancelButtonEmpty";
+            }
+
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle(toolbarSearchTextField)); //GetStyle("ToolbarSearchTextField");
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle(toolbarSearchCancelButton));
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle(toolbarSearchCancelButtonEmpty));
 
             m_HintLabelStyle = new GUIStyle(UnityEngine.GUI.skin.label);
             m_HintLabelStyle.fontSize = 10;
@@ -267,7 +272,8 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (toggleRect.y < yPositionDrawRange.x || toggleRect.y > yPositionDrawRange.y)
                         continue;
                 }
-                else continue;
+                else
+                    continue;
 
                 bool newState;
                 if (m_LabelCount == null)

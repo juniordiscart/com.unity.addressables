@@ -857,7 +857,14 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 	public class AssetBundleProvider : ResourceProviderBase
 	{
 #if UNLOAD_BUNDLE_ASYNC
-        private static Dictionary<string, AssetBundleUnloadOperation> m_UnloadingBundles = new Dictionary<string, AssetBundleUnloadOperation>();
+        internal static Dictionary<string, AssetBundleUnloadOperation> m_UnloadingBundles = new Dictionary<string, AssetBundleUnloadOperation>();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Init()
+        {
+            m_UnloadingBundles = new Dictionary<string, AssetBundleUnloadOperation>();
+        }
+
         /// <summary>
         /// Stores async operations that unload the requested AssetBundles.
         /// </summary>
@@ -936,5 +943,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				return;
 			}
 		}
+
+        internal virtual IOperationCacheKey CreateCacheKeyForLocation(ResourceManager rm, IResourceLocation location, Type desiredType)
+        {
+            //We need to transform the ID first
+            //so we don't try and load the same bundle twice if the user is manipulating the path at runtime.
+            return new IdCacheKey(rm.TransformInternalId(location));
+        }
 	}
 }

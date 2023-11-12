@@ -53,6 +53,17 @@ namespace UnityEditor.AddressableAssets.GUI
             return s;
         }
 
+        internal static bool HasStyle(string styleName)
+        {
+            GUIStyle s = UnityEngine.GUI.skin.FindStyle(styleName);
+            if (s == null)
+                s = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle(styleName);
+            if (s == null)
+                return false;
+
+            return true;
+        }
+
         internal static string ConvertTextToStrikethrough(string value)
         {
             string str = "";

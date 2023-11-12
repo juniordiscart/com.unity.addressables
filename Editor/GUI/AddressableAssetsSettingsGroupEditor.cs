@@ -259,15 +259,21 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 m_SearchStyles = new List<GUIStyle>();
 
-#if UNITY_2023_2_OR_NEWER
-                m_SearchStyles.Add(GetStyle("ToolbarSearchTextFieldPopup")); //GetStyle("ToolbarSearchTextField");
-                m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButton"));
-                m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButtonEmpty"));
-#else
-                m_SearchStyles.Add(GetStyle("ToolbarSeachTextFieldPopup")); //GetStyle("ToolbarSearchTextField");
-                m_SearchStyles.Add(GetStyle("ToolbarSeachCancelButton"));
-                m_SearchStyles.Add(GetStyle("ToolbarSeachCancelButtonEmpty"));
-#endif
+                string toolbarSearchTextField = "ToolbarSeachTextFieldPopup";
+                string toolbarSearchCancelButton = "ToolbarSeachCancelButton";
+                string toolbarSearchCancelButtonEmpty = "ToolbarSeachCancelButtonEmpty";
+
+                if(!AddressablesGUIUtility.HasStyle(toolbarSearchTextField))
+                {
+                    toolbarSearchTextField = "ToolbarSearchTextFieldPopup";
+                    toolbarSearchCancelButton = "ToolbarSearchCancelButton";
+                    toolbarSearchCancelButtonEmpty = "ToolbarSearchCancelButtonEmpty";
+                }
+
+                m_SearchStyles.Add(GetStyle(toolbarSearchTextField)); //GetStyle("ToolbarSearchTextField");
+                m_SearchStyles.Add(GetStyle(toolbarSearchCancelButton));
+                m_SearchStyles.Add(GetStyle(toolbarSearchCancelButtonEmpty));
+
             }
 
 			if (m_ButtonStyle == null)
