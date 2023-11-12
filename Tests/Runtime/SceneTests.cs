@@ -345,6 +345,7 @@ namespace SceneTests
             Assert.AreEqual(1, m_Addressables.m_SceneInstances.Count);
             var sceneInst = op.m_InternalOp.Result;
             yield return m_Addressables.UnloadSceneAsync(sceneInst);
+            LogAssert.NoUnexpectedReceived();
 
             Assert.AreEqual(0, m_Addressables.m_SceneInstances.Count);
         }

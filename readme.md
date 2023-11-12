@@ -4,13 +4,18 @@ The Addressables package by Unity provides a novel way of managing and packing a
 
 This variant forked from the original Addressables-project adds support for building your assets across several catalogs in one go and provides several other benefits, e.g. reduced build times and build size, as well as keeping the buildcache intact.
 
-This package currently tracks version `1.21.14` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
+This package currently tracks version `1.21.19` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if you require a specific version.
 
-**Note**: this repository does not track every available version of the _vanilla_ Addressables package. It's only kept up-to-date sporadically.
+## Notes before you begin
 
-**Upgrade note:** when upgrading from Addressables version `1.21.2` to `1.21.9` or later, please read the upgrade notes for [migration help](#from-1212-to-1219-and-later) with breaking changes.
+1. This multi-catalog version of Addressables **does not support remote catalogs**! If your project requires feature this for updating content,
+then please look for a different package, or fork from this repository and add it in.
+2. This repository does not track every available version of the _vanilla_ Addressables package. It's only kept up-to-date sporadically. 
+3. For additional features found in this fork of Addressables, check the [Additional features](#additional-features) section.
 
-For additional features found in this fork of Addressables, check the [Additional features](#additional-features) section.
+## Upgrades notes
+
+When upgrading from Addressables version `1.21.2` to `1.21.9` or later, please read the upgrade notes for [migration help](#from-1212-to-1219-and-later) with breaking changes.
 
 ## The problem
 
