@@ -8,8 +8,7 @@ This package currently tracks version `1.21.19` of the vanilla Addressables pack
 
 ## Notes before you begin
 
-1. This multi-catalog version of Addressables **does not support remote catalogs**! If your project requires feature this for updating content,
-then please look for a different package, or fork from this repository and add it in.
+1. This multi-catalog version of Addressables **does not support catalogs and group updates** for sub-sequent builds! If your project requires content to be updated regularly and downloaded by your users without a new player build, then this package will not work for you. If you do require it, please consider implementing this feature in a fork from this repository.
 2. This repository does not track every available version of the _vanilla_ Addressables package. It's only kept up-to-date sporadically. 
 3. For additional features found in this fork of Addressables, check the [Additional features](#additional-features) section.
 
