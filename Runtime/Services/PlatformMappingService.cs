@@ -170,5 +170,14 @@ namespace UnityEngine.AddressableAssets
             return GetAddressablesPlatformPathInternal(Application.platform);
 #endif
         }
+        
+        /// <summary>
+        /// Retrieves the Addressables platform subfolder of the provided build platform.
+        /// </summary>
+        /// <returns>Returns the Addressables platform subfolder of the provided build platform.</returns>
+        public static string GetPlatformPathSubFolder(BuildTarget buildTarget)
+        {
+            return GetAddressablesPlatformPathInternal(buildTarget);
+        } 
     }
 }
