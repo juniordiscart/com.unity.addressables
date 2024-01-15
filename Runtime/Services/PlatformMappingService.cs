@@ -171,6 +171,7 @@ namespace UnityEngine.AddressableAssets
 #endif
         }
         
+#if UNITY_EDITOR
         /// <summary>
         /// Retrieves the Addressables platform subfolder of the provided build platform.
         /// </summary>
@@ -178,6 +179,7 @@ namespace UnityEngine.AddressableAssets
         public static string GetPlatformPathSubFolder(BuildTarget buildTarget)
         {
             return GetAddressablesPlatformPathInternal(buildTarget);
-        } 
+        }
+#endif
     }
 }
