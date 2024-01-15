@@ -59,9 +59,21 @@ namespace UnityEditor.AddressableAssets.GUI
             m_SearchField = new SearchField();
             m_ActivatorRect = activatorRect;
             m_SearchStyles = new List<GUIStyle>();
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachTextField"));
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachCancelButton"));
-            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle("ToolbarSeachCancelButtonEmpty"));
+
+            string toolbarSearchTextField = "ToolbarSearchTextField";
+            string toolbarSearchCancelButton = "ToolbarSearchCancelButton";
+            string toolbarSearchCancelButtonEmpty = "ToolbarSearchCancelButtonEmpty";
+
+            if (!AddressablesGUIUtility.HasStyle(toolbarSearchTextField))
+            {
+                toolbarSearchTextField = "ToolbarSeachTextField";
+                toolbarSearchCancelButton = "ToolbarSeachCancelButton";
+                toolbarSearchCancelButtonEmpty = "ToolbarSeachCancelButtonEmpty";
+            }
+
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle(toolbarSearchTextField)); //GetStyle("ToolbarSearchTextField");
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle(toolbarSearchCancelButton));
+            m_SearchStyles.Add(AddressablesGUIUtility.GetStyle(toolbarSearchCancelButtonEmpty));
 
             m_HintLabelStyle = new GUIStyle(UnityEngine.GUI.skin.label);
             m_HintLabelStyle.fontSize = 10;
@@ -260,7 +272,8 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (toggleRect.y < yPositionDrawRange.x || toggleRect.y > yPositionDrawRange.y)
                         continue;
                 }
-                else continue;
+                else
+                    continue;
 
                 bool newState;
                 if (m_LabelCount == null)

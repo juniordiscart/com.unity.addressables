@@ -620,8 +620,23 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// </summary>
 		public bool BundleLocalCatalog
 		{
-			get { return m_BundleLocalCatalog; }
-			set { m_BundleLocalCatalog = value; }
+            get
+            {
+#if ENABLE_BINARY_CATALOG
+                return false;
+#else
+                return m_BundleLocalCatalog;
+#endif
+            }
+            set
+            {
+#if ENABLE_BINARY_CATALOG
+                m_BundleLocalCatalog = false;
+                Debug.LogWarning("Bundling the content catalog is not compatible with binary catalogs. Setting is disabled.");
+#else
+                m_BundleLocalCatalog = value;
+#endif
+            }
 		}
 
 		/// <summary>

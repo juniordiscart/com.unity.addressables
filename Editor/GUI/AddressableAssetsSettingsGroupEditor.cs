@@ -228,12 +228,9 @@ namespace UnityEditor.AddressableAssets.GUI
 			}
 		}
 
-		GUIStyle GetStyle(string styleName, string altStyleName = null)
+		GUIStyle GetStyle(string styleName)
 		{
 			GUIStyle s = UnityEngine.GUI.skin.FindStyle(styleName);
-
-			if ((s == null) && !string.IsNullOrWhiteSpace(altStyleName))
-				s = UnityEngine.GUI.skin.FindStyle(altStyleName);
 
 			if (s == null)
 				s = EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle(styleName);
@@ -256,15 +253,28 @@ namespace UnityEditor.AddressableAssets.GUI
 		[NonSerialized]
 		Texture2D m_CogIcon;
 
-		void TopToolbar(Rect toolbarPos)
-		{
-			if (m_SearchStyles == null)
-			{
-				m_SearchStyles = new List<GUIStyle>();
-				m_SearchStyles.Add(GetStyle("ToolbarSearchTextFieldPopup", "ToolbarSeachTextFieldPopup")); //GetStyle("ToolbarSeachTextField");
-				m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButton", "ToolbarSeachCancelButton"));
-				m_SearchStyles.Add(GetStyle("ToolbarSearchCancelButtonEmpty", "ToolbarSeachCancelButtonEmpty"));
-			}
+        void TopToolbar(Rect toolbarPos)
+        {
+            if (m_SearchStyles == null)
+            {
+                m_SearchStyles = new List<GUIStyle>();
+
+                string toolbarSearchTextField = "ToolbarSeachTextFieldPopup";
+                string toolbarSearchCancelButton = "ToolbarSeachCancelButton";
+                string toolbarSearchCancelButtonEmpty = "ToolbarSeachCancelButtonEmpty";
+
+                if(!AddressablesGUIUtility.HasStyle(toolbarSearchTextField))
+                {
+                    toolbarSearchTextField = "ToolbarSearchTextFieldPopup";
+                    toolbarSearchCancelButton = "ToolbarSearchCancelButton";
+                    toolbarSearchCancelButtonEmpty = "ToolbarSearchCancelButtonEmpty";
+                }
+
+                m_SearchStyles.Add(GetStyle(toolbarSearchTextField)); //GetStyle("ToolbarSearchTextField");
+                m_SearchStyles.Add(GetStyle(toolbarSearchCancelButton));
+                m_SearchStyles.Add(GetStyle(toolbarSearchCancelButtonEmpty));
+
+            }
 
 			if (m_ButtonStyle == null)
 				m_ButtonStyle = GetStyle("ToolbarButton");

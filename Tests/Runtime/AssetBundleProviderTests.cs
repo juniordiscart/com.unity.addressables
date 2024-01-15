@@ -77,8 +77,8 @@ namespace AddressableTests.SyncAddressables
                 m_Addressables.WebRequestOverride = null;
         }
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator WhenUWRExceedsMaxLimit_UWRAreQueued()
         {
             List<AsyncOperationHandle<GameObject>> l =
@@ -91,9 +91,10 @@ namespace AddressableTests.SyncAddressables
                 h.Release();
             }
         }
+#endif
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator WhenUWRExceedsMaxLimit_CompletesSynchronously()
         {
             List<AsyncOperationHandle<GameObject>> loadOps =
@@ -110,18 +111,20 @@ namespace AddressableTests.SyncAddressables
                 handle.Release();
             }
         }
+#endif
 
+#if !UNITY_PS5
         [Test]
-        [Platform(Exclude = "PS5")]
         public void WhenUWRIsUsed_CompletesSynchronously()
         {
             AsyncOperationHandle<GameObject> h = m_Addressables.LoadAssetAsync<GameObject>(GetForceUWRAddrName(0));
             h.WaitForCompletion();
             h.Release();
         }
+#endif
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator WhenAssetBundleIsLocal_AndForceUWRIsEnabled_UWRIsUsed()
         {
             AsyncOperationHandle<GameObject> h = m_Addressables.LoadAssetAsync<GameObject>(GetForceUWRAddrName(0));
@@ -129,9 +132,11 @@ namespace AddressableTests.SyncAddressables
             yield return h;
             h.Release();
         }
+#endif
 
+
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator WhenAssetBundleIsLocal_AndForceUWRIsDisabled_UWRIsNotUsed()
         {
             AsyncOperationHandle<GameObject> h = m_Addressables.LoadAssetAsync<GameObject>("testprefab");
@@ -139,9 +144,10 @@ namespace AddressableTests.SyncAddressables
             yield return h;
             h.Release();
         }
+#endif
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator WhenWebRequestOverrideIsSet_CallbackIsCalled_AssetBundleProvider()
         {
             bool webRequestOverrideCalled = false;
@@ -160,15 +166,21 @@ namespace AddressableTests.SyncAddressables
             LogAssert.ignoreFailingMessages = prev;
             Assert.IsTrue(webRequestOverrideCalled);
         }
+#endif
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator WhenWebRequestFails_RetriesCorrectAmount_AssetBundleProvider()
         {
             var prev = LogAssert.ignoreFailingMessages;
             LogAssert.ignoreFailingMessages = true;
+            int retries = 0;
+            m_Addressables.WebRequestOverride = request =>
+            {
+                retries++;
+            };
 
-            var nonExistingPath = "http://127.0.0.1/non-existing-bundle";
+            var nonExistingPath = "https://127.0.0.1/non-existing-bundle";
             var loc = new ResourceLocationBase(nonExistingPath, nonExistingPath, typeof(AssetBundleProvider).FullName, typeof(AssetBundleResource));
             var d = new AssetBundleRequestOptions();
             d.RetryCount = 3;
@@ -177,15 +189,19 @@ namespace AddressableTests.SyncAddressables
             LogAssert.Expect(LogType.Log, new Regex(@"^(Web request failed, retrying \(0/3)"));
             LogAssert.Expect(LogType.Log, new Regex(@"^(Web request failed, retrying \(1/3)"));
             LogAssert.Expect(LogType.Log, new Regex(@"^(Web request failed, retrying \(2/3)"));
+
             var h = m_Addressables.ResourceManager.ProvideResource<AssetBundleResource>(loc);
             yield return h;
 
             if (h.IsValid()) h.Release();
             LogAssert.ignoreFailingMessages = prev;
+            // apparently we do 1 attempt, then 3 retries
+            Assert.AreEqual(4, retries);
         }
+#endif
 
+#if !UNITY_PS5
         [Test]
-        [Platform(Exclude = "PS5")]
         [TestCase("Relative/Local/Path", true, false)]
         [TestCase("Relative/Local/Path", true, true)]
         [TestCase("http://127.0.0.1/Web/Path", false, true)]
@@ -209,10 +225,12 @@ namespace AddressableTests.SyncAddressables
             if (isLocal && useUnityWebRequestForLocalBundles)
             {
                 expectedPath = internalId.StartsWith("jar") ? internalId : "file:///" + Path.GetFullPath(internalId);
+                expectedPath = expectedPath.Replace('\\', '/');
             }
 
             Assert.AreEqual(expectedPath, path);
         }
+#endif
 
         [UnityTest]
         public IEnumerator LoadBundleAsync_WithUnfinishedUnload_WaitsForUnloadAndCompletes()

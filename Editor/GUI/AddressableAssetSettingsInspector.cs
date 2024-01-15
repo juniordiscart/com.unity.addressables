@@ -268,10 +268,10 @@ namespace UnityEditor.AddressableAssets.GUI
 
                     int currentProfileIndex = m_CurrentProfileIndex;
                     // Current profile in use was changed by different window
-                    if (AddressableAssetSettingsDefaultObject.Settings.profileSettings.profiles[m_CurrentProfileIndex].id != AddressableAssetSettingsDefaultObject.Settings.activeProfileId)
+                    if (m_AasTarget.profileSettings.profiles[m_CurrentProfileIndex].id != m_AasTarget.activeProfileId)
                     {
                         currentProfileIndex =
-                            profileNames.IndexOf(AddressableAssetSettingsDefaultObject.Settings.profileSettings.GetProfileName(AddressableAssetSettingsDefaultObject.Settings.activeProfileId));
+                            profileNames.IndexOf(m_AasTarget.profileSettings.GetProfileName(m_AasTarget.activeProfileId));
                         if (currentProfileIndex != m_CurrentProfileIndex)
                             m_QueuedChanges.Add(() => m_CurrentProfileIndex = currentProfileIndex);
                     }
@@ -280,7 +280,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (currentProfileIndex != m_CurrentProfileIndex)
                         m_QueuedChanges.Add(() => m_CurrentProfileIndex = currentProfileIndex);
 
-                    AddressableAssetSettingsDefaultObject.Settings.activeProfileId = AddressableAssetSettingsDefaultObject.Settings.profileSettings.GetProfileId(profileNames[currentProfileIndex]);
+                    m_AasTarget.activeProfileId = m_AasTarget.profileSettings.GetProfileId(profileNames[currentProfileIndex]);
 
                     EditorGUILayout.BeginHorizontal();
                     GUILayout.FlexibleSpace();

@@ -204,8 +204,8 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             m_Addressables.Release(updateOp);
         }
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator UpdateContent_UpdatesCatalogs_WhenAutoCleanCacheEnabled_RemovesNonReferencedBundlesFromCache()
         {
 #if ENABLE_CACHING
@@ -225,16 +225,24 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             var updateOp = m_Addressables.UpdateCatalogs(null, false, true);
             yield return updateOp;
 
+            // there seems to be different behavior in 2019 and all other versions
             string fakeCacheFolder = Path.GetDirectoryName(fakeCachePath);
-            Assert.AreEqual(0, Directory.GetDirectories(fakeCacheFolder).Length);
-
+            if (Directory.Exists(fakeCacheFolder))
+            {
+                // 2019 assertions, fakeCacheFolder is not deleted
+                Assert.AreEqual(0, Directory.GetDirectories(fakeCacheFolder).Length);
+                Directory.Delete(fakeCacheFolder);
+            } else
+            {
+                Assert.IsFalse(Directory.Exists(fakeCacheFolder));
+            }
             m_Addressables.Release(updateOp);
-            Directory.Delete(fakeCacheFolder);
 #else
             Assert.Ignore("Caching not enabled.");
             yield return null;
 #endif
         }
+#endif
 
         [UnityTest]
         public IEnumerator UpdateContent_UpdatesCatalogs_WhenAutoCleanCacheDisabled_NoBundlesRemovedFromCache()

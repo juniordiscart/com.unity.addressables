@@ -9,3 +9,4 @@ using System.Runtime.CompilerServices;
 #endif
 [assembly: InternalsVisibleTo("Unity.Addressables.Tests")]
 [assembly: InternalsVisibleTo("Unity.Addressables.Samples.Tests")]
+[assembly: InternalsVisibleTo("Unity.Addressables.Android")]

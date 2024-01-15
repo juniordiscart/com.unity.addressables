@@ -54,7 +54,6 @@ namespace UnityEditor.AddressableAssets
 
 			if (string.IsNullOrEmpty(m_AddressableAssetSettingsGuid))
 			{
-				Debug.LogError("Invalid guid for default AddressableAssetSettings object.");
 				return null;
 			}
 

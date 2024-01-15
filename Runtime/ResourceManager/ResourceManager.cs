@@ -195,7 +195,7 @@ namespace UnityEngine.ResourceManagement
 		HashSet<InstanceOperation> m_TrackedInstanceOperations = new HashSet<InstanceOperation>();
 		internal DelegateList<float> m_UpdateCallbacks = DelegateList<float>.CreateWithGlobalCache();
 		List<IAsyncOperation> m_DeferredCompleteCallbacks = new List<IAsyncOperation>();
-		HashSet<IResourceProvider> m_AsestBundleProviders = new HashSet<IResourceProvider>();
+        HashSet<IResourceProvider> m_AssetBundleProviders = new HashSet<IResourceProvider>();
 
 		bool m_InsideExecuteDeferredCallbacksMethod = false;
 		List<DeferredCallbackRegisterRequest> m_DeferredCallbacksToRegister = null;
@@ -459,7 +459,6 @@ namespace UnityEngine.ResourceManagement
 			{
 				op.IncrementReferenceCount();
 				return new AsyncOperationHandle(op, location.ToString());
-				;
 			}
 
 			Type provType;
@@ -508,19 +507,21 @@ namespace UnityEngine.ResourceManagement
 			bool isAssetBundleProvider = false;
 			if (provider != null)
 			{
-				if (m_AsestBundleProviders.Contains(provider))
+                if (m_AssetBundleProviders.Contains(provider))
 					isAssetBundleProvider = true;
 				else if (typeof(AssetBundleProvider).IsAssignableFrom(provider.GetType()))
 				{
 					isAssetBundleProvider = true;
-					m_AsestBundleProviders.Add(provider);
+                    m_AssetBundleProviders.Add(provider);
 				}
 			}
 
-			//If the location uses the AssetBundleProvider, we need to transform the ID first
-			//so we don't try and load the same bundle twice if the user is manipulating the path at runtime.
+            //Actual key generation has been moved to AssetBundleProvider virtual method to allow provider derived from AssetBundleProvider
+            //skip calling TransformInternalId method, as it may return different values before and after asset bundle is loaded,
+            //for example when using Play Asset Delivery for Android.
+            //For major package release consider this method to be made a part of IResourceProvider to simplify this whole logic.
 			if (isAssetBundleProvider)
-				key = new IdCacheKey(TransformInternalId(location));
+                key = (provider as AssetBundleProvider).CreateCacheKeyForLocation(this, location, desiredType);
 			else
 				key = new LocationCacheKey(location, desiredType);
 
@@ -620,7 +621,11 @@ namespace UnityEngine.ResourceManagement
 			Allocator.Release(o.GetType().GetHashCode(), o);
 			var cachable = o as ICachable;
 			if (cachable?.Key != null)
+            {
 				RemoveOperationFromCache(cachable.Key);
+                cachable.Key = null;
+            }
+
 		}
 
 		internal T CreateOperation<T>(Type actualType, int typeHash, IOperationCacheKey cacheKey, Action<IAsyncOperation> onDestroyAction) where T : IAsyncOperation

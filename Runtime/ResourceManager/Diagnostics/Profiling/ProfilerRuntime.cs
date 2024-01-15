@@ -58,7 +58,7 @@ namespace UnityEngine.ResourceManagement.Profiling
             CatalogLoadCounter.Value++;
         }
 
-        public static void AddBundleOperation(ProvideHandle handle, [NotNull] AssetBundleRequestOptions requestOptions, ContentStatus status, BundleSource source)
+        public static void AddBundleOperation(ProvideHandle handle, AssetBundleRequestOptions requestOptions, ContentStatus status, BundleSource source)
         {
             IAsyncOperation op = handle.InternalOp as IAsyncOperation;
             if (op == null)
@@ -125,7 +125,7 @@ namespace UnityEngine.ResourceManagement.Profiling
             string containingBundleName = GetContainingBundleNameForLocation(handle.Location);
 
             string assetId;
-            if (handle.Location.InternalId.EndsWith(']'))
+            if (handle.Location.InternalId.EndsWith("]"))
             {
                 int start = handle.Location.InternalId.IndexOf('[');
                 assetId = handle.Location.InternalId.Remove(start);

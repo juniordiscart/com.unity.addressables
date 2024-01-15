@@ -913,7 +913,6 @@ namespace AddressableAssetsIntegrationTests
 
 #if !UNITY_SWITCH
         [UnityTest]
-        [Platform(Exclude = "Switch")]
         public IEnumerator LoadContentCatalogAsync_SetsUpLocalAndRemoteLocations()
         {
             yield return Init();
@@ -2289,6 +2288,7 @@ namespace AddressableAssetsIntegrationTests
             string label = AddressablesTestUtility.GetPrefabLabel("BASE");
             AsyncOperationHandle op = m_Addressables.DownloadDependenciesAsync(label);
             yield return op;
+            AssertDownloadDependencyBundlesAreValid(op);
             op.Release();
         }
 
@@ -2996,8 +2996,8 @@ namespace AddressableAssetsIntegrationTests
         }
 #endif
 #if !ENABLE_BINARY_CATALOG
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator ClearDependencyCache_ClearsAllCachedFilesForKey()
         {
             yield return Init();
@@ -3027,6 +3027,7 @@ namespace AddressableAssetsIntegrationTests
             yield return null;
 #endif
         }
+#endif
 
         [UnityTest]
         public IEnumerator ClearDependencyCache_ClearsAllCachedFilesForKeyWithDependencies()
@@ -3118,8 +3119,8 @@ namespace AddressableAssetsIntegrationTests
 #endif
         }
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator ClearDependencyCache_ClearsAllCachedFilesForLocationList()
         {
             yield return Init();
@@ -3148,9 +3149,10 @@ namespace AddressableAssetsIntegrationTests
             yield return null;
 #endif
         }
+#endif
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude = "PS5")]
         public IEnumerator ClearDependencyCache_ClearsAllCachedFilesForKeyList()
         {
             yield return Init();
@@ -3181,6 +3183,7 @@ namespace AddressableAssetsIntegrationTests
             yield return null;
 #endif
         }
+#endif
 
         [UnityTest]
         public IEnumerator ClearDependencyCache_ClearsAllCachedFilesForLocationListWithDependencies()
@@ -3433,8 +3436,8 @@ namespace AddressableAssetsIntegrationTests
             Assert.IsFalse(clearCache.IsValid());
         }
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude ="PS5")]
         public IEnumerator AssetBundleRequestOptions_ComputesCorrectSize_WhenLocationDoesNotMatchBundleName_WithHash()
         {
 #if ENABLE_CACHING
@@ -3467,9 +3470,10 @@ namespace AddressableAssetsIntegrationTests
             yield return null;
 #endif
         }
+#endif
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude ="PS5")]
         public IEnumerator AssetBundleResource_RemovesCachedBundle_OnLoadFailure()
         {
 #if ENABLE_CACHING
@@ -3488,7 +3492,7 @@ namespace AddressableAssetsIntegrationTests
             };
             CreateFakeCachedBundle(bundleName, hash.ToString());
             CachedAssetBundle cab = new CachedAssetBundle(bundleName, hash);
-            var request = abr.CreateWebRequest(new ResourceLocationBase("testName", bundleName, typeof(AssetBundleProvider).FullName,
+            var request = abr.CreateWebRequest(new ResourceLocationBase("testName", $"http://127.0.01/{bundleName}", typeof(AssetBundleProvider).FullName,
                 typeof(IAssetBundleResource)));
 
             Assert.IsTrue(Caching.IsVersionCached(cab));
@@ -3499,9 +3503,10 @@ namespace AddressableAssetsIntegrationTests
             yield return null;
 #endif
         }
+#endif
 
+#if !UNITY_PS5
         [UnityTest]
-        [Platform(Exclude ="PS5")]
         public IEnumerator AssetBundleResource_RemovesCachedBundle_OnLoadFailure_WhenRetryCountIsZero()
         {
 #if ENABLE_CACHING
@@ -3520,7 +3525,7 @@ namespace AddressableAssetsIntegrationTests
             };
             CreateFakeCachedBundle(bundleName, hash.ToString());
             CachedAssetBundle cab = new CachedAssetBundle(bundleName, hash);
-            var request = abr.CreateWebRequest(new ResourceLocationBase("testName", bundleName, typeof(AssetBundleProvider).FullName,
+            var request = abr.CreateWebRequest(new ResourceLocationBase("testName", $"http://127.0.01/{bundleName}", typeof(AssetBundleProvider).FullName,
                 typeof(IAssetBundleResource)));
 
             Assert.IsTrue(Caching.IsVersionCached(cab));
@@ -3531,14 +3536,16 @@ namespace AddressableAssetsIntegrationTests
             yield return null;
 #endif
         }
+#endif
 
+#if !UNITY_PS5
         [Test]
-        [Platform(Exclude ="PS5")]
         public void AssetBundleResource_WhenNotLoaded_GetAssetPreloadRequest_ReturnsNull()
         {
             AssetBundleResource abr = new AssetBundleResource();
             Assert.AreEqual(null, abr.GetAssetPreloadRequest());
         }
+#endif
 
         [Test]
         public void WebRequestQueueOperation_CanSetWebRequest()

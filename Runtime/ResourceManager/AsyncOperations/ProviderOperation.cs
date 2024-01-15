@@ -298,6 +298,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             if (m_DepOp.IsValid())
                 m_DepOp.Release();
             Result = default(TObject);
+            m_Location = null;
         }
     }
 }
