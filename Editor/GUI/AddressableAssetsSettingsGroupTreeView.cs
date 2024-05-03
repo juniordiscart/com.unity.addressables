@@ -982,6 +982,8 @@ namespace UnityEditor.AddressableAssets.GUI
 					menu.AddItem(new GUIContent("Remove Addressables"), false, RemoveEntry, selectedNodes);
 					menu.AddItem(new GUIContent("Simplify Addressable Names"), false, SimplifyAddresses, selectedNodes);
 
+					menu.AddItem(new GUIContent("Reset Address to Default"), false, ResetAddressToDefault, selectedNodes);
+
 					if (selectedNodes.Count == 1)
 						menu.AddItem(new GUIContent("Copy Address to Clipboard"), false, CopyAddressesToClipboard, selectedNodes);
 
@@ -1156,40 +1158,40 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 		}
 
-		void MoveEntriesToGroup(object context)
-		{
-            var pair = context as Tuple<Event, List<AssetEntryTreeViewItem>>;
-			var entries = new List<AddressableAssetEntry>();
-            bool mixedGroups = false;
-            AddressableAssetGroup displayGroup = null;
-            foreach (AssetEntryTreeViewItem item in pair.Item2)
-            {
-                if (item.entry != null)
-			{
-					entries.Add(item.entry);
-                    if (displayGroup == null)
-                        displayGroup = item.entry.parentGroup;
-                    else if (item.entry.parentGroup != displayGroup)
-                    {
-                        mixedGroups = true;
-                    }
-                }
-			}
+        void MoveEntriesToGroup(object context)
+        {
+	        var pair = context as Tuple<Event, List<AssetEntryTreeViewItem>>;
+	        var entries = new List<AddressableAssetEntry>();
+	        bool mixedGroups = false;
+	        AddressableAssetGroup displayGroup = null;
+	        foreach (AssetEntryTreeViewItem item in pair.Item2)
+	        {
+		        if (item.entry != null)
+		        {
+			        entries.Add(item.entry);
+			        if (displayGroup == null)
+				        displayGroup = item.entry.parentGroup;
+			        else if (item.entry.parentGroup != displayGroup)
+			        {
+				        mixedGroups = true;
+			        }
+		        }
+	        }
 
-            var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
-            if (pair.Item1 == null)
-            {
-                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, AddressableAssetUtility.MoveEntriesToGroup);
-                window.SetPosition(Vector2.zero);
-            }
-            else
-            {
-                window.Initialize(m_Editor.settings, entries, !mixedGroups, false, AddressableAssetUtility.MoveEntriesToGroup);
-                window.SetPosition(pair.Item1.mousePosition);
-            }
-		}
+	        var window = EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group");
+	        if (pair.Item1 == null)
+	        {
+		        window.Initialize(m_Editor.settings, entries, !mixedGroups, false, AddressableAssetUtility.MoveEntriesToGroup);
+		        window.SetPosition(Vector2.zero);
+	        }
+	        else
+	        {
+		        window.Initialize(m_Editor.settings, entries, !mixedGroups, false, AddressableAssetUtility.MoveEntriesToGroup);
+		        window.SetPosition(pair.Item1.mousePosition);
+	        }
+        }
 
-		internal void CreateNewGroup(object context)
+        internal void CreateNewGroup(object context)
 		{
 			var groupTemplate = context as AddressableAssetGroupTemplate;
 			if (groupTemplate != null)
@@ -1288,6 +1290,39 @@ namespace UnityEditor.AddressableAssets.GUI
 					item.entry.SetAddress(Path.GetFileNameWithoutExtension(item.entry.address), false);
 					entries.Add(item.entry);
 					modifiedGroups.Add(item.entry.parentGroup);
+				}
+			}
+
+			foreach (var g in modifiedGroups)
+			{
+				g.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entries, false, true);
+				AddressableAssetUtility.OpenAssetIfUsingVCIntegration(g);
+			}
+
+			m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entries, true, false);
+		}
+
+		protected void ResetAddressToDefault(object context)
+		{
+			if (!EditorUtility.DisplayDialog("Reset Addresses", "Are you sure you want to rename the selected entries to their default addresses?", "Yes", "No"))
+				return;
+
+			List<AssetEntryTreeViewItem> selectedNodes = context as List<AssetEntryTreeViewItem>;
+			if (selectedNodes == null || selectedNodes.Count < 1)
+				return;
+
+			List<AddressableAssetEntry> entries = new List<AddressableAssetEntry>();
+			HashSet<AddressableAssetGroup> modifiedGroups = new HashSet<AddressableAssetGroup>();
+			foreach (AssetEntryTreeViewItem node in selectedNodes)
+			{
+				if ((node.entry == null) || node.entry.IsSubAsset)
+					continue;
+
+				if (!node.entry.address.Equals(node.entry.AssetPath))
+				{
+					node.entry.SetAddress(node.entry.AssetPath, false);
+					entries.Add(node.entry);
+					modifiedGroups.Add(node.entry.parentGroup);
 				}
 			}
 

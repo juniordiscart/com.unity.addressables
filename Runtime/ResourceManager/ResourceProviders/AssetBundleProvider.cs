@@ -381,6 +381,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     m_PreloadCompleted = true;
                     return null;
                 }
+#elif ENABLE_ASSETBUNDLE_SYNC
+				m_AssetBundle.LoadAllAssets();
+				m_PreloadCompleted = true;
+				return null;
 #endif
 				if (m_PreloadRequest == null)
 				{
@@ -635,6 +639,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 if (AsyncOperationHandle.IsWaitingForCompletion)
                     CompleteBundleLoad(AssetBundle.LoadFromFile(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc));
                 else
+#elif ENABLE_ASSETBUNDLE_SYNC
+				if (true)
+					CompleteBundleLoad(AssetBundle.LoadFromFile(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc));
+				else
 #endif
 				{
 					m_RequestOperation = AssetBundle.LoadFromFileAsync(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc);

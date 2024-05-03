@@ -95,8 +95,15 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                             CompleteOperation();
                         }
                         else
+#elif ENABLE_ASSETBUNDLE_SYNC
+                        if (true)
+                        {
+                            GetArrayResult(m_AssetBundle.LoadAssetWithSubAssets(assetPath, m_ProvideHandle.Type.GetElementType()));
+                            CompleteOperation();
+                        }
+                        else
 #endif
-                            m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetElementType());
+						m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetElementType());
                     }
                     else if (m_ProvideHandle.Type.IsGenericType && typeof(IList<>) == m_ProvideHandle.Type.GetGenericTypeDefinition())
                     {
@@ -107,8 +114,15 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                             CompleteOperation();
                         }
                         else
+#elif ENABLE_ASSETBUNDLE_SYNC
+                        if (true)
+                        {
+                            GetListResult(m_AssetBundle.LoadAssetWithSubAssets(assetPath, m_ProvideHandle.Type.GetGenericArguments()[0]));
+                            CompleteOperation();
+                        }
+                        else
 #endif
-                            m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetGenericArguments()[0]);
+						m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetGenericArguments()[0]);
                     }
                     else
                     {
@@ -122,6 +136,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                                 CompleteOperation();
                             }
                             else
+#elif ENABLE_ASSETBUNDLE_SYNC
+							if (true)
+                            {
+                                GetAssetSubObjectResult(m_AssetBundle.LoadAssetWithSubAssets(mainPath, m_ProvideHandle.Type));
+                                CompleteOperation();
+                            }
+                            else
 #endif
                                 m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(mainPath, m_ProvideHandle.Type);
                         }
@@ -129,6 +150,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         {
 #if !UNITY_2021_1_OR_NEWER
                             if (AsyncOperationHandle.IsWaitingForCompletion)
+                            {
+                                GetAssetResult(m_AssetBundle.LoadAsset(assetPath, m_ProvideHandle.Type));
+                                CompleteOperation();
+                            }
+                            else
+#elif ENABLE_ASSETBUNDLE_SYNC
+                            if (true)
                             {
                                 GetAssetResult(m_AssetBundle.LoadAsset(assetPath, m_ProvideHandle.Type));
                                 CompleteOperation();
