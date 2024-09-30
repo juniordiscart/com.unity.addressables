@@ -1,6 +1,8 @@
 #if (ENABLE_CCD && ENABLE_MOQ)
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -29,6 +31,14 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
 {
     public class CcdBuildMenuTests
     {
+        public enum RemoteCatalogType
+        {
+            None,
+            Local,
+            Remote
+        };
+        static RemoteCatalogType[] remoteCatalogTypes = new RemoteCatalogType[] { RemoteCatalogType.None, RemoteCatalogType.Local, RemoteCatalogType.Remote};
+
         private const int k_SleepTime = 30000;
 
         // this is all cribbed from AddressableAssetTestsBase
@@ -58,6 +68,9 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
         private static string m_ManagedBucketId = "05bb444b-5c7e-40ad-a123-fd7596f60784";
         private static string m_StaticBucketId = "ce62fde2-1451-4e0c-adee-1924e95b48e7";
         private static string m_SecondBucketId = "98476627-3c9d-49a2-ac79-b84e3e2b6913";
+        // this is used to queue up subsequent calls to ListBuckets
+        private Queue<List<CcdBucket>> m_listBucketCalls = new Queue<List<CcdBucket>>();
+
 
 
         private AddressablesDataBuilderInput m_Input;
@@ -247,6 +260,26 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
             m_CcdManagementMock = new CcdManagementServiceSdkMock();
             m_CcdManagementMock.Init();
 
+            #if CCD_3_OR_NEWER
+                        m_CcdManagementMock.Setup(client => client.ListBucketsAsync(It.IsAny<PageOptions>(), It.IsAny<ListBucketsOptions>())).Returns<PageOptions, ListBucketsOptions>((v, bucketsOptions) =>
+            #else
+                        m_CcdManagementMock.Setup(client => client.ListBucketsAsync(It.IsAny<PageOptions>())).Returns<PageOptions>((v) =>
+            #endif
+            {
+                if (v.Page == 1)
+                {
+                    if (m_listBucketCalls.Count == 0)
+                    {
+                        throw new Exception("no list bucket data found for call");
+                    }
+
+                    return Task.FromResult(m_listBucketCalls.Dequeue());
+                }
+                if (v.Page == 2)
+                    throw new CcdManagementException(CcdManagementErrorCodes.OutOfRange, "out of range");
+                return null;
+            });
+
             // Refresh data sources to populate our profiles
             Assert.True(await refreshDataSources());
 
@@ -263,6 +296,10 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
             m_CcdManagementMock.VerifyAll();
             AssetDatabase.DeleteAsset(k_ProfileSettingsPath);
             deleteContentStateBin();
+            if (m_listBucketCalls.Count > 0)
+            {
+                throw new Exception("not all list bucket calls were made");
+            }
         }
 
         [OneTimeTearDown]
@@ -296,6 +333,29 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
             }
 
             Assert.True(File.Exists(fileName));
+        }
+
+        private void setupRemoteCatalog(RemoteCatalogType remoteCatalogType)
+        {
+            switch(remoteCatalogType)
+            {
+                case RemoteCatalogType.None:
+                    m_Settings.BuildRemoteCatalog = false;
+                    m_Settings.RemoteCatalogBuildPath = new ProfileValueReference();
+                    break;
+                case RemoteCatalogType.Local:
+                    m_Settings.BuildRemoteCatalog = true;
+                    m_Settings.RemoteCatalogBuildPath = new ProfileValueReference();
+                    m_Settings.RemoteCatalogBuildPath.SetVariableByName(m_Settings, "Local.BuildPath");
+                    m_Settings.RemoteCatalogLoadPath.SetVariableByName(m_Settings, "Local.LoadPath");
+                    break;
+                case RemoteCatalogType.Remote:
+                    m_Settings.BuildRemoteCatalog = true;
+                    m_Settings.RemoteCatalogBuildPath = new ProfileValueReference();
+                    m_Settings.RemoteCatalogBuildPath.SetVariableByName(m_Settings, "Remote.BuildPath");
+                    m_Settings.RemoteCatalogLoadPath.SetVariableByName(m_Settings, "Remote.LoadPath");
+                    break;
+            }
         }
 
         [Test]
@@ -688,33 +748,26 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
             var managedBucket = new CcdBucket(id: Guid.Parse(m_ManagedBucketId), name: EditorUserBuildSettings.activeBuildTarget.ToString(), attributes: new CcdBucketAttributes(promoteOnly: false));
             var staticBucket = new CcdBucket(id: Guid.Parse(m_StaticBucketId), name: "Static Bucket", attributes: new CcdBucketAttributes(promoteOnly: false));
             var secondBucket = new CcdBucket(id: Guid.Parse(m_SecondBucketId), name: "Second Bucket", attributes: new CcdBucketAttributes(promoteOnly: false));
-            var buckets = new System.Collections.Generic.List<CcdBucket>();
+            var buckets = new List<CcdBucket>();
             buckets.Add(managedBucket);
             buckets.Add(staticBucket);
             buckets.Add(secondBucket);
 
-            // this is refresh data
-#if CCD_3_OR_NEWER
-            var listBucketsCalls = m_CcdManagementMock.Setup(client => client.ListBucketsAsync(It.IsAny<PageOptions>(), It.IsAny<ListBucketsOptions>())).Returns<PageOptions, ListBucketsOptions>((v, bucketsOptions) =>
-#else
-            var listBucketsCalls = m_CcdManagementMock.Setup(client => client.ListBucketsAsync(It.IsAny<PageOptions>())).Returns<PageOptions>((v) =>
-#endif
-            {
-                if (v.Page == 1)
-                    return Task.FromResult(buckets);
-                if (v.Page == 2)
-                    throw new CcdManagementException(CcdManagementErrorCodes.OutOfRange, "out of range");
-                return null;
-            });
-
-            // no badges
             m_CcdManagementMock.Setup(client => client.ListBadgesAsync(managedBucket.Id, It.IsAny<PageOptions>()))
                 .Throws(new CcdManagementException(CcdManagementErrorCodes.OutOfRange, "out of range"));
             m_CcdManagementMock.Setup(client => client.ListBadgesAsync(staticBucket.Id, It.IsAny<PageOptions>()))
                 .Throws(new CcdManagementException(CcdManagementErrorCodes.OutOfRange, "out of range"));
             m_CcdManagementMock.Setup(client => client.ListBadgesAsync(secondBucket.Id, It.IsAny<PageOptions>()))
                 .Throws(new CcdManagementException(CcdManagementErrorCodes.OutOfRange, "out of range"));
-
+            return await refreshDataSources(buckets);
+        }
+        public async Task<bool> refreshDataSources(List<CcdBucket> buckets)
+        {
+            // this is refresh data
+            // production
+            m_listBucketCalls.Enqueue(buckets);
+            // development
+            m_listBucketCalls.Enqueue(new List<CcdBucket>());
 
             // I can't add group types directly as it's internal. So adding my test group types by calling
             var result = await CcdBuildEvents.Instance.RefreshDataSources(m_Input);
@@ -734,10 +787,10 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
 
 
         [Test]
-        public async Task VerifyTargetBucketAllLocal()
+        public async Task VerifyTargetBucketAllLocal([ValueSource(nameof(remoteCatalogTypes))] RemoteCatalogType remoteCatalogType)
         {
             m_Settings.activeProfileId = m_Settings.profileSettings.GetProfileId(k_ProfileDefault);
-            m_Settings.BuildRemoteCatalog = false;
+            setupRemoteCatalog(remoteCatalogType);
             var success = await CcdBuildEvents.Instance.VerifyTargetBucket(m_Input);
             Assert.True(success);
 #if !ADDRESSABLES_WITHOUT_GROUP_FIXES
@@ -764,12 +817,10 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
         }
 
         [Test]
-        public async Task VerifyTargetBucketAutomaticAndStaticProfile()
+        public async Task VerifyTargetBucketAutomaticAndStaticProfile([ValueSource(nameof(remoteCatalogTypes))] RemoteCatalogType remoteCatalogType)
         {
-            m_CcdManagementMock.Setup(client => client.CreateBucketAsync(It.Is<CreateBucketOptions>((v) => v.Name == EditorUserBuildSettings.activeBuildTarget.ToString())))
-                .Throws<CcdManagementException>(AlreadyExistsException);
             m_Settings.activeProfileId = m_Settings.profileSettings.GetProfileId(k_ProfileAutomaticAndStatic);
-            m_Settings.BuildRemoteCatalog = true;
+            setupRemoteCatalog(remoteCatalogType);
             var success = await CcdBuildEvents.Instance.VerifyTargetBucket(m_Input);
             Assert.True(success);
 
@@ -781,12 +832,11 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
         }
 
         [Test]
-        public async Task VerifyTargetBucketAutomaticProfile()
+        public async Task VerifyTargetBucketAutomaticProfile([ValueSource(nameof(remoteCatalogTypes))] RemoteCatalogType remoteCatalogType)
         {
-            m_CcdManagementMock.Setup(client => client.CreateBucketAsync(It.Is<CreateBucketOptions>((v) => v.Name == EditorUserBuildSettings.activeBuildTarget.ToString())))
-                .Throws<CcdManagementException>(AlreadyExistsException);
             m_Settings.activeProfileId = m_Settings.profileSettings.GetProfileId(k_ProfileAutomaticAndLocal);
-            m_Settings.BuildRemoteCatalog = true;
+            setupRemoteCatalog(remoteCatalogType);
+
             var success = await CcdBuildEvents.Instance.VerifyTargetBucket(m_Input);
             Assert.True(success);
 
@@ -798,25 +848,79 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
         }
 
         [Test]
-        public async Task VerifyTargetBucketStaticProfile()
+        public async Task VerifyTargetBucketAutomaticProfileNoManagedData([ValueSource(nameof(remoteCatalogTypes))] RemoteCatalogType remoteCatalogType)
+        {
+            var managedBucket = new CcdBucket(id: Guid.Parse(m_ManagedBucketId), name: EditorUserBuildSettings.activeBuildTarget.ToString(), attributes: new CcdBucketAttributes(promoteOnly: false));
+            m_CcdManagementMock.Setup(client => client.CreateBucketAsync(It.Is<CreateBucketOptions>((v) => v.Name == EditorUserBuildSettings.activeBuildTarget.ToString())))
+                .Returns(Task.FromResult(managedBucket));
+            m_Settings.activeProfileId = m_Settings.profileSettings.GetProfileId(k_ProfileAutomaticAndLocal);
+            setupRemoteCatalog(remoteCatalogType);
+
+            resetManagedBucket();
+
+            // this should be a completely new remote project
+            await refreshDataSources(new List<CcdBucket>());
+
+            var success = await CcdBuildEvents.Instance.VerifyTargetBucket(m_Input);
+            Assert.True(success);
+
+            var ccdManagedDataField = m_Input.AddressableSettings.GetType().GetField("m_CcdManagedData", BindingFlags.NonPublic | BindingFlags.Instance);
+            var ccdManagedDataInstance = ccdManagedDataField.GetValue(m_Input.AddressableSettings);
+            var bucketIdField = ccdManagedDataInstance.GetType().GetField("BucketId", BindingFlags.Public | BindingFlags.Instance);
+            var verifiedBucketId = bucketIdField.GetValue(ccdManagedDataInstance);
+            Assert.AreEqual(m_ManagedBucketId, verifiedBucketId);
+        }
+
+        [Test]
+        public async Task VerifyTargetBucketAutomaticProfileNoManagedDataBucketExists([ValueSource(nameof(remoteCatalogTypes))] RemoteCatalogType remoteCatalogType)
+        {
+            var managedBucket = new CcdBucket(id: Guid.Parse(m_ManagedBucketId), name: EditorUserBuildSettings.activeBuildTarget.ToString(), attributes: new CcdBucketAttributes(promoteOnly: false));
+            m_CcdManagementMock.Setup(client => client.CreateBucketAsync(It.Is<CreateBucketOptions>((v) => v.Name == EditorUserBuildSettings.activeBuildTarget.ToString())))
+                .Throws(AlreadyExistsException());
+            m_Settings.activeProfileId = m_Settings.profileSettings.GetProfileId(k_ProfileAutomaticAndLocal);
+            setupRemoteCatalog(remoteCatalogType);
+
+            resetManagedBucket();
+
+            // this should be a completely new remote project
+            await refreshDataSources(new List<CcdBucket>());
+            // since the bucket already exists we should load the bucket
+            m_listBucketCalls.Enqueue(new List<CcdBucket>(){managedBucket});
+
+            var success = await CcdBuildEvents.Instance.VerifyTargetBucket(m_Input);
+            Assert.True(success);
+
+            var ccdManagedDataField = m_Input.AddressableSettings.GetType().GetField("m_CcdManagedData", BindingFlags.NonPublic | BindingFlags.Instance);
+            var ccdManagedDataInstance = ccdManagedDataField.GetValue(m_Input.AddressableSettings);
+            var bucketIdField = ccdManagedDataInstance.GetType().GetField("BucketId", BindingFlags.Public | BindingFlags.Instance);
+            var verifiedBucketId = bucketIdField.GetValue(ccdManagedDataInstance);
+            Assert.AreEqual(m_ManagedBucketId, verifiedBucketId);
+        }
+
+
+        [Test]
+        public async Task VerifyTargetBucketStaticProfile([ValueSource(nameof(remoteCatalogTypes))] RemoteCatalogType remoteCatalogType)
         {
             m_Settings.activeProfileId = m_Settings.profileSettings.GetProfileId(k_ProfileStaticAndLocal);
-            m_Settings.BuildRemoteCatalog = true;
+            setupRemoteCatalog(remoteCatalogType);
             var success = await CcdBuildEvents.Instance.VerifyTargetBucket(m_Input);
             Assert.True(success);
         }
 
         [Test]
-        public async Task VerifyTargetBucketOverride()
+        public async Task VerifyTargetBucketOverride([ValueSource(nameof(remoteCatalogTypes))] RemoteCatalogType remoteCatalogType)
         {
             var ccdManagedDataField = m_Input.AddressableSettings.GetType().GetField("m_CcdManagedData", BindingFlags.NonPublic | BindingFlags.Instance);
             var ccdManagedDataInstance = ccdManagedDataField.GetValue(m_Input.AddressableSettings);
 
             var stateField = ccdManagedDataInstance.GetType().GetField("State", BindingFlags.Public | BindingFlags.Instance);
             var stateEnumValues = stateField.GetValue(ccdManagedDataInstance).GetType().GetEnumValues();
-
-            m_Settings.BuildRemoteCatalog = true;
             stateField.SetValue(ccdManagedDataInstance, stateEnumValues.GetValue(2));
+
+            m_Settings.activeProfileId = m_Settings.profileSettings.GetProfileId(k_ProfileAutomaticAndLocal);
+            setupRemoteCatalog(remoteCatalogType);
+            m_Settings.RemoteCatalogBuildPath.SetVariableByName(m_Settings, "Remote.BuildPath");
+            m_Settings.RemoteCatalogLoadPath.SetVariableByName(m_Settings, "Remote.LoadPath");
 
             var success = await CcdBuildEvents.Instance.VerifyTargetBucket(m_Input);
             Assert.True(success);
