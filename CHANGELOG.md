@@ -4,6 +4,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.21.20] - 2024-02-08
+- Fixed an issue where scene InternalId collisions were very likely when using dynamic internal asset naming
+- Fixed catalogs to use back slashes rather than forward slashes for android builds.
+- Fixed an issue where "Failed to remove scene from Addressables profiler" warning occurs when a scene is unloaded.
+- Prevent a KeyNotFoundException from being logged to the console.
+- Fix error message to report not found when loading non-Addressable asset by guid
+- Fixed issue where a NullReferenceException occurs when using WaitForCompletion and the max number of concurrent requests is set to 1.
+- Fixed issue where there is missing asset data in the Addressables Profiler for binary catalogs.
+- Added note about the limitations of the Check for Content Update Restrictions tool.
+- Add migration upgrade prompt for legacy path pairs (ex. RemoteLoadPath)
+- Fixed an issue where a broken script on any Addressable Asset would make it impossible to select Addressable Assets in the AssetReference inspector
+- Add logging of catalog and asset bundle http operations.
+- Add UI to trigger CCD management API http call logging (requires newer CCD package)
+- CCD Automatic Profiles can now be one per-profile, rather than one per AddressableSettings instance
+- CCD Manager is built when using the Build to CCD and the standard Build content menu
+- Add support for CCD Management SDK 3.0
+
 ## [1.21.19] - 2023-10-17
 - Fixed an issue where scene InternalId collisions were very likely when using dynamic internal asset naming
 - Fixed catalogs to use back slashes rather than forward slashes for android builds.

@@ -221,6 +221,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
 #if UNITY_2019_4_OR_NEWER
         GUIContent m_CCDEnabled = new GUIContent("Enable CCD Features", "If enabled, will add options to upload bundles to CCD.");
+        GUIContent m_CCDLogRequests = new GUIContent("Log HTTP Requests", "If enabled, will log requests to the CCD management API.");
+        GUIContent m_CCDLogRequestHeaders = new GUIContent("Log HTTP Request Headers", "If enabled, will log request headers.");
 #endif
 #if UNITY_2021_2_OR_NEWER
         GUIContent m_BuildAddressablesWithPlayerBuild =
@@ -628,6 +630,27 @@ namespace UnityEditor.AddressableAssets.GUI
 
                     m_QueuedChanges.Add(() => m_AasTarget.CCDEnabled = toggle);
                 }
+#if CCD_REQUEST_LOGGING
+                if (m_AasTarget.CCDEnabled)
+                {
+                    var loggingToggle = EditorGUILayout.Toggle(m_CCDLogRequests, m_AasTarget.CCDLogRequests);
+                    if (loggingToggle != m_AasTarget.CCDLogRequests)
+                    {
+                        m_QueuedChanges.Add(() => m_AasTarget.CCDLogRequests = loggingToggle);
+                        // we want to disable request header logging if we disable logging requests
+                        m_QueuedChanges.Add(() => m_AasTarget.CCDLogRequestHeaders = loggingToggle && m_AasTarget.CCDLogRequestHeaders);
+                    }
+
+                    if (m_AasTarget.CCDLogRequests)
+                    {
+                        var headerLoggingToggle = EditorGUILayout.Toggle(m_CCDLogRequestHeaders, m_AasTarget.CCDLogRequestHeaders);
+                        if (headerLoggingToggle != m_AasTarget.CCDLogRequestHeaders)
+                        {
+                            m_QueuedChanges.Add(() => m_AasTarget.CCDLogRequestHeaders = headerLoggingToggle);
+                        }
+                    }
+                }
+#endif
 
                 GUILayout.Space(postBlockContentSpace);
             }

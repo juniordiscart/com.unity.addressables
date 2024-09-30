@@ -905,7 +905,7 @@ namespace UnityEngine.AddressableAssets
 #if UNITY_EDITOR
     class AssetPathToTypes : AssetPostprocessor
     {
-        private static Dictionary<string, HashSet<Type>> s_PathToTypes = new Dictionary<string, HashSet<Type>>();
+        internal static Dictionary<string, HashSet<Type>> s_PathToTypes = new Dictionary<string, HashSet<Type>>();
 
         public static HashSet<Type> GetTypesForAssetPath(string path)
         {
@@ -916,9 +916,19 @@ namespace UnityEngine.AddressableAssets
                 return value;
 
             var objectsForAsset = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
-            value = new HashSet<Type>();
+            value = AddTypesToPath(objectsForAsset, path);
+            return value;
+        }
+
+        internal static HashSet<Type> AddTypesToPath(Object[] objectsForAsset, string path)
+        {
+            HashSet<Type> value = new HashSet<Type>();
             foreach (Object o in objectsForAsset)
+            {
+                if (o != null)
                 value.Add(o.GetType());
+            }
+
             s_PathToTypes.Add(path, value);
             return value;
         }

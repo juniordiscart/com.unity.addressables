@@ -1,9 +1,9 @@
 {
     "name": "Unity.Addressables",
+    "rootNamespace": "",
     "references": [
         "Unity.ResourceManager"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
@@ -11,10 +11,10 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-	"versionDefines": [
+    "versionDefines": [
         {
             "name": "com.unity.services.ccd.management",
-            "expression": "[2.0.0,3.0.0)",
+            "expression": "[2.0.0,4.0.0)",
             "define": "ENABLE_CCD"
         },
         {
@@ -22,5 +22,6 @@
             "expression": "[1.0.2,3.0.0)",
             "define": "ENABLE_ADDRESSABLE_PROFILER"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

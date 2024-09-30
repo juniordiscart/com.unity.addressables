@@ -15,6 +15,7 @@ using UnityEngine.Networking;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditorInternal;
 #endif
 
 namespace UnityEngine.AddressableAssets
@@ -226,10 +227,43 @@ namespace UnityEngine.AddressableAssets
 
         string GetMessageForSingleKey(string keyString)
         {
+            HashSet<Type> typesAvailableForKey = GetTypesForKey(keyString);
+            if (typesAvailableForKey.Count == 0)
+            {
+                return GetNotFoundMessage(keyString);
+            }
+
 #if UNITY_EDITOR
             string path = AssetDatabase.GUIDToAssetPath(keyString);
             if (!string.IsNullOrEmpty(path))
             {
+                return GetEditorTypeNotAssignableMessage(keyString, path);
+            }
+#endif
+
+            if (typesAvailableForKey.Count == 1)
+            {
+                return GetTypeNotAssignableMessage(keyString, typesAvailableForKey);
+            }
+
+            return GetMultipleAssignableTypesMessage(keyString, typesAvailableForKey);
+        }
+
+        private string GetNotFoundMessage(string keyString)
+        {
+#if UNITY_EDITOR
+                string path = AssetDatabase.GUIDToAssetPath(keyString);
+                if (!string.IsNullOrEmpty(path))
+                {
+                    return $"{base.Message} No Location found for Key={keyString}, Path={path}. Verify the asset is marked as Addressable.";
+                }
+#endif
+                return $"{base.Message} No Location found for Key={keyString}";
+        }
+
+#if UNITY_EDITOR
+        private string GetEditorTypeNotAssignableMessage(string keyString, string path)
+        {
                 Type directType = AssetDatabase.GetMainAssetTypeAtPath(path);
                 if (directType != null)
                     return $"{base.Message} Could not load Asset with GUID={keyString}, Path={path}. Asset exists with main Type={directType}, which is not assignable from the requested Type={Type}";
@@ -237,11 +271,7 @@ namespace UnityEngine.AddressableAssets
             }
 #endif
 
-            HashSet<Type> typesAvailableForKey = GetTypesForKey(keyString);
-            if (typesAvailableForKey.Count == 0)
-                return $"{base.Message} No Location found for Key={keyString}";
-
-            if (typesAvailableForKey.Count == 1)
+        private string GetTypeNotAssignableMessage(string keyString, HashSet<Type> typesAvailableForKey)
             {
                 Type availableType = null;
                 foreach (Type type in typesAvailableForKey)
@@ -251,6 +281,8 @@ namespace UnityEngine.AddressableAssets
                 return $"{base.Message} No Asset found with for Key={keyString}. Key exists as Type={availableType}, which is not assignable from the requested Type={Type}";
             }
 
+        private string GetMultipleAssignableTypesMessage(string keyString, HashSet<Type> typesAvailableForKey)
+        {
             StringBuilder csv = new StringBuilder(512);
             int count = 0;
             foreach (Type type in typesAvailableForKey)
@@ -412,7 +444,11 @@ namespace UnityEngine.AddressableAssets
             get
             {
 #if UNITY_EDITOR
-                if (EditorSettings.enterPlayModeOptionsEnabled && reinitializeAddressables)
+                // Addressables in the Editor can be reinitialized when entering or exiting playmode.
+                // This waits until we are on the main thread so that calls like Addressables.Log don't
+                // end up calling the reinitialization code and blowing up if they're being called on
+                // a background thread.
+                if (InternalEditorUtility.CurrentThreadIsMainThread() && reinitializeAddressables && EditorSettings.enterPlayModeOptionsEnabled)
                 {
                     reinitializeAddressables = false;
                     m_AddressablesInstance.ReleaseSceneManagerOperation();

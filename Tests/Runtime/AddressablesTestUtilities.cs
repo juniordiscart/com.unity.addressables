@@ -64,6 +64,9 @@ static class AddressablesTestUtility
 
         Directory.CreateDirectory(RootFolder);
 
+        // create a non-addressable asset
+        AddressablesTestUtility.CreateAsset(RootFolder + "/nonaddressable0" + suffix + ".prefab", "nonAddressable0");
+
         var settings = AddressableAssetSettings.Create(RootFolder + "/Settings", "AddressableAssetSettings.Tests", false, true);
         settings.MaxConcurrentWebRequests = kMaxWebRequestCount;
         var group = settings.FindGroup("TestStuff" + suffix);

@@ -125,11 +125,20 @@ namespace UnityEngine.ResourceManagement
             }
         }
 
+        internal static void DequeueRequest(UnityWebRequestAsyncOperation operation)
+        {
+            operation.completed -= OnWebAsyncOpComplete;
+            OnWebAsyncOpComplete(operation);
+        }
+
         private static void OnWebAsyncOpComplete(AsyncOperation operation)
         {
-            s_ActiveRequests.Remove(operation as UnityWebRequestAsyncOperation);
+            OnWebAsyncOpComplete(operation as UnityWebRequestAsyncOperation);
+        }
 
-            if (s_QueuedOperations.Count > 0)
+        private static void OnWebAsyncOpComplete(UnityWebRequestAsyncOperation operation)
+        {
+            if (s_ActiveRequests.Remove(operation) && s_QueuedOperations.Count > 0)
             {
                 var nextQueuedOperation = s_QueuedOperations.Dequeue();
                 BeginWebRequest(nextQueuedOperation);

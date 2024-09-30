@@ -55,6 +55,8 @@ namespace UnityEditor.AddressableAssets.Settings
             [SerializeField]
             internal bool userHasBeenInformedAboutBuildReportSettingPreBuild = false;
 #endif
+            [SerializeField]
+            internal bool userHasBeenInformedAboutPathPairMigration = false;
         }
 
         static ConfigSaveData s_Data;
@@ -134,7 +136,27 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
         }
+
+
 #endif
+
+        internal static bool UserHasBeenInformedAboutPathPairMigration
+        {
+            get
+            {
+                ValidateData();
+                return s_Data.userHasBeenInformedAboutPathPairMigration;
+            }
+            set
+            {
+                ValidateData();
+                if (s_Data.userHasBeenInformedAboutPathPairMigration != value)
+                {
+                    s_Data.userHasBeenInformedAboutPathPairMigration = value;
+                    SaveData();
+                }
+            }
+        }
 
         /// <summary>
         /// File formats supported for the bundle build layout report.

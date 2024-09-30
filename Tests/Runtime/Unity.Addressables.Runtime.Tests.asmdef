@@ -1,28 +1,38 @@
 {
     "name": "Unity.Addressables.Tests",
+    "rootNamespace": "",
     "references": [
         "Unity.Addressables",
         "Unity.ResourceManager",
         "Unity.Addressables.Editor",
-        "Unity.ScriptableBuildPipeline.Editor"
-    ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+        "Unity.ScriptableBuildPipeline.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Services.Ccd.Management"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
     "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
         "UNITY_INCLUDE_TESTS"
     ],
-	"versionDefines": [
+    "versionDefines": [
         {
             "name": "Unity",
             "expression": "2021.2.0a19",
             "define": "ENABLE_ASYNC_ASSETBUNDLE_UWR"
+        },
+        {
+            "name": "com.unity.services.ccd.management",
+            "expression": "[2.0.0,4.0.0)",
+            "define": "ENABLE_CCD"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

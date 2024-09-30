@@ -236,7 +236,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     BundleData bundleData = (BundleData)Parent;
                     return HashCode.Combine(bundleData.BundleCode, AssetGuid.GetHashCode());
                 }
-                return AssetGuid.GetHashCode();
+                return HashCode.Combine(AssetGuid.GetHashCode(), AssetPath?.GetHashCode());
             }
         }
 

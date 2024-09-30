@@ -241,6 +241,53 @@ namespace AddressableAssetsIntegrationTests
         }
 
         [UnityTest]
+        public IEnumerator InvalidKeyException_LoadAsset__AssetFromGUIDNotAddressable()
+        {
+            if (string.IsNullOrEmpty(TypeName) || TypeName != "BuildScriptFastMode" || TypeName == "BuildScriptVirtualMode")
+            {
+                Assert.Ignore($"Skipping test {nameof(InvalidKeyException_LoadAsset__AssetFromGUIDFoundWithDifferentType)} for {TypeName}, Editor AssetDatabase based test.");
+            }
+
+
+            //Setup
+            yield return Init();
+#if UNITY_EDITOR
+            var allAssets = UnityEditor.AssetDatabase.GetAllAssetPaths();
+            var RootFolder = string.Format(PathFormat, TypeName, "BASE");
+            var path = RootFolder + "/nonaddressable0BASE.prefab";
+            string guid = UnityEditor.AssetDatabase.AssetPathToGUID(path);
+            Assert.IsNotEmpty(guid, "could not find guid for non-addressable asset");
+
+            AsyncOperationHandle<GameObject> goLoadHandle = new AsyncOperationHandle<GameObject>();
+
+            try
+            {
+                //Test
+                using (new IgnoreFailingLogMessage())
+                {
+
+                    goLoadHandle = m_Addressables.LoadAssetAsync<GameObject>(guid);
+                    yield return goLoadHandle;
+                    // not-addressable so we shouldn't be able to fetch it
+                    Assert.AreEqual(goLoadHandle.Status, AsyncOperationStatus.Failed);
+                }
+
+                string message =
+                    $"{InvalidKeyExceptionBaseMessage} No Location found for Key={guid}, Path={path}. Verify the asset is marked as Addressable.";
+                Assert.AreEqual(message, goLoadHandle.OperationException.Message,
+                    "InvalidKeyException message not the same as expected for when a similar Location exists with same key and a different type");
+            }
+            finally
+            {
+                //Cleanup
+                if (goLoadHandle.IsValid())
+                    goLoadHandle.Release();
+            }
+#endif
+        }
+
+
+        [UnityTest]
         public IEnumerator InvalidKeyException_LoadAsset__AssetFromGUIDFoundWithDifferentType()
         {
             if (string.IsNullOrEmpty(TypeName) || TypeName != "BuildScriptFastMode" || TypeName == "BuildScriptVirtualMode")

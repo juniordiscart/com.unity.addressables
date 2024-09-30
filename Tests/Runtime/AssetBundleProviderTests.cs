@@ -274,6 +274,17 @@ namespace AddressableTests.SyncAddressables
         }
 #endif
 
+        [Test]
+        [TestCase("http://www.example.com/index with space.html", "http://www.example.com/index%20with%20space.html")]
+        [TestCase("http://www.example.com/index%20with%20space.html", "http://www.example.com/index%20with%20space.html")]
+        [TestCase("http://www.example.com/index with space :andcolons.html", "http://www.example.com/index%20with%20space%20:andcolons.html")]
+        public void CreateWebRequestReturnsCorrectlySpacedUrlPerPlatform(string inputUrl, string expectedUrl)
+        {
+            var abr = new AssetBundleResource();
+            var webRequest = abr.CreateWebRequest(inputUrl);
+            Assert.AreEqual(webRequest.url, expectedUrl);
+        }
+
         [UnityTest]
         public IEnumerator LoadBundleAsync_WithUnfinishedUnload_WaitsForUnloadAndCompletes()
         {

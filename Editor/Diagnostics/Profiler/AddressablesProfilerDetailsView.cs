@@ -506,8 +506,15 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             BuildLayout.ExplicitAsset reportAsset = AddressablesProfilerViewController.LayoutsManager.GetAsset(frameData.BundleCode, frameData.AssetCode);
             if (reportAsset == null)
                 return null;
+            return GetAssetDataForFrameData(reportAsset, frameData, bundleCodeToData);
+        }
 
-            BundleData parentBundle = bundleCodeToData[frameData.BundleCode];
+        internal AssetData GetAssetDataForFrameData(BuildLayout.ExplicitAsset reportAsset, AssetFrameData frameData, Dictionary<int, BundleData> bundleCodeToData) {
+            if (!bundleCodeToData.TryGetValue(frameData.BundleCode, out BundleData parentBundle))
+            {
+                return null;
+            }
+
             AssetData assetData = parentBundle.GetOrCreateAssetData(reportAsset);
             assetData.Update(frameData);
             return assetData;
@@ -665,8 +672,11 @@ namespace UnityEditor.AddressableAssets.Diagnostics
 
         public void Dispose()
         {
-            m_Tree.SaveColumnVisibility();
-            m_ProfilerWindow.SelectedFrameIndexChanged -= OnSelectedFrameIndexChanged;
+            m_Tree?.SaveColumnVisibility();
+            if (m_ProfilerWindow != null)
+            {
+                m_ProfilerWindow.SelectedFrameIndexChanged -= OnSelectedFrameIndexChanged;
+            }
         }
     }
 }
