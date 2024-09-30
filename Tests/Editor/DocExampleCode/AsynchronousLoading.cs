@@ -40,7 +40,7 @@ namespace AddressableAssets.DocExampleCode
 
         private void OnDestroy()
         {
-            Addressables.Release(loadHandle);
+            loadHandle.Release();
         }
     }
 

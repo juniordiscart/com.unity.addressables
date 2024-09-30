@@ -1,4 +1,4 @@
-﻿using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets;
 
 /// <summary>
 /// A utility class for various Addressables functionality
@@ -17,11 +17,11 @@ public static class AddressablesUtility
         if (result.Count > 0)
         {
             string key = result[0].PrimaryKey;
-            Addressables.Release(loadResourceLocations);
+            loadResourceLocations.Release();
             return key;
         }
 
-        Addressables.Release(loadResourceLocations);
+        loadResourceLocations.Release();
         return string.Empty;
     }
 }

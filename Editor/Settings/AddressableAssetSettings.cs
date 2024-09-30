@@ -30,7 +30,7 @@ namespace UnityEditor.AddressableAssets.Settings
 	/// <summary>
 	/// Contains editor data for the addressables system.
 	/// </summary>
-	public class AddressableAssetSettings : ScriptableObject
+    public class AddressableAssetSettings : ScriptableObject, ISerializationCallbackReceiver
 	{
 		internal class Cache<T1, T2>
 		{
@@ -58,6 +58,13 @@ namespace UnityEditor.AddressableAssets.Settings
 					m_CurrentCacheVersion = m_Settings.currentHash;
 				m_TargetInfoCache.Add(key, value);
 			}
+
+            public void Remove(T1 key)
+            {
+                if (!IsValid())
+                    m_CurrentCacheVersion = m_Settings.currentHash;
+                m_TargetInfoCache.Remove(key);
+            }
 
 			private bool IsValid()
 			{
@@ -943,8 +950,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
 		internal void DataBuilderCompleted(IDataBuilder builder, IDataBuilderResult result)
 		{
-			if (OnDataBuilderComplete != null)
-				OnDataBuilderComplete(this, builder, result);
+            OnDataBuilderComplete?.Invoke(this, builder, result);
 		}
 
 		/// <summary>
@@ -1959,10 +1965,8 @@ namespace UnityEditor.AddressableAssets.Settings
 			{
 				if (postEvent)
 				{
-					if (OnModificationGlobal != null)
-						OnModificationGlobal(this, modificationEvent, eventData);
-					if (OnModification != null)
-						OnModification(this, modificationEvent, eventData);
+                    OnModificationGlobal?.Invoke(this, modificationEvent, eventData);
+                    OnModification?.Invoke(this, modificationEvent, eventData);
 				}
 
 				if (settingsModified && IsPersisted)
@@ -2042,10 +2046,27 @@ namespace UnityEditor.AddressableAssets.Settings
 			if (m_FindAssetEntryCache != null)
 			{
 				if (m_FindAssetEntryCache.TryGetCached(guid, out foundEntry))
+                {
+                   if (foundEntry?.parentGroup == null)
+                        m_FindAssetEntryCache.Remove(guid);
+                   else
 					return foundEntry;
 			}
+            }
 			else
 				m_FindAssetEntryCache = new Cache<string, AddressableAssetEntry>(this);
+
+            for (int i = 0; i < groups.Count; ++i)
+            {
+                if (groups[i] == null)
+                    continue;
+
+                if (groups[i].EntryMap.TryGetValue(guid, out foundEntry))
+                {
+                    m_FindAssetEntryCache.Add(guid, foundEntry);
+                    return foundEntry;
+                }
+            }
 
 			if (includeImplicit)
 			{
@@ -2123,6 +2144,11 @@ namespace UnityEditor.AddressableAssets.Settings
 
 			return null;
 		}
+
+        internal void ClearFindAssetEntryCache()
+        {
+            m_FindAssetEntryCache = null;
+        }
 
 		internal bool IsAssetPathInAddressableDirectory(string assetPath, out string assetName)
 		{
@@ -2859,8 +2885,7 @@ namespace UnityEditor.AddressableAssets.Settings
 			else
 				Debug.Log($"Addressable content successfully built (duration : {TimeSpan.FromSeconds(result.Duration).ToString("g")})");
 
-			if (BuildScript.buildCompleted != null)
-				BuildScript.buildCompleted(result);
+            BuildScript.buildCompleted?.Invoke(result);
 			AssetDatabase.Refresh();
 			return result;
 		}
@@ -3078,5 +3103,23 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// The ids of the registered commands.
 		/// </summary>
 		public static IEnumerable<string> CustomAssetGroupCommands => s_CustomAssetGroupCommands.Keys;
+
+
+        /// <summary>
+        /// Impementation of ISerializationCallbackReceiver. Sorts collections for deterministic ordering
+        /// </summary>
+        public void OnBeforeSerialize()
+        {
+            // m_InitializationObjects, m_DataBuilders, and m_GroupTemplateObjects are serialized by array index
+            profileSettings.profiles.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
+            m_GroupAssets.Sort((a, b) => string.CompareOrdinal(a?.Guid, b?.Guid));
+        }
+
+        /// <summary>
+        /// Impementation of ISerializationCallbackReceiver. Used to set callbacks for ProfileValueReference changes.
+        /// </summary>
+        public void OnAfterDeserialize()
+        {
+        }
 	}
 }

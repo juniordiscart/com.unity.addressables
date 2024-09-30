@@ -25,6 +25,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <inheritdoc/>
         public void ReleaseInstance(ResourceManager resourceManager, GameObject instance)
         {
+            // Guard for null - note that Unity overloads equality for GameObject so `default(GameObject) == null` is true so must use explicit `is null` type guard
+            if (instance is null)
+                return;
+
             AsyncOperationHandle<GameObject> resource;
             if (!m_InstanceObjectToPrefabHandle.TryGetValue(instance, out resource))
             {
@@ -32,7 +36,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             }
             else
             {
-                resourceManager.Release(resource);
+                resource.Release();
                 m_InstanceObjectToPrefabHandle.Remove(instance);
             }
 

@@ -98,7 +98,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Assert.IsNotNull(op.Result);
             Assert.AreEqual(0, op.Result.Count);
             Assert.AreEqual(0, m_Addressables.CatalogsWithAvailableUpdates.Count());
-            m_Addressables.Release(op);
+            op.Release();
         }
 
         [UnityTest]
@@ -117,7 +117,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Assert.IsNotNull(op.Result);
             Assert.AreEqual(1, op.Result.Count);
             Assert.AreEqual(1, m_Addressables.CatalogsWithAvailableUpdates.Count());
-            m_Addressables.Release(op);
+            op.Release();
         }
 
         [UnityTest]
@@ -155,7 +155,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Assert.AreEqual(kLocatorId + 2, op.Result[0]);
             Assert.AreEqual(1, m_Addressables.CatalogsWithAvailableUpdates.Count());
             Assert.AreEqual(kLocatorId + 2, m_Addressables.CatalogsWithAvailableUpdates.First());
-            m_Addressables.Release(op);
+            op.Release();
         }
 
         [UnityTest]
@@ -174,13 +174,13 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Assert.IsNotNull(op.Result);
             Assert.AreEqual(1, op.Result.Count);
             var updateOp = m_Addressables.UpdateCatalogs(op.Result, false);
-            m_Addressables.Release(op);
+            op.Release();
 
             yield return updateOp;
             Assert.IsNotNull(updateOp.Result);
             Assert.AreEqual(1, updateOp.Result.Count);
             Assert.AreEqual(kNewLocatorId, updateOp.Result[0].LocatorId);
-            m_Addressables.Release(updateOp);
+            updateOp.Release();
         }
 
         [UnityTest]
@@ -201,7 +201,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Assert.IsNotNull(updateOp.Result);
             Assert.AreEqual(1, updateOp.Result.Count);
             Assert.AreEqual(kNewLocatorId, updateOp.Result[0].LocatorId);
-            m_Addressables.Release(updateOp);
+            updateOp.Release();
         }
 
 #if !UNITY_PS5
@@ -236,7 +236,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             {
                 Assert.IsFalse(Directory.Exists(fakeCacheFolder));
             }
-            m_Addressables.Release(updateOp);
+            updateOp.Release();
 #else
             Assert.Ignore("Caching not enabled.");
             yield return null;
@@ -267,7 +267,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             string fakeCacheFolder = Path.GetDirectoryName(fakeCachePath);
             Assert.IsTrue(Directory.GetDirectories(fakeCacheFolder).Length > 0);
 
-            m_Addressables.Release(updateOp);
+            updateOp.Release();
             Directory.Delete(fakeCacheFolder, true);
 #else
             Assert.Ignore("Caching not enabled.");
@@ -299,7 +299,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Assert.AreEqual(updateOp.OperationException.Message, "ChainOperation failed because dependent operation failed");
             Assert.AreEqual(updateOp.OperationException.InnerException.Message, "CompletedOperation, status=Failed, result=False catalogs updated, but failed to clean bundle cache.");
 
-            m_Addressables.Release(updateOp);
+            updateOp.Release();
 #else
             Assert.Ignore("Caching is enabled, but test expects to run on caching-disabled platforms or platform was skipped.");
             yield return null;

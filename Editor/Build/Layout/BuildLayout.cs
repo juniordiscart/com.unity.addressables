@@ -242,7 +242,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         internal string m_FilePath;
 
         private bool m_HeaderRead = false;
-        private bool m_BodyRead = false;
+        internal bool m_BodyRead = false;
 
         private FileStream m_FileStream = null;
         private StreamReader m_StreamReader = null;
@@ -1016,6 +1016,9 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             [SerializeReference]
             public List<DataFromOtherAsset> OtherAssets = new List<DataFromOtherAsset>();
 
+            /// <summary>
+            /// A list of referenced explicit assets located in other AssetBundles.
+            /// </summary>
             [SerializeReference]
             internal List<ExplicitAsset> ExternalReferences = new List<ExplicitAsset>();
 

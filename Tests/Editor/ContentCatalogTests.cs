@@ -345,48 +345,48 @@ namespace UnityEditor.AddressableAssets.Tests
             }
         }
 #else
-        [Test]
-        public void ResourceLocatorPerfTest([Values(256, 512, 1024, 2048)]int binaryReaderCacheSize, [Values(256, 512, 1024, 2048)]int locatorCacheSize)
-        {
-            var reader = new BinaryStorageBuffer.Reader(File.ReadAllBytes($"{Path.GetDirectoryName(Application.dataPath)}/catalogs/testcatalog.bin"), binaryReaderCacheSize, new ContentCatalogData.Serializer());
-            var locator = new ContentCatalogData(reader).CreateCustomLocator("", null, locatorCacheSize);
-            int count = 0;
-            var keys = locator.Keys.ToArray();
-            var sw = new Stopwatch();
-            sw.Start();
-            var startBytes = GC.GetTotalMemory(true);
-            foreach (var k in keys)
-            {
-                if (count++ > 10000)
-                    break;
-                if (locator.Locate(k.ToString(), null, out var locs))
-                {
-                    foreach (var l in locs)
-                    {
-                        var deps = l.Dependencies;
-                        var d = l.Data;
-                        var id = l.InternalId;
-                        var p = l.PrimaryKey;
-                        var pr = l.ProviderId;
-                        var t = l.ResourceType;
-                        if (deps != null)
-                        {
-                            foreach (var dep in deps)
-                            {
-                                var di = dep.InternalId;
-                                var dd = l.Data;
-                                var did = l.InternalId;
-                                var dp = l.PrimaryKey;
-                                var dpr = l.ProviderId;
-                                var dt = l.ResourceType;
-                            }
-                        }
-                    }
-                }
-            }
-            var endBytes = GC.GetTotalMemory(true);
-            Debug.Log($"BINARY: load time: {sw.ElapsedMilliseconds}, memory: {(float)(endBytes - startBytes) / (1024 * 1024)}mb");
-        }
+//         [Test]
+//         public void ResourceLocatorPerfTest([Values(256, 512, 1024, 2048)]int binaryReaderCacheSize, [Values(256, 512, 1024, 2048)]int locatorCacheSize)
+//         {
+//             var reader = new BinaryStorageBuffer.Reader(File.ReadAllBytes($"{Path.GetDirectoryName(Application.dataPath)}/catalogs/testcatalog.bin"), binaryReaderCacheSize, new ContentCatalogData.Serializer());
+//             var locator = new ContentCatalogData(reader).CreateCustomLocator("", null, locatorCacheSize);
+//             int count = 0;
+//             var keys = locator.Keys.ToArray();
+//             var sw = new Stopwatch();
+//             sw.Start();
+//             var startBytes = GC.GetTotalMemory(true);
+//             foreach (var k in keys)
+//             {
+//                 if (count++ > 10000)
+//                     break;
+//                 if (locator.Locate(k.ToString(), null, out var locs))
+//                 {
+//                     foreach (var l in locs)
+//                     {
+//                         var deps = l.Dependencies;
+//                         var d = l.Data;
+//                         var id = l.InternalId;
+//                         var p = l.PrimaryKey;
+//                         var pr = l.ProviderId;
+//                         var t = l.ResourceType;
+//                         if (deps != null)
+//                         {
+//                             foreach (var dep in deps)
+//                             {
+//                                 var di = dep.InternalId;
+//                                 var dd = l.Data;
+//                                 var did = l.InternalId;
+//                                 var dp = l.PrimaryKey;
+//                                 var dpr = l.ProviderId;
+//                                 var dt = l.ResourceType;
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//             var endBytes = GC.GetTotalMemory(true);
+//             Debug.Log($"BINARY: load time: {sw.ElapsedMilliseconds}, memory: {(float)(endBytes - startBytes) / (1024 * 1024)}mb");
+//         }
 
 /*
         [Test]

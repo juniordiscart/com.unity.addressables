@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
@@ -57,7 +57,7 @@ namespace Addressables.SamplesTests
 
             Assert.AreEqual(behavior.AssetReferenceAddress, returnedAddress);
 
-            m_Addressables.Release(assetReferenceHandle);
+            assetReferenceHandle.Release();
             UnityEngine.AddressableAssets.Addressables.m_AddressablesInstance = savedImpl;
         }
     }

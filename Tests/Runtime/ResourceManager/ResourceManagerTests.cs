@@ -274,7 +274,8 @@ namespace UnityEngine.ResourceManagement.Tests
             iProvider.ReleaseInstanceCallback = (rm, go) => { releaseCalled = true; };
             var instHandle = m_ResourceManager.ProvideInstance(iProvider, locDep, default(InstantiationParameters));
             Assert.IsFalse(instHandle.IsDone);
-            m_ResourceManager.Release(instHandle);
+            var instHandleCpy = instHandle;
+            instHandleCpy.Release();
             Assert.IsTrue(instHandle.IsValid());
             Assert.IsFalse(provideCalled);
             Assert.IsFalse(releaseCalled);
@@ -304,7 +305,7 @@ namespace UnityEngine.ResourceManagement.Tests
             };
             iProvider.ReleaseInstanceCallback = (rm, go) =>
             {
-                rm.Release(refResource[0]);
+                refResource[0].Release();
                 GameObject.Destroy(go);
             };
 

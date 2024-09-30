@@ -682,14 +682,14 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         }
 
         /// <summary>
-        /// Impementation of ISerializationCallbackReceiver, does nothing.
+        /// Implementation of ISerializationCallbackReceiver. Does nothing.
         /// </summary>
         public void OnBeforeSerialize()
         {
         }
 
         /// <summary>
-        /// Impementation of ISerializationCallbackReceiver, used to set callbacks for ProfileValueReference changes.
+        /// Impementation of ISerializationCallbackReceiver. Used to set callbacks for ProfileValueReference changes.
         /// </summary>
         public void OnAfterDeserialize()
         {

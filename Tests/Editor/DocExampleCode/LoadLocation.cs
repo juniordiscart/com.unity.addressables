@@ -69,7 +69,7 @@ namespace AddressableAssets.DocExampleCode
         {
             foreach (var item in operationDictionary)
             {
-                Addressables.Release(item.Value);
+                item.Value.Release();
             }
         }
     }
@@ -92,7 +92,7 @@ namespace AddressableAssets.DocExampleCode
 
             //...
 
-            Addressables.Release(handle);
+            handle.Release();
 
             #endregion
         }

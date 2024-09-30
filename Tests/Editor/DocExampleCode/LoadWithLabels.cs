@@ -50,7 +50,7 @@ namespace AddressableAssets.DocExampleCode
         private void OnDestroy()
         {
             // Release all the loaded assets associated with loadHandle
-            Addressables.Release(loadHandle);
+            loadHandle.Release();
         }
     }
 

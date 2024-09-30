@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "1.21.21",
+  "version": "1.22.2",
   "unity": "2019.4",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "1.21.23",
+    "com.unity.scriptablebuildpipeline": "1.21.24",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -20,16 +20,16 @@
     "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
   },
   "_upm": {
-    "changelog": "- Fix \"Unable to verify target bucket for Remote Catalog: Not Found. Object could not be found\" error\n- Fixed caching to prevent unnecessary refreshing of bucket data."
+    "changelog": "- Fixed memory leak when loading Sprite objects from a SpriteAtlas asset.\n- Added support for directly calling Release() on AsyncOperationHandles that didn't have the option to.\n- Fixed issue where operation that uses WaitForCompletion can timeout much earlier than it should.\n- Sort collections to make serialized editor files deterministic\n- Fixed an issue where tearing down the Addressables instance could happen before user teardown code was getting called.\n- Fixed issue where labels on an addressable sub-entry are incorrectly added to the former parent entry."
   },
   "upmCi": {
-    "footprint": "695daa558014469fbd2177e71f16275b07c2d612"
+    "footprint": "d828e27c19c8a0b02bc63dd74aa88208da4959ad"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@1.21/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@1.22/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "74ca1aaeb603da7437db95664f9bb92252223dab"
+    "revision": "8c3d8e3f459edf307b582d67a31d29e34e6dcfb1"
   },
   "samples": [
     {

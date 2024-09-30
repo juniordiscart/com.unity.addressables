@@ -271,12 +271,14 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     {
         string sceneName = op.Result.Scene.name;
         Assert.IsNotNull(sceneName);
+        Assert.IsTrue(SceneManager.GetSceneByName(sceneName).isLoaded);
         var unloadOp = addressables.UnloadSceneAsync(op, UnloadSceneOptions.None, false);
         yield return unloadOp;
+        Assert.IsTrue(unloadOp.IsValid());
         Assert.AreEqual(AsyncOperationStatus.Succeeded, unloadOp.Status);
         Assert.IsFalse(unloadOp.Result.Scene.isLoaded);
         Assert.IsTrue(unloadOp.IsDone);
-        addressables.Release(unloadOp);
+        unloadOp.Release();
         Assert.IsNull(SceneManager.GetSceneByName(sceneName).name);
     }
 

@@ -37,7 +37,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
         [FormerlySerializedAs("m_serializeEntries")]
         [SerializeField]
-        List<AddressableAssetEntry> m_SerializeEntries = new List<AddressableAssetEntry>();
+        internal List<AddressableAssetEntry> m_SerializeEntries = new List<AddressableAssetEntry>();
 
         [FormerlySerializedAs("m_readOnly")]
         [SerializeField]
@@ -415,7 +415,8 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Converts data to serializable format.
+        /// Implementation of ISerializationCallbackReceiver. Converts data to serializable form before serialization,
+        /// and sorts collections for deterministic ordering.
         /// </summary>
         public void OnBeforeSerialize()
         {
@@ -425,10 +426,11 @@ namespace UnityEditor.AddressableAssets.Settings
                 foreach (var e in entries)
                     m_SerializeEntries.Add(e);
             }
+            m_SerializeEntries.Sort((a, b) => string.CompareOrdinal(a.guid, b.guid));
         }
 
         /// <summary>
-        /// Converts data from serializable format.
+        /// Implementation of ISerializationCallbackReceiver. Converts data from serializable format.
         /// </summary>
         public void OnAfterDeserialize()
         {
@@ -512,11 +514,11 @@ namespace UnityEditor.AddressableAssets.Settings
             foreach (AddressableAssetEntry e in m_EntryMap.Values)
             {
                 AddressableAssetEntry lookedUpEntry = m_Settings.FindAssetEntry(e.guid);
-                if (lookedUpEntry.parentGroup != this)
+                if (lookedUpEntry?.parentGroup != this)
                 {
                     Debug.LogWarning(e.address
                                      + " is already a member of group "
-                                     + lookedUpEntry.parentGroup
+                                     + lookedUpEntry?.parentGroup
                                      + " but group "
                                      + m_GroupName
                                      + " contained a reference to it.  Removing referece.");

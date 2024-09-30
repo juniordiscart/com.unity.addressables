@@ -12,7 +12,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// Collection of AddressableAssetGroupSchema objects
     /// </summary>
     [Serializable]
-    public class AddressableAssetGroupSchemaSet
+    public class AddressableAssetGroupSchemaSet : ISerializationCallbackReceiver
     {
         [FormerlySerializedAs("m_schemas")]
         [SerializeField]
@@ -236,6 +236,21 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Implementation of ISerializationCallbackReceiver. Sorts collections for deterministic ordering.
+        /// </summary>
+        public void OnBeforeSerialize()
+        {
+            m_Schemas.Sort(AddressableAssetGroupSchema.Compare);
+        }
+
+        /// <summary>
+        /// Implementation of ISerializationCallbackReceiver. Does nothing.
+        /// </summary>
+        public void OnAfterDeserialize()
+        {
         }
     }
 }

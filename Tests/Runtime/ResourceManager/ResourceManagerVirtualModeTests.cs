@@ -56,7 +56,7 @@ namespace UnityEngine.ResourceManagement.Tests
             IResourceLocation bundle = sharedBundleLocations[sharedBundleIndex];
             VirtualAssetBundle vBundle = bundleMap[bundle.InternalId];
             var vab = new VirtualAssetBundleEntry(path, Random.Range(1024, 1024 * 1024));
-            vab.m_AssetPath = path;
+            vab.AssetPath = path;
             vBundle.Assets.Add(vab);
             IResourceLocation dep1Location = sharedBundleLocations[sharedBundleIndex + 1];
             IResourceLocation dep2Location = sharedBundleLocations[sharedBundleIndex + 2];

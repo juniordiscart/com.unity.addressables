@@ -434,7 +434,7 @@ namespace AddressableTests.SyncAddressables
             LogAssert.Expect(LogType.Error, new Regex("InvalidKeyException*"));
 
             Assert.IsTrue(instanceOperation.IsDone);
-            m_Addressables.Release(depOp);
+            depOp.Release();
         }
 
         [Test]
@@ -447,7 +447,7 @@ namespace AddressableTests.SyncAddressables
                     "Exception thrown is not of the correct type.");
             };
             var depOp = m_Addressables.LoadAssetAsync<GameObject>(m_InvalidKey);
-            m_Addressables.Release(depOp);
+            depOp.Release();
             ResourceManager.ExceptionHandler = prevHandler;
         }
 
@@ -463,7 +463,7 @@ namespace AddressableTests.SyncAddressables
             instanceOperation.WaitForCompletion();
 
             Assert.IsTrue(instanceOperation.IsDone);
-            m_Addressables.Release(depOp);
+            depOp.Release();
         }
 
         [TestCase(true)]

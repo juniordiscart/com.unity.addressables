@@ -115,7 +115,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 {
                     bool success = obj.Status == AsyncOperationStatus.Succeeded;
                     Complete(true, success, success ? "" : $"{obj.DebugName}, status={obj.Status}, result={obj.Result} failed initialization.");
-                    m_Addressables.Release(m_DepOp);
+                    m_DepOp.Release();
                 };
             }
             else

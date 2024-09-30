@@ -399,7 +399,13 @@ namespace UnityEditor.AddressableAssets.Tests
             var locator = new AddressableAssetSettingsLocator(m_Settings);
             Assert.IsTrue(locator.Locate("test0", null, out var locations));
             Assert.AreEqual(2, locations.Count);
-            Assert.AreEqual(typeof(SceneInstance), locations[0].ResourceType);
+            var foundScene = false;
+            foreach (var l in locations)
+            {
+                if (l.ResourceType == typeof(SceneInstance))
+                    foundScene = true;
+            }
+            Assert.True(foundScene);
         }
 
         [Test]

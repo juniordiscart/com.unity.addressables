@@ -366,6 +366,7 @@ namespace SceneTests
         }
 
         [UnityTest]
+        [Obsolete]
         public IEnumerator SceneTests_Release_ReleaseToZeroRefCountUnloadsScene()
         {
             var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
@@ -381,15 +382,71 @@ namespace SceneTests
         }
 
         [UnityTest]
+        public IEnumerator SceneTests_Release_ReleaseToZeroRefCountUnloadsScene_Direct()
+        {
+            var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            yield return op;
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
+            Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
+
+            op.Release();
+            yield return null;
+
+            Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
+            Assert.IsFalse(op.IsValid());
+        }
+
+        [UnityTest]
+        [Obsolete]
+        public IEnumerator SceneTests_Release_ReleaseToZeroRefCountUnloadsScene_Typeless()
+        {
+            // implicit convert to a Typeless handle
+            AsyncOperationHandle op = (AsyncOperationHandle)m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            yield return op;
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
+            Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
+
+            m_Addressables.Release(op);
+            yield return null;
+
+            Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
+            Assert.IsFalse(op.IsValid());
+        }
+
+        [UnityTest]
+        public IEnumerator SceneTests_Release_ReleaseToZeroRefCountUnloadsScene_DirectTypeless()
+        {
+            // implicit convert to a Typeless handle
+            AsyncOperationHandle op = (AsyncOperationHandle)m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            yield return op;
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
+            Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
+
+            op.Release();
+            yield return null;
+
+            Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
+            Assert.IsFalse(op.IsValid());
+        }
+
+        [UnityTest]
         public IEnumerator SceneTests_Release_ReleaseToRefCountZeroWhileLoadingUnloadsAfterLoadCompletes()
         {
             // Setup
             var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
 
             // Test
-            op.Completed += s => Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
-            m_Addressables.Release(op);
+            bool wasLoadCompleted = false;
+            op.Completed += s =>
+            {
+                Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
+                wasLoadCompleted = true;
+            };
+
+            var opCopy = op;
+            opCopy.Release();
             yield return op;
+            Assert.IsTrue(wasLoadCompleted);
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsFalse(op.IsValid());
 
@@ -422,25 +479,34 @@ namespace SceneTests
             {
                 Assert.AreEqual(startingReceiversCount, m_Addressables.ResourceManager.m_UpdateReceivers.Count + m_Addressables.ResourceManager.m_UpdateCallbacks.Count);
 
-                m_Addressables.Release(op);
+                op.Release();
 
                 Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
                 Assert.IsFalse(op.IsValid());
 
             }
+
+            yield return null; //< `OnSceneUnloaded` needs to trigger for `m_Addressables.ActiveSceneInstances` teardown checks
         }
 
         [UnityTest]
         public IEnumerator SceneTests_Release_ReleaseNotRefCountZeroWhileLoadingDoesntUnloadAfterLoadCompletes()
         {
             // Setup
-            var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
-            Addressables.ResourceManager.Acquire(op);
+            var opFirst = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            var op = Addressables.ResourceManager.Acquire(opFirst);
 
             // Test
-            op.Completed += s => Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
-            Addressables.Release(op);
+            bool wasLoadCompleted = false;
+            opFirst.Completed += s =>
+            {
+                Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
+                wasLoadCompleted = true;
+            };
+
+            opFirst.Release();
             yield return op;
+            Assert.IsTrue(wasLoadCompleted);
             Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsTrue(op.IsValid());
 
@@ -448,7 +514,7 @@ namespace SceneTests
             yield return op;
             Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsTrue(op.IsValid());
-            m_Addressables.Release(op);
+            op.Release();
 
             yield return op;
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
@@ -458,20 +524,20 @@ namespace SceneTests
         [UnityTest]
         public IEnumerator SceneTests_Release_ReleaseNotToZeroRefCountDoesNotUnloadScene()
         {
-            var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
-            yield return op;
-            Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
+            var opFirst = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            yield return opFirst;
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, opFirst.Status);
             Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
-            Addressables.ResourceManager.Acquire(op);
+            var op = Addressables.ResourceManager.Acquire(opFirst);
 
-            m_Addressables.Release(op);
+            opFirst.Release();
             yield return null;
 
             Assert.IsTrue(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsTrue(op.IsValid());
 
             // Cleanup
-            m_Addressables.Release(op);
+            op.Release();
             yield return null;
         }
 
@@ -526,7 +592,7 @@ namespace SceneTests
             //Assert
             Assert.AreEqual(typeof(ChainOperation<SceneInstance, SceneInstance>), unloadHandle.m_InternalOp.GetType(),
                 "Unload a scene while a Load is in progress should have resulted in the unload being chained behind the load op, but wasn't");
-            Addressables.Release(unloadHandle);
+            unloadHandle.Release();
         }
 
         [UnityTest]
@@ -542,7 +608,7 @@ namespace SceneTests
             //Assert
             Assert.AreEqual(typeof(ChainOperationTypelessDependency<SceneInstance>), unloadHandle.m_InternalOp.GetType(),
                 "Unload a scene while a Load is in progress should have resulted in the unload being chained behind the load op, but wasn't");
-            Addressables.Release(unloadHandle);
+            unloadHandle.Release();
         }
 
         [UnityTest]
@@ -578,12 +644,15 @@ namespace SceneTests
             int bundleCountAfterUnload = AssetBundle.GetAllLoadedAssetBundles().Count();
             Assert.AreEqual(bundleCountAfterInstantiate, bundleCountAfterUnload);
 
-            Addressables.Release(activeScene);
+            var activeSceneCpy = activeScene;
+            Assert.IsTrue(activeScene.IsValid());
+            activeSceneCpy.Release();
+
             yield return activeScene;
 
             // Cleanup
             Assert.IsFalse(activeScene.IsValid());
-            Addressables.Release(instOp);
+            instOp.Release();
             AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
             int bundleCountEndTest = AssetBundle.GetAllLoadedAssetBundles().Count();
             Assert.AreEqual(bundleCountBeforeTest, bundleCountEndTest);

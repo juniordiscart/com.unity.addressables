@@ -37,7 +37,7 @@ namespace AddressableAssets.DocExampleCode
         // Release asset when parent object is destroyed
         private void OnDestroy()
         {
-            Addressables.Release(handle);
+            handle.Release();
         }
     }
 

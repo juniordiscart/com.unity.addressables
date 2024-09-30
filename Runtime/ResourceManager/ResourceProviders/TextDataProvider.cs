@@ -156,28 +156,35 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             protected virtual void SendWebRequest(string path)
             {
-                path = path.Replace('\\', '/');
-                UnityWebRequest request = new UnityWebRequest(path, UnityWebRequest.kHttpVerbGET, new DownloadHandlerBuffer(), null);
-                if (m_Timeout > 0)
-                    request.timeout = m_Timeout;
+                try
+                {
+                    path = path.Replace('\\', '/');
+                    UnityWebRequest request = new UnityWebRequest(path, UnityWebRequest.kHttpVerbGET, new DownloadHandlerBuffer(), null);
+                    if (m_Timeout > 0)
+                        request.timeout = m_Timeout;
 
-                m_PI.ResourceManager.WebRequestOverride?.Invoke(request);
-                m_RequestQueueOperation = WebRequestQueue.QueueRequest(request);
-                if (m_RequestQueueOperation.IsDone)
-                {
-                    m_RequestOperation = m_RequestQueueOperation.Result;
-                    if (m_RequestOperation.isDone)
-                        RequestOperation_completed(m_RequestOperation);
-                    else
-                        m_RequestOperation.completed += RequestOperation_completed;
-                }
-                else
-                {
-                    m_RequestQueueOperation.OnComplete += asyncOperation =>
+                    m_PI.ResourceManager.WebRequestOverride?.Invoke(request);
+                    m_RequestQueueOperation = WebRequestQueue.QueueRequest(request);
+                    if (m_RequestQueueOperation.IsDone)
                     {
-                        m_RequestOperation = asyncOperation;
-                        m_RequestOperation.completed += RequestOperation_completed;
-                    };
+                        m_RequestOperation = m_RequestQueueOperation.Result;
+                        if (m_RequestOperation.isDone)
+                            RequestOperation_completed(m_RequestOperation);
+                        else
+                            m_RequestOperation.completed += RequestOperation_completed;
+                    }
+                    else
+                    {
+                        m_RequestQueueOperation.OnComplete += asyncOperation =>
+                        {
+                            m_RequestOperation = asyncOperation;
+                            m_RequestOperation.completed += RequestOperation_completed;
+                        };
+                    }
+                }
+                catch (UriFormatException e)
+                {
+                    throw new UriFormatException("Invalid path '" + path + "'", e);
                 }
             }
         }

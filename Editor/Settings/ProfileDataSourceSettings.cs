@@ -485,6 +485,12 @@ namespace UnityEditor.AddressableAssets.Settings
 #endif
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {
+            profileGroupTypes.Sort((x, y) => string.CompareOrdinal(x.GroupTypePrefix, y.GroupTypePrefix));
+            foreach (var profileGroupType in profileGroupTypes)
+            {
+                profileGroupType.Variables.Sort((x, y) => string.CompareOrdinal(x.Suffix,y.Suffix));
+            }
+            environments.Sort((x, y) => string.CompareOrdinal(x.id, y.id));
         }
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()

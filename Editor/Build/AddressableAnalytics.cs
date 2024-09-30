@@ -315,11 +315,14 @@ namespace UnityEditor.AddressableAssets
 
                 int selected = schema.DetermineSelectedIndex(groupTypes, -1, currentSettings, vars);
 
-                PathType pathType;
-                if (selected == -1)
-                    pathType = PathType.Custom;
-                else
-                    pathType = prefixToTypeMap[groupTypes[selected].GroupTypePrefix];
+                PathType pathType = PathType.Custom;
+                if (selected >= 0)
+                {
+                    if (!prefixToTypeMap.TryGetValue(groupTypes[selected].GroupTypePrefix, out pathType))
+                    {
+                        pathType = PathType.Custom;
+                    }
+                }
 
                 if (pathType == PathType.Custom)
                 {

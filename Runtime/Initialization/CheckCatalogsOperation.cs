@@ -61,7 +61,7 @@ namespace UnityEngine.AddressableAssets
 
         protected override void Destroy()
         {
-            m_Addressables.Release(m_DepOp);
+            m_DepOp.Release();
         }
 
         /// <inheritdoc />

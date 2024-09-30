@@ -52,7 +52,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         public bool IsLocalCatalogInBundle = false;
 
         internal Dictionary<IResourceLocation, InternalOp> m_LocationToCatalogLoadOpMap = new Dictionary<IResourceLocation, InternalOp>();
-        ResourceManager m_RM;
 
         /// <summary>
         /// Constructor for this provider.
@@ -60,7 +59,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         /// <param name="resourceManagerInstance">The resource manager to use.</param>
         public ContentCatalogProvider(ResourceManager resourceManagerInstance)
         {
-            m_RM = resourceManagerInstance;
             m_BehaviourFlags = ProviderBehaviourFlags.CanProvideWithFailedDependencies;
         }
 
@@ -191,7 +189,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             void CatalogLoadOpCompleteCallback(AsyncOperationHandle<ContentCatalogData> op)
             {
                 m_ContentCatalogData = op.Result;
-                m_ProviderInterface.ResourceManager.Release(op);
+                op.Release();
                 OnCatalogLoaded(m_ContentCatalogData);
             }
 
@@ -438,7 +436,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     ResourceManagement.Profiling.ProfilerRuntime.AddCatalog(Hash128.Parse(ccd.m_BuildResultHash));
 #endif
                     ccd.location = m_ProviderInterface.Location;
-                    ccd.localHash = m_LocalHashValue;
+                    ccd.LocalHash = m_LocalHashValue;
                     if (!string.IsNullOrEmpty(m_RemoteHashValue) && !string.IsNullOrEmpty(m_LocalDataPath))
                     {
 #if ENABLE_CACHING
@@ -471,7 +469,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                             return;
                         }
 #endif
-                        ccd.localHash = m_RemoteHashValue;
+                        ccd.LocalHash = m_RemoteHashValue;
                     }
 #if ENABLE_CACHING
                     else if (string.IsNullOrEmpty(m_LocalDataPath) && string.IsNullOrEmpty(Application.persistentDataPath))

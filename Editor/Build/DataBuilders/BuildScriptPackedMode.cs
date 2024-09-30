@@ -191,7 +191,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 throw;
             }
 #endif
-
             m_AllBundleInputDefs = new List<AssetBundleBuild>();
             m_GroupToBundleNames = new Dictionary<AddressableAssetGroup, (string, string)[]>();
             // force these caches to be rebuilt
@@ -478,7 +477,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     var contentHash = HashingMethods.Calculate(bytes).ToString();
 
                     if (aaContext.Settings.BuildRemoteCatalog || ProjectConfigData.GenerateBuildLayout)
-                        contentCatalog.LocalHash = contentHash;
+                    contentCatalog.LocalHash = contentHash;
 
                     CreateCatalogFiles(bytes, builderInput, aaContext, contentHash, catalogInfo);
                 }

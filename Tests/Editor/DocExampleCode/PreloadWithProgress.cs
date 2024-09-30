@@ -33,7 +33,7 @@ namespace AddressableAssets.DocExampleCode
             }
 
             CompletionEvent.Invoke(downloadHandle.Status == AsyncOperationStatus.Succeeded);
-            Addressables.Release(downloadHandle); //Release the operation handle
+            downloadHandle.Release(); //Release the operation handle
         }
     }
 

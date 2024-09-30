@@ -288,6 +288,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		ulong m_LastDownloadedByteCount = 0;
 		float m_TimeoutTimer = 0;
 		int m_TimeoutOverFrames = 0;
+        int m_LastFrameCount = -1;
+        float m_TimeSecSinceLastUpdate = 0;
 
 		private bool HasTimedOut => m_TimeoutTimer >= m_Options.Timeout && m_TimeoutOverFrames > 5;
 
@@ -444,7 +446,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             if (!m_ProvideHandle.IsValid)
                 return;
 
-            if (status == Profiling.ContentStatus.Active && m_AssetBundle == null)
+            if (status == Profiling.ContentStatus.Active && m_AssetBundle == null) // is this going to suggest load only are released?
                 Profiling.ProfilerRuntime.BundleReleased(m_Options.BundleName);
             else
                 Profiling.ProfilerRuntime.AddBundleOperation(m_ProvideHandle, m_Options, status, source);
@@ -713,13 +715,25 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 					m_TimeoutTimer = 0;
 					m_TimeoutOverFrames = 0;
 					m_LastDownloadedByteCount = operation.webRequest.downloadedBytes;
+
+                    m_LastFrameCount = -1;
+                    m_TimeSecSinceLastUpdate = 0;
 				}
 				else
 				{
-					m_TimeoutTimer += unscaledDeltaTime;
+                    float updateTime = unscaledDeltaTime;
+                    if (m_LastFrameCount == Time.frameCount)
+                    {
+                        updateTime = Time.realtimeSinceStartup - m_TimeSecSinceLastUpdate;
+                    }
+
+                    m_TimeoutTimer += updateTime;
 					if (HasTimedOut)
 						operation.webRequest.Abort();
 					m_TimeoutOverFrames++;
+
+                    m_LastFrameCount = Time.frameCount;
+                    m_TimeSecSinceLastUpdate = Time.realtimeSinceStartup;
 				}
 			}
 		}
@@ -767,14 +781,14 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			{
 				if (!m_Completed)
 				{
-#if ENABLE_ADDRESSABLE_PROFILER
-                    AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
-#endif
                     if (!(m_ProvideHandle.Location is DownloadOnlyLocation))
                     {
                         // this loads the bundle into memory which we don't want to do with download only bundles
                     m_AssetBundle = downloadHandler.assetBundle;
                     }
+#if ENABLE_ADDRESSABLE_PROFILER
+                    AddBundleToProfiler(Profiling.ContentStatus.Active, m_Source);
+#endif
                     downloadHandler.Dispose();
                     downloadHandler = null;
 					m_ProvideHandle.Complete(this, true, null);

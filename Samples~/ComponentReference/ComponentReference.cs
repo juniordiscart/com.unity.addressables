@@ -82,6 +82,6 @@ public class ComponentReference<TComponent> : AssetReference
         }
 
         // Release the handle
-        Addressables.Release(op);
+        op.Release();
     }
 }

@@ -316,9 +316,12 @@ public class BuildLayoutGenerationTaskTests
 
             BuildLayout layout = BuildAndExtractLayout();
 
+            var layoutGroup1 = layout.Groups.Find((g) => g.Name == "Group1");
+            var layoutGroup2 = layout.Groups.Find((g) => g.Name == "Group2");
+
             // Test
-            CollectionAssert.Contains(layout.Groups[0].Bundles[0].Dependencies, layout.Groups[1].Bundles[0]);
-            Assert.AreEqual(layout.Groups[0].Bundles[0].Files[0].Assets[0].ExternallyReferencedAssets[0], layout.Groups[1].Bundles[0].Files[0].Assets[0]);
+            CollectionAssert.Contains(layoutGroup1.Bundles[0].Dependencies, layoutGroup2.Bundles[0]);
+            Assert.AreEqual(layoutGroup1.Bundles[0].Files[0].Assets[0].ExternallyReferencedAssets[0], layoutGroup2.Bundles[0].Files[0].Assets[0]);
         }
         finally // cleanup
         {

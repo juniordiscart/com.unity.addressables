@@ -15,18 +15,11 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         int m_Version;
         string m_LocationName;
 
+        internal int Version { get => m_Version; }
         internal string LocationName
         {
             get { return m_LocationName; }
             set { m_LocationName = value; }
-        }
-
-        bool m_UnloadSceneOpExcludeReleaseCallback;
-
-        internal bool UnloadSceneOpExcludeReleaseCallback
-        {
-            get { return m_UnloadSceneOpExcludeReleaseCallback; }
-            set { m_UnloadSceneOpExcludeReleaseCallback = value; }
         }
 
         /// <summary>
@@ -45,7 +38,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             m_InternalOp = op;
             m_Version = op?.Version ?? 0;
             m_LocationName = null;
-            m_UnloadSceneOpExcludeReleaseCallback = false;
         }
 
         /// <summary>
@@ -69,7 +61,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             m_InternalOp = (AsyncOperationBase<TObject>)op;
             m_Version = op?.Version ?? 0;
             m_LocationName = null;
-            m_UnloadSceneOpExcludeReleaseCallback = false;
         }
 
         internal AsyncOperationHandle(IAsyncOperation op, int version)
@@ -77,7 +68,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             m_InternalOp = (AsyncOperationBase<TObject>)op;
             m_Version = version;
             m_LocationName = null;
-            m_UnloadSceneOpExcludeReleaseCallback = false;
         }
 
         internal AsyncOperationHandle(IAsyncOperation op, string locationName)
@@ -85,7 +75,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             m_InternalOp = (AsyncOperationBase<TObject>)op;
             m_Version = op?.Version ?? 0;
             m_LocationName = locationName;
-            m_UnloadSceneOpExcludeReleaseCallback = false;
         }
 
         internal AsyncOperationHandle(IAsyncOperation op, int version, string locationName)
@@ -93,7 +82,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             m_InternalOp = (AsyncOperationBase<TObject>)op;
             m_Version = version;
             m_LocationName = locationName;
-            m_UnloadSceneOpExcludeReleaseCallback = false;
         }
 
         /// <summary>
@@ -113,6 +101,14 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             add { InternalOp.Completed += value; }
             remove { InternalOp.Completed -= value; }
+        }
+
+        /// <summary>
+        /// Automatically release this handle upon Completed callback 
+        /// </summary>
+        public void ReleaseHandleOnCompletion()
+        {
+            Completed += op => op.Release();
         }
 
         /// <summary>
@@ -264,7 +260,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// Release the handle.  If the internal operation reference count reaches 0, the resource will be released.
         /// </summary>
-        internal void Release()
+        public void Release()
         {
             InternalOp.DecrementReferenceCount();
             m_InternalOp = null;
@@ -337,6 +333,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         int m_Version;
         string m_LocationName;
 
+        internal int Version{ get => m_Version; }
         internal string LocationName
         {
             get { return m_LocationName; }
@@ -374,7 +371,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// Acquire a new handle to the internal operation.  This will increment the reference count, therefore the returned handle must also be released.
         /// </summary>
-        /// <returns>A new handle to the operation.  This handle must also be released.</returns>
+        /// <returns>A new handle to the operation. This handle must also be released.</returns>
         internal AsyncOperationHandle Acquire()
         {
             InternalOp.IncrementReferenceCount();
@@ -388,6 +385,14 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             add { InternalOp.CompletedTypeless += value; }
             remove { InternalOp.CompletedTypeless -= value; }
+        }
+
+        /// <summary>
+        /// Automatically release this handle upon Completed callback 
+        /// </summary>
+        public void ReleaseHandleOnCompletion()
+        {
+            Completed += op => op.Release();
         }
 
         /// <summary>
@@ -527,7 +532,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// Release the handle.  If the internal operation reference count reaches 0, the resource will be released.
         /// </summary>
-        internal void Release()
+        public void Release()
         {
             InternalOp.DecrementReferenceCount();
             m_InternalOp = null;

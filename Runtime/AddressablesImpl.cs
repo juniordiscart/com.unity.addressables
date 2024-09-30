@@ -42,9 +42,7 @@ namespace UnityEngine.AddressableAssets
         public ISceneProvider SceneProvider;
 
         public ResourceManager ResourceManager
-        {
-            get => m_ResourceManager;
-        }
+        { get => m_ResourceManager; }
 
         public int CatalogRequestsTimeout
         {
@@ -173,7 +171,7 @@ namespace UnityEngine.AddressableAssets
                     Scene sceneCached = sceneHandle.Result.Scene; // The result of the handle will become invalid, so cache it here.
 
                     var op = SceneProvider.ReleaseScene(m_ResourceManager, sceneHandle);
-                    AutoReleaseHandleOnCompletion(op);
+                    op.ReleaseHandleOnCompletion();
                     m_ResourceManager.CleanupSceneInstances(sceneCached);
                 }
             }

@@ -26,25 +26,34 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         private const string k_ViewNonLoadedPreferencesKey = k_PreferencesKeyPrefix + k_ViewNonLoadedActionName;
         private const string k_ViewObjectsPreferencesKey = k_PreferencesKeyPrefix + k_ViewObjectsActionName;
 
-        private readonly struct FrameData
+        internal readonly struct FrameData
         {
-            public readonly NativeArray<CatalogFrameData> CatalogValues;
-            public readonly NativeArray<BundleFrameData> BundleValues;
-            public readonly NativeArray<AssetFrameData> AssetValues;
-            public readonly NativeArray<AssetFrameData> SceneValues;
+            public readonly IEnumerable<CatalogFrameData> CatalogValues;
+            public readonly IEnumerable<BundleFrameData> BundleValues;
+            public readonly IEnumerable<AssetFrameData> AssetValues;
+            public readonly IEnumerable<AssetFrameData> SceneValues;
 
-            public bool HasValues => CatalogValues.IsCreated && CatalogValues.Length > 0;
+            public bool HasValues
+            {
+                get
+                {
+                    if (CatalogValues == null)
+                        return false;
+                    using var e = CatalogValues.GetEnumerator();
+                    return e.MoveNext();
+                }
+            }
 
             public FrameData(int frame)
             {
-                using (var rawFrameData = UnityEditorInternal.ProfilerDriver.GetRawFrameDataView(frame, 0))
+                using (var rawFrameDataRef = m_frameDataStore.GetRawFrameDataView(frame, 0))
                 {
-                    if (rawFrameData != null && rawFrameData.valid)
+                    if (rawFrameDataRef != null && rawFrameDataRef.valid)
                     {
-                        CatalogValues = rawFrameData.GetFrameMetaData<CatalogFrameData>(ProfilerRuntime.kResourceManagerProfilerGuid, ProfilerRuntime.kCatalogTag);
-                        BundleValues = rawFrameData.GetFrameMetaData<BundleFrameData>(ProfilerRuntime.kResourceManagerProfilerGuid, ProfilerRuntime.kBundleDataTag);
-                        AssetValues = rawFrameData.GetFrameMetaData<AssetFrameData>(ProfilerRuntime.kResourceManagerProfilerGuid, ProfilerRuntime.kAssetDataTag);
-                        SceneValues = rawFrameData.GetFrameMetaData<AssetFrameData>(ProfilerRuntime.kResourceManagerProfilerGuid, ProfilerRuntime.kSceneDataTag);
+                        CatalogValues = m_frameDataStore.GetFrameMetaData<CatalogFrameData>(rawFrameDataRef, ProfilerRuntime.kResourceManagerProfilerGuid, ProfilerRuntime.kCatalogTag);
+                        BundleValues = m_frameDataStore.GetFrameMetaData<BundleFrameData>(rawFrameDataRef, ProfilerRuntime.kResourceManagerProfilerGuid, ProfilerRuntime.kBundleDataTag);
+                        AssetValues = m_frameDataStore.GetFrameMetaData<AssetFrameData>(rawFrameDataRef, ProfilerRuntime.kResourceManagerProfilerGuid, ProfilerRuntime.kAssetDataTag);
+                        SceneValues = m_frameDataStore.GetFrameMetaData<AssetFrameData>(rawFrameDataRef, ProfilerRuntime.kResourceManagerProfilerGuid, ProfilerRuntime.kSceneDataTag);
                     }
                     else
                     {
@@ -61,7 +70,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         private ToolbarSearchField m_SearchField;
         private ContentSearch m_SearchController = new ContentSearch();
 
-
+        internal static IFrameDataStore m_frameDataStore = new EditorFrameDataStore();
 
         private AddressablesProfilerDetailsDataInspector m_DetailsInspector;
 
@@ -88,15 +97,24 @@ namespace UnityEditor.AddressableAssets.Diagnostics
 
         public VisualElement CreateView()
         {
-            m_ViewGroups = EditorPrefs.GetBool(k_ViewGroupsPreferencesKey, false);
-            m_ViewAssetBundles = EditorPrefs.GetBool(k_ViewAssetBundlesPreferencesKey, true);
-            m_ViewAssets = EditorPrefs.GetBool(k_ViewAssetsPreferencesKey, true);
-            m_ViewNonLoadedAssets = EditorPrefs.GetBool(k_ViewNonLoadedPreferencesKey, false);
-            m_ViewObjects = EditorPrefs.GetBool(k_ViewObjectsPreferencesKey, false);
+            try
+            {
+                m_ViewGroups = EditorPrefs.GetBool(k_ViewGroupsPreferencesKey, false);
+                m_ViewAssetBundles = EditorPrefs.GetBool(k_ViewAssetBundlesPreferencesKey, true);
+                m_ViewAssets = EditorPrefs.GetBool(k_ViewAssetsPreferencesKey, true);
+                m_ViewNonLoadedAssets = EditorPrefs.GetBool(k_ViewNonLoadedPreferencesKey, false);
+                m_ViewObjects = EditorPrefs.GetBool(k_ViewObjectsPreferencesKey, false);
 
-            CreateViewsWithToolbarInLeft();
-            OnReinitialise();
-            return m_RootSplitView;
+                CreateViewsWithToolbarInLeft();
+                OnReinitialise();
+                return m_RootSplitView;
+            }
+            catch (Exception e)
+            {
+                // this can be caused by data issues and can be nearly impossible to track down once caught further up
+                Debug.LogException(e);
+                throw;
+            }
         }
 
         private VisualElement CreateViewsWithToolbarInLeft()
@@ -215,7 +233,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                         MissingBuildReportDisplay(missingBuildHash);
                     }
                 }
-                GenerateContentDataForFrame(frameData);
+                m_RootGroupsContentData = GenerateContentDataForFrame(frameData);
                 BuildTree();
             }
             else
@@ -413,16 +431,16 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             return 0;
         }
 
-        private void GenerateContentDataForFrame(FrameData frameData)
+        internal List<GroupData> GenerateContentDataForFrame(FrameData frameData)
         {
             Dictionary<BuildLayout.Bundle, BundleData> reportBundleToBundleData = new Dictionary<BuildLayout.Bundle, BundleData>();
             List<BundleData> bundleContent = GenerateBundleRoots(frameData.BundleValues, reportBundleToBundleData);
             GenerateAssetData(bundleContent, frameData.AssetValues, frameData.SceneValues);
             List<GroupData> groupContent = CollectGroups(bundleContent);
-            m_RootGroupsContentData = groupContent;
+            return groupContent;
         }
 
-        List<BundleData> GenerateBundleRoots(in NativeArray<BundleFrameData> bundleValues, in Dictionary<BuildLayout.Bundle, BundleData> reportBundleToBundleData)
+        List<BundleData> GenerateBundleRoots(in IEnumerable<BundleFrameData> bundleValues, in Dictionary<BuildLayout.Bundle, BundleData> reportBundleToBundleData)
         {
             List<BundleData> bundleDatas = new List<BundleData>();
             foreach (BundleFrameData frameData in bundleValues)
@@ -432,18 +450,21 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     return new List<BundleData>();
                 BundleData bundleData = new BundleData(layoutBundle, frameData);
                 bundleDatas.Add(bundleData);
-                reportBundleToBundleData.Add(layoutBundle, bundleData);
+                if (!reportBundleToBundleData.TryAdd(layoutBundle, bundleData))
+                {
+                    throw new Exception($"Unable to add bundle data for bundle {layoutBundle.Name}, duplicate data exists.");
+                }
             }
 
             GenerateBundleDependencies(bundleDatas, reportBundleToBundleData);
             return bundleDatas;
         }
 
-        void GenerateAssetData(List<BundleData> bundleDatas, in NativeArray<AssetFrameData> assetValues, in NativeArray<AssetFrameData> sceneValues)
+        internal void GenerateAssetData(List<BundleData> bundleDatas, in IEnumerable<AssetFrameData> assetValues, in IEnumerable<AssetFrameData> sceneValues)
         {
             Dictionary<int, BundleData> bundleCodeToData = new Dictionary<int, BundleData>();
             foreach (BundleData data in bundleDatas)
-                bundleCodeToData.Add(data.BundleCode, data);
+                bundleCodeToData.TryAdd(data.BundleCode, data);
 
             List<AssetData> addressableLoadedAssets = new List<AssetData>();
             // add all addressable loaded assets so later know they are fully loaded
@@ -520,7 +541,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             return assetData;
         }
 
-        private void ProcessAssetReferences(List<AssetData> activeAddressableAssets, Dictionary<int, BundleData> bundleCodeToData)
+        internal void ProcessAssetReferences(List<AssetData> activeAddressableAssets, Dictionary<int, BundleData> bundleCodeToData)
         {
             // instead get a stack
             Stack<AssetData> assetsToBeProcessed = new Stack<AssetData>(activeAddressableAssets);
@@ -533,7 +554,10 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 if(!processedAssets.Add(assetData))
                     continue; // not needed
 
-                BundleData parentBundle = bundleCodeToData[((BundleData)assetData.Parent).BundleCode];
+                if (!bundleCodeToData.TryGetValue(((BundleData)assetData.Parent).BundleCode, out var parentBundle))
+                {
+                    continue;
+                }
                 foreach (BuildLayout.ObjectData objectData in assetData.ReportObjects)
                 {
                     // get or create object for self, this may have already been made from a reference
@@ -559,7 +583,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             }
         }
 
-        private AssetData ProcessReference(AssetData referencingAssetData, ObjectData referencingObjectData,
+        internal AssetData ProcessReference(AssetData referencingAssetData, ObjectData referencingObjectData,
             BuildLayout.ObjectReference objectReference, BundleData parentBundle, Dictionary<int, BundleData> bundleCodeToData)
         {
             BuildLayout.File file = referencingAssetData.IsImplicit ? referencingAssetData.ReportImplicitData.File : referencingAssetData.ReportExplicitData.File;
@@ -586,7 +610,14 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 if (referencedReportAsset.Bundle != bundleContainingReferencedObj.ReportBundle)
                 {
                     int bundleCode = referencedReportAsset.Bundle.InternalName.GetHashCode();
-                    bundleContainingReferencedObj = bundleCodeToData[bundleCode];
+                    if (bundleCodeToData.ContainsKey(bundleCode))
+                    {
+                        bundleContainingReferencedObj = bundleCodeToData[bundleCode];
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Asset {referencedReportAsset.AddressableName} referenced bundle {referencedReportAsset.Bundle.Name} not loaded from build layout, attaching to parent {bundleContainingReferencedObj.ReportBundle.Name}");
+                    }
                 }
 
                 bundleContainingReferencedObj.GetOrCreateAssetData(referencedReportAsset, out referencedAssetData);
@@ -630,7 +661,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         {
             foreach (BundleData data in bundleDatas)
             {
-                foreach (BuildLayout.Bundle dependency in data.ReportBundle.Dependencies)
+                foreach (BuildLayout.Bundle dependency in data.ReportBundle.Dependencies ?? new List<BuildLayout.Bundle>())
                 {
                     if (!reportBundleToBundleData.TryGetValue(dependency, out var bundleDataIsDependantOn))
                         continue;

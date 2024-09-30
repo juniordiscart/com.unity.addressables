@@ -208,6 +208,10 @@ namespace UnityEngine.ResourceManagement
 
 		Action<AsyncOperationHandle, DiagnosticEventType, int, object> m_obsoleteDiagnosticsHandler; // For use in working with Obsolete RegisterDiagnosticCallback method.
 		Action<DiagnosticEventContext> m_diagnosticsHandler;
+
+        internal int DeferredCompleteCallbacksCount { get => m_DeferredCompleteCallbacks.Count; }
+        internal int DeferredCallbackCount { get => m_DeferredCallbacksToRegister?.Count ?? 0; }
+
 		Action<IAsyncOperation> m_ReleaseOpNonCached;
 		Action<IAsyncOperation> m_ReleaseOpCached;
 		Action<IAsyncOperation> m_ReleaseInstanceOp;
@@ -674,6 +678,11 @@ namespace UnityEngine.ResourceManagement
 			return m_AssetOperationCache.Count;
 		}
 
+        internal void ClearOperationCache()
+        {
+            m_AssetOperationCache.Clear();
+        }
+
 		/// <summary>
 		/// Creates an operation that has already completed with a specified result and error message./>.
 		/// </summary>
@@ -719,6 +728,16 @@ namespace UnityEngine.ResourceManagement
 		/// Increment reference count of operation handle.
 		/// </summary>
 		/// <param name="handle">The handle to the resource to increment the reference count for.</param>
+        /// <returns>A new handle to the operation. This handle must also be released.</returns>
+        public AsyncOperationHandle<TObject> Acquire<TObject>(AsyncOperationHandle<TObject> handle)
+        {
+            return handle.Acquire();
+        }
+
+        /// <summary>
+        /// Increment reference count of operation handle.
+        /// </summary>
+        /// <param name="handle">The handle to the resource to increment the reference count for.</param>
 		public void Acquire(AsyncOperationHandle handle)
 		{
 			handle.Acquire();

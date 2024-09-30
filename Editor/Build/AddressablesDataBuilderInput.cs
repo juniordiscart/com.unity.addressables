@@ -39,8 +39,10 @@ namespace UnityEditor.AddressableAssets.Build
         /// </summary>
         public FileRegistry Registry { get; private set; }
 
-        //used only by tests to inject custom info into build...
-        internal string PathSuffix = string.Empty;
+        /// <summary>
+        /// can be used in testing to append a suffix to file paths
+        /// </summary>
+        public string PathSuffix = string.Empty;
 
         /// <summary>
         /// The name of the default Runtime Settings file.

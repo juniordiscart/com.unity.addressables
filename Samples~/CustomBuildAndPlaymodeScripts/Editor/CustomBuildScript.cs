@@ -311,7 +311,7 @@ public class CustomBuildScript : BuildScriptBase
                     progressTracker.UpdateTask("Generating Build Layout");
                     List<IBuildTask> tasks = new List<IBuildTask>();
                     var buildLayoutTask = new BuildLayoutGenerationTask();
-                    buildLayoutTask.BundleNameRemap = bundleRenameMap;
+                    extractData.BuildContext.SetContextObject<IBuildLayoutParameters>(new BuildLayoutParameters(bundleRenameMap));
                     tasks.Add(buildLayoutTask);
                     BuildTasksRunner.Run(tasks, extractData.BuildContext);
                 }

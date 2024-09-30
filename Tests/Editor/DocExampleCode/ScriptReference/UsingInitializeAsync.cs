@@ -78,7 +78,7 @@ namespace AddressableAssets.DocExampleCode
                 IResourceLocator locator = handle.Result;
                 Debug.Log($"The resource locator returned has an id of {locator.LocatorId}");
             }
-            Addressables.Release(handle);
+            handle.Release();
         }
 
         #endregion

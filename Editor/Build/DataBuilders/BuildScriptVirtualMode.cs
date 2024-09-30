@@ -18,7 +18,6 @@ using UnityEngine.ResourceManagement.Util;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using UnityEditor.Experimental;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -107,7 +106,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 new[] { ResourceManagerRuntimeData.kCatalogAddress },
                 GetCatalogPath("file://{UnityEngine.Application.dataPath}/../"),
                 typeof(ContentCatalogProvider), typeof(ContentCatalogData)));
-            aaContext.runtimeData.AddressablesVersion = PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version;
+            aaContext.runtimeData.AddressablesVersion = Addressables.Version;
             m_CreatedProviderIds = new Dictionary<string, VirtualAssetBundleRuntimeData>();
             m_ResourceProviderData = new List<ObjectInitializationData>();
 
@@ -198,7 +197,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         var assetPath = abb.assetNames[i];
                         var size = ComputeSize(assetPath);
                         var vab = new VirtualAssetBundleEntry(a, size);
-                        vab.m_AssetPath = assetPath;
+                        vab.AssetPath = assetPath;
                         bundleData.Assets.Add(vab);
                         dataSize += size;
                         headerSize += a.Length * 5; //assume 5x path length overhead size per item, probably much less
@@ -358,41 +357,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return path.StartsWith("{UnityEngine.AddressableAssets.Addressables.RuntimePath}", StringComparison.Ordinal);
         }
 
-        static string OutputLibraryPathForAsset(string a)
-        {
-            var guid = AssetDatabase.AssetPathToGUID(a);
-            var legacyPath = string.Format("Library/metadata/{0}{1}/{2}", guid[0], guid[1], guid);
-#if UNITY_2020_2_OR_NEWER
-            var artifactID = Experimental.AssetDatabaseExperimental.ProduceArtifact(new ArtifactKey(new GUID(guid)));
-            if (Experimental.AssetDatabaseExperimental.GetArtifactPaths(artifactID, out var paths))
-                return Path.GetFullPath(paths[0]);
-            else
-                legacyPath = String.Empty;
-#elif UNITY_2020_1_OR_NEWER
-            var hash = Experimental.AssetDatabaseExperimental.GetArtifactHash(guid);
-            if (Experimental.AssetDatabaseExperimental.GetArtifactPaths(hash, out var paths))
-                return Path.GetFullPath(paths[0]);
-            else
-                legacyPath = String.Empty; // legacy path is never valid in 2020.1+
-#else
-            if (IsAssetDatabaseV2Enabled()) // AssetDatabase V2 is optional in 2019.3 and 2019.4
-            {
-                var hash = Experimental.AssetDatabaseExperimental.GetArtifactHash(guid);
-                if (Experimental.AssetDatabaseExperimental.GetArtifactPaths(hash, out var paths))
-                    return Path.GetFullPath(paths[0]);
-            }
-#endif
-            return legacyPath;
-        }
-
-        static bool IsAssetDatabaseV2Enabled()
-        {
-            // method is internal
-            var methodInfo = typeof(AssetDatabase).GetMethod("IsV2Enabled", BindingFlags.Static | BindingFlags.NonPublic);
-            return methodInfo != null && (bool)methodInfo.Invoke(null, null);
-        }
-
-        static long ComputeSize(string a)
+        long ComputeSize(string a)
         {
             var path = OutputLibraryPathForAsset(a);
             if (!File.Exists(path))

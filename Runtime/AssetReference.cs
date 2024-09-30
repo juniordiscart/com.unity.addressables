@@ -677,7 +677,7 @@ namespace UnityEngine.AddressableAssets
                 return;
             }
 
-            Addressables.Release(m_Operation);
+            m_Operation.Release();
             m_Operation = default(AsyncOperationHandle);
         }
 

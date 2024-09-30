@@ -47,7 +47,7 @@ namespace AddressableAssets.DocExampleCode
 
         void ReleaseResources()
         {
-            Addressables.Release(opHandle);
+            opHandle.Release();
         }
 
         // When ready to release the asset, call ReleaseResources().

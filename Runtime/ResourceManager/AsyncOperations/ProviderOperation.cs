@@ -26,8 +26,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
     internal class ProviderOperation<TObject> : AsyncOperationBase<TObject>, IGenericProviderOperation, ICachable
     {
         private bool m_ReleaseDependenciesOnFailure = true;
-        private Action<int, object, bool, Exception> m_CompletionCallback;
-        private Action<int, IList<object>> m_GetDepCallback;
         private Func<float> m_GetProgressCallback;
         private Func<DownloadStatus> m_GetDownloadProgressCallback;
         private Func<bool> m_WaitForCompletionCallback;

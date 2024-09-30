@@ -387,7 +387,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
         /// <param name="carryOverCacheState">Cached state that needs to carry over from the previous build.  This mainly affects Content Update.</param>
         /// <returns>True if the file is saved, false otherwise.</returns>
-        internal static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
+        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
             string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
         {
             try
@@ -493,7 +493,13 @@ namespace UnityEditor.AddressableAssets.Build
             return GetContentStateDataPath(browse, null);
         }
 
-        internal static string GetContentStateDataPath(bool browse, AddressableAssetSettings settings)
+        /// <summary>
+        /// Gets the path of the cache data from a selected build.
+        /// </summary>
+        /// <param name="browse">If true, the user is allowed to browse for a specific file.</param>
+        /// <param name="settings">The settings object to use for the build.</param>
+        /// <returns>The path of the previous state .bin file used to detect changes from the previous build to the content update build.</returns>
+        public static string GetContentStateDataPath(bool browse, AddressableAssetSettings settings)
         {
             if (settings == null)
                 settings = AddressableAssetSettingsDefaultObject.Settings;

@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEditor;
 
 namespace UnityEngine.ResourceManagement.Util
@@ -36,7 +37,7 @@ namespace UnityEngine.ResourceManagement.Util
         static T FindInstance()
         {
 #if UNITY_EDITOR
-            foreach (T cb in Resources.FindObjectsOfTypeAll(typeof(T)))
+            foreach (T cb in Resources.FindObjectsOfTypeAll(typeof(T)).Cast<T>())
             {
                 var go = cb.gameObject;
                 if (!EditorUtility.IsPersistent(go.transform.root.gameObject) && !(go.hideFlags == HideFlags.NotEditable || go.hideFlags == HideFlags.HideAndDontSave))

@@ -80,6 +80,7 @@ namespace LegacyResourcesTests
             }
 
             SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {sa}, EditorUserBuildSettings.activeBuildTarget, false);
+            AssetDatabase.SaveAssets();
         }
 #endif
 

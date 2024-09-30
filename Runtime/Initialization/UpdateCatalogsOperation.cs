@@ -67,7 +67,7 @@ namespace UnityEngine.AddressableAssets
 
         protected override void Destroy()
         {
-            m_Addressables.Release(m_DepOp);
+            m_DepOp.Release();
         }
 
         /// <inheritdoc />
@@ -88,7 +88,7 @@ namespace UnityEngine.AddressableAssets
                 {
                     var catData = m_DepOp.Result[i].Result as ContentCatalogData;
                     locator = catData.CreateCustomLocator(catData.location.PrimaryKey);
-                    localHash = catData.localHash;
+                    localHash = catData.LocalHash;
                     remoteLocation = catData.location;
                 }
 

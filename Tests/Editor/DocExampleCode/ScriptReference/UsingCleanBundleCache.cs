@@ -26,7 +26,7 @@ namespace AddressableAssets.DocExampleCode
 			{
                 // during caching a reference is added to the catalogs.
                 // release is needed to reduce the reference and allow catalog to be uncached for updating
-				Addressables.Release(op);
+				op.Release();
 			};
 		}
 		#endregion
@@ -52,7 +52,7 @@ namespace AddressableAssets.DocExampleCode
 			{
 				// during caching a reference is added to the catalogs.
 				// release is needed to reduce the reference and allow catalog to be uncached for updating
-				Addressables.Release(op);
+				op.Release();
 			};
 		}
 		#endregion

@@ -653,7 +653,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     entry.IsInResources =
                         IsInResources; //if this is a sub-folder of Resources, copy it on down
-                    entry.m_Labels = m_Labels;
+                    entry.m_Labels.UnionWith(m_Labels);
                     if (entryFilter == null || entryFilter(entry))
                         assets.Add(entry);
 
@@ -679,7 +679,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         if (entry != null)
                         {
                             entry.IsInResources = IsInResources; //if this is a sub-folder of Resources, copy it on down
-                            entry.m_Labels = m_Labels;
+                            entry.m_Labels.UnionWith(m_Labels);
                             entry.IsFolder = true;
                             if (entryFilter == null || entryFilter(entry))
                                 assets.Add(entry);
@@ -724,7 +724,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (folderEntry != null)
                 {
                     folderEntry.IsInResources = IsInResources;
-                    folderEntry.m_Labels = m_Labels;
+                    folderEntry.m_Labels.UnionWith(m_Labels);
                     folderEntry.IsFolder = true;
                 }
                 else
@@ -735,7 +735,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
             if (assetEntry != null)
             {
-                assetEntry.m_Labels = m_Labels;
+                assetEntry.m_Labels.UnionWith(m_Labels);
                 assetEntry.IsFolder = false;
             }
 
@@ -854,17 +854,19 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Implementation of ISerializationCallbackReceiver.  Converts data to serializable form before serialization.
+        /// Implementation of ISerializationCallbackReceiver. Converts data to serializable form before serialization,
+        /// and sorts collections for deterministic ordering.
         /// </summary>
         public void OnBeforeSerialize()
         {
             m_SerializedLabels = new List<string>();
             foreach (var t in m_Labels)
                 m_SerializedLabels.Add(t);
+            m_SerializedLabels.Sort(string.CompareOrdinal);
         }
 
         /// <summary>
-        /// Implementation of ISerializationCallbackReceiver.  Converts data from serializable form after deserialization.
+        /// Implementation of ISerializationCallbackReceiver. Converts data from serializable form after deserialization.
         /// </summary>
         public void OnAfterDeserialize()
         {

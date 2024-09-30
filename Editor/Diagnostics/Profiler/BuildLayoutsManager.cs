@@ -1,5 +1,6 @@
 #if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
@@ -25,7 +26,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 foreach (BuildLayout.Bundle bundle in BuildLayoutHelpers.EnumerateBundles(layout))
                 {
                     int bundleCode = bundle.InternalName.GetHashCode();
-                    m_BundleMap.Add(bundleCode, bundle);
+                    if (!m_BundleMap.TryAdd(bundleCode, bundle))
+                        throw new Exception($"Duplicate bundle code ${bundle.InternalName.GetHashCode()} found for ${bundle.Name} in layout.");
                     Dictionary<int, BuildLayout.ExplicitAsset> assetMap = new Dictionary<int, BuildLayout.ExplicitAsset>(bundle.AssetCount);
                     foreach (BuildLayout.ExplicitAsset asset in BuildLayoutHelpers.EnumerateAssets(bundle))
                     {
@@ -57,10 +59,15 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         private Dictionary<Hash128, BuildLayout> m_BuildLayouts = new Dictionary<Hash128, BuildLayout>();
         private readonly List<ActiveLayout> m_ActiveLayouts = new List<ActiveLayout>();
 
-        public void LoadReports()
+        internal void ClearReports()
         {
             m_BuildLayouts.Clear();
             m_ActiveLayouts.Clear();
+        }
+
+        public void LoadReports()
+        {
+            ClearReports();
 
             if (Directory.Exists(Addressables.BuildReportPath))
             {
@@ -97,6 +104,22 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             return true;
         }
 
+        internal void AddActiveLayout(string buildResultHash)
+        {
+            if (m_BuildLayouts.TryGetValue(Hash128.Parse(buildResultHash), out BuildLayout layout))
+            {
+                AddActiveLayout(layout);
+                return;
+            }
+            throw new Exception($"Unable to add active layout. {buildResultHash} does not exist in loaded reports.");
+        }
+
+        internal void AddActiveLayout(BuildLayout layout)
+        {
+            m_ActiveLayouts.Add(new ActiveLayout(layout));
+
+        }
+
         private bool TryLoadLayoutAtPath(string path, out BuildLayout layoutOut, bool logErrors = false)
         {
             layoutOut = BuildLayout.Open(path);
@@ -116,13 +139,13 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             return true;
         }
 
-        public HashSet<Hash128> SetActiveReportsAndGetMissingBuildHashes(NativeArray<CatalogFrameData> loadedRuntimeCatalogs)
+        public HashSet<Hash128> SetActiveReportsAndGetMissingBuildHashes(IEnumerable<CatalogFrameData> loadedRuntimeCatalogs)
         {
             HashSet<ActiveLayout> oldActives = new HashSet<ActiveLayout>(m_ActiveLayouts);
             HashSet<Hash128> missingBuildHashes = new HashSet<Hash128>();
-            for (int i = 0; i < loadedRuntimeCatalogs.Length; ++i)
+            foreach(CatalogFrameData loadedRuntimeCatalog in loadedRuntimeCatalogs)
             {
-                var recordedHash = loadedRuntimeCatalogs[i].BuildResultHash;
+                var recordedHash = loadedRuntimeCatalog.BuildResultHash;
                 var layout = m_ActiveLayouts.Find(activeLayout => activeLayout.BuildResultHash == recordedHash);
                 if (layout != null)
                 {
@@ -131,7 +154,9 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 }
 
                 if (m_BuildLayouts.TryGetValue(recordedHash, out BuildLayout newActiveLayout))
+                {
                     m_ActiveLayouts.Add(new ActiveLayout(newActiveLayout));
+                }
                 else
                 {
                     // try get from saved manual path

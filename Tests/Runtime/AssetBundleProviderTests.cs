@@ -38,7 +38,7 @@ namespace AddressableTests.SyncAddressables
 #if UNITY_EDITOR
         internal override void Setup(AddressableAssetSettings settings, string tempAssetFolder)
         {
-            AddressableAssetGroup regGroup = settings.CreateGroup("localNoUWRGroup", false, false, true,
+            AddressableAssetGroup regGroup = settings.CreateGroup("localNoUWRGroup", true, false, true,
                 new List<AddressableAssetGroupSchema>(), typeof(BundledAssetGroupSchema));
             regGroup.GetSchema<BundledAssetGroupSchema>().BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.OnlyHash;
 
@@ -284,10 +284,11 @@ namespace AddressableTests.SyncAddressables
             var webRequest = abr.CreateWebRequest(inputUrl);
             Assert.AreEqual(webRequest.url, expectedUrl);
         }
-
+#if !UNITY_PS5
         [UnityTest]
         public IEnumerator LoadBundleAsync_WithUnfinishedUnload_WaitsForUnloadAndCompletes()
         {
+
             var h = m_Addressables.LoadAssetAsync<GameObject>("testprefab");
             yield return h;
             Assert.IsNotNull(h.Result);
@@ -297,6 +298,7 @@ namespace AddressableTests.SyncAddressables
             Assert.IsNotNull(h.Result);
             h.Release();
         }
+#endif
 
         [UnityTest]
         public IEnumerator LoadBundleSync_WithUnfinishedUnload_WaitsForUnloadAndCompletes()

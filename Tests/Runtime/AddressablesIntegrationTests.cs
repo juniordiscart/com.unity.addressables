@@ -76,10 +76,20 @@ namespace AddressableAssetsIntegrationTests
         {
             if (m_Addressables != null)
             {
+                Assert.AreEqual(0, m_Addressables.ResourceManager.DeferredCompleteCallbacksCount);
+                Assert.AreEqual(0, m_Addressables.ResourceManager.DeferredCallbackCount);
+
                 Assert.AreEqual(m_StartingOpCount, m_Addressables.ResourceManager.OperationCacheCount);
                 Assert.AreEqual(m_StartingTrackedHandleCount, m_Addressables.TrackedHandleCount,
                     $"Starting tracked handle count [{m_StartingInstanceCount}], not equal to current tracked handle count [{m_Addressables.TrackedHandleCount}]");
                 Assert.AreEqual(m_StartingInstanceCount, m_Addressables.ResourceManager.InstanceOperationCount);
+
+                //If we had left deferred callbacks left then make sure to update
+                if (m_Addressables.ResourceManager.DeferredCallbackCount > 0
+                    || m_Addressables.ResourceManager.DeferredCompleteCallbacksCount > 0)
+                {
+                    m_Addressables.ResourceManager.Update(Time.unscaledDeltaTime);
+                }
             }
 
             PostTearDownEvent?.Invoke();
