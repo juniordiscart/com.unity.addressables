@@ -447,9 +447,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #if ENABLE_BINARY_CATALOG
             using (Log.ScopedStep(LogLevel.Info, "Generate Binary Catalog"))
             {
-                foreach(var catalogInfo in GetContentCatalogs(builderInput, aaContext))
+                foreach (var catalogInfo in GetContentCatalogs(builderInput, aaContext))
                 {
-                    var contentCatalog = new ContentCatalogData(ResourceManagerRuntimeData.kCatalogAddress);
+                    var contentCatalog = new ContentCatalogData(catalogInfo.Identifier);
                     contentCatalogs.Add(contentCatalog);
 
                     if (addrResult != null)
@@ -477,7 +477,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     var contentHash = HashingMethods.Calculate(bytes).ToString();
 
                     if (aaContext.Settings.BuildRemoteCatalog || ProjectConfigData.GenerateBuildLayout)
-                    contentCatalog.LocalHash = contentHash;
+                        contentCatalog.LocalHash = contentHash;
 
                     CreateCatalogFiles(bytes, builderInput, aaContext, contentHash, catalogInfo);
                 }
@@ -703,12 +703,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
-            aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
-                new[] { ResourceManagerRuntimeData.kCatalogAddress },
-                loadPath,
-                typeof(ContentCatalogProvider),
-                typeof(ContentCatalogData),
-                dependencyHashes));
+            if (buildInfo?.Register ?? true)
+            {
+                aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
+                    new[] { buildInfo?.Identifier ?? ResourceManagerRuntimeData.kCatalogAddress },
+                    loadPath,
+                    typeof(ContentCatalogProvider),
+                    typeof(ContentCatalogData),
+                    dependencyHashes));
+            }
 
             return true;
         }
@@ -795,7 +798,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 new AssetBundleBuild()
                 {
                     assetBundleName = Path.GetFileName(filepath),
-                    assetNames = new[] {tempFilePath},
+                    assetNames = new[] { tempFilePath },
                     addressableNames = new string[0]
                 }
             });
@@ -881,7 +884,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             if (buildInfo?.Register ?? true)
             {
                 ResourceLocationData localCatalog = new ResourceLocationData(
-                    new[] { ResourceManagerRuntimeData.kCatalogAddress },
+                    new[] { buildInfo?.Identifier ?? ResourceManagerRuntimeData.kCatalogAddress },
                     loadPath,
                     typeof(ContentCatalogProvider),
                     typeof(ContentCatalogData),
