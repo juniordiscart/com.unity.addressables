@@ -11,6 +11,7 @@ using UnityEditor.IMGUI.Controls;
 using UnityEditor.U2D;
 using UnityEditor.VersionControl;
 using UnityEngine.AddressableAssets;
+using UnityEngine.TestTools;
 using UnityEngine.U2D;
 using Object = UnityEngine.Object;
 
@@ -28,6 +29,15 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 AssetDatabase.DeleteAsset(m_fbxAssetPath);
                 AssetDatabase.Refresh();
+            }
+        }
+
+        internal class BGeneric : AGeneric<BGeneric> { }
+        internal class AGeneric<T> : MonoBehaviour { }
+        internal class BReference : AssetReferenceT<BGeneric>
+        {
+            public BReference(string guid) : base(guid)
+            {
             }
         }
 
@@ -131,7 +141,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 class TestSelectionTree : AssetReferencePopup.AssetReferenceTreeView
                 {
                     internal TestSelectionTree(TreeViewState state, AssetReferenceDrawer drawer,
-                        AssetReferencePopup popup, string guid, string nonAddressedAsset)
+                                               AssetReferencePopup popup, string guid, string nonAddressedAsset)
                         : base(state, drawer, popup, guid, nonAddressedAsset)
                     {
                     }
@@ -174,6 +184,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             AssetReference ar = new AssetReference();
+            ar.m_AssetGUID = m_AssetGUID;
             assetPath = AssetDatabase.GUIDToAssetPath(m_AssetGUID);
             m_AssetReferenceDrawer.m_AssetRefObject = ar;
             m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "test";
@@ -325,14 +336,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.ImportAsset(spritePath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             var importer = (TextureImporter)AssetImporter.GetAtPath(spritePath);
             importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Multiple;
-#pragma warning disable 618
-            importer.spritesheet = new SpriteMetaData[]
-            {
-                new SpriteMetaData() {name = "topleft", pivot = Vector2.zero, rect = new Rect(0, 0, 16, 16)},
-                new SpriteMetaData() {name = "testSprite", pivot = Vector2.zero, rect = new Rect(16, 16, 16, 16)}
-            };
-#pragma warning restore 618
+            importer.spriteImportMode = SpriteImportMode.Single;
             importer.SaveAndReimport();
 
             // Add sprite to subassets
@@ -656,7 +660,8 @@ namespace UnityEditor.AddressableAssets.Tests
             Directory.CreateDirectory(ConfigFolder + "/test");
             PrefabUtility.SaveAsPrefabAsset(testObject, newEntryPath);
             var newEntryGuid = AssetDatabase.AssetPathToGUID(newEntryPath);
-            var secondTestEntry = Settings.CreateOrMoveEntry(newEntryGuid, Settings.groups[1]);
+            var newGroup = Settings.CreateGroup("AssetReferenceDrawerTestGroup", false, false, false, null);
+            var secondTestEntry = Settings.CreateOrMoveEntry(newEntryGuid, newGroup);
 
             // Tree setup
             var testId = testEntry.AssetPath.GetHashCode();
@@ -681,8 +686,16 @@ namespace UnityEditor.AddressableAssets.Tests
             EditorBuildSettings.RemoveConfigObject("Assets/AddressableAssetsData");
             Settings.RemoveAssetEntry(AssetDatabase.AssetPathToGUID(newEntryPath));
             Settings.RemoveAssetEntry(m_AssetGUID);
+            Settings.RemoveGroup(newGroup);
             m_AssetReferenceDrawer = null;
             TearDownTestDir();
+        }
+
+        [Test]
+        public void AssetReferenceDrawerUtilities_GetGenericType_DoesNotHaveInfiniteLoop_WhenUsingGenerics()
+        {
+            var genericType = AssetReferenceDrawerUtilities.GetGenericType(typeof(BReference));
+            Assert.AreEqual(typeof(AGeneric<BGeneric>), genericType);
         }
 
         [Test]
@@ -824,7 +837,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsTrue(success);
             Assert.AreEqual(fbxAssetGuid, guid);
             Assert.AreEqual(meshSubAsset.name, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
-            Assert.AreEqual(meshSubAsset.GetType(), m_AssetReferenceDrawer.m_AssetRefObject.SubOjbectType);
+            Assert.AreEqual(meshSubAsset.GetType(), m_AssetReferenceDrawer.m_AssetRefObject.SubObjectType);
         }
 
         [Test]
@@ -861,8 +874,6 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.RemoveAssetEntry(assetRef.AssetGUID);
             TearDownTestDir();
         }
-
-#if UNITY_2019_2_OR_NEWER
 
         [Test]
         public void AssetReferenceDrawer_SetObject_SetToNullDirtiesObject()
@@ -1237,6 +1248,338 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual("MainList.Array.data[111].SubList.Array", arrayPath);
         }
 
-#endif
+        [Test]
+        public void AssetReferenceDrawer_RefreshSubObjects_NullAssetReference()
+        {
+            AssetReference uninitialized = null;
+            var result = AssetReferenceDrawerUtilities.RefreshSubObjects(ref uninitialized);
+            Assert.False(result);
+        }
+
+        [Test]
+        public void AssetReferenceDrawer_RefreshSubObjects_NullAssetReferenceInternalEditor()
+        {
+            AssetReference empty = new AssetReference();
+            var result = AssetReferenceDrawerUtilities.RefreshSubObjects(ref empty);
+            Assert.False(result);
+        }
+
+        [Test]
+        public void AssetReferenceDrawer_RefreshSubObjects_NotSpriteAtlas()
+        {
+            string assetPath = "";
+            var obj = SetupAssetReference(out assetPath);
+            var result = AssetReferenceDrawerUtilities.RefreshSubObjects(ref m_AssetReferenceDrawer.m_AssetRefObject);
+            Assert.False(result);
+
+            // Cleanup
+            m_AssetReferenceDrawer = null;
+            TearDownTestDir();
+        }
+
+        [TestCase(1, 1)]
+        public void AssetReferenceDrawer_RefreshSubObjects_ReloadObjectsNoMatchFound(int numAtlasObjects, int numReferences)
+        {
+            // Setup
+            var subAssets = new List<Object>();
+            var atlas = SetUpSpriteAtlas(numAtlasObjects, out subAssets);
+            var property = SetupForSetSubAssets(atlas, numReferences, true);
+            var assetPath = AssetDatabase.GetAssetOrScenePath(atlas);
+            var atlasGuid = AssetDatabase.AssetPathToGUID(assetPath);
+            m_AssetReferenceDrawer.m_label = new GUIContent("testSpriteReference");
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            m_AssetReferenceDrawer.m_AssetName = atlas.name;
+
+            m_AssetReferenceDrawer.assetProperty = property;
+            var result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.True(m_AssetReferenceDrawer.m_SubassetRefreshed);
+            // save required as the non-matching result was cleared out
+            Assert.True(result);
+            Assert.IsNull(m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(string.Empty, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+            // Cleanup
+            TearDownTestDir();
+            Settings.RemoveAssetEntry(atlasGuid);
+        }
+
+        [TestCase(5, 1)]
+        public void AssetReferenceDrawer_RefreshSubObjects_ReloadObjectsNamesMatchNoGUID(int numAtlasObjects, int numReferences)
+        {
+            // Setup
+            var subAssets = new List<Object>();
+            var atlas = SetUpSpriteAtlas(numAtlasObjects, out subAssets);
+            var property = SetupForSetSubAssets(atlas, numReferences, true);
+            var assetPath = AssetDatabase.GetAssetOrScenePath(atlas);
+            var atlasGuid = AssetDatabase.AssetPathToGUID(assetPath);
+            m_AssetReferenceDrawer.m_label = new GUIContent("testSpriteReference");
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            m_AssetReferenceDrawer.m_AssetName = atlas.name;
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "testSprite3";
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID = string.Empty;
+
+            m_AssetReferenceDrawer.assetProperty = property;
+            var result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.True(m_AssetReferenceDrawer.m_SubassetRefreshed);
+            Assert.False(result);
+            Assert.AreEqual("testSprite3", m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(string.Empty, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+            // Cleanup
+            TearDownTestDir();
+            Settings.RemoveAssetEntry(atlasGuid);
+        }
+
+        [TestCase(5, 1)]
+        public void AssetReferenceDrawer_RefreshSubObjects_ReloadObjectsGUIDsMatch(int numAtlasObjects, int numReferences)
+        {
+            // Setup
+            var subAssets = new List<Object>();
+            var atlas = SetUpSpriteAtlas(numAtlasObjects, out subAssets);
+            var property = SetupForSetSubAssets(atlas, numReferences, true);
+            var assetPath = AssetDatabase.GetAssetOrScenePath(atlas);
+            var atlasGuid = AssetDatabase.AssetPathToGUID(assetPath);
+            m_AssetReferenceDrawer.m_label = new GUIContent("testSpriteReference");
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            m_AssetReferenceDrawer.m_AssetName = atlas.name;
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "testSprite3";
+            var packables = atlas.GetPackables();
+            var packableGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(packables[3]));
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID = packableGUID;
+
+            m_AssetReferenceDrawer.assetProperty = property;
+            var result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.True(m_AssetReferenceDrawer.m_SubassetRefreshed);
+            Assert.False(result);
+            Assert.AreEqual("testSprite3", m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(packableGUID, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+            // Cleanup
+            TearDownTestDir();
+            Settings.RemoveAssetEntry(atlasGuid);
+        }
+
+        [TestCase(5, 1)]
+        public void AssetReferenceDrawer_RefreshSubObjects_ReloadObjectsGUIDsMatchSpriteMoved(int numAtlasObjects, int numReferences)
+        {
+            // Setup
+            string atlasGUID = null;
+            var sprite = SetUpSingleSprite(out atlasGUID);
+            var atlasPath = AssetDatabase.GUIDToAssetPath(atlasGUID);
+            var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath);
+            var property = SetupForSetSubAssets(atlas, numReferences, true);
+            var assetPath = AssetDatabase.GetAssetOrScenePath(atlas);
+
+            // move sprite
+            var oldSpritePath = AssetDatabase.GetAssetPath(sprite);
+            var newSpritePath = ConfigFolder + "/test" + "/movedSprite.png";
+            AssetDatabase.MoveAsset(oldSpritePath, newSpritePath);
+            AssetDatabase.Refresh();
+
+
+            m_AssetReferenceDrawer.m_label = new GUIContent("testSpriteReference");
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            m_AssetReferenceDrawer.m_AssetName = atlas.name;
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "testSprite";
+            var packables = atlas.GetPackables();
+            var packableGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(packables[0]));
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID = packableGUID;
+
+            m_AssetReferenceDrawer.assetProperty = property;
+            var result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.True(m_AssetReferenceDrawer.m_SubassetRefreshed);
+            Assert.True(result);
+            Assert.AreEqual("movedSprite", m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(packableGUID, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+            // Cleanup
+            TearDownTestDir();
+            Settings.RemoveAssetEntry(atlasGUID);
+        }
+
+        [TestCase(5, 1)]
+        public void AssetReferenceDrawer_RefreshSubObjects_ReloadObjectsSpriteDeletedSingle(int numAtlasObjects, int numReferences)
+        {
+            // Setup
+            string atlasGUID = null;
+            var sprite = SetUpSingleSprite(out atlasGUID);
+            var atlasPath = AssetDatabase.GUIDToAssetPath(atlasGUID);
+            var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath);
+            var property = SetupForSetSubAssets(atlas, numReferences, true);
+            var assetPath = AssetDatabase.GetAssetOrScenePath(atlas);
+
+            // delete sprite
+            var oldSpritePath = AssetDatabase.GetAssetPath(sprite);
+            AssetDatabase.DeleteAsset(oldSpritePath);
+            AssetDatabase.Refresh();
+
+            m_AssetReferenceDrawer.m_label = new GUIContent("testSpriteReference");
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            m_AssetReferenceDrawer.m_AssetName = atlas.name;
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "testSprite";
+            var packables = atlas.GetPackables();
+            var packableGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(packables[0]));
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID = packableGUID;
+
+            LogAssert.ignoreFailingMessages = true;
+            m_AssetReferenceDrawer.assetProperty = property;
+            var result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.True(m_AssetReferenceDrawer.m_SubassetRefreshed);
+            Assert.True(result);
+            Assert.AreEqual(null, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(string.Empty, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+
+            // Cleanup
+            LogAssert.ignoreFailingMessages = false;
+            TearDownTestDir();
+            Settings.RemoveAssetEntry(atlasGUID);
+        }
+
+        [TestCase(5, 1)]
+        public void AssetReferenceDrawer_RefreshSubObjects_ReloadObjectsSpriteDeletedMultiple(int numAtlasObjects, int numReferences)
+        {
+            // Setup
+            var subAssets = new List<Object>();
+            var atlas = SetUpSpriteAtlas(numAtlasObjects, out subAssets);
+            var property = SetupForSetSubAssets(atlas, numReferences, true);
+            var assetPath = AssetDatabase.GetAssetOrScenePath(atlas);
+            var atlasGuid = AssetDatabase.AssetPathToGUID(assetPath);
+            m_AssetReferenceDrawer.m_label = new GUIContent("testSpriteReference");
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            m_AssetReferenceDrawer.m_AssetName = atlas.name;
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "testSprite3";
+            var packables = atlas.GetPackables();
+            var packableGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(packables[3]));
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID = packableGUID;
+
+            // delete sprite
+            var oldSpritePath = AssetDatabase.GetAssetPath(subAssets[3]);
+            AssetDatabase.DeleteAsset(oldSpritePath);
+            AssetDatabase.Refresh();
+
+            LogAssert.ignoreFailingMessages = true;
+            m_AssetReferenceDrawer.assetProperty = property;
+            var result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.True(m_AssetReferenceDrawer.m_SubassetRefreshed);
+            Assert.True(result);
+            Assert.AreEqual(null, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(string.Empty, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+            // Cleanup
+            LogAssert.ignoreFailingMessages = false;
+            TearDownTestDir();
+            Settings.RemoveAssetEntry(atlasGuid);
+        }
+
+        [TestCase(5, 1)]
+        public void AssetReferenceDrawer_RefreshSubObjects_ReloadObjectsRemoveAllSprites(int numAtlasObjects, int numReferences)
+        {
+            // Setup
+            var subAssets = new List<Object>();
+            var atlas = SetUpSpriteAtlas(numAtlasObjects, out subAssets);
+            var property = SetupForSetSubAssets(atlas, numReferences, true);
+            var assetPath = AssetDatabase.GetAssetOrScenePath(atlas);
+            var atlasGuid = AssetDatabase.AssetPathToGUID(assetPath);
+            m_AssetReferenceDrawer.m_label = new GUIContent("testSpriteReference");
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            m_AssetReferenceDrawer.m_AssetName = atlas.name;
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "testSprite3";
+            var packables = atlas.GetPackables();
+            var packableGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(packables[3]));
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID = packableGUID;
+
+            // remove all the sprites
+            atlas.Remove(subAssets.ToArray());
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {atlas}, EditorUserBuildSettings.activeBuildTarget, false);
+
+            LogAssert.ignoreFailingMessages = true;
+            m_AssetReferenceDrawer.assetProperty = property;
+            var result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.True(m_AssetReferenceDrawer.m_SubassetRefreshed);
+            Assert.True(result);
+            Assert.IsNull(m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(string.Empty, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+            // Cleanup
+            LogAssert.ignoreFailingMessages = false;
+            Settings.RemoveAssetEntry(atlasGuid);
+            TearDownTestDir();
+        }
+
+        [TestCase(5, 1)]
+        public void AssetReferenceDrawer_RefreshSubObjects_ReloadObjectsRemoveSelectedSprite(int numAtlasObjects, int numReferences)
+        {
+            // Setup
+            var subAssets = new List<Object>();
+            var atlas = SetUpSpriteAtlas(numAtlasObjects, out subAssets);
+            var property = SetupForSetSubAssets(atlas, numReferences, true);
+            var assetPath = AssetDatabase.GetAssetOrScenePath(atlas);
+            var atlasGuid = AssetDatabase.AssetPathToGUID(assetPath);
+            m_AssetReferenceDrawer.m_label = new GUIContent("testSpriteReference");
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlas).GetField("testSpriteReference", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            m_AssetReferenceDrawer.m_AssetName = atlas.name;
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "testSprite3";
+            var packables = atlas.GetPackables();
+            var packableGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(packables[3]));
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID = packableGUID;
+
+            // remove all the sprites
+            atlas.Remove(subAssets.GetRange(3, 1).ToArray());
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {atlas}, EditorUserBuildSettings.activeBuildTarget, false);
+
+            // this is done in OnGUI
+            LogAssert.ignoreFailingMessages = true;
+            m_AssetReferenceDrawer.assetProperty = property;
+            var result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.True(result);
+            Assert.True(m_AssetReferenceDrawer.m_SubassetRefreshed);
+            Assert.False(property.serializedObject.hasModifiedProperties);
+            Assert.IsNull(m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(string.Empty, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+            // verify a second call does nothing
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName = "testSprite3";
+            m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID = packableGUID;
+            result = m_AssetReferenceDrawer.RefreshSubAsset();
+            Assert.False(result);
+            Assert.AreEqual("testSprite3", m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
+            Assert.AreEqual(packableGUID, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectGUID);
+
+            // Cleanup
+            LogAssert.ignoreFailingMessages = false;
+            TearDownTestDir();
+            Settings.RemoveAssetEntry(atlasGuid);
+        }
+
+        [Test]
+        public void AssetReferenceDrawer_GetAtlas()
+        {
+            AssetReference assetReference = new AssetReference();
+            var result = AssetReferenceDrawerUtilities.GetAtlas(ref assetReference);
+            Assert.IsNull(result);
+
+            var subAssets = new List<Object>();
+            var atlas = SetUpSpriteAtlas(5, out subAssets);
+            var atlasGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(atlas));
+
+            // generic reference
+            assetReference = new AssetReference(atlasGuid);
+            result = AssetReferenceDrawerUtilities.GetAtlas(ref assetReference);
+            Assert.AreEqual(atlas, result);
+
+            // sprite reference
+            AssetReference assetReferenceSprite = new AssetReferenceSprite(atlasGuid);
+            result = AssetReferenceDrawerUtilities.GetAtlas(ref assetReferenceSprite);
+            Assert.AreEqual(atlas, result);
+
+            AssetReference assetReferencedSprite = new AssetReferenceAtlasedSprite(atlasGuid);
+            result = AssetReferenceDrawerUtilities.GetAtlas(ref assetReferencedSprite);
+            Assert.AreEqual(atlas, result);
+
+            // Cleanup
+            TearDownTestDir();
+            Settings.RemoveAssetEntry(atlasGuid);
+        }
     }
 }

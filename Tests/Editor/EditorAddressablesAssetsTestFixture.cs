@@ -17,7 +17,6 @@ namespace UnityEditor.AddressableAssets.Tests
 {
     class EditorAddressableAssetsTestFixture
     {
-        EditorBuildSettingsScene[] m_PreviousScenes;
         protected AddressableAssetSettings m_Settings;
 
         protected const string TempPath = "Assets/TempGen";
@@ -28,7 +27,6 @@ namespace UnityEditor.AddressableAssets.Tests
             DirectoryUtility.DeleteDirectory(TempPath, onlyIfEmpty: false, recursiveDelete: true);
             Directory.CreateDirectory(TempPath);
             m_Settings = AddressableAssetSettings.Create(Path.Combine(TempPath, "Settings"), "AddressableAssetSettings.Tests", true, true);
-            m_PreviousScenes = EditorBuildSettings.scenes;
         }
 
         [TearDown]
@@ -38,7 +36,6 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(m_Settings));
             Resources.UnloadAsset(m_Settings);
             DirectoryUtility.DeleteDirectory(TempPath, onlyIfEmpty: false, recursiveDelete: true);
-            EditorBuildSettings.scenes = m_PreviousScenes;
             AssetDatabase.Refresh();
         }
 

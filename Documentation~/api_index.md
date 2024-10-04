@@ -4,7 +4,7 @@ uid: addressables-script-ref
 
 # Addressables Script Reference
 
-This section of the documentation contains details of the scripting API that Unity provides for the Addressables package. 
+This section of the documentation contains details of the scripting API that Unity provides for the Addressables package.
 
 The scripting reference is organized according to the classes available to scripts, which are described along with their methods, properties, and any other information relevant to their use.
 
@@ -29,7 +29,6 @@ In Unity Editor code:
 
 * [AddressableAssetSettings]: defines the Addressable settings.
 * [AddressableAssetSettingsDefaultObject]: provides access to the asset containing your Addressables settings.
-* [AnalyzeRule]: a base class for adding rules to the Analyze tool.
 * [IHostingService]: an interface for creating your own hosting service implementations.
 * [IDataBuilder]: an interface for creating your own build implementations.
 
@@ -43,7 +42,6 @@ In Unity Editor code:
 [AssetReference]: xref:UnityEngine.AddressableAssets.AssetReference
 [AddressableAssetSettings]: xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings
 [AddressableAssetSettingsDefaultObject]: xref:UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject
-[AnalyzeRule]: xref:UnityEditor.AddressableAssets.Build.AnalyzeRules.AnalyzeRule
 [IHostingService]: xref:UnityEditor.AddressableAssets.HostingServices.IHostingService
 [IDataBuilder]: xref:UnityEditor.AddressableAssets.Build.IDataBuilder
 [ResourceManager]: xref:UnityEngine.ResourceManagement.ResourceManager

@@ -21,6 +21,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// </summary>
     public class BuildScriptBase : ScriptableObject, IDataBuilder
     {
+        public const string BuiltInBundleBaseName = "_unitybuiltinassets";
+
         /// <summary>
         /// The type of instance provider to create for the Addressables system.
         /// </summary>
@@ -153,12 +155,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     if (assetGroup == null)
                         continue;
 
-                    if (assetGroup.Schemas.Find((x) => x.GetType() == typeof(PlayerDataGroupSchema)) &&
-                        assetGroup.Schemas.Find((x) => x.GetType() == typeof(BundledAssetGroupSchema)))
-                    {
-                        return $"Addressable group {assetGroup.Name} cannot have both a {typeof(PlayerDataGroupSchema).Name} and a {typeof(BundledAssetGroupSchema).Name}";
-                    }
-
                     EditorUtility.DisplayProgressBar($"Processing Addressable Group", assetGroup.Name, (float)index / aaContext.Settings.groups.Count);
                     var errorString = ProcessGroup(assetGroup, aaContext);
                     if (!string.IsNullOrEmpty(errorString))
@@ -166,7 +162,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         return errorString;
                     }
                 }
-            } finally
+            }
+            finally
             {
                 EditorUtility.ClearProgressBar();
             }
@@ -193,36 +190,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         public virtual bool CanBuildData<T>() where T : IDataBuilderResult
         {
             return false;
-        }
-
-        /// <summary>
-        /// Utility method for creating locations from player data.
-        /// </summary>
-        /// <param name="playerDataSchema">The schema for the group.</param>
-        /// <param name="assetGroup">The group to extract the locations from.</param>
-        /// <param name="locations">The list of created locations to fill in.</param>
-        /// <param name="providerTypes">Any unknown provider types are added to this set in order to ensure they are not stripped.</param>
-        /// <returns>True if any legacy locations were created.  This is used by the build scripts to determine if a legacy provider is needed.</returns>
-        protected bool CreateLocationsForPlayerData(PlayerDataGroupSchema playerDataSchema, AddressableAssetGroup assetGroup, List<ContentCatalogDataEntry> locations, HashSet<Type> providerTypes)
-        {
-            bool needsLegacyProvider = false;
-            if (playerDataSchema != null && (playerDataSchema.IncludeBuildSettingsScenes || playerDataSchema.IncludeResourcesFolders))
-            {
-                var entries = new List<AddressableAssetEntry>();
-                assetGroup.GatherAllAssets(entries, true, true, false);
-                foreach (var a in entries.Where(e => e.IsInSceneList || e.IsInResources))
-                {
-                    if (!playerDataSchema.IncludeBuildSettingsScenes && a.IsInSceneList)
-                        continue;
-                    if (!playerDataSchema.IncludeResourcesFolders && a.IsInResources)
-                        continue;
-                    a.CreateCatalogEntries(locations, false, a.IsScene ? "" : typeof(LegacyResourcesProvider).FullName, null, null, providerTypes);
-                    if (!a.IsScene)
-                        needsLegacyProvider = true;
-                }
-            }
-
-            return needsLegacyProvider;
         }
 
         /// <summary>

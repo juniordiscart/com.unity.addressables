@@ -21,7 +21,6 @@ namespace UnityEngine.ResourceManagement.Tests
             public FakeTypedOperation()
             {
                 m_RM = new ResourceManager();
-                m_RM.postProfilerEvents = true;
             }
 
             public object GetResultAsObject()

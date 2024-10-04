@@ -1,4 +1,3 @@
-#if UNITY_2022_2_OR_NEWER
 using NUnit.Framework;
 using System;
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
@@ -118,4 +117,3 @@ namespace UnityEditor.AddressableAssets.Tests
         }
     }
 }
-#endif

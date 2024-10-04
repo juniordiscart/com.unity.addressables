@@ -261,17 +261,19 @@ namespace UnityEditor.AddressableAssets.Tests
 
         [TestCase(BundledAssetGroupSchema.AssetNamingMode.FullPath, "Assets/blah/something.asset", "", "Assets/blah/something.asset")]
         [TestCase(BundledAssetGroupSchema.AssetNamingMode.Filename, "Assets/blah/something.asset", "", "something.asset")]
-        [TestCase(BundledAssetGroupSchema.AssetNamingMode.Filename, "Assets/blah/somescene.unity", "", "somescene")]
+        [TestCase(BundledAssetGroupSchema.AssetNamingMode.Filename, "Assets/blah/somescene.unity", "", "somescene", true)]
         [TestCase(BundledAssetGroupSchema.AssetNamingMode.GUID, "Assets/blah/something.asset", "guidstring", "guidstring")]
         [TestCase(BundledAssetGroupSchema.AssetNamingMode.Dynamic, "Assets/blah/something.asset", "guidstring", "g")]
         [TestCase(BundledAssetGroupSchema.AssetNamingMode.Dynamic, "Assets/blah/something.asset", "abcd_guidstring", "abcd")]
+        [TestCase(BundledAssetGroupSchema.AssetNamingMode.Dynamic, "TestPath.unity", "GUID", "GUID", true)]
+        [TestCase(BundledAssetGroupSchema.AssetNamingMode.Dynamic,"TestPath.unity", "GUID", "G", false)]
         [Test]
-        public void BundledAssetGroupSchema_GetAssetLoadPath_Returns_ExpectedId(int imode, string assetPath, string guid, string expectedId)
+        public void BundledAssetGroupSchema_GetAssetLoadPath_Returns_ExpectedId(int imode, string assetPath, string guid, string expectedId, bool isScene = false)
         {
             var mode = (BundledAssetGroupSchema.AssetNamingMode)imode;
             var bas = Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>();
             bas.InternalIdNamingMode = mode;
-            var actualId = bas.GetAssetLoadPath(assetPath, otherInternaIds, s => guid);
+            var actualId = bas.GetAssetLoadPath(assetPath, otherInternaIds, s => guid, isScene);
             Assert.AreEqual(expectedId, actualId);
         }
 
@@ -390,7 +392,7 @@ namespace UnityEditor.AddressableAssets.Tests
         public void GetPackageVersion_ReturnsAValidVersion()
         {
             string v = AddressableAssetUtility.GetVersionFromPackageData();
-            Assert.IsTrue(v.StartsWith("1."), $"Failed to get a valid version from package.json data. Expected 1.X but was {v}");
+            Assert.IsTrue(v.StartsWith("2."), $"Failed to get a valid version from package.json data. Expected 2.X but was {v}");
             Assert.IsTrue(v.Split('.').Length == 2,
                 $"Format from GetVersionFromPackageData, produced {v} which is incorrectly formatted");
         }

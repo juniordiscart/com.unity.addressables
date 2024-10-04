@@ -62,6 +62,7 @@ namespace UnityEngine.AddressableAssets
         AsyncOperationHandle<List<string>> m_ActiveCheckUpdateOperation;
         internal AsyncOperationHandle<List<IResourceLocator>> m_ActiveUpdateOperation;
 
+
         Action<AsyncOperationHandle> m_OnHandleCompleteAction;
         Action<AsyncOperationHandle> m_OnSceneHandleCompleteAction;
         Action<AsyncOperationHandle> m_OnHandleDestroyedAction;
@@ -1329,7 +1330,6 @@ namespace UnityEngine.AddressableAssets
             SceneReleaseMode releaseMode = SceneReleaseMode.ReleaseSceneWhenSceneUnloaded, bool activateOnLoad = true, int priority = 100)
         {
             return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadSceneParameters, releaseMode, activateOnLoad, priority, false)));
-
         }
 
         internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, IResourceLocation key, LoadSceneParameters loadSceneParameters,

@@ -5,11 +5,16 @@ using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build;
+using UnityEditor.Build.Player;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
+using static UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
@@ -37,10 +42,8 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_GroupTemplateObjectsHeader;
         static FoldoutSessionStateValue InitObjectsFoldout = new FoldoutSessionStateValue("Addressables.InitObjectsFoldout");
         GUIContent m_InitObjectsHeader;
-#if UNITY_2019_4_OR_NEWER
         static FoldoutSessionStateValue CCDEnabledFoldout = new FoldoutSessionStateValue("Addressables.CCDEnabledFoldout");
         GUIContent m_CCDEnabledHeader;
-#endif
 
         //Used for displaying path pairs
         bool m_UseCustomPaths = false;
@@ -109,9 +112,7 @@ namespace UnityEditor.AddressableAssets.GUI
             m_DataBuildersHeader = new GUIContent("Build and Play Mode Scripts", "Settings affect profiles.");
             m_GroupTemplateObjectsHeader = new GUIContent("Asset Group Templates", "Settings affect profiles.");
             m_InitObjectsHeader = new GUIContent("Initialization Objects", "Settings affect profiles.");
-#if UNITY_2019_4_OR_NEWER
             m_CCDEnabledHeader = new GUIContent("Cloud Content Delivery", "Settings affect profiles.");
-#endif
         }
 
         GUIContent m_ManageGroups =
@@ -119,10 +120,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
         GUIContent m_ManageProfiles =
             new GUIContent("Manage Profiles", "Open the Addressables Profiles window");
-
-        GUIContent m_SendProfilerEvents =
-            new GUIContent("Send Profiler Events",
-                "Turning this on enables the use of the Addressables Event Viewer window.");
 
         GUIContent m_LogRuntimeExceptions =
             new GUIContent("Log Runtime Exceptions",
@@ -161,6 +158,22 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_CheckForCatalogUpdateOnInit =
             new GUIContent("Only update catalogs manually", "If set, this will forgo checking for content catalog updates on initialization.");
 
+        GUIContent m_InternalIdNamingMode = new GUIContent("Internal Asset Naming Mode",
+            "Mode for naming assets internally in bundles.  This can reduce the size of the catalog by replacing long paths with shorter strings. Dynamic recommended for Release. Full Path recommended for Development.");
+
+        GUIContent m_InternalBundleIdMode = new GUIContent("Internal Bundle Id Mode",
+            $"Specifies how the internal id of the bundle is generated.  This must be set to {BundleInternalIdMode.GroupGuid} or {BundleInternalIdMode.GroupGuidProjectIdHash} to ensure proper caching on device.");
+
+        GUIContent m_AssetLoadMode = new GUIContent("Asset Load Mode", "Determines how Assets are loaded when accessed." +
+            "\n- Requested Asset And Dependencies, will only load the requested Asset (Recommended for most platforms)." +
+            "\n- All Packed Assets And Dependencies, will load all Assets that are packed together. Best used when loading all Assets into memory is required (Recommended for Nintendo Switch).");
+
+        GUIContent m_AssetProvider =
+            new GUIContent("Asset Provider", "The provider to use for loading assets out of AssetBundles. Modify only if you have a custom asset provider.");
+
+        GUIContent m_BundleProvider =
+            new GUIContent("Asset Bundle Provider", "The provider to use for loading AssetBundles (not the assets within bundles). Modify only if you have a custom AssetBundle provider.");
+
         GUIContent m_RemoteCatBuildandLoadPaths =
             new GUIContent("Build & Load Paths", "Paths to build or load a remote content catalog");
 
@@ -175,6 +188,18 @@ namespace UnityEditor.AddressableAssets.GUI
 
         GUIContent m_CatalogTimeout =
             new GUIContent("Catalog Download Timeout", "The time until a catalog hash or json UnityWebRequest download will timeout in seconds. 0 for no timeout.");
+
+        GUIContent m_BundleTimeout =
+            new GUIContent("Bundle Request Timeout", "The timeout with no download activity (in seconds) for the bundle http request (Recommended 5-10s).");
+
+        GUIContent m_BundleRetryCount =
+            new GUIContent("Bundle Retry Count", "The number of times to retry the bundle http request. Note that a retry count of 0 allows auto-downloading asset bundles that fail to load from the cache. Set to -1 to prevent this auto-downloading behavior.");
+
+        GUIContent m_BundleRedirectLimit =
+            new GUIContent("Bundle Http Redirect Limit", "The redirect limit for the bundle http request.");
+
+        GUIContent m_UseUWRForLocalBundles =
+            new GUIContent("Use UnityWebRequest for Local Asset Bundles", "If enabled, local asset bundles will load through UnityWebRequest (Recommended for Android and WebGL).");
 
         GUIContent m_CertificateHandlerType =
             new GUIContent("Custom certificate handler", "The class to use for custom certificate handling.  This type must inherit from UnityEngine.Networking.CertificateHandler.");
@@ -191,12 +216,18 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_ContentStateFileBuildPath =
             new GUIContent("Content State Build Path", "The path used for the addressables_content_state.bin file, which is used to detect modified assets during a Content Update.");
 
-        GUIContent m_ShaderBundleNaming =
-            new GUIContent("Shader Bundle Naming Prefix",
-                "This setting determines how the Unity built in shader bundle will be named during the build.  The recommended setting is Project Name Hash.");
+        GUIContent m_SharedBundleSettings =
+            new GUIContent("Shared Bundle Settings", "Determines the group whose settings used for shared bundles (Built In and MonoScript bundles). By default this is the Default group.");
 
-        GUIContent m_ShaderBundleCustomNaming =
-            new GUIContent("Shader Bundle Custom Prefix", "Custom prefix for Unity built in shader bundle.");
+        GUIContent m_SharedBundleSettingsGroup =
+            new GUIContent("Shared Bundle Settings Group", "Group whose settings are used for shared bundles (Built In and MonoScript bundles).");
+
+        GUIContent m_BuiltInBundleNaming =
+            new GUIContent("Built In Bundle Naming Prefix",
+                "This setting determines how the Unity built in bundle will be named during the build.  The recommended setting is Project Name Hash.");
+
+        GUIContent m_BuiltInBundleCustomNaming =
+            new GUIContent("Built In Bundle Custom Prefix", "Custom prefix for Unity built in bundle.");
 
         GUIContent m_MonoBundleNaming =
             new GUIContent("MonoScript Bundle Naming Prefix",
@@ -219,10 +250,8 @@ namespace UnityEditor.AddressableAssets.GUI
             new GUIContent("For Build & Release", "Determines where the system attempts to pull the previous content state file from for the Content Update.");
 #endif
 
-#if UNITY_2019_4_OR_NEWER
         GUIContent m_CCDEnabled = new GUIContent("Enable CCD Features", "If enabled, will add options to upload bundles to CCD.");
-#endif
-#if UNITY_2021_2_OR_NEWER
+
         GUIContent m_BuildAddressablesWithPlayerBuild =
             new GUIContent("Build Addressables on Player Build", "Determines if a new Addressables build will be built with a Player Build.");
 
@@ -232,7 +261,9 @@ namespace UnityEditor.AddressableAssets.GUI
             new GUIContent("Build Addressables content on Player Build", "A new Addressables build will be created with a Player Build"),
             new GUIContent("Do not Build Addressables content on Player build", "No new Addressables build will be created with a Player Build")
         };
-#endif
+
+        GUIContent m_EnableJsonCatalog = new GUIContent("Enable Json Catalog",
+            "If enabled, Json catalogs will be used instead of binary catalogs. Json catalogs are more human readible, but slower to load and have a larger size.");
 
         public override bool RequiresConstantRepaint()
         {
@@ -308,7 +339,6 @@ namespace UnityEditor.AddressableAssets.GUI
             });
             if (DiagnosticsFoldout.IsActive)
             {
-                ProjectConfigData.PostProfilerEvents = EditorGUILayout.Toggle(m_SendProfilerEvents, ProjectConfigData.PostProfilerEvents);
                 bool logResourceManagerExceptions = EditorGUILayout.Toggle(m_LogRuntimeExceptions, m_AasTarget.buildSettings.LogResourceManagerExceptions);
 
                 if (logResourceManagerExceptions != m_AasTarget.buildSettings.LogResourceManagerExceptions)
@@ -329,9 +359,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (overridePlayerVersion != m_AasTarget.OverridePlayerVersion)
                     m_QueuedChanges.Add(() => m_AasTarget.OverridePlayerVersion = overridePlayerVersion);
 
+#if ENABLE_JSON_CATALOG
                 bool bundleLocalCatalog = EditorGUILayout.Toggle(m_BundleLocalCatalog, m_AasTarget.BundleLocalCatalog);
                 if (bundleLocalCatalog != m_AasTarget.BundleLocalCatalog)
                     m_QueuedChanges.Add(() => m_AasTarget.BundleLocalCatalog = bundleLocalCatalog);
+#endif
 /*
                 bool optimizeCatalogSize = EditorGUILayout.Toggle(m_OptimizeCatalogSize, m_AasTarget.OptimizeCatalogSize);
                 if (optimizeCatalogSize != m_AasTarget.OptimizeCatalogSize)
@@ -346,12 +378,31 @@ namespace UnityEditor.AddressableAssets.GUI
                     DrawRemoteCatalogPaths();
                 }
 
+                bool enableJsonCatalog = EditorGUILayout.Toggle(m_EnableJsonCatalog, m_AasTarget.EnableJsonCatalog);
+                if (enableJsonCatalog != m_AasTarget.EnableJsonCatalog)
+                    m_QueuedChanges.Add(() => ToggleJsonCatalog(m_AasTarget, enableJsonCatalog));
+
                 EditorGUI.BeginDisabledGroup(!buildRemoteCatalog);
                 bool disableCatalogOnStartup = EditorGUILayout.Toggle(m_CheckForCatalogUpdateOnInit, m_AasTarget.DisableCatalogUpdateOnStartup);
                 if (disableCatalogOnStartup != m_AasTarget.DisableCatalogUpdateOnStartup)
                     m_QueuedChanges.Add(() => m_AasTarget.DisableCatalogUpdateOnStartup = disableCatalogOnStartup);
                 EditorGUI.EndDisabledGroup();
+                GUILayout.Space(postBlockContentSpace);
 
+                var internalIdNamingMode = (AssetNamingMode)EditorGUILayout.EnumPopup(m_InternalIdNamingMode, m_AasTarget.InternalIdNamingMode);
+                if (internalIdNamingMode != m_AasTarget.InternalIdNamingMode)
+                    m_QueuedChanges.Add(() => m_AasTarget.InternalIdNamingMode = internalIdNamingMode);
+
+                var internalBundleIdMode = (BundleInternalIdMode)EditorGUILayout.EnumPopup(m_InternalBundleIdMode, m_AasTarget.InternalBundleIdMode);
+                if (internalBundleIdMode != m_AasTarget.InternalBundleIdMode)
+                    m_QueuedChanges.Add(() => m_AasTarget.InternalBundleIdMode = internalBundleIdMode);
+
+                var assetLoadMode = (AssetLoadMode)EditorGUILayout.EnumPopup(m_AssetLoadMode, m_AasTarget.AssetLoadMode);
+                if (assetLoadMode != m_AasTarget.AssetLoadMode)
+                    m_QueuedChanges.Add(() => m_AasTarget.AssetLoadMode = assetLoadMode);
+
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_BundledAssetProviderType"), m_AssetProvider, true);
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_AssetBundleProviderType"), m_BundleProvider, true);
                 GUILayout.Space(postBlockContentSpace);
             }
 
@@ -372,7 +423,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     new[] {"List Restricted Assets (recommended)", "Fail Build", "Disabled"});
                 if (contentUpdateRestrictionsCheckOptionIndex != (int)m_AasTarget.CheckForContentUpdateRestrictionsOption)
                     m_QueuedChanges.Add(() => m_AasTarget.CheckForContentUpdateRestrictionsOption =
-                        (CheckForContentUpdateRestrictionsOptions)contentUpdateRestrictionsCheckOptionIndex);
+                            (CheckForContentUpdateRestrictionsOptions)contentUpdateRestrictionsCheckOptionIndex);
 
 #if ENABLE_CCD
                 if (m_AasTarget.BuildAndReleaseBinFileOption == BuildAndReleaseContentStateBehavior.UseCCDBucket)
@@ -447,7 +498,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             contentStatePath = ContentUpdateScript.PreviousContentStateFileCachePath;
 #endif
                             EditorGUILayout.HelpBox($"The content state file path is a remote path. For new content builds, the content state file can be found at {contentStatePath}. " +
-                                                    $"When updating a previous build, the remote file will be downloaded to that same location.", MessageType.Info);
+                                $"When updating a previous build, the remote file will be downloaded to that same location.", MessageType.Info);
                         }
                     }
 
@@ -456,7 +507,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
 #if ENABLE_CCD
                 int buildAndReleaseContentBehavior = EditorGUILayout.Popup(m_BuildAndReleaseBinFile, (int)m_AasTarget.BuildAndReleaseBinFileOption,
-                        new[]{"Use Content State Build Path", "Use uploaded addressables_content_state.bin"});
+                    new[] {"Use Content State Build Path", "Use uploaded addressables_content_state.bin"});
                 if (buildAndReleaseContentBehavior != (int)m_AasTarget.BuildAndReleaseBinFileOption)
                     m_QueuedChanges.Add(() => m_AasTarget.BuildAndReleaseBinFileOption = (BuildAndReleaseContentStateBehavior)buildAndReleaseContentBehavior);
 #endif
@@ -485,6 +536,23 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (catalogTimeouts != m_AasTarget.CatalogRequestsTimeout)
                     m_QueuedChanges.Add(() => m_AasTarget.CatalogRequestsTimeout = catalogTimeouts);
                 GUILayout.Space(postBlockContentSpace);
+
+                var useUWRForLocalBundles = EditorGUILayout.Toggle(m_UseUWRForLocalBundles, m_AasTarget.UseUnityWebRequestForLocalBundles);
+                if (useUWRForLocalBundles != m_AasTarget.UseUnityWebRequestForLocalBundles)
+                    m_QueuedChanges.Add(() => m_AasTarget.UseUnityWebRequestForLocalBundles = useUWRForLocalBundles);
+
+                var bundleTimeout = EditorGUILayout.IntField(m_BundleTimeout, m_AasTarget.BundleTimeout);
+                if (bundleTimeout != m_AasTarget.BundleTimeout)
+                    m_QueuedChanges.Add(() => m_AasTarget.BundleTimeout = bundleTimeout);
+
+                var bundleRetryCount = EditorGUILayout.IntField(m_BundleRetryCount, m_AasTarget.BundleRetryCount);
+                if (bundleRetryCount != m_AasTarget.BundleRetryCount)
+                    m_QueuedChanges.Add(() => m_AasTarget.BundleRetryCount = bundleRetryCount);
+
+                var bundleRedirectLimit = EditorGUILayout.IntField(m_BundleRedirectLimit, m_AasTarget.BundleRedirectLimit);
+                if (bundleRedirectLimit != m_AasTarget.BundleRedirectLimit)
+                    m_QueuedChanges.Add(() => m_AasTarget.BundleRedirectLimit = bundleRedirectLimit);
+                GUILayout.Space(postBlockContentSpace);
             }
 
             EditorGUI.EndFoldoutHeaderGroup();
@@ -496,7 +564,6 @@ namespace UnityEditor.AddressableAssets.GUI
             });
             if (BuildFoldout.IsActive)
             {
-#if UNITY_2021_2_OR_NEWER
                 int index = (int)m_AasTarget.BuildAddressablesWithPlayerBuild;
                 int newIndex = EditorGUILayout.Popup(m_BuildAddressablesWithPlayerBuild, index, m_BuildAddressablesWithPlayerBuildOptions);
                 if (index != newIndex)
@@ -509,7 +576,6 @@ namespace UnityEditor.AddressableAssets.GUI
                         EditorGUILayout.TextField(" ", enabled ? "Enabled" : "Disabled");
                     }
                 }
-#endif
 
                 bool ignoreUnsupportedFilesInBuild = EditorGUILayout.Toggle(m_IgnoreUnsupportedFilesInBuild, m_AasTarget.IgnoreUnsupportedFilesInBuild);
                 if (ignoreUnsupportedFilesInBuild != m_AasTarget.IgnoreUnsupportedFilesInBuild)
@@ -532,20 +598,50 @@ namespace UnityEditor.AddressableAssets.GUI
 #if !NONRECURSIVE_DEPENDENCY_DATA
                 EditorGUI.EndDisabledGroup();
 #endif
+                bool stripUnityVersion = EditorGUILayout.Toggle(m_StripUnityVersionFromBundleBuild, m_AasTarget.StripUnityVersionFromBundleBuild);
+                if (stripUnityVersion != m_AasTarget.StripUnityVersionFromBundleBuild)
+                    m_QueuedChanges.Add(() => m_AasTarget.StripUnityVersionFromBundleBuild = stripUnityVersion);
 
-                ShaderBundleNaming shaderBundleNaming = (ShaderBundleNaming)EditorGUILayout.Popup(m_ShaderBundleNaming,
-                    (int)m_AasTarget.ShaderBundleNaming, new[] {"Project Name Hash", "Default Group GUID", "Custom"});
-                if (shaderBundleNaming != m_AasTarget.ShaderBundleNaming)
-                    m_QueuedChanges.Add(() => m_AasTarget.ShaderBundleNaming = shaderBundleNaming);
-                if (shaderBundleNaming == ShaderBundleNaming.Custom)
+                bool disableVisibleSubAssetRepresentations = EditorGUILayout.Toggle(m_DisableVisibleSubAssetRepresentations, m_AasTarget.DisableVisibleSubAssetRepresentations);
+                if (disableVisibleSubAssetRepresentations != m_AasTarget.DisableVisibleSubAssetRepresentations)
+                    m_QueuedChanges.Add(() => m_AasTarget.DisableVisibleSubAssetRepresentations = disableVisibleSubAssetRepresentations);
+
+                GUILayout.Space(postBlockContentSpace);
+
+                SharedBundleSettings sharedBundleSettings = (SharedBundleSettings)EditorGUILayout.Popup(m_SharedBundleSettings,
+                    (int)m_AasTarget.SharedBundleSettings, new[] { "Default Group", "Custom Group" });
+                bool useDefaultGroup = sharedBundleSettings == SharedBundleSettings.DefaultGroup;
+                if (sharedBundleSettings != m_AasTarget.SharedBundleSettings)
                 {
-                    string customShaderBundleName = EditorGUILayout.TextField(m_ShaderBundleCustomNaming, m_AasTarget.ShaderBundleCustomNaming);
-                    if (customShaderBundleName != m_AasTarget.ShaderBundleCustomNaming)
-                        m_QueuedChanges.Add(() => m_AasTarget.ShaderBundleCustomNaming = customShaderBundleName);
+                    // Initially set custom index to default group
+                    if (!useDefaultGroup)
+                    {
+                        for (int i = 0; i < m_AasTarget.groups.Count; i++)
+                        {
+                            if (m_AasTarget.groups[i].IsDefaultGroup())
+                                m_AasTarget.SharedBundleSettingsCustomGroupIndex = i;
+                        }
+                    }
+                    m_QueuedChanges.Add(() => m_AasTarget.SharedBundleSettings = sharedBundleSettings);
+                }
+
+                EditorGUILayout.BeginHorizontal();
+                GroupsPopupUtility.DrawGroupsDropdown(m_SharedBundleSettingsGroup, m_AasTarget.GetSharedBundleGroup(), !useDefaultGroup, false, true, SetSharedBundleSettingsCustomGroupIndex, null);
+                EditorGUILayout.EndHorizontal();
+
+                BuiltInBundleNaming builtInBundleNaming = (BuiltInBundleNaming)EditorGUILayout.Popup(m_BuiltInBundleNaming,
+                    (int)m_AasTarget.BuiltInBundleNaming, new[] {"Project Name Hash", "Default Group GUID", "Custom"});
+                if (builtInBundleNaming != m_AasTarget.BuiltInBundleNaming)
+                    m_QueuedChanges.Add(() => m_AasTarget.BuiltInBundleNaming = builtInBundleNaming);
+                if (builtInBundleNaming == BuiltInBundleNaming.Custom)
+                {
+                    string customShaderBundleName = EditorGUILayout.TextField(m_BuiltInBundleCustomNaming, m_AasTarget.BuiltInBundleCustomNaming);
+                    if (customShaderBundleName != m_AasTarget.BuiltInBundleCustomNaming)
+                        m_QueuedChanges.Add(() => m_AasTarget.BuiltInBundleCustomNaming = customShaderBundleName);
                 }
 
                 MonoScriptBundleNaming monoBundleNaming = (MonoScriptBundleNaming)EditorGUILayout.Popup(m_MonoBundleNaming,
-                    (int)m_AasTarget.MonoScriptBundleNaming, new[] {"Disable MonoScript Bundle Build", "Project Name Hash", "Default Group GUID", "Custom"});
+                    (int)m_AasTarget.MonoScriptBundleNaming, new[] {"Project Name Hash", "Default Group GUID", "Custom"});
                 if (monoBundleNaming != m_AasTarget.MonoScriptBundleNaming)
                     m_QueuedChanges.Add(() => m_AasTarget.MonoScriptBundleNaming = monoBundleNaming);
                 if (monoBundleNaming == MonoScriptBundleNaming.Custom)
@@ -554,14 +650,6 @@ namespace UnityEditor.AddressableAssets.GUI
                     if (customMonoScriptBundleName != m_AasTarget.MonoScriptBundleCustomNaming)
                         m_QueuedChanges.Add(() => m_AasTarget.MonoScriptBundleCustomNaming = customMonoScriptBundleName);
                 }
-
-                bool stripUnityVersion = EditorGUILayout.Toggle(m_StripUnityVersionFromBundleBuild, m_AasTarget.StripUnityVersionFromBundleBuild);
-                if (stripUnityVersion != m_AasTarget.StripUnityVersionFromBundleBuild)
-                    m_QueuedChanges.Add(() => m_AasTarget.StripUnityVersionFromBundleBuild = stripUnityVersion);
-
-                bool disableVisibleSubAssetRepresentations = EditorGUILayout.Toggle(m_DisableVisibleSubAssetRepresentations, m_AasTarget.DisableVisibleSubAssetRepresentations);
-                if (disableVisibleSubAssetRepresentations != m_AasTarget.DisableVisibleSubAssetRepresentations)
-                    m_QueuedChanges.Add(() => m_AasTarget.DisableVisibleSubAssetRepresentations = disableVisibleSubAssetRepresentations);
                 GUILayout.Space(postBlockContentSpace);
             }
 
@@ -606,7 +694,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
             EditorGUI.EndFoldoutHeaderGroup();
 
-#if UNITY_2019_4_OR_NEWER
             CCDEnabledFoldout.IsActive = AddressablesGUIUtility.BeginFoldoutHeaderGroupWithHelp(CCDEnabledFoldout.IsActive, m_CCDEnabledHeader, () =>
             {
                 string url = AddressableAssetUtility.GenerateDocsURL("AddressablesCCD.html");
@@ -633,7 +720,6 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             EditorGUI.EndFoldoutHeaderGroup();
-#endif
 
             if (EditorGUI.EndChangeCheck() || m_QueuedChanges.Count > 0)
             {
@@ -645,6 +731,39 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 m_AasTarget.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private List<NamedBuildTarget> buildTargets = new List<NamedBuildTarget>()
+        {
+          NamedBuildTarget.Android,
+          NamedBuildTarget.EmbeddedLinux,
+          NamedBuildTarget.iOS,
+          NamedBuildTarget.LinuxHeadlessSimulation,
+          NamedBuildTarget.NintendoSwitch,
+          NamedBuildTarget.PS4,
+          NamedBuildTarget.QNX,
+          NamedBuildTarget.Server,
+          NamedBuildTarget.Standalone,
+          NamedBuildTarget.tvOS,
+          NamedBuildTarget.WebGL,
+          NamedBuildTarget.WindowsStoreApps,
+          NamedBuildTarget.XboxOne
+        };
+
+        void ToggleJsonCatalog(AddressableAssetSettings settings, bool enableJsonCatalog)
+        {
+            settings.EnableJsonCatalog = enableJsonCatalog;
+            foreach (var buildTarget in buildTargets)
+                AddressableAssetSettings.UpdateSymbolsForBuildTarget(buildTarget, enableJsonCatalog);
+        }
+
+        internal static void SetSharedBundleSettingsCustomGroupIndex(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
+        {
+            for (int i = 0; i < settings.groups.Count; i++)
+            {
+                if (settings.groups[i].Guid == group.Guid)
+                    settings.SharedBundleSettingsCustomGroupIndex = i;
             }
         }
 
@@ -866,8 +985,8 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_ShowPaths)
             {
                 EditorStyles.helpBox.fontSize = 12;
-                var baseBuildPathValue = settings.profileSettings.GetValueById(settings.activeProfileId, BuildPath.Id);
-                var baseLoadPathValue = settings.profileSettings.GetValueById(settings.activeProfileId, LoadPath.Id);
+                var baseBuildPathValue = BuildPath.GetValue(settings, false);
+                var baseLoadPathValue = LoadPath.GetValue(settings, false);
                 EditorGUILayout.HelpBox(String.Format("Build Path: {0}", settings.profileSettings.EvaluateString(settings.activeProfileId, baseBuildPathValue)), MessageType.None);
                 EditorGUILayout.HelpBox(String.Format("Load Path: {0}", settings.profileSettings.EvaluateString(settings.activeProfileId, baseLoadPathValue)), MessageType.None);
             }

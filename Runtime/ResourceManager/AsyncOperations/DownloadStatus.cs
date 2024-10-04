@@ -11,12 +11,12 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
     public struct DownloadStatus
     {
         /// <summary>
-        /// The number of bytes downloaded by the operation and all of its dependencies.
+        /// The total number of bytes needed to download by the operation and dependencies.
         /// </summary>
         public long TotalBytes;
 
         /// <summary>
-        /// The total number of bytes needed to download by the operation and dependencies.
+        /// The number of bytes downloaded by the operation and all of its dependencies.
         /// </summary>
         public long DownloadedBytes;
 

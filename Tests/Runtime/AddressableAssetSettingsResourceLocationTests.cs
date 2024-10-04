@@ -52,16 +52,11 @@ namespace AddressableAssetSettingsResourceLocationTests
             entry.address = k_ValidKey;
 
             entry = settings.CreateOrMoveEntry(guid2, settings.DefaultGroup);
-            entry.address = k_InvalidKey;
+            entry.m_Address = k_InvalidKey;
 
             AddressableAssetEntry folder = settings.CreateOrMoveEntry(folderGuid, settings.DefaultGroup);
             folder.address = k_FolderAddress;
             folder.IsFolder = true;
-
-            bool currentIgnoreState = LogAssert.ignoreFailingMessages;
-            LogAssert.ignoreFailingMessages = false;
-            LogAssert.Expect(LogType.Error, $"Address '{entry.address}' cannot contain '[ ]'.");
-            LogAssert.ignoreFailingMessages = currentIgnoreState;
         }
 
         protected override void OnRuntimeSetup()
@@ -123,6 +118,30 @@ namespace AddressableAssetSettingsResourceLocationTests
             LogAssert.Expect(LogType.Error, $"Address '{k_InvalidKey}' cannot contain '[ ]'.");
             Assert.IsFalse(res);
             Assert.IsNull(locs);
+        }
+
+        [Test]
+        public void ComparingTwoResourceLocations_ReturnsTrue_IfInternalIdAndResourceTypeMatch()
+        {
+            IResourceLocation loc1 = new ResourceLocationBase("1", "internalid", "provider", typeof(GameObject));
+            IResourceLocation loc2 = new ResourceLocationBase("2", "internalid", "provider", typeof(GameObject));
+
+            ResourceLocationComparer comparer = new ResourceLocationComparer();
+
+            Assert.IsTrue(comparer.Equals(loc1, loc2));
+        }
+
+        [Test]
+        public void ComparingTwoResourceLocations_ReturnsFalse_IfInternalIdOrResourceTypeDontMatch()
+        {
+            IResourceLocation loc1 = new ResourceLocationBase("1", "internalid", "provider", typeof(GameObject));
+            IResourceLocation loc2 = new ResourceLocationBase("2", "internalid2", "provider", typeof(GameObject));
+            IResourceLocation loc3 = new ResourceLocationBase("3", "internalid", "provider", typeof(Sprite));
+
+            ResourceLocationComparer comparer = new ResourceLocationComparer();
+
+            Assert.IsFalse(comparer.Equals(loc1, loc2));
+            Assert.IsFalse(comparer.Equals(loc1, loc3));
         }
 
 #endif

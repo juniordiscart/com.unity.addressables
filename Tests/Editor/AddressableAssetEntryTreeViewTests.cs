@@ -23,15 +23,10 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        public void BuildTree_Structure_WhenOnlyWithDefaultGroups_CreatesBuiltInDataAndDefaultGroups()
+        public void BuildTree_Structure_WhenOnlyWithDefaultGroups_CreatesDefaultGroup()
         {
             var tree = CreateExpandedTree();
-            Assert.AreEqual(2, tree.Root.children.Count);
-
-            var playerDataRow = tree.Root.children.First(c => c.displayName == AddressableAssetSettings.PlayerDataGroupName);
-            Assert.AreEqual(2, playerDataRow.children.Count);
-            Assert.IsTrue(playerDataRow.children.Any(c => c.displayName == AddressableAssetEntry.EditorSceneListName));
-            Assert.IsTrue(playerDataRow.children.Any(c => c.displayName == AddressableAssetEntry.ResourcesName));
+            Assert.AreEqual(1, tree.Root.children.Count);
 
             var defaultGroupRow = tree.Root.children.First(c => c.displayName == AddressableAssetSettings.DefaultLocalGroupName + " (Default)");
             Assert.False(defaultGroupRow.hasChildren);
@@ -59,51 +54,12 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        public void BuildTree_Scenes_CreatesAnEntryOnlyForScenesInBuild()
-        {
-            var scenesBU = EditorBuildSettings.scenes;
-            try
-            {
-                EditorBuildSettings.scenes = new EditorBuildSettingsScene[0];
-                var sceneGuid1 = CreateScene(k_TreeViewTestFolderPath + "/includedScene1.unity", addToBuild: true);
-                var sceneGuid2 = CreateScene(k_TreeViewTestFolderPath + "/excludedScene.unity", addToBuild: false);
-
-                var tree = CreateExpandedTree();
-
-                var scenesListRow = tree.GetRows().First(c => c.displayName == AddressableAssetEntry.EditorSceneListName);
-                Assert.AreEqual(1, scenesListRow.children.Count);
-                Assert.True(scenesListRow.children.Any(r => r.displayName == GetName(sceneGuid1)));
-            }
-            finally
-            {
-                EditorBuildSettings.scenes = scenesBU;
-            }
-        }
-
-        [Test]
-        public void BuildTree_Resources_CreatesEntriesForAllFilesInResourcesFolders()
-        {
-            Directory.CreateDirectory(k_TreeViewTestFolderPath + "/Resources");
-            Directory.CreateDirectory(k_TreeViewTestFolderPath + "/SubFolder/Resources");
-            var resourceGuid1 = CreateAsset(k_TreeViewTestFolderPath + "/Resources/testResource1.prefab");
-            var resourceGuid2 = CreateAsset(k_TreeViewTestFolderPath + "/SubFolder/Resources/testResource3.prefab");
-
-            var tree = CreateExpandedTree();
-
-            var resourcesRow = tree.GetRows().First(c => c.displayName == AddressableAssetEntry.ResourcesName);
-            var resourcesCount = ResourcesTestUtility.GetResourcesEntryCount(m_Settings, true);
-            Assert.AreEqual(resourcesCount, resourcesRow.children.Count);
-            Assert.True(resourcesRow.children.Any(r => r.displayName == GetName(resourceGuid1)));
-            Assert.True(resourcesRow.children.Any(r => r.displayName == GetName(resourceGuid2)));
-        }
-
-        [Test]
         public void BuildTree_Groups_CreatesEntriesForEachOne()
         {
             CreateGroup("testGroup1");
             CreateGroup("testGroup2");
             var tree = CreateExpandedTree();
-            Assert.AreEqual(4, tree.Root.children.Count);
+            Assert.AreEqual(3, tree.Root.children.Count);
         }
 
         [Test]
@@ -357,7 +313,6 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Assert.AreEqual("address2,address3,address1", result, "Entry's address was incorrectly copied.");
         }
-
 
         List<AddressableAssetEntry> GetAllEntries(bool includeSubObjects = false)
         {

@@ -19,7 +19,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// </summary>
         IEnumerable<object> Keys { get; }
 
-#if ENABLE_BINARY_CATALOG
+#if !ENABLE_JSON_CATALOG
         /// <summary>
         /// All locations that are available by this locator.
         /// </summary>

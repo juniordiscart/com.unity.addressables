@@ -135,7 +135,7 @@ static class AddressablesTestUtility
         aRefTestBehavior.ReferenceWithSubObject.SubObjectName = "sub-shown";
         aRefTestBehavior.LabelReference = new AssetLabelReference()
         {
-            labelString = settings.labelTable.labelNames[0]
+            labelString = settings.labelTable[0]
         };
 
         string hasBehaviorPath = RootFolder + "/AssetReferenceBehavior.prefab";
@@ -162,6 +162,8 @@ static class AddressablesTestUtility
         settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(hasBehaviorPath), group, false, false);
 
         CreateFolderEntryAssets(RootFolder, settings, group);
+
+        CreateAsset(RootFolder + "/nonAddressableAsset.prefab", "nonAddressableAsset");
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
@@ -226,7 +228,8 @@ static class AddressablesTestUtility
             {
                 AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(AssetDatabase.GUIDToAssetPath(spriteGuid))
             });
-            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {sa}, EditorUserBuildSettings.activeBuildTarget, false);
+            AssetDatabase.SaveAssetIfDirty(sa);
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { sa }, EditorUserBuildSettings.activeBuildTarget, false);
         }
 
         var folderEntry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(folderPath), group, false, false);
@@ -244,7 +247,7 @@ static class AddressablesTestUtility
         return AssetDatabase.AssetPathToGUID(assetPath);
     }
     const string kCatalogExt =
-#if ENABLE_BINARY_CATALOG
+#if !ENABLE_JSON_CATALOG
             ".bin";
 #else
             ".json";

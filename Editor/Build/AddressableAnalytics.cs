@@ -20,6 +20,153 @@ namespace UnityEditor.AddressableAssets
 
         private const string UsageEvent = "addressablesUsageEvent";
         private const string BuildEvent = "addressablesBuildEvent";
+        private static PackageManager.PackageInfo packageInfo = PackageManager.PackageInfo.FindForPackageName("com.unity.addressables");
+        private const string packageName = "com.unity.addressables";
+
+        #if UNITY_2023_3_OR_NEWER
+        [AnalyticInfo(vendorKey:VendorKey, eventName:BuildEvent)]
+        public class AddressablesBuildEvent : IAnalytic
+        {
+
+            AnalyticsBuildData cachedBuildData;
+            public AddressablesBuildEvent(BuildData bd)
+            {
+                cachedBuildData = new AnalyticsBuildData(bd);
+            }
+
+            public bool TryGatherData(out IAnalytic.IData data, out Exception error)
+            {
+                data = cachedBuildData;
+                error = null;
+                if (data == null)
+                    return false;
+                return true;
+            }
+        }
+
+        [AnalyticInfo(vendorKey:VendorKey, eventName:UsageEvent)]
+        public class AddressablesUsageEvent : IAnalytic
+        {
+            AnalyticsUsageData cachedUsageData;
+
+            public AddressablesUsageEvent(UsageData ud)
+            {
+                cachedUsageData = new AnalyticsUsageData(ud);
+            }
+
+            public bool TryGatherData(out IAnalytic.IData data, out Exception error)
+            {
+                data = cachedUsageData;
+                error = null;
+                if (data == null)
+                    return false;
+                return true;
+            }
+        }
+
+        [Serializable]
+        internal class AnalyticsUsageData : IAnalytic.IData
+        {
+            public int UsageEventType;
+            public bool IsUsingCCD;
+            public int AutoRunRestrictionsOption;
+            public string package;
+            public string package_ver;
+
+            public AnalyticsUsageData(UsageData ud)
+            {
+                UsageEventType = ud.UsageEventType;
+                IsUsingCCD = ud.IsUsingCCD;
+                AutoRunRestrictionsOption = ud.AutoRunRestrictionsOption;
+                package = packageName;
+                package_ver = packageInfo.version;
+            }
+        }
+
+        [Serializable]
+        internal class AnalyticsBuildData : IAnalytic.IData
+        {
+            public bool IsUsingCCD;
+            public bool IsContentUpdateBuild;
+            public bool DebugBuildLayoutEnabled;
+            public bool AutoOpenBuildReportEnabled;
+            public bool BuildAndRelease;
+            public bool IsPlayModeBuild;
+            public int BuildScript;
+            public int NumberOfAddressableAssets;
+            public int NumberOfLabels;
+            public int NumberOfAssetBundles;
+            public int NumberOfGroups;
+            public int NumberOfGroupsUsingLZ4;
+            public int NumberOfGroupsUsingLZMA;
+            public int NumberOfGroupsUncompressed;
+            public int NumberOfGroupsPackedTogether;
+            public int NumberOfGroupsPackedTogetherByLabel;
+            public int NumberOfGroupsPackedSeparately;
+            public int MaxNumberOfAddressableAssetsInAGroup;
+            public int MinNumberOfAddressableAssetsInAGroup;
+            public int BuildTarget;
+
+            public int NumberOfGroupsUsingEditorHosted;
+            public int NumberOfGroupsUsingBuiltIn;
+            public int NumberOfGroupsUsingCCD;
+            public int NumberOfGroupsUsingRemoteCustomPaths;
+            public int NumberOfGroupsUsingLocalCustomPaths;
+
+            public int NumberOfAssetsInEditorHostedPaths;
+            public int NumberOfAssetsInBuiltInPaths;
+            public int NumberOfAssetsInCCDPaths;
+            public int NumberOfAssetsInRemoteCustomPaths;
+            public int NumberOfAssetsInLocalCustomPaths;
+
+            public int IsIncrementalBuild;
+            public int ErrorCode;
+            public double TotalBuildTime;
+            public string package;
+            public string package_ver;
+
+            public AnalyticsBuildData(BuildData bd)
+            {
+                IsUsingCCD = bd.IsUsingCCD;
+                IsContentUpdateBuild = bd.IsContentUpdateBuild;
+                IsPlayModeBuild = bd.IsPlayModeBuild;
+                BuildScript = bd.BuildScript;
+                BuildAndRelease = bd.BuildAndRelease;
+#if UNITY_2022_2_OR_NEWER
+                DebugBuildLayoutEnabled = bd.DebugBuildLayoutEnabled;
+                AutoOpenBuildReportEnabled = bd.AutoOpenBuildReportEnabled;
+#endif
+                NumberOfLabels = bd.NumberOfLabels;
+                IsIncrementalBuild = bd.IsIncrementalBuild;
+                NumberOfAssetBundles = bd.NumberOfAssetBundles;
+                NumberOfAddressableAssets = bd.NumberOfAddressableAssets;
+                MinNumberOfAddressableAssetsInAGroup = bd.MinNumberOfAddressableAssetsInAGroup;
+                MaxNumberOfAddressableAssetsInAGroup = bd.MaxNumberOfAddressableAssetsInAGroup;
+                NumberOfGroups = bd.NumberOfGroups;
+                TotalBuildTime = bd.TotalBuildTime;
+                NumberOfGroupsUsingLZ4 = bd.NumberOfGroupsUsingLZ4;
+                NumberOfGroupsUsingLZMA = bd.NumberOfGroupsUsingLZMA;
+                NumberOfGroupsUncompressed = bd.NumberOfGroupsUncompressed;
+                NumberOfGroupsPackedTogether = bd.NumberOfGroupsPackedTogether;
+                NumberOfGroupsPackedTogetherByLabel = bd.NumberOfGroupsPackedTogetherByLabel;
+                NumberOfGroupsPackedSeparately = bd.NumberOfGroupsPackedSeparately;
+                NumberOfGroupsUsingBuiltIn = bd.NumberOfGroupsUsingBuiltIn;
+                NumberOfGroupsUsingEditorHosted = bd.NumberOfGroupsUsingEditorHosted;
+                NumberOfGroupsUsingRemoteCustomPaths = bd.NumberOfGroupsUsingRemoteCustomPaths;
+                NumberOfGroupsUsingLocalCustomPaths = bd.NumberOfGroupsUsingLocalCustomPaths;
+                NumberOfGroupsUsingCCD = bd.NumberOfGroupsUsingCCD;
+                NumberOfAssetsInRemoteCustomPaths = bd.NumberOfAssetsInRemoteCustomPaths;
+                NumberOfAssetsInLocalCustomPaths = bd.NumberOfAssetsInLocalCustomPaths;
+                NumberOfAssetsInBuiltInPaths = bd.NumberOfAssetsInBuiltInPaths;
+                NumberOfAssetsInEditorHostedPaths = bd.NumberOfAssetsInEditorHostedPaths;
+                NumberOfAssetsInCCDPaths = bd.NumberOfAssetsInCCDPaths;
+                BuildTarget = bd.BuildTarget;
+                ErrorCode = bd.ErrorCode;
+                package = packageName;
+                package_ver = packageInfo.version;
+            }
+        }
+        #endif
 
         [Serializable]
         internal struct BuildData
@@ -134,7 +281,7 @@ namespace UnityEditor.AddressableAssets
             PackedMode = 0,
             PackedPlayMode = 1,
             FastMode = 2,
-            VirtualMode = 3,
+            // 3
             CustomBuildScript = 4
         }
 
@@ -206,8 +353,6 @@ namespace UnityEditor.AddressableAssets
                 return BuildScriptType.FastMode;
             if (type == typeof(BuildScriptPackedPlayMode))
                 return BuildScriptType.PackedPlayMode;
-            if (type == typeof(BuildScriptVirtualMode))
-                return BuildScriptType.VirtualMode;
             return BuildScriptType.CustomBuildScript;
         }
 
@@ -401,11 +546,9 @@ namespace UnityEditor.AddressableAssets
                 IsPlayModeBuild = false,
                 BuildScript = (int)buildScriptType,
                 BuildAndRelease = isBuildAndRelease,
-#if UNITY_2022_2_OR_NEWER
                 DebugBuildLayoutEnabled = ProjectConfigData.GenerateBuildLayout,
                 AutoOpenBuildReportEnabled = ProjectConfigData.AutoOpenAddressablesReport && ProjectConfigData.GenerateBuildLayout,
-#endif
-                NumberOfLabels = currentSettings.labelTable.labelNames.Count,
+                NumberOfLabels = currentSettings.labelTable.Count,
                 IsIncrementalBuild = (int)buildType,
                 NumberOfAssetBundles = numberOfAssetBundles,
                 NumberOfAddressableAssets = numberOfAddressableAssets,
@@ -441,12 +584,20 @@ namespace UnityEditor.AddressableAssets
             if (!EditorAnalytics.enabled)
                 return;
 
+            BuildData data = GenerateBuildData(builderInput, result, buildType);
+
+            // This will probably cause problems somewhere, but whatever.
+#if UNITY_2023_3_OR_NEWER
+            AddressablesBuildEvent evt = new AddressablesBuildEvent(data);
+            EditorAnalytics.SendAnalytic(evt);
+#else
+            #pragma warning disable CS0618 // Type or member is obsolete
             if (!EventIsRegistered(BuildEvent))
                 if (!RegisterEvent(BuildEvent))
                     return;
-
-            BuildData data = GenerateBuildData(builderInput, result, buildType);
             EditorAnalytics.SendEventWithLimit(BuildEvent, data);
+            #pragma warning restore CS0618 // Type or member is obsolete
+#endif
         }
 
         internal static UsageData GenerateUsageData(UsageEventType eventType, AnalyticsContentUpdateRestriction restriction = AnalyticsContentUpdateRestriction.NotApplicable)
@@ -480,18 +631,26 @@ namespace UnityEditor.AddressableAssets
             if (!SessionState.GetBool(sessionStateKey, false))
                 SessionState.SetBool(sessionStateKey, true);
 
+            UsageData data = GenerateUsageData(eventType, (AnalyticsContentUpdateRestriction) contentUpdateRestriction);
+#if UNITY_2023_3_OR_NEWER
+            AddressablesUsageEvent evt = new AddressablesUsageEvent(data);
+            EditorAnalytics.SendAnalytic(evt);
+#else
+            #pragma warning disable CS0618 // Type or member is obsolete
             if (!EventIsRegistered(UsageEvent))
                 if (!RegisterEvent(UsageEvent))
                     return;
-
-            UsageData data = GenerateUsageData(eventType, (AnalyticsContentUpdateRestriction) contentUpdateRestriction);
             EditorAnalytics.SendEventWithLimit(UsageEvent, data);
+            #pragma warning restore CS0618 // Type or member is obsolete
+#endif
         }
 
         private static bool RegisterEvent(string eventName)
         {
             bool eventSuccessfullyRegistered = false;
+            #pragma warning disable CS0618 // Type or member is obsolete
             AnalyticsResult registerEvent = EditorAnalytics.RegisterEventWithLimit(eventName, 100, 100, VendorKey);
+            #pragma warning restore CS0618 // Type or member is obsolete
             if (registerEvent == AnalyticsResult.Ok)
             {
                 _registeredEvents.Add(eventName);

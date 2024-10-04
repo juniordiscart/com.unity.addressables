@@ -326,14 +326,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
 						menu.AddItem(new GUIContent("Window/Profiles"), false, () => EditorWindow.GetWindow<ProfileWindow>().Show(true));
 						menu.AddItem(new GUIContent("Window/Labels"), false, () => EditorWindow.GetWindow<LabelWindow>(true).Intialize(settings));
-						menu.AddItem(new GUIContent("Window/Analyze"), false, AnalyzeWindow.ShowWindow);
-						menu.AddItem(new GUIContent("Window/Hosting Services"), false, () => EditorWindow.GetWindow<HostingServicesWindow>().Show(settings));
-						menu.AddItem(new GUIContent("Window/Event Viewer"), false, ResourceProfilerWindow.ShowWindow);
-
-#if UNITY_2022_2_OR_NEWER
                         menu.AddItem(new GUIContent("Window/Addressables Report"), false, BuildReportVisualizer.BuildReportWindow.ShowWindow);
-#endif
-
                         menu.AddItem(new GUIContent("Groups View/Show Sprite and Subobject Addresses"), ProjectConfigData.ShowSubObjectsInGroupView, () =>
                         {
                             ProjectConfigData.ShowSubObjectsInGroupView = !ProjectConfigData.ShowSubObjectsInGroupView;
@@ -373,7 +366,7 @@ namespace UnityEditor.AddressableAssets.GUI
 						for (int i = 0; i < settings.DataBuilders.Count; i++)
 						{
 							var m = settings.GetDataBuilder(i);
-							if (m.CanBuildData<AddressablesPlayModeBuildResult>())
+                            if (m != null && m.CanBuildData<AddressablesPlayModeBuildResult>())
 							{
                                 string text = m is Build.DataBuilders.BuildScriptPackedPlayMode
                                     ? $"Use Existing Build ({PlatformMappingService.GetAddressablesPlatformPathInternal(EditorUserBuildSettings.activeBuildTarget)})"
@@ -401,7 +394,7 @@ namespace UnityEditor.AddressableAssets.GUI
 							for (int i = 0; i < settings.DataBuilders.Count; i++)
 							{
 								var dataBuilder = settings.GetDataBuilder(i);
-								if (dataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
+                                if (dataBuilder != null && dataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
 								{
 									addressablesPlayerBuildResultBuilderExists = true;
 									BuildMenuContext context = new BuildMenuContext()
@@ -432,6 +425,7 @@ namespace UnityEditor.AddressableAssets.GUI
 					for (int i = 0; i < settings.DataBuilders.Count; i++)
 					{
 						var m = settings.GetDataBuilder(i);
+                        if (m != null)
 						genericDropdownMenu.AddItem(new GUIContent("Clear Build Cache/Content Builders/" + m.Name), false, OnCleanAddressables, m);
 					}
 
@@ -455,7 +449,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             for (int i = 0; i < settings.DataBuilders.Count; i++)
                             {
                                 var dataBuilder = settings.GetDataBuilder(i);
-                                if (dataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
+                                if (dataBuilder != null && dataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
                                 {
                                     addressablesPlayerBuildResultBuilderExists = true;
                                     BuildMenuContext context = new BuildMenuContext()
@@ -545,18 +539,26 @@ namespace UnityEditor.AddressableAssets.GUI
 			return displayMenus;
 		}
 
-		private static void OnBuildAddressables(object ctx)
+        private static void OnBuildAddressables(object context)
 		{
-			BuildMenuContext buildAddressablesContext = (BuildMenuContext)ctx;
-			OnBuildAddressables(buildAddressablesContext);
+            BuildAddressablesWithResult((BuildMenuContext)context);
 		}
 
 		internal static void OnBuildAddressables(BuildMenuContext context)
 		{
+            BuildAddressablesWithResult(context);
+        }
+
+        internal static AddressablesPlayerBuildResult BuildAddressablesWithResult(BuildMenuContext context)
+        {
+            AddressablesPlayerBuildResult result = default;
+
+            try
+            {
 			if (context.BuildMenu == null)
 			{
 				Addressables.LogError("Addressable content build failure : null build menu context");
-				return;
+                    return null;
 			}
 
 			if (context.buildScriptIndex >= 0)
@@ -565,11 +567,20 @@ namespace UnityEditor.AddressableAssets.GUI
 			var builderInput = new AddressablesDataBuilderInput(context.Settings);
 
 			if (!HandlePreBuild(context, builderInput))
-				return;
+                    return null;
 
-			AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult rst, builderInput);
+                AddressableAssetSettings.BuildPlayerContent(out result, builderInput);
 
-			HandlePostBuild(context, builderInput, rst);
+                HandlePostBuild(context, builderInput, result);
+            }
+            catch (Exception e)
+            {
+                // since this is called from a menu option, the exception tends to get logged in a less than ideal handler.
+                // using Debug.LogException so we get the full stack trace as this might be in user code
+                Debug.LogException(e);
+            }
+
+            return result;
 		}
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
@@ -598,6 +609,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 RegisterBuildMenuEvents(context, isUpdate, out preEvent, out postEvent);
 
                 await AddressableAssetSettings.BuildAndReleasePlayerContent(isUpdate);
+            } catch (Exception e)
+            {
+                // since this is called from a menu option, the exception tends to get logged in a less than ideal handler.
+                // using Debug.LogException so we get the full stack trace as this might be in user code
+                Debug.LogException(e);
             } finally {
                 UnregisterBuildMenuEvents(isUpdate, preEvent, postEvent);
                 EditorUtility.ClearProgressBar();                               

@@ -17,7 +17,6 @@ namespace UnityEditor.AddressableAssets.Settings
     {
         AddressablesImpl m_addressables;
         AddressableAssetSettings m_settings;
-        internal ResourceManagerDiagnostics m_Diagnostics;
         AsyncOperationHandle<IList<AsyncOperationHandle>> groupOp;
 
         public FastModeInitializationOperation(AddressablesImpl addressables, AddressableAssetSettings settings)
@@ -25,7 +24,6 @@ namespace UnityEditor.AddressableAssets.Settings
             m_addressables = addressables;
             m_settings = settings;
             m_addressables.ResourceManager.RegisterForCallbacks();
-            m_Diagnostics = new ResourceManagerDiagnostics(m_addressables.ResourceManager);
         }
 
         internal static T GetBuilderOfType<T>(AddressableAssetSettings settings, bool includeSubclasses) where T : class, IDataBuilder
@@ -76,13 +74,6 @@ namespace UnityEditor.AddressableAssets.Settings
             var locator = new AddressableAssetSettingsLocator(m_settings);
             m_addressables.AddResourceLocator(locator);
             m_addressables.AddResourceLocator(new DynamicResourceLocator(m_addressables));
-            m_addressables.ResourceManager.postProfilerEvents = ProjectConfigData.PostProfilerEvents;
-            if (!m_addressables.ResourceManager.postProfilerEvents)
-            {
-                m_Diagnostics.Dispose();
-                m_Diagnostics = null;
-                m_addressables.ResourceManager.ClearDiagnosticCallbacks();
-            }
 
             if (!m_settings.buildSettings.LogResourceManagerExceptions)
                 ResourceManager.ExceptionHandler = null;
@@ -94,7 +85,6 @@ namespace UnityEditor.AddressableAssets.Settings
             m_addressables.ResourceManager.ResourceProviders.Add(new AssetDatabaseProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new TextDataProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new JsonAssetProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new LegacyResourcesProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(m_addressables.ResourceManager));
             WebRequestQueue.SetMaxConcurrentRequests(m_settings.MaxConcurrentWebRequests);

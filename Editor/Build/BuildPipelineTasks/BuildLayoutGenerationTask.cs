@@ -171,7 +171,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 foreach (var resultEntry in assetResult.Value.ObjectTypes)
                 {
-                    if(!objectTypes.ContainsKey(resultEntry.Key))
+                    if (!objectTypes.ContainsKey(resultEntry.Key))
                         objectTypes.Add(resultEntry.Key, resultEntry.Value);
                 }
             }
@@ -259,7 +259,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                             continue;
                         }
                         else if (info.serializedObject.filePath.StartsWith("temp:/preloaddata",
-                                     StringComparison.OrdinalIgnoreCase))
+                            StringComparison.OrdinalIgnoreCase))
                         {
                             file.PreloadInfoSize = (int)info.header.size;
                             continue;
@@ -342,7 +342,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                     Dictionary<long, string> localIdentifierToObjectName;
                     if (!guidToObjectNames.TryGetValue(bucket.guid, out localIdentifierToObjectName))
+                    {
                         localIdentifierToObjectName = GetObjectsIdForAsset(assetPath);
+                        guidToObjectNames.Add(bucket.guid, localIdentifierToObjectName);
+                    }
 
                     foreach (ObjectSerializedInfo bucketObj in bucket.objs)
                     {
@@ -375,12 +378,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     }
 
                     if (!guidToPulledInBuckets.TryGetValue(implicitAsset.AssetGuid,
-                            out List<BuildLayout.DataFromOtherAsset> bucketList))
+                        out List<BuildLayout.DataFromOtherAsset> bucketList))
                         bucketList = guidToPulledInBuckets[implicitAsset.AssetGuid] = new List<BuildLayout.DataFromOtherAsset>();
                     bucketList.Add(implicitAsset);
                 }
 
-                assetInFileId = file.OtherAssets.Count-1;
+                assetInFileId = file.OtherAssets.Count - 1;
                 foreach (BuildLayout.ExplicitAsset asset in file.Assets)
                 {
                     assetInFileId++;
@@ -407,12 +410,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                     if (asset.MainAssetType == AssetType.GameObject)
                     {
-#if UNITY_2022_2_OR_NEWER
                         Type importerType = AssetDatabase.GetImporterType(asset.AssetPath);
                         if (importerType == typeof(ModelImporter))
                             asset.MainAssetType = AssetType.Model;
                         else if (importerType != null)
-#endif
                             asset.MainAssetType = AssetType.Prefab;
                     }
 
@@ -424,7 +425,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     {
                         Dictionary<long, string> localIdentifierToObjectName;
                         if (!guidToObjectNames.TryGetValue(bucket.guid, out localIdentifierToObjectName))
+                        {
                             localIdentifierToObjectName = GetObjectsIdForAsset(asset.AssetPath);
+                            guidToObjectNames.Add(bucket.guid, localIdentifierToObjectName);
+                        }
 
                         CollectObjectsForAsset(bucket, objectTypes, asset, localIdentifierToObjectName, fData, assetInFileId);
                     }
@@ -500,17 +504,20 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         private static Dictionary<long, string> GetObjectsIdForAsset(string assetPath)
         {
-            UnityEngine.Object[] assetSubObjects = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-            Dictionary<long, string> localIdentifierToObjectName = new Dictionary<long, string>(assetSubObjects.Length);
-            if (assetSubObjects != null)
+            Dictionary<long, string> localIdentifierToObjectName = new Dictionary<long, string>();
+            var prop = new HierarchyProperty(assetPath, false);
+            if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(prop.instanceID, out _, out long mainLocalID))
             {
-                foreach (var o in assetSubObjects)
+                localIdentifierToObjectName[mainLocalID] = prop.name;
+                if (prop.hasChildren)
                 {
-                    if (o != null && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(o, out _, out long localId))
-                        localIdentifierToObjectName[localId] = o.name;
+                    while (prop.Next(Array.Empty<int>()))
+                    {
+                        if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(prop.instanceID, out _, out long localID))
+                            localIdentifierToObjectName[localID] = prop.name;
+                    }
                 }
             }
-
             return localIdentifierToObjectName;
         }
 
@@ -586,7 +593,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     layoutObject = new BuildLayout.ObjectData()
                     {
                         ObjectName = eType.ToString(),
-                        LocalIdentifierInFile = TypeToObjectData.Count+1,
+                        LocalIdentifierInFile = TypeToObjectData.Count + 1,
                         AssetType = eType,
                         SerializedSize = bucketObj.header.size,
                         StreamedSize = bucketObj.rawData.size
@@ -633,7 +640,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 HashSet<int> indices;
                 foreach (ObjectIdentifier dependency in dependencies)
                 {
-                    if (fileObjectLookup.TryGetObjectReferenceData(dependency, out (int,int) val))
+                    if (fileObjectLookup.TryGetObjectReferenceData(dependency, out (int, int)val))
                     {
                         // object dependency within this file was found
                         if (assetIndices.TryGetValue(val.Item1, out indices))
@@ -670,9 +677,9 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     }
                 }
 
-                foreach (KeyValuePair<int,HashSet<int>> assetRefData in assetIndices)
+                foreach (KeyValuePair<int, HashSet<int>> assetRefData in assetIndices)
                 {
-                    objectData.References.Add(new BuildLayout.ObjectReference(){AssetId = assetRefData.Key, ObjectIds = new List<int>(assetRefData.Value)});
+                    objectData.References.Add(new BuildLayout.ObjectReference() {AssetId = assetRefData.Key, ObjectIds = new List<int>(assetRefData.Value)});
                 }
             }
         }
@@ -707,6 +714,9 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // create groups
             foreach (AddressableAssetGroup group in aaSettings.groups)
             {
+                if (group == null)
+                    continue;
+
                 if (group.Name != group.name)
                 {
                     Debug.LogWarningFormat(
@@ -941,8 +951,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     totalAssetFileSize = curBd.DependencyBundle.FileSize + totalDependentAssetFilesize,
                 };
 
-                curBd.Efficiency =  newEfficiencyInfo.totalAssetFileSize > 0 ? (float) curBd.referencedAssetsFileSize / curBd.DependencyBundle.FileSize : 1f;
-                curBd.ExpandedEfficiency = newEfficiencyInfo.totalAssetFileSize > 0 ? (float) newEfficiencyInfo.referencedAssetFileSize / newEfficiencyInfo.totalAssetFileSize : 1f;
+                curBd.Efficiency =  newEfficiencyInfo.totalAssetFileSize > 0 ? (float)curBd.referencedAssetsFileSize / curBd.DependencyBundle.FileSize : 1f;
+                curBd.ExpandedEfficiency = newEfficiencyInfo.totalAssetFileSize > 0 ? (float)newEfficiencyInfo.referencedAssetFileSize / newEfficiencyInfo.totalAssetFileSize : 1f;
                 bundleDependencyCache[curBd] = newEfficiencyInfo;
             }
         }
@@ -1044,7 +1054,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         void AddImplicitAssetsToLayout(LayoutLookupTables lookup, BuildLayout layout)
         {
-            foreach (KeyValuePair<string,List<BuildLayout.DataFromOtherAsset>> pair in lookup.UsedImplicits)
+            foreach (KeyValuePair<string, List<BuildLayout.DataFromOtherAsset>> pair in lookup.UsedImplicits)
             {
                 if (pair.Value.Count <= 1)
                     continue;
@@ -1076,7 +1086,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 if (!hasDuplicatedObjects)
                     continue;
 
-                for (int i = assetDuplication.DuplicatedObjects.Count-1; i >= 0; --i)
+                for (int i = assetDuplication.DuplicatedObjects.Count - 1; i >= 0; --i)
                 {
                     if (assetDuplication.DuplicatedObjects[i].IncludedInBundleFiles.Count <= 1)
                         assetDuplication.DuplicatedObjects.RemoveAt(i);
@@ -1103,11 +1113,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             editorSettings.NonRecursiveBuilding = aaSettings.NonRecursiveBuilding;
             editorSettings.ContiguousBundles = aaSettings.ContiguousBundles;
             editorSettings.UniqueBundleIds = aaSettings.UniqueBundleIds;
+            editorSettings.EnableJsonCatalog = aaSettings.EnableJsonCatalog;
 
-            if (aaSettings.ShaderBundleNaming == ShaderBundleNaming.Custom)
-                editorSettings.ShaderBundleNaming = aaSettings.ShaderBundleCustomNaming;
+            if (aaSettings.BuiltInBundleNaming == BuiltInBundleNaming.Custom)
+                editorSettings.ShaderBundleNaming = aaSettings.BuiltInBundleCustomNaming;
             else
-                editorSettings.ShaderBundleNaming = aaSettings.ShaderBundleNaming.ToString();
+                editorSettings.ShaderBundleNaming = aaSettings.BuiltInBundleNaming.ToString();
             if (aaSettings.MonoScriptBundleNaming == MonoScriptBundleNaming.Custom)
                 editorSettings.MonoScriptBundleNaming = aaSettings.MonoScriptBundleCustomNaming;
             else
@@ -1118,7 +1129,9 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             if (aaSettings.BuildRemoteCatalog)
                 editorSettings.RemoteCatalogLoadPath = aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings);
             editorSettings.CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout;
+#if ENABLE_JSON_CATALOG
             editorSettings.BundleLocalCatalog = aaSettings.BundleLocalCatalog;
+#endif
             editorSettings.OptimizeCatalogSize = aaSettings.OptimizeCatalogSize;
             editorSettings.DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup;
 
@@ -1157,7 +1170,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
 
             BuildLayout.AddressablesRuntimeData runtimeSettings = new BuildLayout.AddressablesRuntimeData();
-            runtimeSettings.ProfilerEvents = aaContext.runtimeData.ProfileEvents;
             runtimeSettings.LogResourceManagerExceptions = aaContext.runtimeData.LogResourceManagerExceptions;
 
             runtimeSettings.CatalogLoadPaths = new List<string>();

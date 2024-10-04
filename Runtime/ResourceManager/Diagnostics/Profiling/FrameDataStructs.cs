@@ -1,5 +1,3 @@
-#if ENABLE_ADDRESSABLE_PROFILER
-
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine.ResourceManagement.Util;
@@ -69,19 +67,7 @@ namespace UnityEngine.ResourceManagement.Profiling
 
         public override int GetHashCode()
         {
-#if UNITY_2022_2_OR_NEWER
             return HashCode.Combine(AssetCode.GetHashCode(), BundleCode.GetHashCode(), ReferenceCount.GetHashCode(), PercentComplete.GetHashCode(), Status.GetHashCode());
-#else
-            int hash = 17;
-            hash = hash * 31 + AssetCode.GetHashCode();
-            hash = hash * 31 + BundleCode.GetHashCode();
-            hash = hash * 31 + ReferenceCount.GetHashCode();
-            hash = hash * 31 + PercentComplete.GetHashCode();
-            hash = hash * 31 + Status.GetHashCode();
-            return hash;
-#endif
         }
     }
 }
-
-#endif

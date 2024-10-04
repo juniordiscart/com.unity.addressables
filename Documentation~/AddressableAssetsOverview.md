@@ -104,9 +104,9 @@ For information about hosting content remotely, refer to [Distributing content r
 
 ## Content builds
 
-The Addressables system separates the building of Addressable content from the build of your player. A content build produces the content catalog, catalog hash, and the AssetBundles containing your assets. 
+The Addressables system separates the building of Addressable content from the build of your player. A content build produces the content catalog, catalog hash, and the AssetBundles containing your assets.
 
-Because asset formats are platform-specific, you must make a content build for each platform before building a player. 
+Because asset formats are platform-specific, you must make a content build for each platform before building a player.
 
 Refer to [Building Addressable content](xref:addressables-builds) for more information.
 
@@ -125,5 +125,4 @@ The Addressables system provides the following tools and windows to help you man
 
 * [Addressable Groups window](xref:addressables-groups-window): The main interface for managing assets, group settings, and making builds.
 * [Profiles window](xref:addressables-profiles): Helps set up paths used by your builds.
-* [Hosting tool](xref:addressables-asset-hosting-services): Provides a simple asset hosting service that runs from the Editor to help development and testing of your project.
 * [Build layout report](xref:addressables-build-layout-report): Describes the AssetBundles produced by a content build.

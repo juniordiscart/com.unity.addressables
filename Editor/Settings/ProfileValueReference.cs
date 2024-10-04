@@ -35,13 +35,24 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>The evaluated string stored in the referenced profile variable.</returns>
         public string GetValue(AddressableAssetSettings settings)
         {
+            return GetValue(settings, true);
+        }
+
+        /// <summary>
+        /// Evaluate the profile value using the provided settings object.
+        /// </summary>
+        /// <param name="settings">The settings object to evaluate with.  The activeProfileId will be used.</param>
+        /// <param name="evaluateValue">Specify whether to evaluate the raw profile value.</param>
+        /// <returns>The string stored in the referenced profile variable.</returns>
+        public string GetValue(AddressableAssetSettings settings, bool evaluateValue)
+        {
             if (settings == null)
             {
                 Debug.LogWarning("ProfileValueReference: AddressableAssetSettings object is null.");
                 return null;
             }
 
-            return GetValue(settings.profileSettings, settings.activeProfileId);
+            return GetValue(settings.profileSettings, settings.activeProfileId, evaluateValue);
         }
 
         /// <summary>
@@ -51,6 +62,21 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="profileId">The profile id.</param>
         /// <returns>The evaluated string stored in the referenced profile variable.</returns>
         public string GetValue(AddressableAssetProfileSettings profileSettings, string profileId)
+        {
+            return GetValue(profileSettings, profileId, true);
+        }
+
+        /// <summary>
+        /// Return a profile value using the provided profile settings object and a profile id.
+        /// </summary>
+        /// <remarks>
+        /// This handles custom values that are stored as the id of the variable. 
+        /// </remarks>
+        /// <param name="profileSettings">The profile settings object.</param>
+        /// <param name="profileId">The profile id.</param>
+        /// <param name="evaluateValue">Specify whether to evaluate the raw profile value.</param>
+        /// <returns>The evaluated string stored in the referenced profile variable.</returns>
+        internal string GetValue(AddressableAssetProfileSettings profileSettings, string profileId, bool evaluateValue)
         {
             if (profileSettings == null)
             {
@@ -64,7 +90,22 @@ namespace UnityEditor.AddressableAssets.Settings
                 return null;
             }
 
-            return profileSettings.EvaluateString(profileId, profileSettings.GetValueById(profileId, m_Id));
+            var pathValue = Id;
+            if (pathValue == null || string.IsNullOrEmpty(pathValue))
+            {
+                Debug.LogWarning("ProfileValueReference: GetValue called with empty id.");
+                return null;
+            }
+            if (Guid.TryParse(pathValue, out var buildPathId))
+            {
+                pathValue = profileSettings.GetValueById(profileId, m_Id);
+            }
+            if (!evaluateValue)
+            {
+                return pathValue;
+            }
+            return profileSettings.EvaluateString(profileId, pathValue);
+
         }
 
         /// <summary>

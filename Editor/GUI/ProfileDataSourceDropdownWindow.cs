@@ -99,7 +99,6 @@ namespace UnityEditor.AddressableAssets.GUI
         public async override void OnOpen()
         {
             options.Add(new BuiltInOption());
-            options.Add(new EditorHostedOption());
             options.Add(new CCDOption());
             options.Add(new CustomOption());
 
@@ -180,7 +179,6 @@ namespace UnityEditor.AddressableAssets.GUI
                             switch (option.state)
                             {
                                 case DropdownState.BuiltIn:
-                                case DropdownState.EditorHosted:
                                     var args = new DropdownWindowEventArgs();
                                     args.GroupType = m_GroupType;
                                     args.Option = option;
@@ -373,7 +371,6 @@ namespace UnityEditor.AddressableAssets.GUI
 
                     break;
                 case DropdownState.BuiltIn:
-                case DropdownState.EditorHosted:
                 default:
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
                     SetCcdManagedDataState(CcdManagedData.ConfigState.None);
@@ -556,30 +553,14 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        internal class EditorHostedOption : BaseOption
-        {
-            internal EditorHostedOption()
-            {
-                OptionName = "Editor Hosted";
-                state = DropdownState.EditorHosted;
-                BuildPath = AddressableAssetSettings.kRemoteBuildPathValue;
-                LoadPath = AddressableAssetSettings.RemoteLoadPathValue;
-            }
-
-            internal override void Draw(Action action)
-            {
-                DrawMenuItem(OptionName, null, action);
-            }
-        }
-
         internal class CustomOption : BaseOption
         {
             internal CustomOption()
             {
                 OptionName = "Custom";
                 state = DropdownState.Custom;
-                BuildPath = null;
-                LoadPath = null;
+                BuildPath = AddressableAssetSettings.kRemoteBuildPathValue;
+                LoadPath = AddressableAssetSettings.kRemoteLoadPathValue;
             }
 
             internal override void Draw(Action action)

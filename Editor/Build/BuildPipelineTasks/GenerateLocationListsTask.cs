@@ -76,7 +76,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             if (aaContext.GuidToCatalogLocation == null)
                 aaContext.GuidToCatalogLocation = output.GuidToLocation;
-            else foreach (KeyValuePair<GUID,List<ContentCatalogDataEntry>> pair in output.GuidToLocation)
+            else
+                foreach (KeyValuePair<GUID, List<ContentCatalogDataEntry>> pair in output.GuidToLocation)
                 aaContext.GuidToCatalogLocation[pair.Key] = pair.Value;
 
             aaContext.assetGroupToBundles = output.AssetGroupToBundles;
@@ -291,7 +292,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                             entry.CreateCatalogEntries(locations, true, assetProvider, bEntry.ExpandedDependencies.Select(x => x.BundleName), null, input.AssetToAssetInfo, providerTypes,
                                 schema.IncludeAddressInCatalog, schema.IncludeGUIDInCatalog, schema.IncludeLabelsInCatalog, bEntry.AssetInternalIds);
                             if (indexAddedStart < locations.Count)
-                                guidToLocation.Add(assetGUID, locations.GetRange(indexAddedStart, locations.Count-indexAddedStart));
+                                guidToLocation.Add(assetGUID, locations.GetRange(indexAddedStart, locations.Count - indexAddedStart));
                         }
                     }
                 }
@@ -312,21 +313,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return output;
         }
 
-        /// <summary>
-        /// Runs the build task with a give context and write data.
-        /// </summary>
-        /// <param name="aaBuildContext">The addressables build context.</param>
-        /// <param name="writeData">The write data used to generate the location lists.</param>
-        /// <returns>The success or failure ReturnCode</returns>
-        [Obsolete("This method uses nonoptimized code. Use nonstatic version Run() instead.")]
-        public static ReturnCode Run(IAddressableAssetsBuildContext aaBuildContext, IBundleWriteData writeData)
-        {
-            var task = new GenerateLocationListsTask();
-            task.m_AaBuildContext = aaBuildContext;
-            task.m_WriteData = writeData;
-            return task.Run();
-        }
-
         internal static string GetBundleProviderName(AddressableAssetGroup group)
         {
             return group.GetSchema<BundledAssetGroupSchema>().GetBundleCachedProviderId();
@@ -342,7 +328,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             var bagSchema = group.GetSchema<BundledAssetGroupSchema>();
             if (bagSchema == null || bagSchema.LoadPath == null)
             {
-                Debug.LogError("Unable to determine load path for " + name + ". Check that your default group is not '" + AddressableAssetSettings.PlayerDataGroupName + "'");
+                Debug.LogError("Unable to determine load path for " + name + ".");
                 return string.Empty;
             }
 
@@ -354,7 +340,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             var bagSchema = group.GetSchema<BundledAssetGroupSchema>();
             if (bagSchema == null || loadPath == null)
             {
-                Debug.LogError("Unable to determine load path for " + name + ". Check that your default group is not '" + AddressableAssetSettings.PlayerDataGroupName + "'");
+                Debug.LogError("Unable to determine load path for " + name + ".");
                 return string.Empty;
             }
 

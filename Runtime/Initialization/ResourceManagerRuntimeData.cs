@@ -55,19 +55,6 @@ namespace UnityEngine.AddressableAssets.Initialization
             get { return m_CatalogLocations; }
         }
 
-        [FormerlySerializedAs("m_profileEvents")]
-        [SerializeField]
-        bool m_ProfileEvents;
-
-        /// <summary>
-        /// Flag to control whether the ResourceManager sends profiler events.
-        /// </summary>
-        public bool ProfileEvents
-        {
-            get { return m_ProfileEvents; }
-            set { m_ProfileEvents = value; }
-        }
-
         [FormerlySerializedAs("m_logResourceManagerExceptions")]
         [SerializeField]
         bool m_LogResourceManagerExceptions = true;

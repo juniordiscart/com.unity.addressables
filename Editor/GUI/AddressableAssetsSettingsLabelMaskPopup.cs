@@ -143,19 +143,19 @@ namespace UnityEditor.AddressableAssets.GUI
                 return new List<string>();
 
             int count;
-            var labels = new List<string>(m_Settings.labelTable.labelNames.Count);
+            var labels = new List<string>(m_Settings.labelTable.Count);
             List<string> disabledLabels = new List<string>();
-            for (int i = 0; i < m_Settings.labelTable.labelNames.Count; ++i)
+            for (int i = 0; i < m_Settings.labelTable.Count; ++i)
             {
                 if (m_LabelCount != null)
-                    m_LabelCount.TryGetValue(m_Settings.labelTable.labelNames[i], out count);
+                    m_LabelCount.TryGetValue(m_Settings.labelTable[i], out count);
                 else
-                    count = m_Entries[0].labels.Contains(m_Settings.labelTable.labelNames[i]) ? m_Entries.Count : 0;
+                    count = m_Entries[0].labels.Contains(m_Settings.labelTable[i]) ? m_Entries.Count : 0;
 
                 if (count > 0)
-                    labels.Add(m_Settings.labelTable.labelNames[i]);
+                    labels.Add(m_Settings.labelTable[i]);
                 else
-                    disabledLabels.Add(m_Settings.labelTable.labelNames[i]);
+                    disabledLabels.Add(m_Settings.labelTable[i]);
             }
 
             // find any labels that are not in settings
@@ -163,7 +163,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 foreach (string key in m_LabelCount.Keys)
                 {
-                    if (!m_Settings.labelTable.labelNames.Contains(key))
+                    if (!m_Settings.labelTable.Contains(key))
                         labels.Add(key);
                 }
             }
@@ -171,7 +171,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 foreach (string key in m_Entries[0].labels)
                 {
-                    if (!m_Settings.labelTable.labelNames.Contains(key))
+                    if (!m_Settings.labelTable.Contains(key))
                         labels.Add(key);
                 }
             }
@@ -286,7 +286,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     EditorGUI.showMixedValue = true;
                 UnityEngine.GUI.SetNextControlName(labelName);
 
-                bool labelIsInSettings = m_Settings.labelTable.labelNames.Contains(labelName);
+                bool labelIsInSettings = m_Settings.labelTable.Contains(labelName);
                 string label = labelIsInSettings ? labelName : AddressablesGUIUtility.ConvertTextToStrikethrough(labelName);
                 newState = EditorGUI.ToggleLeft(toggleRect, new GUIContent(label), oldState);
                 EditorGUI.showMixedValue = false;

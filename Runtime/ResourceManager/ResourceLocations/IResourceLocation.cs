@@ -60,4 +60,22 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         /// </summary>
         Type ResourceType { get; }
     }
+
+    /// <summary>
+    /// An IEqualityComparerer to check if two IResourceLocations are the same
+    /// </summary>
+    public class ResourceLocationComparer : IEqualityComparer<IResourceLocation>
+    {
+        /// <inheritdoc >
+        public bool Equals(IResourceLocation x, IResourceLocation y)
+        {
+            return GetHashCode(x) == GetHashCode(y);
+        }
+
+        /// <inheritdoc >
+        public int GetHashCode(IResourceLocation obj)
+        {
+            return obj.InternalId.GetHashCode() * 31 + obj.ResourceType.GetHashCode();
+        }
+    }
 }

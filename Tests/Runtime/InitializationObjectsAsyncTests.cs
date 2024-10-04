@@ -281,14 +281,6 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
         }
     }
 
-    class InitializationObjects_VirtualMode : InitializationObjectsAsyncTests
-    {
-        protected override TestBuildScriptMode BuildScriptMode
-        {
-            get { return TestBuildScriptMode.Virtual; }
-        }
-    }
-
     class InitializationObjects_PackedPlaymodeMode : InitializationObjectsAsyncTests
     {
         protected override TestBuildScriptMode BuildScriptMode

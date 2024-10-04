@@ -652,8 +652,8 @@ namespace UnityEditor.AddressableAssets.Build
         {
             // we need the "unresolved" value since we're tring to match it to its original type
             Debug.Log("Loading from active profile id " + settings.activeProfileId);
-            var buildPathValue = settings.profileSettings.GetValueById(settings.activeProfileId, buildPath.Id);
-            var loadPathValue = settings.profileSettings.GetValueById(settings.activeProfileId, loadPath.Id);
+            var buildPathValue = buildPath.GetValue(settings, false);
+            var loadPathValue = loadPath.GetValue(settings, false);
             Debug.Log(loadPathValue);
             if (buildPathValue == null || loadPathValue == null)
             {
@@ -783,28 +783,17 @@ namespace UnityEditor.AddressableAssets.Build
 
         int StartProgress(string description)
         {
-#if UNITY_2020_1_OR_NEWER
             return Progress.Start("CCD", description, Progress.Options.Managed);
-#else
-            Debug.Log(description);
-            return -1;
-#endif
         }
 
         void RemoveProgress(int progressId)
         {
-#if UNITY_2020_1_OR_NEWER
             Progress.Remove(progressId);
-#endif
         }
 
         void ReportProgress(int progressId, float progress, string message)
         {
-#if UNITY_2020_1_OR_NEWER
             Progress.Report(progressId, progress, message);
-#else
-            Debug.Log($"[{progress}] {message}");
-#endif
         }
 
         // Do not use Addressable.Log in this method as it may not be executed on the main thread

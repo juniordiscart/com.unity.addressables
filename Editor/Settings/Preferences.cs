@@ -6,9 +6,8 @@ namespace UnityEditor.AddressableAssets
 {
     internal static class AddressablesPreferences
     {
-#if UNITY_2021_2_OR_NEWER
         internal const string kBuildAddressablesWithPlayerBuildKey = "Addressables.BuildAddressablesWithPlayerBuild";
-#endif
+
         private class GUIScope : UnityEngine.GUI.Scope
         {
             float m_LabelWidth;
@@ -42,23 +41,14 @@ namespace UnityEditor.AddressableAssets
             public static readonly GUIContent buildLayoutReport = EditorGUIUtility.TrTextContent("Debug Build Layout",
                 $"A debug build layout file will be generated as part of the build process. The file will put written to {BuildLayoutGenerationTask.m_LayoutFilePath}");
 
-            #if UNITY_2022_2_OR_NEWER
             internal static readonly GUIContent autoOpenAddressablesReport = EditorGUIUtility.TrTextContent("Open Addressables Report after build");
-            #endif
+
             public static readonly GUIContent buildLayoutReportFileFormat = EditorGUIUtility.TrTextContent("File Format", $"The file format of the debug build layout file.");
-#if UNITY_2021_2_OR_NEWER
+
             public static readonly GUIContent playerBuildSettings = EditorGUIUtility.TrTextContent("Player Build Settings");
 
             public static readonly GUIContent enableAddressableBuildPreprocessPlayer = EditorGUIUtility.TrTextContent("Build Addressables on build Player",
                 $"If enabled, will perform a new Addressables build before building a Player. Addressable Asset Settings value can override the user global preferences.");
-#endif
-
-#if !ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
-            public static readonly GUIContent installProfilingCoreHelp = EditorGUIUtility.TrTextContent("In order to run Addressables profiler using the debug layout. Profiling.Core package is required for etc. Install now?",
-                $"Profiling.Core is needed to transmit and display data from the runtime.");
-            public static readonly GUIContent installProfilingCoreButton = EditorGUIUtility.TrTextContent("Install now",
-                $"Enables Profiling.Core package in this project");
-#endif
         }
 
         static AddressablesPreferences()
@@ -94,28 +84,13 @@ namespace UnityEditor.AddressableAssets
                 int formatNewIndex = EditorGUILayout.Popup(Properties.buildLayoutReportFileFormat, formatOldIndex, new[] {"TXT and JSON", "JSON"});
                 if (formatNewIndex != formatOldIndex)
                     ProjectConfigData.BuildLayoutReportFileFormat = (ProjectConfigData.ReportFileFormat)formatNewIndex;
-                EditorGUI.indentLevel--;
 
-#if UNITY_2022_2_OR_NEWER
-                EditorGUI.indentLevel++;
                 ProjectConfigData.AutoOpenAddressablesReport = EditorGUILayout.Toggle(Properties.autoOpenAddressablesReport, ProjectConfigData.AutoOpenAddressablesReport);
                 EditorGUI.indentLevel--;
-#endif
             }
-
-#if !ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
-            GUILayout.Space(15);
-            EditorGUILayout.HelpBox(Properties.installProfilingCoreHelp);
-            var rect = EditorGUILayout.GetControlRect();
-            if (UnityEngine.GUI.Button(rect, Properties.installProfilingCoreButton))
-            {
-                UnityEditor.PackageManager.Client.Add("com.unity.profiling.core@1.0.2");
-            }
-#endif
 
             GUILayout.Space(15);
 
-#if UNITY_2021_2_OR_NEWER
             bool buildWithPlayerValue = EditorPrefs.GetBool(kBuildAddressablesWithPlayerBuildKey, true);
 
             GUILayout.Label(Properties.playerBuildSettings, EditorStyles.boldLabel);
@@ -146,7 +121,6 @@ namespace UnityEditor.AddressableAssets
                     }
                 }
             }
-#endif
         }
     }
 }

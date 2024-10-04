@@ -1,5 +1,3 @@
-#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
-
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -197,5 +195,3 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         }
     }
 }
-
-#endif

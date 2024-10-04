@@ -14,9 +14,7 @@ Content built using Addressables only references other assets built in that Addr
 
 To convert your project to Addressables, you need to perform different steps depending on how your current project references and loads assets:
 
-* __Scene data__: Assets you add directly to a scene or to a component in a scene, which the application loads automatically. Unity packages serialized scene data and the assets that a scene directly references into a single archive that it includes in your built player application. For information on how to upgrade scene data to Addressables, refer to [Convert scene data](#convert-scene-data).
 * __Prefabs__: Assets you create using GameObjects and components, and save outside a Scene. For information on how to upgrade prefab data to Addressables, refer to [Convert prefabs](#convert-prefabs).
-* __Resources folders__: Assets you place in your project’s Resources folders and load using the `Resources` API. Unity packages assets in Resources files into a single archive that it includes in your built player application. The Resources archive is separate from the scene data archive. For information on how to upgrade the Resources folder to Addressables, refer to [Convert the Resources folder](#convert-the-resources-folder).
 * __AssetBundles__: Assets you package in AssetBundles and load with the `AssetBundle` API. For information on how to upgrade AssetBundles to Addressables, refer to [Convert AssetBundles](#convert-assetbundles)
 * __StreamingAssets__: Files you place in the `StreamingAssets` folder. Unity includes any files in the `StreamingAssets` folder in your built player application as is. For information, refer to [Files in StreamingAssets](#files-in-streamingassets)
 
@@ -67,7 +65,7 @@ To convert a prefab into an Addressable asset, enable the __Addressables__ optio
 You don't always need to make prefabs Addressable when used in an Addressable scene. Addressables automatically includes prefabs that you add to the scene hierarchy as part of the data contained in the scene's AssetBundle. If you use a prefab in more than one scene, make the prefab into an Addressable asset so that the prefab data isn't duplicated in each scene that uses it. You must also make a prefab Addressable if you want to load and instantiate it dynamically at runtime.
 
 > [!NOTE]
-> If you use a Prefab in a non-Addressable Scene, Unity copies the Prefab data into the built-in Scene data whether the Prefab is Addressable or not. You can identify assets duplicated between your Addressable asset groups and your non-Addressable Scene data using the __Check Scene to Addressable Duplicate Dependencies__ rule in the [Analyze tool]. 
+> If you use a Prefab in a non-Addressable Scene, Unity copies the Prefab data into the built-in Scene data whether the Prefab is Addressable or not.
 
 ## Convert the Resources folder
 

@@ -62,7 +62,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
         else if (defaultContentUpdateSchema.StaticContent)
         {
             // cannot detect individual shader usage, so just assume that the shaders haven't changed, and just indeterminisn.
-            if (!RevertBundleByNameContains("_unitybuiltinshaders", updateContext, aaContext))
+            if (!RevertBundleByNameContains(BuildScriptBase.BuiltInBundleBaseName, updateContext, aaContext))
                 return ReturnCode.Error;
             // Scripts could have been added and fail, or removed and load fine, not enough information to know
             if (!RevertBundleByNameContains("_monoscripts", updateContext, aaContext))

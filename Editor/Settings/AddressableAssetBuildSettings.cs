@@ -14,40 +14,6 @@ namespace UnityEditor.AddressableAssets.Settings
     [Serializable]
     public class AddressableAssetBuildSettings
     {
-        /// <summary>
-        /// Controls whether to compile scripts when running in virtual mode.  When disabled, build times are faster but the simulated bundle contents may not be accurate due to including editor code.
-        /// </summary>
-        public bool compileScriptsInVirtualMode
-        {
-            get { return m_CompileScriptsInVirtualMode; }
-            set
-            {
-                m_CompileScriptsInVirtualMode = value;
-                SetDirty();
-            }
-        }
-
-        [FormerlySerializedAs("m_compileScriptsInVirtualMode")]
-        [SerializeField]
-        bool m_CompileScriptsInVirtualMode;
-
-        /// <summary>
-        /// Controls whether to remove temporary files after each build.  When disabled, build times in packed mode are faster, but may not reflect all changes in assets.
-        /// </summary>
-        public bool cleanupStreamingAssetsAfterBuilds
-        {
-            get { return m_CleanupStreamingAssetsAfterBuilds; }
-            set
-            {
-                m_CleanupStreamingAssetsAfterBuilds = value;
-                SetDirty();
-            }
-        }
-
-        [FormerlySerializedAs("m_cleanupStreamingAssetsAfterBuilds")]
-        [SerializeField]
-        bool m_CleanupStreamingAssetsAfterBuilds = true;
-
         [FormerlySerializedAs("m_logResourceManagerExceptions")]
         [SerializeField]
         bool m_LogResourceManagerExceptions = true;

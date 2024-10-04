@@ -1,6 +1,4 @@
-#if UNITY_2022_2_OR_NEWER
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -474,6 +472,4 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_TreeView.Rebuild();
         }
     }
-
 }
-#endif

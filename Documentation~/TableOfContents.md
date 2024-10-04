@@ -66,7 +66,6 @@
   * [Remote content AssetBundle caching](remote-content-assetbundle-cache.md)
   * [Pre-download remote content](remote-content-predownload.md)
   * [Use Addressables with Cloud Content Delivery](AddressablesCCD.md)
-  * [Editor asset hosting services](AddressableAssetsHostingServices.md)
 * [Use Addressables at runtime](RuntimeAddressables.md)
   * [Addressables initialization](InitializeAsync.md)
   * [Memory management overview](MemoryManagement.md)

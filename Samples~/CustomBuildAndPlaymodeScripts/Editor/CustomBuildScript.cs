@@ -99,13 +99,12 @@ public class CustomBuildScript : BuildScriptBase
         {
             CertificateHandlerType = aaSettings.CertificateHandlerType,
             BuildTarget = builderInput.Target.ToString(),
-            ProfileEvents = builderInput.ProfilerEventsEnabled,
             LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions,
             DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup,
+#if ENABLE_JSON_CATALOG
             IsLocalCatalogInBundle = aaSettings.BundleLocalCatalog,
-#if UNITY_2019_3_OR_NEWER
-            AddressablesVersion = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version,
 #endif
+            AddressablesVersion = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly)?.version,
             MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests,
             CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout
         };
@@ -152,16 +151,16 @@ public class CustomBuildScript : BuildScriptBase
     internal static string GetBuiltInShaderBundleNamePrefix(AddressableAssetSettings settings)
     {
         string value = "";
-        switch (settings.ShaderBundleNaming)
+        switch (settings.BuiltInBundleNaming)
         {
-            case ShaderBundleNaming.DefaultGroupGuid:
+            case BuiltInBundleNaming.DefaultGroupGuid:
                 value = settings.DefaultGroup.Guid;
                 break;
-            case ShaderBundleNaming.ProjectName:
+            case BuiltInBundleNaming.ProjectName:
                 value = Hash128.Compute(GetProjectName()).ToString();
                 break;
-            case ShaderBundleNaming.Custom:
-                value = settings.ShaderBundleCustomNaming;
+            case BuiltInBundleNaming.Custom:
+                value = settings.BuiltInBundleCustomNaming;
                 break;
         }
 
@@ -234,7 +233,7 @@ public class CustomBuildScript : BuildScriptBase
                 buildTargetGroup,
                 aaContext.Settings.buildSettings.bundleBuildPath);
 
-            var builtinShaderBundleName = GetBuiltInShaderBundleNamePrefix(aaContext) + "_unitybuiltinshaders.bundle";
+            var builtinBundleName = GetBuiltInShaderBundleNamePrefix(aaContext) + $"{BuiltInBundleBaseName}.bundle";
 
             var schema = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>();
             AddBundleProvider(schema);
@@ -242,7 +241,7 @@ public class CustomBuildScript : BuildScriptBase
             string monoScriptBundleName = GetMonoScriptBundleNamePrefix(aaContext);
             if (!string.IsNullOrEmpty(monoScriptBundleName))
                 monoScriptBundleName += "_monoscripts.bundle";
-            var buildTasks = RuntimeDataBuildTasks(builtinShaderBundleName, monoScriptBundleName);
+            var buildTasks = RuntimeDataBuildTasks(builtinBundleName, monoScriptBundleName);
             buildTasks.Add(extractData);
 
             IBundleBuildResults results;
@@ -281,8 +280,9 @@ public class CustomBuildScript : BuildScriptBase
                             outputBundles.Add(b >= 0 ? m_OutputAssetBundleNames[b] : buildBundles[i]);
                         }
 
+                        AddressableAssetGroup sharedBundleGroup = aaContext.Settings.GetSharedBundleGroup();
                         PostProcessBundles(assetGroup, buildBundles, outputBundles, results, aaContext.runtimeData, aaContext.locations, builderInput.Registry, primaryKeyToCatalogEntry,
-                            bundleRenameMap, postCatalogUpdateCallbacks);
+                            bundleRenameMap, postCatalogUpdateCallbacks, sharedBundleGroup);
                     }
                 }
             }
@@ -295,12 +295,7 @@ public class CustomBuildScript : BuildScriptBase
             {
                 var resultValue = r.Value;
                 m_Linker.AddTypes(resultValue.includedTypes);
-#if UNITY_2021_1_OR_NEWER
                 m_Linker.AddSerializedClass(resultValue.includedSerializeReferenceFQN);
-#else
-                if (resultValue.GetType().GetProperty("includedSerializeReferenceFQN") != null)
-                    m_Linker.AddSerializedClass(resultValue.GetType().GetProperty("includedSerializeReferenceFQN").GetValue(resultValue) as System.Collections.Generic.IEnumerable<string>);
-#endif
             }
 
 
@@ -498,6 +493,7 @@ public class CustomBuildScript : BuildScriptBase
         string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + builderInput.RuntimeCatalogFilename;
         m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, builderInput.RuntimeCatalogFilename);
 
+#if ENABLE_JSON_CATALOG
         if (aaContext.Settings.BundleLocalCatalog)
         {
             localLoadPath = localLoadPath.Replace(".json", ".bundle");
@@ -510,8 +506,10 @@ public class CustomBuildScript : BuildScriptBase
             }
         }
         else
+#endif 
         {
             WriteFile(m_CatalogBuildPath, jsonText, builderInput.Registry);
+            WriteFile(m_CatalogBuildPath.Replace(".json", ".hash"), HashingMethods.Calculate(jsonText).ToString(), builderInput.Registry);
         }
 
         string[] dependencyHashes = null;
@@ -620,7 +618,7 @@ public class CustomBuildScript : BuildScriptBase
                 string convertedLocation = bundleNameToInternalBundleIdMap[fullBundleName];
 
                 if (locationIdToCatalogEntryMap.TryGetValue(convertedLocation,
-                        out ContentCatalogDataEntry catalogEntry))
+                    out ContentCatalogDataEntry catalogEntry))
                 {
                     loc.BundleFileId = catalogEntry.InternalId;
 
@@ -649,8 +647,8 @@ public class CustomBuildScript : BuildScriptBase
         if (assetGroup.Schemas.Count == 0)
         {
             Addressables.LogWarning($"{assetGroup.Name} does not have any associated AddressableAssetGroupSchemas. " +
-                                    $"Data from this group will not be included in the build. " +
-                                    $"If this is unexpected the AddressableGroup may have become corrupted.");
+                $"Data from this group will not be included in the build. " +
+                $"If this is unexpected the AddressableGroup may have become corrupted.");
             return string.Empty;
         }
 
@@ -675,29 +673,9 @@ public class CustomBuildScript : BuildScriptBase
     /// <returns></returns>
     protected virtual string ProcessGroupSchema(AddressableAssetGroupSchema schema, AddressableAssetGroup assetGroup, AddressableAssetsBuildContext aaContext)
     {
-        var playerDataSchema = schema as PlayerDataGroupSchema;
-        if (playerDataSchema != null)
-            return ProcessPlayerDataSchema(playerDataSchema, assetGroup, aaContext);
         var bundledAssetSchema = schema as BundledAssetGroupSchema;
         if (bundledAssetSchema != null)
             return ProcessBundledAssetSchema(bundledAssetSchema, assetGroup, aaContext);
-        return string.Empty;
-    }
-
-    internal string ProcessPlayerDataSchema(
-        PlayerDataGroupSchema schema,
-        AddressableAssetGroup assetGroup,
-        AddressableAssetsBuildContext aaContext)
-    {
-        if (CreateLocationsForPlayerData(schema, assetGroup, aaContext.locations, aaContext.providerTypes))
-        {
-            if (!m_CreatedProviderIds.Contains(typeof(LegacyResourcesProvider).Name))
-            {
-                m_CreatedProviderIds.Add(typeof(LegacyResourcesProvider).Name);
-                m_ResourceProviderData.Add(ObjectInitializationData.CreateSerializedInitializationData(typeof(LegacyResourcesProvider)));
-            }
-        }
-
         return string.Empty;
     }
 
@@ -731,13 +709,19 @@ public class CustomBuildScript : BuildScriptBase
             m_ResourceProviderData.Add(assetProviderData);
         }
 
-#if UNITY_2022_1_OR_NEWER
-           string loadPath = schema.LoadPath.GetValue(aaContext.Settings);
-           if (loadPath.StartsWith("http://", StringComparison.Ordinal) && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
-                Addressables.LogWarning($"Addressable group {assetGroup.Name} uses insecure http for its load path.  To allow http connections for UnityWebRequests, change your settings in Edit > Project Settings > Player > Other Settings > Configuration > Allow downloads over HTTP.");
-#endif
+        string buildPath = schema.BuildPath.GetValue(aaContext.Settings);
+        if (buildPath == AddressableAssetProfileSettings.undefinedEntryValue)
+            return ($"Addressable group {assetGroup.Name} build path is set to undefined. Change the path to build content.");
+
+        string loadPath = schema.LoadPath.GetValue(aaContext.Settings);
+        if (loadPath == AddressableAssetProfileSettings.undefinedEntryValue)
+            Addressables.LogWarning($"Addressable group {assetGroup.Name} load path is set to undefined. Change the path to load content.");
+
+        if (loadPath.StartsWith("http://", StringComparison.Ordinal) && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
+            Addressables.LogWarning($"Addressable group {assetGroup.Name} uses insecure http for its load path.  To allow http connections for UnityWebRequests, change your settings in Edit > Project Settings > Player > Other Settings > Configuration > Allow downloads over HTTP.");
+
         if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && aaContext.runtimeData.BuildTarget == BuildTarget.WebGL.ToString())
-            Addressables.LogWarning($"Addressable group {assetGroup.Name} uses LZMA compression, which cannot be decompressed on WebGL. Use LZ4 compression instead.");
+        Addressables.LogWarning($"Addressable group {assetGroup.Name} uses LZMA compression, which cannot be decompressed on WebGL. Use LZ4 compression instead.");
 
         var bundleInputDefs = new List<AssetBundleBuild>();
         var list = PrepGroupBundlePacking(assetGroup, bundleInputDefs, schema);
@@ -784,8 +768,8 @@ public class CustomBuildScript : BuildScriptBase
     {
         var message = string.Empty;
 
-        string buildPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.BuildPath.Id);
-        string loadPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.LoadPath.Id);
+        string buildPath = schema.BuildPath.GetValue(settings, false);
+        string loadPath = schema.LoadPath.GetValue(settings, false);
 
         bool buildLocal = buildPath.Contains("[UnityEngine.AddressableAssets.Addressables.BuildPath]");
         bool loadLocal = loadPath.Contains("{UnityEngine.AddressableAssets.Addressables.RuntimePath}");
@@ -797,7 +781,7 @@ public class CustomBuildScript : BuildScriptBase
         else if (!buildLocal && loadLocal)
         {
             message = "LoadPath for group " + assetGroup.Name +
-                      " is set to the dynamic-lookup version of StreamingAssets, but BuildPath is not. These paths must both use the dynamic-lookup, or both not use it. \n";
+                " is set to the dynamic-lookup version of StreamingAssets, but BuildPath is not. These paths must both use the dynamic-lookup, or both not use it. \n";
         }
 
         if (!string.IsNullOrEmpty(message))
@@ -860,7 +844,7 @@ public class CustomBuildScript : BuildScriptBase
                 combinedEntries.AddRange(allEntries);
                 GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), "all", ignoreUnsupportedFilesInBuild);
             }
-                break;
+            break;
             case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
             {
                 foreach (AddressableAssetEntry a in assetGroup.entries)
@@ -873,7 +857,7 @@ public class CustomBuildScript : BuildScriptBase
                     GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), a.address, ignoreUnsupportedFilesInBuild);
                 }
             }
-                break;
+            break;
             case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
             {
                 var labelTable = new Dictionary<string, List<AddressableAssetEntry>>();
@@ -905,7 +889,7 @@ public class CustomBuildScript : BuildScriptBase
                     GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), entryGroup.Key, ignoreUnsupportedFilesInBuild);
                 }
             }
-                break;
+            break;
             default:
                 throw new Exception("Unknown Packing Mode");
         }
@@ -1014,7 +998,7 @@ public class CustomBuildScript : BuildScriptBase
     // and isn't needed for most tests.
     internal static bool s_SkipCompilePlayerScripts = false;
 
-    static IList<IBuildTask> RuntimeDataBuildTasks(string builtinShaderBundleName, string monoScriptBundleName)
+    static IList<IBuildTask> RuntimeDataBuildTasks(string buildInBundleName, string monoScriptBundleName)
     {
         var buildTasks = new List<IBuildTask>();
 
@@ -1032,7 +1016,7 @@ public class CustomBuildScript : BuildScriptBase
         buildTasks.Add(new CalculateAssetDependencyData());
         buildTasks.Add(new AddHashToBundleNameTask());
         buildTasks.Add(new StripUnusedSpriteSources());
-        buildTasks.Add(new CreateBuiltInShadersBundle(builtinShaderBundleName));
+        buildTasks.Add(new CreateBuiltInBundle(buildInBundleName));
         if (!string.IsNullOrEmpty(monoScriptBundleName))
             buildTasks.Add(new CreateMonoScriptBundle(monoScriptBundleName));
         buildTasks.Add(new PostDependencyCallback());
@@ -1078,7 +1062,7 @@ public class CustomBuildScript : BuildScriptBase
 
     void PostProcessBundles(AddressableAssetGroup assetGroup, List<string> buildBundles, List<string> outputBundles, IBundleBuildResults buildResult, ResourceManagerRuntimeData runtimeData,
         List<ContentCatalogDataEntry> locations, FileRegistry registry, Dictionary<string, ContentCatalogDataEntry> primaryKeyToCatalogEntry, Dictionary<string, string> bundleRenameMap,
-        List<Action> postCatalogUpdateCallbacks)
+        List<Action> postCatalogUpdateCallbacks, AddressableAssetGroup sharedBundleGroup)
     {
         var schema = assetGroup.GetSchema<BundledAssetGroupSchema>();
         if (schema == null)
@@ -1110,8 +1094,8 @@ public class CustomBuildScript : BuildScriptBase
                 };
                 dataEntry.Data = requestOptions;
 
-                if (assetGroup == assetGroup.Settings.DefaultGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) &&
-                    (info.FileName.EndsWith("_unitybuiltinshaders.bundle", StringComparison.Ordinal) || info.FileName.EndsWith("_monoscripts.bundle", StringComparison.Ordinal)))
+                if (assetGroup == sharedBundleGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) &&
+                    (info.FileName.EndsWith($"{BuiltInBundleBaseName}.bundle", StringComparison.Ordinal) || info.FileName.EndsWith("_monoscripts.bundle", StringComparison.Ordinal)))
                 {
                     outputBundles[i] = ConstructAssetBundleName(null, schema, info, outputBundles[i]);
                 }
@@ -1276,9 +1260,8 @@ public class CustomBuildScript : BuildScriptBase
     {
         var settingsPath = Addressables.BuildPath + "/settings.json";
         return !String.IsNullOrEmpty(m_CatalogBuildPath) &&
-               File.Exists(m_CatalogBuildPath) &&
-               File.Exists(settingsPath);
+            File.Exists(m_CatalogBuildPath) &&
+            File.Exists(settingsPath);
     }
 }
 #endif
-

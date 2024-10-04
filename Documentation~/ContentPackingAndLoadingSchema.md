@@ -43,7 +43,7 @@ When you choose a Profile variable, a preview of the path is displayed in the __
 |__Use UnityWebRequest for Local Asset Bundles__|Enable this property to load local AssetBundle archives from this group using [`UnityWebRequestAssetBundle.GetAssetBundle`](xref:UnityEngine.Networking.UnityWebRequest.GetAssetBundle(System.String,System.UInt32)) instead of [`AssetBundle.LoadFromFileAsync`](xref:UnityEngine.AssetBundle.LoadFromFileAsync(System.String,System.UInt32,System.UInt64)). |
 | __Request Timeout__| The timeout interval for downloading remote bundles. |
 | __Use Http Chunked Transfer__| Enable this property to use the HTTP/1.1 chunked-transfer encoding method when downloading bundles. <br/><br/> Deprecated and ignored in Unity 2019.3+. |
-| __Http Redirect Limit__| The number of redirects allowed when downloading bundles. Set to -1 for no limit. |
+| __Http Redirect Limit__| The number of redirects allowed when downloading bundles. |
 | __Retry Count__| The number of times to retry failed downloads. |
 |__Include Addresses in Catalog__|Enable this property to include the address strings in the catalog. If you don't load assets in the group using their address strings, you can disable this property to decrease the size of the catalog.|
 |__Include GUIDs in Catalog__|Enable this property to include GUID strings in the catalog. You must include GUID strings to access an asset with an [`AssetReference`](xref:addressables-asset-references). If you don't load assets in the group using an `AssetReference` or GUID strings, you can disable this property to decrease the size of the catalog.|

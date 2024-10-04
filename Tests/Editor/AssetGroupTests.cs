@@ -64,8 +64,8 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             const string guid = "0000";
             const string address = "not/a/real/address";
-            AddressableAssetGroup group1 = Settings.CreateGroup("group1", false, false, true, null, new Type[] { });
-            AddressableAssetGroup group2 = Settings.CreateGroup("group2", false, false, true, null, new Type[] { });
+            AddressableAssetGroup group1 = Settings.CreateGroup("group1", false, false, true, null, new Type[] {});
+            AddressableAssetGroup group2 = Settings.CreateGroup("group2", false, false, true, null, new Type[] {});
 
             //We're making 2 identical enteries.  This is to simulate each group having it's own copy of an AA Entry that references the same object.
             //If we use the same object the call to AddAssetEntry won't give us the state we're looking for.
@@ -93,7 +93,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void RemoveEntries_InvokesModificationNotification()
         {
-            AddressableAssetGroup group1 = Settings.CreateGroup("group1", false, false, true, null, new Type[] { });
+            AddressableAssetGroup group1 = Settings.CreateGroup("group1", false, false, true, null, new Type[] {});
 
             List<AddressableAssetEntry> entries = new List<AddressableAssetEntry>();
             for (int i = 0; i < 10; i++)
@@ -134,7 +134,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CannotSetInvalidGroupAsDefault()
         {
-            AddressableAssetGroup group1 = Settings.CreateGroup("group1", false, true, true, null, new Type[] { });
+            AddressableAssetGroup group1 = Settings.CreateGroup("group1", false, true, true, null, new Type[] {});
             LogAssert.Expect(LogType.Error, "Unable to set " + group1.Name + " as the Default Group.  Default Groups must not be ReadOnly.");
             Settings.DefaultGroup = group1;
             Assert.AreNotEqual(Settings.DefaultGroup, group1);
@@ -184,42 +184,6 @@ namespace UnityEditor.AddressableAssets.Tests
             //Cleanup
             Settings.DefaultGroup = oldDefault;
             Settings.RemoveGroup(group1);
-        }
-
-        [Test]
-        public void ResourcesEntry_AddsCorrectTreeViewItem_ForSubobjects()
-        {
-            using (new HideResourceFoldersScope())
-            {
-                //Setup
-                string assetPath = "SubFolder/Cube.prefab";
-                int builtInPackagesResourcesCount = ResourcesTestUtility.GetResourcesEntryCount(Settings, true);
-                CreatePrefabInResourcesSubFolder(assetPath);
-                AddressableAssetEntryTreeView treeView = new AddressableAssetEntryTreeView(
-                    new TreeViewState(),
-                    new MultiColumnHeaderState(new MultiColumnHeaderState.Column[2]),
-                    new AddressableAssetsSettingsGroupEditor(new AddressableAssetsWindow()));
-
-                //Test
-                AddressableAssetEntry entry = Settings.FindAssetEntry("Resources");
-                AssetEntryTreeViewItem treeViewItem = new AssetEntryTreeViewItem(entry, 0);
-                treeView.RecurseEntryChildren(entry, treeViewItem, 0);
-
-                //Assert
-                Assert.AreEqual(1 + builtInPackagesResourcesCount, treeViewItem.children.Count);
-                Assert.AreEqual(assetPath.Replace(".prefab", ""), treeViewItem.children[0].displayName);
-
-                //Cleanup
-                AssetDatabase.DeleteAsset("Assets/Resources/");
-            }
-        }
-
-        void CreatePrefabInResourcesSubFolder(string subFolderAssetPath)
-        {
-            string path = $"Assets/Resources/{subFolderAssetPath}";
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            GameObject go = new GameObject();
-            PrefabUtility.SaveAsPrefabAsset(go, path);
         }
     }
 }

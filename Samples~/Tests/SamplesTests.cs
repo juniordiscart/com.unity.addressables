@@ -71,14 +71,6 @@ namespace Addressables.SamplesTests
         }
     }
 
-    class SamplesTests_VirtualMode : SamplesTests
-    {
-        protected override TestBuildScriptMode BuildScriptMode
-        {
-            get { return TestBuildScriptMode.Virtual; }
-        }
-    }
-
     class SamplesTests_PackedPlaymodeMode : SamplesTests
     {
         protected override TestBuildScriptMode BuildScriptMode

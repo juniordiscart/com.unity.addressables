@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets;
@@ -53,13 +53,11 @@ namespace Tests.Editor
             testSettings = AddressableAssetSettings.Create("AddressableAnalyticsTests", "AddressableAnalyticsTestSettings", false, false);
             var buildScriptPackedMode = ScriptableObject.CreateInstance<BuildScriptPackedMode>();
             var buildScriptPackedPlayMode = ScriptableObject.CreateInstance<BuildScriptPackedPlayMode>();
-            var buildScriptVirtualMode = ScriptableObject.CreateInstance<BuildScriptVirtualMode>();
             var buildScriptFastMode = ScriptableObject.CreateInstance<BuildScriptFastMode>();
             var customBuildScript = ScriptableObject.CreateInstance<BuildScriptTests.BuildScriptTestClass>();
 
             testSettings.AddDataBuilder(buildScriptPackedMode);
             testSettings.AddDataBuilder(buildScriptFastMode);
-            testSettings.AddDataBuilder(buildScriptVirtualMode);
             testSettings.AddDataBuilder(buildScriptPackedPlayMode);
             testSettings.AddDataBuilder(customBuildScript);
 
@@ -283,33 +281,41 @@ namespace Tests.Editor
             var oldActivePlayModeBuildScriptIndex = ProjectConfigData.ActivePlayModeIndex;
             try
             {
-                //PackedMode
-                ProjectConfigData.ActivePlayModeIndex = 1;
+                //ADBMode
+                ProjectConfigData.ActivePlayModeIndex = GetDataBuilderIndexForType(typeof(BuildScriptFastMode));
                 builderInput.IsBuildAndRelease = false;
                 builderInput.IsContentUpdateBuild = false;
                 var buildData1 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.CleanBuild);
                 Assert.IsTrue(buildData1.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
-                Assert.AreEqual(2, buildData1.BuildScript, "Fast Mode should correspond to a BuildData.BuildScript value of 2.");
-                //FastMode
-                ProjectConfigData.ActivePlayModeIndex = 2;
+                int expected = (int)AddressableAnalytics.BuildScriptType.FastMode;
+                Assert.AreEqual(expected, buildData1.BuildScript, $"Fast Mode should correspond to a BuildData.BuildScript value of {expected}.");
+                //PackedPlayMode
+                ProjectConfigData.ActivePlayModeIndex = GetDataBuilderIndexForType(typeof(BuildScriptPackedPlayMode));
                 var buildData2 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.CleanBuild);
                 Assert.IsTrue(buildData2.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
-                Assert.AreEqual(3, buildData2.BuildScript, "Virtual mode should correspond to a BuildData.BuildScript value of 3.");
-                //VirtualMode
-                ProjectConfigData.ActivePlayModeIndex = 3;
-                var buildData3 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.CleanBuild);
-                Assert.IsTrue(buildData3.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
-                Assert.AreEqual(1, buildData3.BuildScript, "Packed PlayMode should correspond to a BuildData.BuildScript value of 1.");
+                expected = (int)AddressableAnalytics.BuildScriptType.PackedPlayMode;
+                Assert.AreEqual(expected, buildData2.BuildScript, $"PackedPlayMode mode should correspond to a BuildData.BuildScript value of {expected}.");
                 //Custom
-                ProjectConfigData.ActivePlayModeIndex = 4;
+                ProjectConfigData.ActivePlayModeIndex = testSettings.DataBuilders.Count;
                 var buildData4 = AddressableAnalytics.GenerateBuildData(builderInput, CreateTestResult(0, true, null), AddressableAnalytics.BuildType.CleanBuild);
                 Assert.IsTrue(buildData4.IsPlayModeBuild, "IsPlayModeBuild should be true for play mode builds");
-                Assert.AreEqual(4, buildData4.BuildScript, "A custom build script should correspond to a BuildData.BuildScript value of 4.");
+                expected = (int)AddressableAnalytics.BuildScriptType.CustomBuildScript;
+                Assert.AreEqual(expected, buildData4.BuildScript, $"Custom build scripts should correspond to a BuildData.BuildScript value of {expected}.");
             }
             finally
             {
                 ProjectConfigData.ActivePlayModeIndex = oldActivePlayModeBuildScriptIndex;
             }
+        }
+
+        int GetDataBuilderIndexForType(System.Type t)
+        {
+            for (int i = 0; i < testSettings.DataBuilders.Count; ++i)
+            {
+                if (testSettings.DataBuilders[i].GetType() == t)
+                    return i;
+            }
+            return testSettings.DataBuilders.Count;
         }
 
         [Test]

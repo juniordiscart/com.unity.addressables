@@ -1,15 +1,11 @@
-#if UNITY_2020_1_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
 using Debug = UnityEngine.Debug;
 
@@ -277,6 +273,39 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        [TestCase(
+    "Assets/Test/Folder/a/b/c/d/123234.json",
+    "Assets/Test/Folder/a/b/c/d/123235.json",
+    "Assets/Test/Folder/a/b/c/d/123236.json",
+    "Assets/Test/Folder/a/b/c/d/123237.json",
+    "Assets/Test/Folder/a/b/c/d/123238.json",
+    "Assets/Test/Folder/a/b/c/d/123239.json",
+    "Assets/Test/Folder/a/b/c/d/123230.json",
+    "Assets/Test/Folder/a/b/c/d/123240.json",
+    "Assets/Test/Folder/a/b/c/d/123241.json",
+    "Assets/Test/Folder/a/b/c/d/123242.json",
+    "Assets/Test/Folder/a/b/c/d/123243.json",
+    TestName = "StringDeduplication_Common_Prefixes")]
+        public void TestStringDeduplication(params string[] strs)
+        {
+            int rawSize = 0;
+            var wr = new BinaryStorageBuffer.Writer(256);
+            var ids = new List<uint>();
+            foreach (var s in strs)
+            {
+                rawSize += s.Length;
+                ids.Add(wr.WriteString(s, '/'));
+            }
+            var data = wr.SerializeToByteArray();
+            var br = new BinaryStorageBuffer.Reader(data);
+
+            for (int i = 0; i < ids.Count; i++)
+                Assert.AreEqual(strs[i], br.ReadString(ids[i], '/'));
+
+            Assert.Less(data.Length, rawSize);
+        }
+
+        [Test]
         public void PerfTestStringExamples()
         {
             var wr = new BinaryStorageBuffer.Writer(1024);
@@ -427,6 +456,54 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.AreEqual(new ComplexObject(i), re.ReadObject<ComplexObject>(ids[i]));
         }
 
+        //https://jira.unity3d.com/browse/ADDR-3459
+        [Test]
+        [TestCase(short.MinValue, 0)]
+        [TestCase(short.MinValue, 0)]
+        [TestCase(short.MaxValue, short.MaxValue)]
+        [TestCase(short.MaxValue + 1, short.MaxValue)]
+        [TestCase(-1, 0)]
+        public void ContentCatalogData_SerializesTimeout_Correctly(int timeout, int expectedTimeout)
+        {
+            AssetBundleRequestOptions options = new AssetBundleRequestOptions();
+            options.Timeout = timeout;
+
+            ContentCatalogData.AssetBundleRequestOptionsSerializationAdapter adapter = new ContentCatalogData.AssetBundleRequestOptionsSerializationAdapter();
+            BinaryStorageBuffer.Writer writer = new BinaryStorageBuffer.Writer();
+            var id = adapter.Serialize(writer, options);
+
+            var byteArray = writer.SerializeToByteArray();
+            BinaryStorageBuffer.Reader reader = new BinaryStorageBuffer.Reader(byteArray);
+
+            var result = adapter.Deserialize(reader, typeof(AssetBundleRequestOptions), id) as AssetBundleRequestOptions;
+
+            Assert.AreEqual(expectedTimeout, result.Timeout);
+        }
+
+        //https://jira.unity3d.com/browse/ADDR-3459
+        [Test]
+        [TestCase(-2, 32)]
+        [TestCase(-1, 32)]
+        [TestCase(128, 128)]
+        [TestCase(129, 128)]
+        [TestCase(0, 0)]
+        public void ContentCatalogData_SerializesRedirectLimit_Correctly(int redirectLimit, int expectedRedirectLimit)
+        {
+            AssetBundleRequestOptions options = new AssetBundleRequestOptions();
+            options.RedirectLimit = redirectLimit;
+
+            ContentCatalogData.AssetBundleRequestOptionsSerializationAdapter adapter = new ContentCatalogData.AssetBundleRequestOptionsSerializationAdapter();
+            BinaryStorageBuffer.Writer writer = new BinaryStorageBuffer.Writer();
+            var id = adapter.Serialize(writer, options);
+
+            var byteArray = writer.SerializeToByteArray();
+            BinaryStorageBuffer.Reader reader = new BinaryStorageBuffer.Reader(byteArray);
+
+            var result = adapter.Deserialize(reader, typeof(AssetBundleRequestOptions), id) as AssetBundleRequestOptions;
+
+            Assert.AreEqual(expectedRedirectLimit, result.RedirectLimit);
+        }
+
         [Test]
         public void TestComplexObjectArray([Values(1024, 1024 * 1024)]int chunkSize, [Values(1, 32, 256, 1024)]int count, [Values(0, 10, 1024)]int cacheSize)
         {
@@ -471,4 +548,3 @@ namespace UnityEditor.AddressableAssets.Tests
         }
     }
 }
-#endif

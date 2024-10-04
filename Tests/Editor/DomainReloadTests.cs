@@ -10,7 +10,6 @@ namespace UnityEditor.AddressableAssets.Tests
 {
     public class DomainReloadTests
     {
-#if UNITY_2022_1_OR_NEWER
         bool savedState;
         EnterPlayModeOptions savedOptions;
 
@@ -34,7 +33,6 @@ namespace UnityEditor.AddressableAssets.Tests
             yield return new ExitPlayMode();
             EditorSettings.enterPlayModeOptionsEnabled = savedState;
             EditorSettings.enterPlayModeOptions = savedOptions;
-
             if (AssetBundleProvider.m_UnloadingBundles.Count != 0)
             {
                 AssetBundleProvider.m_UnloadingBundles = new Dictionary<string, AssetBundleUnloadOperation>();
@@ -48,11 +46,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void DomainReloadTests_EnteringPlaymode_ClearsUnloadingBundles()
         {
-#if UNITY_2022_1_OR_NEWER
             Assert.AreEqual(AssetBundleProvider.m_UnloadingBundles.Count, 0, "m_UnloadingBundles not cleared correctly on enter playmode");
-        #else
-            Assert.Ignore("UNLOAD_BUNDLE_ASYNC scripting define is not set, test will be ignored.");
-#endif
         }
 
         [Test]
@@ -62,7 +56,6 @@ namespace UnityEditor.AddressableAssets.Tests
             Addressables.ResolveInternalId("DummyString"); //just need this so m_Addressables property gets called
             Assert.IsFalse(Addressables.reinitializeAddressables);
         }
-#endif
     }
 }
 

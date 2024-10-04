@@ -1,8 +1,4 @@
-#if UNITY_2022_2_OR_NEWER
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Build.Layout;
-using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
@@ -12,4 +8,3 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
     }
 
 }
-#endif

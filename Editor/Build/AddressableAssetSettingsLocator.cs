@@ -22,7 +22,6 @@ namespace UnityEditor.AddressableAssets.Settings
         public AddressableAssetTree m_AddressableAssetTree;
         HashSet<object> m_Keys = null;
         AddressableAssetSettings m_Settings;
-        bool m_includeResourcesFolders = false;
         bool m_dirty = true;
 
         public IEnumerable<object> Keys
@@ -67,17 +66,6 @@ namespace UnityEditor.AddressableAssets.Settings
                             if (hasNonFolder)
                                 m_Keys.Add(kvp.Key);
                         }
-
-                        if (m_includeResourcesFolders)
-                        {
-                            var resourcesEntry = m_Settings.FindAssetEntry(AddressableAssetEntry.ResourcesName);
-                            resourcesEntry.GatherResourcesEntries(null, true, entry =>
-                            {
-                                m_Keys.Add(entry.address);
-                                m_Keys.Add(entry.guid);
-                                return false;
-                            });
-                        }
                     }
                 }
 
@@ -118,7 +106,7 @@ namespace UnityEditor.AddressableAssets.Settings
             m_Keys = null;
             m_AddressableAssetTree = BuildAddressableTree(m_Settings);
             m_Cache = new Dictionary<CacheKey, IList<IResourceLocation>>();
-            m_keyToEntries = new Dictionary<object, HashSet<AddressableAssetEntry>>(m_Settings.labelTable.labelNames.Count);
+            m_keyToEntries = new Dictionary<object, HashSet<AddressableAssetEntry>>(m_Settings.labelTable.Count);
             using (new AddressablesFileEnumerationScope(m_AddressableAssetTree))
             {
                 foreach (AddressableAssetGroup g in m_Settings.groups)
@@ -128,25 +116,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
                     foreach (AddressableAssetEntry e in g.entries)
                     {
-                        if (e.guid == AddressableAssetEntry.EditorSceneListName)
-                        {
-                            if (e.parentGroup.GetSchema<GroupSchemas.PlayerDataGroupSchema>().IncludeBuildSettingsScenes)
-                            {
-                                e.GatherAllAssets(null, false, false, false, s =>
-                                {
-                                    AddEntriesToTables(m_keyToEntries, s);
-                                    return false;
-                                });
-                            }
-                        }
-                        else if (e.guid == AddressableAssetEntry.ResourcesName)
-                        {
-                            m_includeResourcesFolders = e.parentGroup.GetSchema<GroupSchemas.PlayerDataGroupSchema>().IncludeResourcesFolders;
-                        }
-                        else
-                        {
-                            AddEntriesToTables(m_keyToEntries, e);
-                        }
+                        AddEntriesToTables(m_keyToEntries, e);
                     }
                 }
             }
@@ -183,12 +153,6 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             AddEntry(e, e.address, keyToEntries);
             AddEntry(e, e.guid, keyToEntries);
-            if (e.IsScene && e.IsInSceneList)
-            {
-                int index = BuiltinSceneCache.GetSceneIndex(new GUID(e.guid));
-                if (index != -1)
-                    AddEntry(e, index, keyToEntries);
-            }
 
             if (e.labels != null)
             {
@@ -337,34 +301,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
                         slash = keyPath.LastIndexOf('/');
                     }
-                }
-
-                //check resources folders
-                if (m_includeResourcesFolders)
-                {
-                    string resPath = keyStr;
-                    var ext = System.IO.Path.GetExtension(resPath);
-                    if (!string.IsNullOrEmpty(ext))
-                        resPath = resPath.Substring(0, resPath.Length - ext.Length);
-                    UnityEngine.Object obj = Resources.Load(resPath, type);
-                    if (obj == null && keyStr.Length == 32)
-                    {
-                        resPath = AssetDatabase.GUIDToAssetPath(keyStr);
-                        if (!string.IsNullOrEmpty(resPath))
-                        {
-                            int index = resPath.IndexOf("Resources/", StringComparison.OrdinalIgnoreCase);
-                            if (index >= 0)
-                            {
-                                int start = index + 10;
-                                int length = resPath.Length - (start + System.IO.Path.GetExtension(resPath).Length);
-                                resPath = resPath.Substring(index + 10, length);
-                                obj = Resources.Load(resPath, type);
-                            }
-                        }
-                    }
-
-                    if (obj != null)
-                        locations.Add(new ResourceLocationBase(keyStr, resPath, typeof(LegacyResourcesProvider).FullName, type));
                 }
             }
 

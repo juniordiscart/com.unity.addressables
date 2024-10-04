@@ -1,13 +1,6 @@
-#if UNITY_2022_2_OR_NEWER
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.GUIElements;
-using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
-using static UnityEditor.AddressableAssets.BuildReportVisualizer.BuildReportWindow;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
@@ -92,4 +85,3 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 }
-#endif

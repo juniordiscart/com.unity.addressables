@@ -1,5 +1,3 @@
-#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
-
 namespace UnityEditor.AddressableAssets.Diagnostics
 {
     internal static class TreeColumnNames
@@ -14,5 +12,3 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         public const string TreeColumnReferencesTo = "aap-tree-col-referencesTo";
     }
 }
-
-#endif

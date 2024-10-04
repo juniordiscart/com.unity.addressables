@@ -1,5 +1,3 @@
-#if ENABLE_ADDRESSABLE_PROFILER
-
 using System;
 using System.Collections.Generic;
 
@@ -97,5 +95,3 @@ namespace UnityEngine.ResourceManagement.Profiling
         }
     }
 }
-
-#endif

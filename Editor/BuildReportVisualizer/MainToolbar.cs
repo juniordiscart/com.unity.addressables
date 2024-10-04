@@ -1,7 +1,3 @@
-#if UNITY_2022_2_OR_NEWER
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -90,6 +86,4 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             mainToolbarAddReportButton.Insert(0, mainToolbarAddReportButtonIcon); // list the button icon first
         }
     }
-
 }
-#endif

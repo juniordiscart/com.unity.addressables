@@ -1,14 +1,9 @@
-#if UNITY_2022_2_OR_NEWER
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEditor;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.Build.Reporting;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -267,6 +262,4 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_ListView.Rebuild();
         }
     }
-
 }
-#endif

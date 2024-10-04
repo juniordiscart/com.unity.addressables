@@ -57,16 +57,16 @@ namespace UnityEngine.ResourceManagement.Util
                     }
                 }
 
+                if(bestCount == 0)
+                    return (char)0;
+
                 var parts = str.Split(bestSep);
                 int validParts = 0;
                 foreach (var p in parts)
-                    if (p.Length > 8)
+                    if (p.Length > 4)
                         validParts++;
 
-                if (validParts < 2)
-                    bestSep = (char)0;
-
-                return bestSep;
+                return validParts > 1 ? bestSep : (char)0;
             }
 
             public uint Serialize(Writer writer, object val)
@@ -82,8 +82,10 @@ namespace UnityEngine.ResourceManagement.Util
                 if (t == typeof(string))
                 {
                     var str = val as string;
-                    var bestSep = FindBestSeparator(str, '/', '.', '-', '_', '\\', ',');
-                    return writer.Write(new ObjectToStringRemap { stringId = writer.WriteString((string)val), separator = bestSep });
+                    if(string.IsNullOrEmpty(str))
+                        return uint.MaxValue;
+                    var bestSep = FindBestSeparator(str, '/', '\\', '.', '-', '_', ',');
+                    return writer.Write(new ObjectToStringRemap { stringId = writer.WriteString((string)val, bestSep), separator = bestSep });
                 }
                 return uint.MaxValue;
             }
@@ -261,11 +263,12 @@ namespace UnityEngine.ResourceManagement.Util
 
             bool TryGetCachedValue<T>(uint offset, out T val)
             {
-                if(m_Cache.TryGet(offset, out var obj))
+                if (m_Cache.TryGet(offset, out var obj))
                 {
                     val = (T)obj;
                     return true;
                 }
+
                 val = default;
                 return false;
             }
@@ -355,13 +358,13 @@ namespace UnityEngine.ResourceManagement.Util
                         return vals;
                     uint size = 0;
                     UnsafeUtility.MemCpy(&size, pData, sizeof(uint));
-                    if((id + size) > m_Buffer.Length)
+                    if ((id + size) > m_Buffer.Length)
                         throw new Exception($"Data size {size} is out of bounds of buffer with length of {m_Buffer.Length}.");
                     var elCount = size / sizeof(T);
                     var valsT = new T[elCount];
                     fixed (T* pVals = valsT)
                         UnsafeUtility.MemCpy(pVals, &pData[sizeof(uint)], size);
-                    if(cacheValue)
+                    if (cacheValue)
                         m_Cache.TryAdd(id, valsT);
                     return valsT;
                 }
@@ -406,7 +409,7 @@ namespace UnityEngine.ResourceManagement.Util
                         throw new Exception($"Data offset {offset}, len {strDataLength} is out of bounds of buffer with length of {m_Buffer.Length}.");
 
                     var valStr = enc.GetString(&pData[offset], (int)strDataLength);
-                    if(cacheValue)
+                    if (cacheValue)
                         m_Cache.TryAdd(offset, valStr);
                     return valStr;
                 }
@@ -425,19 +428,27 @@ namespace UnityEngine.ResourceManagement.Util
                 {
                     if (!TryGetCachedValue<string>(id, out var str))
                     {
-                        var ds = ReadValue<DynamicString>((uint)(id & kClearFlagsMask));
-                        stringBuilder.Append(ReadAutoEncodedString(ds.stringId, cacheValue));
-                        while (ds.nextId != uint.MaxValue)
+                        var partStack = new Stack<DynamicString>();
+                        while (id != uint.MaxValue)
                         {
-                            ds = ReadValue<DynamicString>(ds.nextId);
-                            stringBuilder.Append(sep);
-                            stringBuilder.Append(ReadAutoEncodedString(ds.stringId, cacheValue));
+                            var ds = ReadValue<DynamicString>((uint)(id & kClearFlagsMask));
+                            partStack.Push(ds);
+                            id = ds.nextId;
                         }
+
+                        while (partStack.TryPop(out DynamicString ds))
+                        {
+                            stringBuilder.Append(ReadAutoEncodedString(ds.stringId, cacheValue));
+                            if (partStack.Count != 0)
+                                stringBuilder.Append(sep);
+                        }
+
                         str = stringBuilder.ToString();
                         stringBuilder.Clear();
                         if (cacheValue)
                             m_Cache.TryAdd(id, str);
                     }
+
                     return str;
                 }
                 else
@@ -755,28 +766,6 @@ namespace UnityEngine.ResourceManagement.Util
                 return (uint)Encoding.ASCII.GetByteCount(str);
             }
 
-            uint RecurseDynamicStringParts(StringParts[] parts, int index, char sep, uint minSize)
-            {
-                while (index < parts.Length - 1)
-                {
-                    var currPartSize = parts[index].dataSize;
-                    var nextPartSize = parts[index + 1].dataSize;
-                    if (currPartSize < minSize || nextPartSize < minSize)
-                    {
-                        parts[index + 1].str = $"{parts[index].str}{sep}{parts[index + 1].str}";
-                        index++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                var strId = parts[index].isUnicode ? WriteUnicodeString(parts[index].str) : WriteStringInternal(parts[index].str, Encoding.ASCII);
-                var nxtId = (index < parts.Length - 1 ? RecurseDynamicStringParts(parts, index + 1, sep, minSize) : uint.MaxValue);
-                var id = Write(new DynamicString { stringId = strId, nextId = nxtId });
-                return id;
-            }
-
             struct StringParts
             {
                 public string str;
@@ -788,8 +777,8 @@ namespace UnityEngine.ResourceManagement.Util
             {
                 if (str == null)
                     return uint.MaxValue;
-                var minSize = (uint)sizeof(DynamicString);
                 var split = str.Split(sep);
+                var minSize = (uint)sizeof(DynamicString);
                 var parts = new StringParts[split.Length];
                 for (int i = 0; i < parts.Length; i++)
                 {
@@ -803,8 +792,31 @@ namespace UnityEngine.ResourceManagement.Util
                 }
                 else
                 {
-                    return (kDynamicStringFlag | RecurseDynamicStringParts(parts, 0, sep, minSize));
+                    return (kDynamicStringFlag | RecurseDynamicStringParts(parts, parts.Length-1, sep, minSize));
                 }
+            }
+
+            uint RecurseDynamicStringParts(StringParts[] parts, int index, char sep, uint minSize)
+            {
+                while (index > 0)
+                {
+                    var currPartSize = parts[index].dataSize;
+                    if (currPartSize < minSize)
+                    {
+                        parts[index - 1].str = $"{parts[index-1].str}{sep}{parts[index].str}";
+                        parts[index - 1].dataSize += currPartSize + 1;
+                        parts[index - 1].isUnicode |= parts[index].isUnicode;
+                        index--;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                var strId = parts[index].isUnicode ? WriteUnicodeString(parts[index].str) : WriteStringInternal(parts[index].str, Encoding.ASCII);
+                var nxtId = (index > 0 ? RecurseDynamicStringParts(parts, index - 1, sep, minSize) : uint.MaxValue);
+                var id = Write(new DynamicString { stringId = strId, nextId = nxtId });
+                return id;
             }
         }
     }
@@ -833,7 +845,10 @@ namespace UnityEngine.ResourceManagement.Util
             if (obj == null || entryLimit <= 0)
                 return false;
 
-            cache.Add(id, new Entry { Value = obj, lruNode = lru.AddFirst(id) });
+            if (!cache.TryAdd(id, new Entry { Value = obj, lruNode = lru.AddFirst(id) }))
+            {
+                return false;
+            };
 
             while (lru.Count > entryLimit)
             {

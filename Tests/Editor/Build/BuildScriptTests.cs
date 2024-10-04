@@ -410,26 +410,7 @@ namespace UnityEditor.AddressableAssets.Tests
                     db.BuildData<AddressablesPlayerBuildResult>(context);
         }
 
-        [Test]
-        public void Build_GroupWithPlayerDataGroupSchemaAndBundledAssetGroupSchema_LogsError()
-        {
-            const string groupName = "NewGroup";
-            var schemas = new List<AddressableAssetGroupSchema> {ScriptableObject.CreateInstance<PlayerDataGroupSchema>(), ScriptableObject.CreateInstance<BundledAssetGroupSchema>()};
-            AddressableAssetGroup group = Settings.CreateGroup(groupName, false, false, false, schemas);
-
-            var context = new AddressablesDataBuilderInput(Settings);
-            foreach (IDataBuilder db in Settings.DataBuilders)
-            {
-                if (db.CanBuildData<AddressablesPlayerBuildResult>())
-                {
-                    AddressablesPlayerBuildResult result = db.BuildData<AddressablesPlayerBuildResult>(context);
-                    Assert.AreEqual(result.Error, $"Addressable group {groupName} cannot have both a {typeof(PlayerDataGroupSchema).Name} and a {typeof(BundledAssetGroupSchema).Name}");
-                }
-            }
-
-            Settings.RemoveGroup(group);
-        }
-
+#if ENABLE_JSON_CATALOG
         // ADDR-1755
         [Test]
         public void WhenBundleLocalCatalogEnabled_BuildScriptPacked_DoesNotCreatePerformanceLogReport()
@@ -449,6 +430,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var res = db.BuildData<AddressablesPlayerBuildResult>(context);
             Assert.IsFalse(File.Exists(logPath));
         }
+#endif
 
         [Test]
         public void Build_WithDeletedAsset_Succeeds()
@@ -579,9 +561,58 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void WhenBuildPathIsUndefined_BuildLogsError()
+        {
+            string remoteBuildPathId = Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteBuildPath).Id;
+            string oldRemoteBuildPath = Settings.profileSettings.GetValueById(Settings.activeProfileId, remoteBuildPathId);
+            Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteBuildPath, AddressableAssetProfileSettings.undefinedEntryValue);
+
+            AddressableAssetGroup assetGroup = Settings.CreateGroup("UndefinedPaths", false, false, false, null, typeof(BundledAssetGroupSchema));
+            assetGroup.GetSchema<BundledAssetGroupSchema>().BuildPath.SetVariableById(Settings, Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteBuildPath).Id);
+            assetGroup.GetSchema<BundledAssetGroupSchema>().LoadPath.SetVariableById(Settings, Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteLoadPath).Id);
+
+            string assetPath = Path.Combine(TestFolder, "undefinedPaths.prefab");
+            PrefabUtility.SaveAsPrefabAsset(new GameObject(), assetPath);
+            Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), assetGroup, false, false);
+
+            var context = new AddressablesDataBuilderInput(Settings);
+            BuildScriptBase db = (BuildScriptBase)Settings.DataBuilders.Find(x => x.GetType() == typeof(BuildScriptPackedMode));
+            var result = db.BuildData<AddressablesPlayerBuildResult>(context);
+            Assert.AreEqual($"Addressable group {assetGroup.Name} build path is set to undefined. Change the path to build content.", result.Error);
+
+            Settings.RemoveGroup(assetGroup);
+            Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteBuildPath, oldRemoteBuildPath);
+            AssetDatabase.DeleteAsset(assetPath);
+        }
+
+        [Test]
+        public void WhenLoadPathIsUndefined_BuildLogsWarning()
+        {
+            string remoteLoadPathId = Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteLoadPath).Id;
+            string oldRemoteLoadPath = Settings.profileSettings.GetValueById(Settings.activeProfileId, remoteLoadPathId);
+            Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, AddressableAssetProfileSettings.undefinedEntryValue);
+
+            AddressableAssetGroup assetGroup = Settings.CreateGroup("UndefinedPaths", false, false, false, null, typeof(BundledAssetGroupSchema));
+            assetGroup.GetSchema<BundledAssetGroupSchema>().BuildPath.SetVariableById(Settings, Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteBuildPath).Id);
+            assetGroup.GetSchema<BundledAssetGroupSchema>().LoadPath.SetVariableById(Settings, Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteLoadPath).Id);
+
+            string assetPath = Path.Combine(TestFolder, "undefinedPaths.prefab");
+            PrefabUtility.SaveAsPrefabAsset(new GameObject(), assetPath);
+            Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), assetGroup, false, false);
+
+            var context = new AddressablesDataBuilderInput(Settings);
+            BuildScriptBase db = (BuildScriptBase)Settings.DataBuilders.Find(x => x.GetType() == typeof(BuildScriptPackedMode));
+            db.BuildData<AddressablesPlayerBuildResult>(context);
+            LogAssert.Expect(LogType.Warning, $"Addressable group {assetGroup.Name} load path is set to undefined. Change the path to load content.");
+
+            Settings.RemoveGroup(assetGroup);
+            Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, oldRemoteLoadPath);
+            AssetDatabase.DeleteAsset(assetPath);
+        }
+
+        [Test]
         public void WhenLoadPathUsesHttp_AndInsecureHttpNotAllowed_BuildLogsWarning()
         {
-#if UNITY_2022_1_OR_NEWER
             InsecureHttpOption oldHttpOption = PlayerSettings.insecureHttpOption;
             PlayerSettings.insecureHttpOption = InsecureHttpOption.NotAllowed;
 
@@ -606,15 +637,11 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, oldRemoteLoadPath);
             AssetDatabase.DeleteAsset(assetPath);
             PlayerSettings.insecureHttpOption = oldHttpOption;
-#else
-            Assert.Ignore($"Skipping test {nameof(WhenLoadPathUsesHttp_AndInsecureHttpNotAllowed_BuildLogsWarning)}.");
-#endif
         }
 
         [Test]
         public void WhenLoadPathUsesHttp_AndInsecureHttpAllowed_BuildSucceeds()
         {
-#if UNITY_2022_1_OR_NEWER
             InsecureHttpOption oldHttpOption = PlayerSettings.insecureHttpOption;
             PlayerSettings.insecureHttpOption = InsecureHttpOption.AlwaysAllowed;
 
@@ -639,9 +666,6 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, oldRemoteLoadPath);
             AssetDatabase.DeleteAsset(assetPath);
             PlayerSettings.insecureHttpOption = oldHttpOption;
-#else
-            Assert.Ignore($"Skipping test {nameof(WhenLoadPathUsesHttp_AndInsecureHttpAllowed_BuildSucceeds)}.");
-#endif
         }
     }
 }

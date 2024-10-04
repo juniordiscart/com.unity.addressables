@@ -4,6 +4,37 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2023-08-27
+- ProfileValueReference.GetValue is now the preferred method of getting bulid and load paths. A new method has been added that allows token evaluation to be toggled on and off. Using this method ensures that custom build and load paths are handled properly.
+- In the Editor when a sprite is no longer available it will be cleared when the property drawer is viewed. 
+- Add a SubObjectGUID to sprite atlases and use GUIDs for the runtime loading key if is exists. 
+- Catalog hashes get build with the local catalog now.  This prevents remote catalogs from getting downloaded if they match what was shipped with a player
+- Added overloads to LoadAssetsAsync to accept a single string as a key
+- Added bundle request retry override.
+- Added shared bundle settings to AddressableAssetSettings. Monoscript bundle is always enabled.
+- Added more BuildLayout public API
+- Fixed issue with misleading error message for loading through asset where the asset is not Addressable in editor.
+- Added in safeguard to prevent Compress Local Catalog option from being on alongside Binary Catalogs
+- Fixed an issue where ResourceLocation would return a useless value when using Binary Catalogs
+- Fixed an issue where there would sometimes be a minor memory leak when using Binary Catalogs
+- Fixed an issue where Binary Catalogs would not be cached properly
+- Fixed a bug where a GUI style was misspelled in the Editor and was recently fixed
+- Fixed an issue where FindAssetEntry returns incorrect values after Undo/Redo
+- Fixed a regression where remote provider failures were not retried.
+- Fixed an issue where a NullReferenceException occurs when inspecting Addressable Settings
+- Fixed an issue where the content update groups list being cutoff by buttons
+- Fixed an issue where an ArgumentException occurs when sorting labels and creating a new group.
+- Fixed an issue where using binary catalogs causes a crash on Android with ARM7.
+- Fixed an issue where a NullReferenceException occurs in GenerateBuildLayout when a group is null.
+- Fixed a bug where Timeout and Redirect Limit were getting serialized to different values from what was allowed in the Group schema
+- DownloadDepedenciesAsync no longer loads asset bundles into memory
+- Fixed issue where ResourceLocations weren't getting compared correctly for properties like AllLocations
+- Fixed an issue where scene InternalId collisions were very likely when using dynamic internal asset naming
+- Fixed an issue where sprites with normal maps would not be built properly
+- Fixed an issue where "Failed to remove scene from Addressables profiler" warning occurs when a scene is unloaded.
+- Fixed an exception getting thrown in the Addressables Report when drilling into a bundle chain
+- Fixed string deduplication in binary catalogs.  Certain data sets were causing data to expand.
+
 ## [1.21.17] - 2023-08-16
 - Fixed issue where sprite is missing normal texture when using "Use Existing Build" build mode
 - Fixed a bug where a GUI style was misspelled in the Editor and was recently fixed

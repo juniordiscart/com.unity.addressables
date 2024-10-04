@@ -1,5 +1,3 @@
-#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
-
 namespace UnityEditor.AddressableAssets.Diagnostics
 {
     internal class ProfilerStrings
@@ -23,5 +21,3 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         public const string MissingBuildReportLabelText = "Build report <b>{0}</b> not found. Build report data is required to display correct frame data.";
     }
 }
-
-#endif

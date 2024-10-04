@@ -136,7 +136,7 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
-#if ENABLE_BINARY_CATALOG
+#if !ENABLE_JSON_CATALOG
         HashSet<string> GetCacheDirsInUse(IList<AsyncOperationHandle> catalogOps)
         {
             var cacheDirsInUse = new HashSet<string>();

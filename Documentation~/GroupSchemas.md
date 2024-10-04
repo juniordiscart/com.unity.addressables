@@ -23,7 +23,6 @@ The built-in schemas include:
 
 * __Content Packing & Loading__: The main Addressables schema used by the default build script and defines the settings for building and loading Addressable assets. For information on the settings for this schema, refer to [Content Packing & Loading schema reference](ContentPackingAndLoadingSchema.md).
 * __Content Update Restrictions__: Defines settings for making differential updates of an earlier build. For more information about this schema refer to [Content Update Restriction schema reference](UpdateRestrictionSchema.md).
-* __Resources and Built In Scenes__: A special-purpose schema which defines settings for which types of built-in assets to display in the __Built In Data__ group.
 
 ## Create a custom schema
 

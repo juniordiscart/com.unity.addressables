@@ -1,5 +1,3 @@
-#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
-
 using UnityEditor.AddressableAssets.GUIElements;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -20,5 +18,3 @@ namespace UnityEditor.AddressableAssets.Diagnostics
         public MultiColumnTreeView TreeView => GetElement<MultiColumnTreeView>();
     }
 }
-
-#endif

@@ -15,7 +15,6 @@ Alongside group settings, you can use the following to control how Addressables 
 
 The Addressables system provides the following additional tools to help development:
 
-* [Hosting service](xref:addressables-asset-hosting-services): Provides a simple asset server that you can use to host remote assets for local development.
 * [Build layout report](xref:addressables-build-layout-report): provides a description of the AssetBundles produced by a build.
 * [Build profile log](xref:addressables-build-profile-log): provides a log profiling the build process itself so that you can see which parts take the longest.
 

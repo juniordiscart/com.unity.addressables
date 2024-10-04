@@ -70,7 +70,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.CreateFolder("Assets", TestFolderName);
             AssetDatabase.CreateFolder(TestFolder, "Config");
 
-            Settings.labelTable.labelNames.Clear();
+            Settings.labelTable.Clear();
             GameObject testObject = new GameObject("TestObject");
             GameObject testObject1 = new GameObject("TestObject 1");
             GameObject testObject2 = new GameObject("TestObject 2");
@@ -202,7 +202,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             m_Settings = null;
             EditorBuildSettings.RemoveConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName);
-            EditorBuildSettings.TryGetConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, out m_Settings);            
+            EditorBuildSettings.TryGetConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, out m_Settings);
         }
     }
 }

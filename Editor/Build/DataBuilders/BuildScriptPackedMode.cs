@@ -20,7 +20,9 @@ using UnityEngine.Build.Pipeline;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
+
 using static UnityEditor.AddressableAssets.Build.ContentUpdateScript;
+
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -132,13 +134,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return list;
         }
 
+        internal const string UserHasBeenInformedAboutBuildReportSettingPreBuild = nameof(UserHasBeenInformedAboutBuildReportSettingPreBuild);
+
         private TResult CreateErrorResult<TResult>(string errorString, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext) where TResult : IDataBuilderResult
         {
             BuildLayoutGenerationTask.GenerateErrorReport(errorString, aaContext, builderInput.PreviousContentState);
             return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, errorString);
         }
-
-        internal const string UserHasBeenInformedAboutBuildReportSettingPreBuild = nameof(UserHasBeenInformedAboutBuildReportSettingPreBuild);
 
         internal void InitializeBuildContext(AddressablesDataBuilderInput builderInput, out AddressableAssetsBuildContext aaContext)
         {
@@ -156,7 +158,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 #if ENABLE_CCD
                 CcdManagedData = aaSettings.m_CcdManagedData,
 #endif
-                ProfileEvents = builderInput.ProfilerEventsEnabled,
                 LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions,
                 DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup,
 #if ENABLE_JSON_CATALOG
@@ -358,7 +359,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                             PreviousAssetStateCarryOver = carryOverCachedState
                         };
                     }
-
                     ProcessCatalogEntriesForBuild(aaContext, groups, builderInput, extractData.WriteData,
                         contentUpdateContext, m_BundleToInternalId, locationIdToCatalogEntryMap);
                     foreach (var postUpdateCatalogCallback in postCatalogUpdateCallbacks)
@@ -433,7 +433,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 foreach (var catalogInfo in GetContentCatalogs(builderInput, aaContext))
                 {
-                    var contentCatalog = new ContentCatalogData(ResourceManagerRuntimeData.kCatalogAddress);
+                    var contentCatalog = new ContentCatalogData(catalogInfo.Identifier);
                     contentCatalogs.Add(contentCatalog);
 
                     if (addrResult != null)
@@ -514,8 +514,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         aaContext.Settings.GetAllAssets(allEntries, false, ContentUpdateScript.GroupFilter);
 
                     if (ContentUpdateScript.SaveContentState(aaContext.locations, aaContext.GuidToCatalogLocation, tempPath, allEntries,
-                            extractData.DependencyData, playerBuildVersion, remoteCatalogLoadPath,
-                            carryOverCachedState))
+                        extractData.DependencyData, playerBuildVersion, remoteCatalogLoadPath,
+                        carryOverCachedState))
                     {
                         string contentStatePath = ContentUpdateScript.GetContentStateDataPath(false, aaContext.Settings);
                         if (ResourceManagerConfig.ShouldPathUseWebRequest(contentStatePath))
@@ -656,12 +656,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
-            aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
-                new[] { ResourceManagerRuntimeData.kCatalogAddress },
-                loadPath,
-                typeof(ContentCatalogProvider),
-                typeof(ContentCatalogData),
-                dependencyHashes));
+            if (buildInfo?.Register ?? true)
+            {
+                aaContext.runtimeData.CatalogLocations.Add(new ResourceLocationData(
+                    new[] { buildInfo?.Identifier ?? ResourceManagerRuntimeData.kCatalogAddress },
+                    loadPath,
+                    typeof(ContentCatalogProvider),
+                    typeof(ContentCatalogData),
+                    dependencyHashes));
+            }
 
             return true;
         }
@@ -843,7 +846,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             if (buildInfo?.Register ?? true)
             {
                 ResourceLocationData localCatalog = new ResourceLocationData(
-                    new[] { ResourceManagerRuntimeData.kCatalogAddress },
+                    new[] { buildInfo?.Identifier ?? ResourceManagerRuntimeData.kCatalogAddress },
                     loadPath,
                     typeof(ContentCatalogProvider),
                     typeof(ContentCatalogData),
@@ -926,7 +929,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return retCode;
         }
 
-        static string[] CreateRemoteCatalog(string jsonText, List<ResourceLocationData> locations, AddressableAssetSettings aaSettings, AddressablesDataBuilderInput builderInput, ProviderLoadRequestOptions catalogLoadOptions, string contentHash)
+        static string[] CreateRemoteCatalog(string jsonText, List<ResourceLocationData> locations, AddressableAssetSettings aaSettings, AddressablesDataBuilderInput builderInput,
+            ProviderLoadRequestOptions catalogLoadOptions, string contentHash)
         {
             string[] dependencyHashes = null;
 
@@ -959,7 +963,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Cache] = ResourceManagerRuntimeData.kCatalogAddress + "CacheHash";
                 dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Local] = ResourceManagerRuntimeData.kCatalogAddress + "LocalHash";
 
-
                 var remoteHashLoadPath = remoteLoadFolder + versionedFileName + ".hash";
                 var remoteHashLoadLocation = new ResourceLocationData(
                     new[] { dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Remote] },
@@ -990,6 +993,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             return dependencyHashes;
         }
+
 #endif
 
         internal static string GetProjectName()
@@ -1046,8 +1050,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             if (assetGroup.Schemas.Count == 0)
             {
                 Addressables.LogWarning($"{assetGroup.Name} does not have any associated AddressableAssetGroupSchemas. " +
-                                        $"Data from this group will not be included in the build. " +
-                                        $"If this is unexpected the AddressableGroup may have become corrupted.");
+                    $"Data from this group will not be included in the build. " +
+                    $"If this is unexpected the AddressableGroup may have become corrupted.");
                 return string.Empty;
             }
 
@@ -1258,7 +1262,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     combinedEntries.AddRange(allEntries);
                     GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), "all", ignoreUnsupportedFilesInBuild);
                 }
-                    break;
+                break;
                 case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
                 {
                     foreach (AddressableAssetEntry a in assetGroup.entries)
@@ -1271,7 +1275,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), a.address, ignoreUnsupportedFilesInBuild);
                     }
                 }
-                    break;
+                break;
                 case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
                 {
                     var labelTable = new Dictionary<string, List<AddressableAssetEntry>>();
@@ -1303,7 +1307,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), entryGroup.Key, ignoreUnsupportedFilesInBuild);
                     }
                 }
-                    break;
+                break;
                 default:
                     throw new Exception("Unknown Packing Mode");
             }
@@ -1446,7 +1450,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 for (int i = 0; i < builtBundleNames.Count; ++i)
                 {
                     string outputName = null;
-                    foreach ((string, string) bundleValue in bundleValues)
+                    foreach ((string, string)bundleValue in bundleValues)
                     {
                         if (schema.BundleMode == BundledAssetGroupSchema.BundlePackingMode.PackSeparately)
                         {
@@ -1459,7 +1463,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         if (outputName != null)
                             break;
                     }
-
                     outputBundleNames.Add(string.IsNullOrEmpty(outputName) ? builtBundleNames[i] : outputName);
                 }
             }

@@ -14,4 +14,3 @@ Information on how to distribute content remotely to reduce download sizes.
 |[Remote content AssetBundle caching](remote-content-assetbundle-cache.md)|Understand how AssetBundles are cached remotely.|
 |[Pre-download remote content](remote-content-predownload.md)|Workflows for pre-downloading remote content.|
 |[Use Addressables with Cloud Content Delivery](AddressablesCCD.md)|Use Addressables with the CCD service.|
-|[Editor asset hosting services](AddressableAssetsHostingServices.md)|Understand the Editor asset hosting services.|

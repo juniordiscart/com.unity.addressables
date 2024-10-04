@@ -40,7 +40,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.NotNull(TestSingletonWithName.Instance);
             TestSingletonWithName.DestroySingleton();
             Assert.False(TestSingletonWithName.Exists);
-            Assert.IsEmpty(Object.FindObjectsOfType<TestSingletonWithName>(), "Expected no singleton objects to exists after destroy was called");
+            Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(FindObjectsSortMode.None), "Expected no singleton objects to exists after destroy was called");
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace UnityEditor.AddressableAssets.Tests
             // We cant use Assert.Null as we need the override that compares against null when using ==
             Assert.True(instance == null, "Expected singleton instance to be destroyed when leaving play mode.");
             Assert.False(TestSingletonWithName.Exists);
-            Assert.IsEmpty(Object.FindObjectsOfType<TestSingletonWithName>(), "Expected no singleton objects to exists after leaving play mode.");
+            Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(FindObjectsSortMode.None), "Expected no singleton objects to exists after leaving play mode.");
         }
 
         [UnityTest]
@@ -92,7 +92,7 @@ namespace UnityEditor.AddressableAssets.Tests
             // We cant use Assert.Null as we need the override that compares against null when using ==
             Assert.True(instance == null, "Expected editor singleton instance to be destroyed when entering play mode.");
             Assert.False(TestSingletonWithName.Exists);
-            Assert.IsEmpty(Object.FindObjectsOfType<TestSingletonWithName>(), "Expected no singleton objects to exists after leaving play mode.");
+            Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(FindObjectsSortMode.None), "Expected no singleton objects to exists after leaving play mode.");
         }
 
         [UnityTest]

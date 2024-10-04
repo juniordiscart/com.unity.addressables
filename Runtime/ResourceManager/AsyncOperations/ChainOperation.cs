@@ -130,7 +130,7 @@ namespace UnityEngine.ResourceManagement
 		}
 	}
 
-	class ChainOperationTypelessDependency<TObject> : AsyncOperationBase<TObject>
+	class ChainOperationTypelessDepedency<TObject> : AsyncOperationBase<TObject>
 	{
 		AsyncOperationHandle m_DepOp;
 		AsyncOperationHandle<TObject> m_WrappedOp;
@@ -142,7 +142,7 @@ namespace UnityEngine.ResourceManagement
 
         internal AsyncOperationHandle<TObject> WrappedOp => m_WrappedOp;
 
-		public ChainOperationTypelessDependency()
+		public ChainOperationTypelessDepedency()
 		{
 			m_CachedOnWrappedCompleted = OnWrappedCompleted;
 		}

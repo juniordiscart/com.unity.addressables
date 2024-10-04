@@ -716,4 +716,34 @@ public class BuildLayoutGenerationTaskTests
             DeleteScriptableObject("so1");
         }
     }
+
+    [Test]
+    public void WhenBuildContainsNullGroup_BuildLayoutSucceeds()
+    {
+        string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+        AddressableAssetGroup group = null;
+
+        try
+        {
+            // setup
+            group = CreateGroup("Group1");
+            CreateAddressablePrefab("p1", group);
+            AssetDatabase.SaveAssets();
+
+            Settings.groups.Add(null);
+
+            // test
+            Assert.DoesNotThrow(() => BuildAndExtractLayout(), "BuildLayoutGenerationTask does not handle null groups.");
+        }
+        finally // cleanup
+        {
+            if (group != null)
+                Settings.RemoveGroup(group);
+            Settings.RemoveGroup(null);
+
+            if (File.Exists(layoutFilePath))
+                File.Delete(layoutFilePath);
+            DeletePrefab("p1");
+        }
+    }
 }

@@ -40,7 +40,7 @@ Addressables sets the default remote build path to an arbitrarily chosen folder 
 
 The default remote load path is `http://localhost/` appended with the current profile BuildTarget variable. You must change this path to the base URL at which you plan to load your Addressable assets. 
 
-Use different [profiles](profiles-introduction.md) to set up the remote load path as appropriate for the type of development, testing, or publishing you are doing. For example, you could have a profile that loads assets from a localhost server for general development builds, a profile that loads assets from a staging environment for QA builds, and one that loads assets from your Content Delivery Network (CDN) for release builds. Refer to [Hosting](AddressableAssetsHostingServices.md) for more information about configuring hosting.
+Use different [profiles](profiles-introduction.md) to set up the remote load path as appropriate for the type of development, testing, or publishing you are doing. For example, you could have a profile that loads assets from a localhost server for general development builds, a profile that loads assets from a staging environment for QA builds, and one that loads assets from your Content Delivery Network (CDN) for release builds.
 
 > [!NOTE]
 > When running your game in the Editor, you can use the __Use Asset Database__ Play Mode Script to bypass loading assets through the remote or local load paths. This can be convenient, especially when you don't have a localhost server set up. However, it can hide group configuration and asset assignment mistakes.

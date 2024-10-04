@@ -33,7 +33,7 @@ namespace UnityEditor.AddressableAssets.GUI
             titleContent = new GUIContent("Addressables Labels");
             m_Settings = settings;
 
-            var labels = m_Settings.labelTable.labelNames;
+            var labels = m_Settings.labelTable;
             m_LabelNamesRl = new ReorderableList(labels, typeof(string), true, false, true, true);
             m_LabelNamesRl.drawElementCallback = DrawLabelNamesCallback;
             m_LabelNamesRl.onAddDropdownCallback = OnAddLabel;
@@ -84,7 +84,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void HandleEvent(Event current)
         {
-            if (m_ActiveIndex < 0 || m_Settings.labelTable.labelNames.Count == 0)
+            if (m_ActiveIndex < 0 || m_Settings.labelTable.Count == 0)
                 return;
 
             if (current.type == EventType.ContextClick)
@@ -93,7 +93,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 contextMenu.AddItem(new GUIContent("Edit"), false, () =>
                 {
                     m_IsEditing = true;
-                    m_CurrentEdit = m_Settings.labelTable.labelNames[m_ActiveIndex];
+                    m_CurrentEdit = m_Settings.labelTable[m_ActiveIndex];
                     Repaint();
                 });
                 contextMenu.ShowAsContext();
@@ -118,7 +118,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void DrawLabelNamesCallback(Rect rect, int index, bool isActive, bool isFocused)
         {
-            var oldName = m_Settings.labelTable.labelNames[index];
+            var oldName = m_Settings.labelTable[index];
 
             if (m_IsEditing && index == m_ActiveIndex)
             {
@@ -133,7 +133,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void OnRemoveLabel(ReorderableList list)
         {
-            string labelName = m_Settings.labelTable.labelNames[list.index];
+            string labelName = m_Settings.labelTable[list.index];
             m_Settings.RemoveLabel(labelName);
             AddressableAssetUtility.OpenAssetIfUsingVCIntegration(m_Settings);
 

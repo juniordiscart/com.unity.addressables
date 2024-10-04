@@ -42,6 +42,12 @@ namespace UnityEditor.AddressableAssets.Tests
 
         public class TestBuildMenu : BaseTestBuildMenu
         {
+            public bool throwException = false;
+            public TestBuildMenu(bool throwException = false)
+            {
+                this.throwException = throwException;
+            }
+
             public override bool OnPrebuild(AddressablesDataBuilderInput input)
             {
                 Debug.Log("Pre Invoked");
@@ -51,6 +57,10 @@ namespace UnityEditor.AddressableAssets.Tests
             public override bool OnPostbuild(AddressablesDataBuilderInput input, AddressablesPlayerBuildResult result)
             {
                 Debug.Log("Post Invoked");
+                if (throwException)
+                {
+                    throw new Exception("expected exception");
+                }
                 return true;
             }
         }
@@ -99,6 +109,21 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void BuildMenu_BuildCorrectlyLoadException()
+        {
+            AddressableAssetsSettingsGroupEditor.BuildMenuContext context =
+                new AddressableAssetsSettingsGroupEditor.BuildMenuContext();
+            context.BuildMenu = new TestBuildMenu(throwException: true);
+            context.buildScriptIndex = -1;
+            context.Settings = Settings;
+            // Test
+            LogAssert.Expect(LogType.Log, "Pre Invoked");
+            LogAssert.Expect(LogType.Log, "Post Invoked");
+            LogAssert.Expect(LogType.Exception, "Exception: expected exception");
+            AddressableAssetsSettingsGroupEditor.OnBuildAddressables(context);
+        }
+
+            [Test]
         public void BuildMenu_CreateBuildMenus_CorrectOrder()
         {
             List<Type> menuTypes = new List<Type>();

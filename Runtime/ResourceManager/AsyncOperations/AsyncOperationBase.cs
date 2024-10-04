@@ -197,9 +197,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 throw new Exception(string.Format("Cannot increment reference count on operation {0} because it has already been destroyed", this));
 
             m_referenceCount++;
-            if (m_RM != null && m_RM.postProfilerEvents)
-                m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationReferenceCount,
-                    m_referenceCount));
         }
 
         /// <summary>
@@ -213,15 +210,8 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
             m_referenceCount--;
 
-            if (m_RM != null && m_RM.postProfilerEvents)
-                m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationReferenceCount,
-                    m_referenceCount));
-
             if (m_referenceCount == 0)
             {
-                if (m_RM != null && m_RM.postProfilerEvents)
-                    m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationDestroy));
-
                 if (m_DestroyedAction != null)
                 {
                     m_DestroyedAction.Invoke(new AsyncOperationHandle<TObject>(this));
@@ -476,12 +466,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             Result = result;
             m_Status = success ? AsyncOperationStatus.Succeeded : AsyncOperationStatus.Failed;
 
-            if (m_RM != null && m_RM.postProfilerEvents)
-            {
-                m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationPercentComplete, 1));
-                m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationComplete));
-            }
-
             if (m_Status == AsyncOperationStatus.Failed || exception != null)
             {
                 if (exception == null || string.IsNullOrEmpty(exception.Message))
@@ -494,10 +478,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             {
                 if (releaseDependenciesOnFailure)
                     ReleaseDependencies();
-
-                if (m_RM != null && m_RM.postProfilerEvents)
-                    m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationFail, 0,
-                        exception?.ToString()));
 
                 ICachable cachedOperation = this as ICachable;
                 if (cachedOperation?.Key != null)
@@ -519,11 +499,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             m_RM = rm;
             IsRunning = true;
             HasExecuted = false;
-            if (m_RM != null && m_RM.postProfilerEvents)
-            {
-                m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationCreate));
-                m_RM.PostDiagnosticEvent(new ResourceManager.DiagnosticEventContext(new AsyncOperationHandle(this), ResourceManager.DiagnosticEventType.AsyncOperationPercentComplete, 0));
-            }
 
             IncrementReferenceCount(); // keep a reference until the operation completes
             m_UpdateCallbacks = updateCallbacks;

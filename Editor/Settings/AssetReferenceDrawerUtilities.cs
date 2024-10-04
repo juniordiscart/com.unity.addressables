@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +7,7 @@ using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Utility;
 using UnityEngine.U2D;
 
 namespace UnityEditor.AddressableAssets.Settings
@@ -377,14 +377,22 @@ namespace UnityEditor.AddressableAssets.Settings
 
         static string FormatNoAssetString(string n) => string.IsNullOrEmpty(n) ? noAssetString : string.Format(noAssetTypeStringformat, n);
 
-        private static Type GetGenericType(Type t)
+        internal static Type GetGenericType(Type t)
         {
             if (t == null)
                 return null;
             while (t.GenericTypeArguments.Length > 0)
                 t = t.GenericTypeArguments[0];
             if (t.BaseType != null && t.BaseType.GenericTypeArguments.Length == 1)
+            {
+                //if the type is a subclass of a generic class that uses the base type as the generic, we hit an infinite loop here.
+                //Alternatively, we could return 't' here instead, but it's unclear what the expected behavior should be.
+                //At the very least this doesn't cause us to crash
+                if (t.BaseType.GenericTypeArguments[0] == t)
+                    return t.BaseType;
+                else
                 t = GetGenericType(t.BaseType);
+            }
             if (t.HasElementType)
                 t = GetGenericType(t.GetElementType());
             return t;
@@ -393,9 +401,7 @@ namespace UnityEditor.AddressableAssets.Settings
         static internal string FormatName(string name)
         {
             var formatted = string.IsNullOrEmpty(name) ? "<none>" : name;
-            if (formatted.EndsWith("(Clone)", StringComparison.Ordinal))
-                formatted = formatted.Replace("(Clone)", "");
-            return formatted;
+            return AssetReferenceUtilities.FormatName(formatted);
         }
 
         static internal bool ValidateDrag(AssetReference assetReferenceObject, List<AssetReferenceUIRestrictionSurrogate> restrictions, List<AssetEntryTreeViewItem> aaEntries,
@@ -405,7 +411,7 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 foreach (AssetEntryTreeViewItem item in aaEntries)
                 {
-                    if (item == null || item.entry == null || item.entry.IsInResources || !ValidateAsset(assetReferenceObject, restrictions, item.entry.AssetPath))
+                    if (item == null || item.entry == null || !ValidateAsset(assetReferenceObject, restrictions, item.entry.AssetPath))
                         return true;
                 }
             }
@@ -467,6 +473,103 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             return false;
+        }
+
+        internal static bool RefreshSubObjects(ref AssetReference assetReference)
+        {
+            if (assetReference == null)
+            {
+                return false;
+            }
+
+            var editorAsset = assetReference.GetEditorAssetInternal();
+            if (editorAsset == null)
+            {
+                return false;
+            }
+            if (!editorAsset.GetType().IsAssignableFrom(typeof(SpriteAtlas)))
+            {
+                return false;
+            }
+
+            var atlas = GetAtlas(ref assetReference);
+
+            var subObjects = AssetReferenceUtilities.GetAtlasSpritesAndPackables(ref atlas);
+            if (subObjects == null || subObjects.Count == 0)
+            {
+                assetReference.SubObjectName = null;
+                assetReference.SubObjectGUID = string.Empty;
+                return true;
+            }
+
+            var requiresUpdate = false;
+            var foundSubObject = false;
+            foreach ((Object sprite, Object packable) in subObjects)
+            {
+                var path = AssetDatabase.GetAssetPath(packable);
+                if (string.IsNullOrEmpty(path))
+                {
+                    continue;
+                }
+
+                if (sprite == null)
+                {
+                    continue;
+                }
+
+                SpriteImportMode mode = SpriteImportMode.None;
+                var type = AssetDatabase.GetMainAssetTypeAtPath(path);
+                bool isTexture = typeof(Texture2D).IsAssignableFrom(type);
+                if (isTexture)
+                {
+                    var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                    mode = (importer == null ? SpriteImportMode.None : importer.spriteImportMode);
+                }
+
+
+                var formattedSpriteName = FormatName(sprite.name);
+                var namesMatch =  formattedSpriteName == assetReference.SubObjectName;
+                var guid = AssetDatabase.AssetPathToGUID(path);
+                if (guid == assetReference.SubObjectGUID)
+                {
+                    foundSubObject = true;
+                    if (mode == SpriteImportMode.None || mode == SpriteImportMode.Multiple)
+                    {
+                        // names in multiple do not change upon rename
+                        continue;
+                    }
+                    assetReference.SubObjectName = formattedSpriteName;
+                    requiresUpdate = !namesMatch;
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(assetReference.SubObjectGUID) && namesMatch)
+                {
+                    foundSubObject = true;
+                }
+            }
+
+            if (foundSubObject)
+            {
+                return requiresUpdate;
+            }
+
+            assetReference.SubObjectName = null;
+            assetReference.SubObjectGUID = string.Empty;
+            return true;
+        }
+
+        internal static SpriteAtlas GetAtlas(ref AssetReference assetReference)
+        {
+            var assetPath = AssetDatabase.GUIDToAssetPath(assetReference.AssetGUID);
+
+            var mainType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
+            if (mainType == typeof(SpriteAtlas))
+            {
+                return AssetDatabase.LoadAssetAtPath<SpriteAtlas>(assetPath);
+            }
+
+            return null;
         }
     }
 }

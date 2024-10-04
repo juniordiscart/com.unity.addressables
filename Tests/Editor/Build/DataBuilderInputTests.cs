@@ -36,22 +36,6 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        public void BuildInput_ReadsProfilerEventState()
-        {
-            var oldState = ProjectConfigData.PostProfilerEvents;
-            ProjectConfigData.PostProfilerEvents = true;
-            var input = new AddressablesDataBuilderInput(Settings);
-            Assert.AreEqual(true, input.ProfilerEventsEnabled);
-
-            ProjectConfigData.PostProfilerEvents = false;
-            input = new AddressablesDataBuilderInput(Settings);
-            Assert.AreEqual(false, input.ProfilerEventsEnabled);
-
-
-            ProjectConfigData.PostProfilerEvents = oldState;
-        }
-
-        [Test]
         public void CreateResult_AssignsAllCorrectData()
         {
             string settingsPath = "Settings/Path";

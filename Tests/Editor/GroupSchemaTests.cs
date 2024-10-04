@@ -1,11 +1,14 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 using UnityEngine.TestTools;
+using static UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
@@ -370,7 +373,7 @@ namespace UnityEditor.AddressableAssets.Tests
             BundledAssetGroupSchema schema = null;
             try
             {
-                Type[] types = new Type[] { };
+                Type[] types = new Type[] {};
                 group = m_Settings.CreateGroup("Group1", false, false, false, null, types);
                 List<string> variableNames = new List<string>();
                 variableNames.Add("LocalBuildPath");
@@ -499,6 +502,39 @@ namespace UnityEditor.AddressableAssets.Tests
                 if (group != null)
                     m_Settings.RemoveGroupInternal(group, true, false);
                 profile.m_ProfileParent = profileParent;
+            }
+        }
+
+        [Test]
+        [TestCase("Local")]
+        [TestCase("Remote")]
+        public void BundledAssetGroupSchema_UseDefaultSchemaSettings(string pathPairName)
+        {
+            AddressableAssetGroup group = null;
+            try
+            {
+                group = m_Settings.CreateGroup("CanApplyDefaultSettingsTestGroup", false, false, false, null, typeof(BundledAssetGroupSchema));
+                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                schema.UseDefaultSchemaSettings = true;
+                List<ProfileGroupType> groupTypes = ProfileGroupType.CreateGroupTypes(m_Settings.profileSettings.GetProfile(m_Settings.activeProfileId), m_Settings);
+                List<string> options = groupTypes.Select(group => group.GroupTypePrefix).ToList();
+                schema.SelectedPathPairIndex = options.IndexOf(pathPairName);
+
+                Dictionary<DefaultSchemaSettingsBuildTargetGroup, DefaultSchemaSettings[]> defaultSettings = schema.CreateDefaultSchemaSettings();
+                DefaultSchemaSettingsBuildTargetGroup targetGroup = schema.GetDefaultSchemaSettingsBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
+
+                DefaultSchemaSettings expectedSettings = defaultSettings[targetGroup][schema.SelectedPathPairIndex];
+                Assert.AreEqual(expectedSettings.compression, schema.Compression);
+                Assert.AreEqual(expectedSettings.useAssetBundleCache, schema.UseAssetBundleCache);
+                Assert.AreEqual(expectedSettings.assetBundledCacheClearBehavior, schema.AssetBundledCacheClearBehavior);
+                Assert.AreEqual(expectedSettings.useAssetBundleCrc, schema.UseAssetBundleCrc);
+                Assert.AreEqual(expectedSettings.useAssetBundleCrcForCachedBundles, schema.UseAssetBundleCrcForCachedBundles);
+                Assert.AreEqual(expectedSettings.bundleNaming, schema.BundleNaming);
+            }
+            finally
+            {
+                if (group != null)
+                    m_Settings.RemoveGroupInternal(group, true, false);
             }
         }
     }

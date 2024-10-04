@@ -15,9 +15,11 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.TestTools;
 using static UnityEditor.AddressableAssets.Settings.AddressableAssetSettings;
+using static UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
@@ -77,9 +79,9 @@ namespace UnityEditor.AddressableAssets.Tests
             var testObject = new GameObject("TestObjectSetLabel");
             PrefabUtility.SaveAsPrefabAsset(testObject, ConfigFolder + "/testasset.prefab");
             var testAssetGUID = AssetDatabase.AssetPathToGUID(ConfigFolder + "/testasset.prefab");
-            entries.Add(Settings.CreateOrMoveEntry(m_AssetGUID, Settings.FindGroup(AddressableAssetSettings.PlayerDataGroupName)));
+            entries.Add(Settings.CreateOrMoveEntry(m_AssetGUID, Settings.FindGroup(AddressableAssetSettings.DefaultLocalGroupName)));
             for (int i = 0; i <= numEntries; i++)
-                entries.Add(Settings.CreateOrMoveEntry(testAssetGUID, Settings.FindGroup(AddressableAssetSettings.PlayerDataGroupName)));
+                entries.Add(Settings.CreateOrMoveEntry(testAssetGUID, Settings.FindGroup(AddressableAssetSettings.DefaultLocalGroupName)));
         }
 
         [Test]
@@ -93,6 +95,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsTrue(cache.TryGetCached(key, out result));
             Assert.AreEqual(result, 20);
         }
+
 #if !UNITY_2020_3_OR_NEWER
         [Test]
         public void Hash128AppendExtensionTests()
@@ -105,10 +108,11 @@ namespace UnityEditor.AddressableAssets.Tests
             h2.Append(462346);
             Assert.AreNotEqual(h1, h2);
             h2 = h1;
-            Hash128 v = new Hash128(45346,4568234,213,35454);
+            Hash128 v = new Hash128(45346, 4568234, 213, 35454);
             h2.Append(ref v);
             Assert.AreNotEqual(h1, h2);
         }
+
 #endif
         [Test]
         public void SettingsCache_CacheClearedOnSettingsChanged()
@@ -132,6 +136,60 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void UpdateScriptingDefineSymbols_EnableJsonCatalog_SimpleCase()
+        {
+            string[] symbols = Array.Empty<string>();
+            string[] newSymbols = AddressableAssetSettings.UpdateScriptingDefineSymbols(symbols, true);
+            string[] expected = new string[] { "ENABLE_JSON_CATALOG" };
+            Assert.AreEqual(expected, newSymbols, "UpdateScriptingDefineSymbols fails in simple enable case.");
+        }
+
+        [Test]
+        public void UpdateScriptingDefineSymbols_DisableJsonCatalog_SimpleCase()
+        {
+            string[] symbols = new string[] { "ENABLE_JSON_CATALOG" };
+            string[] newSymbols = AddressableAssetSettings.UpdateScriptingDefineSymbols(symbols, false);
+            string[] expected = new string[] { };
+            Assert.AreEqual(expected, newSymbols, "UpdateScriptingDefineSymbols fails in simple disable case.");
+        }
+
+        [Test]
+        public void UpdateScriptingDefineSymbols_EnableJsonCatalog_ReturnsNullinTrivialEnableCase()
+        {
+            string[] symbols = new string[] { "ENABLE_JSON_CATALOG" };
+            string[] newSymbols = AddressableAssetSettings.UpdateScriptingDefineSymbols(symbols, true);
+            string[] expected = null;
+            Assert.AreEqual(expected, newSymbols, "UpdateScriptingDefineSymbols fails in trivial enable case.");
+        }
+
+        [Test]
+        public void UpdateScriptingDefineSymbols_EnableJsonCatalog_ReturnsNullInTrivialDisableCase()
+        {
+            string[] symbols = new string[] { };
+            string[] newSymbols = AddressableAssetSettings.UpdateScriptingDefineSymbols(symbols, false);
+            string[] expected = null;
+            Assert.AreEqual(expected, newSymbols, "UpdateScriptingDefineSymbols fails in naive enable case.");
+        }
+
+        [Test]
+        public void UpdateScriptingDefineSymbols_EnableJsonCatalog_SucceedsInComplexEnableCase()
+        {
+            string[] symbols = new string[] {"Test1", "Test2", "Test3", "Test4", "Test5", "ENABLE_NOTJSON_CATALOG", "ANN%$Y^NG_V#%UE"};
+            string[] newSymbols = AddressableAssetSettings.UpdateScriptingDefineSymbols(symbols, true);
+            string[] expected = new string[] {"ENABLE_JSON_CATALOG", "Test1", "Test2", "Test3", "Test4", "Test5", "ENABLE_NOTJSON_CATALOG", "ANN%$Y^NG_V#%UE"};
+            Assert.AreEqual(expected, newSymbols, "UpdateScriptingDefineSymbols fails in complex enable case.");
+        }
+
+        [Test]
+        public void UpdateScriptingDefineSymbols_EnableJsonCatalog_SucceedsInComplexDisableCase()
+        {
+            string[] symbols = new string[] {"Test1", "Test2", "Test3", "Test4", "ENABLE_KINDAJSON_CATALOG", "ENABLE_JSON_CATALOG", "Test5", "ENABLE_NOTJSON_CATALOG", "ANN%$Y^NG_V#%UE"};
+            string[] newSymbols = AddressableAssetSettings.UpdateScriptingDefineSymbols(symbols, false);
+            string[] expected = new string[] {"Test1", "Test2", "Test3", "Test4", "ENABLE_KINDAJSON_CATALOG", "Test5", "ENABLE_NOTJSON_CATALOG", "ANN%$Y^NG_V#%UE"};
+            Assert.AreEqual(expected, newSymbols, "UpdateScriptingDefineSymbols fails in complex disable case.");
+        }
+
+        [Test]
         public void GetDefaultGroupDoesNotThrowNullExceptionWhenGroupsNull()
         {
             Settings.groups.Insert(0, null);
@@ -142,7 +200,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void HasDefaultInitialGroups()
         {
-            Assert.IsNotNull(Settings.FindGroup(AddressableAssetSettings.PlayerDataGroupName));
             Assert.IsNotNull(Settings.FindGroup(AddressableAssetSettings.DefaultLocalGroupName));
         }
 
@@ -158,10 +215,10 @@ namespace UnityEditor.AddressableAssets.Tests
             var initialValue = Settings.currentHash;
             const string labelName = "Newlabel";
             Settings.AddLabel(labelName);
-            Assert.Contains(labelName, Settings.labelTable.labelNames);
+            Assert.Contains(labelName, Settings.labelTable);
             Assert.AreNotEqual(initialValue, Settings.currentHash);
             Settings.RemoveLabel(labelName);
-            Assert.False(Settings.labelTable.labelNames.Contains(labelName));
+            Assert.False(Settings.labelTable.Contains(labelName));
             Assert.AreEqual(initialValue, Settings.currentHash);
         }
 
@@ -235,8 +292,8 @@ namespace UnityEditor.AddressableAssets.Tests
             labels.Add(labelName);
 
             Assert.AreEqual(3, labels.Count);
-            Assert.AreEqual(2, Settings.labelTable.labelNames.Count);
-            Assert.IsFalse(Settings.labelTable.labelNames.Contains(labelName));
+            Assert.AreEqual(2, Settings.labelTable.Count);
+            Assert.IsFalse(Settings.labelTable.Contains(labelName));
         }
 
         [Test]
@@ -264,12 +321,12 @@ namespace UnityEditor.AddressableAssets.Tests
                 entry.SetLabel(labelName, true, false, false);
                 Settings.AddLabel(labelName2);
 
-                Assert.Contains(labelName, Settings.labelTable.labelNames);
-                Assert.Contains(labelName2, Settings.labelTable.labelNames);
+                Assert.Contains(labelName, Settings.labelTable);
+                Assert.Contains(labelName2, Settings.labelTable);
 
                 Settings.RemoveUnusedLabels();
-                Assert.Contains(labelName, Settings.labelTable.labelNames);
-                Assert.False(Settings.labelTable.labelNames.Contains(labelName2));
+                Assert.Contains(labelName, Settings.labelTable);
+                Assert.False(Settings.labelTable.Contains(labelName2));
             }
             finally
             {
@@ -438,6 +495,54 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Directory.Delete(folderPath, true);
             Settings.RemoveAssetEntry(folderEntry, false);
+        }
+
+        [Test]
+        public void FindAssetEntry_SupportsUndoRedo_WhenGroupAndEntryAdded()
+        {
+            Undo.ClearAll();
+
+            Undo.RecordObject(Settings, "Settings before test group is created");
+            var group = Settings.CreateGroup("UndoRedoTests", false, false, false, null);
+            string guid = GUID.Generate().ToString();
+            var entry = new AddressableAssetEntry(guid, "UndoResetAsset", group, false);
+
+            Undo.RecordObject(group, "Add asset to group");
+            group.AddAssetEntry(entry);
+            Settings.FindAssetEntry(guid); // populate FindAssetEntry cache
+
+            Undo.PerformUndo();
+            Assert.IsTrue(Settings.FindAssetEntry(guid) == null, "Asset wasn't removed");
+
+            Undo.PerformRedo();
+            Assert.IsTrue(Settings.FindAssetEntry(guid) != null, "Asset was re-added");
+
+            Settings.RemoveGroup(group);
+            Undo.ClearAll();
+        }
+
+        [Test]
+        public void FindAssetEntry_SupportsUndoRedo_WhenEntryAdded()
+        {
+            Undo.ClearAll();
+
+            var group = Settings.CreateGroup("UndoRedoTests", false, false, false, null);
+            Undo.RecordObject(Settings, "Settings after test group is created");
+            string guid = GUID.Generate().ToString();
+            var entry = new AddressableAssetEntry(guid, "UndoResetAsset", group, false);
+
+            Undo.RecordObject(group, "Add asset to group");
+            group.AddAssetEntry(entry);
+            Settings.FindAssetEntry(guid); // populate FindAssetEntry cache
+
+            Undo.PerformUndo();
+            Assert.IsTrue(Settings.FindAssetEntry(guid) == null, "Asset wasn't removed");
+
+            Undo.PerformRedo();
+            Assert.IsTrue(Settings.FindAssetEntry(guid) != null, "Asset was re-added");
+
+            Settings.RemoveGroup(group);
+            Undo.ClearAll();
         }
 
         [Test]
@@ -684,16 +789,6 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreNotEqual(prevActivePlayModeDataBuilderIndex, Settings.ActivePlayerDataBuilderIndex);
             Settings.ActivePlayerDataBuilderIndex = prevActivePlayModeDataBuilderIndex;
         }
-
-#pragma warning disable 618
-        [Test]
-        public void AddressableAssetSettings_RemoveSchemaTemplate_CannotRemoveGroupSchemaTemplate()
-        {
-            LogAssert.Expect(LogType.Error, "GroupSchemaTemplates are deprecated, use GroupTemplateObjects");
-            Settings.RemoveSchemaTemplate(0);
-        }
-
-#pragma warning restore 618
 
         [Test]
         public void AddressableAssetSettings_GetGroupTemplateObject_CanGetGroupTemplateObject()
@@ -1052,110 +1147,6 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        public void AddressableAssetSettings_MoveAssetsFromResources_CanMoveAssetsFromResources()
-        {
-            // Setup
-            var testGuidsToPaths = new Dictionary<string, string>();
-            var testObject = new GameObject("TestObjectMoveAssets");
-            PrefabUtility.SaveAsPrefabAsset(testObject, ConfigFolder + "/testasset.prefab");
-            var testAssetGUID = AssetDatabase.AssetPathToGUID(ConfigFolder + "/testasset.prefab");
-            Settings.CreateOrMoveEntry(testAssetGUID, Settings.FindGroup(AddressableAssetSettings.PlayerDataGroupName));
-            var originalAssetEntry = Settings.CreateOrMoveEntry(m_AssetGUID, Settings.FindGroup(AddressableAssetSettings.PlayerDataGroupName));
-            var prevAddress = originalAssetEntry.address;
-            var prevDC = EditorUtility.GetDirtyCount(Settings);
-            var prevGroup = originalAssetEntry.parentGroup;
-            var prevPath = AssetDatabase.GUIDToAssetPath(m_AssetGUID);
-            var prevPathTwo = AssetDatabase.GUIDToAssetPath(testAssetGUID);
-            var testGroup = Settings.FindGroup(AddressableAssetSettings.DefaultLocalGroupName);
-            var testAssetPath = TestFolder + "/testMoveAssets";
-            testGuidsToPaths[m_AssetGUID] = testAssetPath + "/resources/test.prefab";
-            testGuidsToPaths[testAssetGUID] = testAssetPath + "/resources/testasset.prefab";
-
-            // Test
-            Settings.MoveAssetsFromResources(testGuidsToPaths, testGroup);
-            var dc = EditorUtility.GetDirtyCount(Settings);
-            Assert.AreNotEqual(prevPath, AssetDatabase.GUIDToAssetPath(m_AssetGUID));
-            Assert.AreNotEqual(prevPathTwo, AssetDatabase.GUIDToAssetPath(testAssetGUID));
-            Assert.AreNotEqual(prevGroup, Settings.FindAssetEntry(m_AssetGUID).parentGroup);
-            Assert.AreNotEqual(prevGroup, Settings.FindAssetEntry(testAssetGUID).parentGroup);
-            Assert.AreEqual(prevDC + 1, dc);
-
-            testGuidsToPaths[m_AssetGUID] = TestFolder + "/test.prefab";
-            testGuidsToPaths[testAssetGUID] = TestFolder + "/testasset.prefab";
-            Settings.MoveAssetsFromResources(testGuidsToPaths, prevGroup);
-            originalAssetEntry = Settings.FindAssetEntry(m_AssetGUID);
-            Assert.AreEqual(originalAssetEntry.address, "test");
-
-            //Cleanup
-            originalAssetEntry.address = prevAddress;
-            if (Directory.Exists(testAssetPath))
-                AssetDatabase.DeleteAsset(testAssetPath);
-            EditorBuildSettings.RemoveConfigObject(testAssetPath);
-        }
-
-        [Test]
-        public void AddressableAssetSettings_MoveAssetsFromResources_AddressRespectFolderHierarchy()
-        {
-            // Setup
-            var guidsToPaths = new Dictionary<string, string>();
-            var obj = new GameObject("TestObjectMoveAssets");
-
-            var objFolder = TestFolder + "/Resources/subfolder/subsubfolder";
-            if (!Directory.Exists(objFolder))
-            {
-                Directory.CreateDirectory(objFolder);
-            }
-
-            var objPath = objFolder + "/testasset.prefab";
-            PrefabUtility.SaveAsPrefabAsset(obj, objPath);
-
-            var guid = AssetDatabase.AssetPathToGUID(objPath);
-            var playerDataGroup = Settings.FindGroup(AddressableAssetSettings.PlayerDataGroupName);
-            Settings.CreateOrMoveEntry(guid, playerDataGroup);
-
-            var destinationFolder = TestFolder + "/testMoveAssets";
-            guidsToPaths[guid] = destinationFolder + "/testasset.prefab";
-
-            // Test
-            var defaultLocalGroup = Settings.FindGroup(AddressableAssetSettings.DefaultLocalGroupName);
-            Settings.MoveAssetsFromResources(guidsToPaths, defaultLocalGroup);
-
-            var idx = objPath.ToLower().LastIndexOf("resources/");
-            var expectedAddress = objPath.Substring(idx + 10).Replace(Path.GetExtension(objPath), "");
-            var entry = Settings.FindAssetEntry(guid);
-            Assert.AreEqual(expectedAddress, entry.address);
-            Assert.AreEqual(guidsToPaths[guid], AssetDatabase.GUIDToAssetPath(guid));
-            Assert.AreEqual(defaultLocalGroup, entry.parentGroup);
-
-            //Cleanup
-            if (Directory.Exists(TestFolder + "/Resources"))
-                AssetDatabase.DeleteAsset(TestFolder + "/Resources");
-            EditorBuildSettings.RemoveConfigObject(TestFolder + "/Resources");
-
-            Settings.RemoveAssetEntry(guid);
-            AssetDatabase.DeleteAsset(guidsToPaths[guid]);
-            if (Directory.Exists(destinationFolder))
-                AssetDatabase.DeleteAsset(destinationFolder);
-            EditorBuildSettings.RemoveConfigObject(destinationFolder);
-        }
-
-        [Test]
-        public void AddressableAssetSettings_MoveAssetsFromResources_CannotMoveNullOrInvalidAsset()
-        {
-            Settings.MoveAssetsFromResources(null, null);
-            var testAssetEntry = Settings.CreateOrMoveEntry(m_AssetGUID, Settings.FindGroup(AddressableAssetSettings.PlayerDataGroupName));
-            var currentGroup = testAssetEntry.parentGroup;
-            var testGuidsToPaths = new Dictionary<string, string>();
-            var currentPath = AssetDatabase.GUIDToAssetPath(m_AssetGUID);
-            var newAssetPath = TestFolder + "/testMoveAssets";
-            testGuidsToPaths[m_AssetGUID] = newAssetPath + "/test.prefab";
-            Settings.MoveAssetsFromResources(testGuidsToPaths, null);
-            Settings.MoveEntry(testAssetEntry, null);
-            Assert.AreEqual(currentPath, AssetDatabase.GUIDToAssetPath(m_AssetGUID));
-            Assert.AreEqual(currentGroup, Settings.FindAssetEntry(m_AssetGUID).parentGroup);
-        }
-
-        [Test]
         public void AddressableAssetSettings_SetMaxConcurrentWebRequests_CanSet()
         {
             Settings.MaxConcurrentWebRequests = 100;
@@ -1212,8 +1203,8 @@ namespace UnityEditor.AddressableAssets.Tests
                 Settings.RemoveLabel(testLabels[i]);
 
             foreach (var e in entries)
-            foreach (var l in testLabels)
-                Assert.IsTrue(e.labels.Contains(l));
+                foreach (var l in testLabels)
+                    Assert.IsTrue(e.labels.Contains(l));
 
             // Check that each of the first half of labels were removed
             foreach (var e in entries)
@@ -1295,7 +1286,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             string notSet = null;
             AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => notSet = "set");
-            Assert.IsTrue(AddressableAssetSettings.InvokeAssetEntryCommand("cmd1", new AddressableAssetEntry[] { }));
+            Assert.IsTrue(AddressableAssetSettings.InvokeAssetEntryCommand("cmd1", new AddressableAssetEntry[] {}));
             Assert.AreEqual("set", notSet);
             AddressableAssetSettings.UnregisterCustomAssetEntryCommand("cmd1");
         }
@@ -1307,7 +1298,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Encountered exception when running Asset Entry Command 'cmd1': Exception of type 'System.Exception' was thrown.");
-                Assert.IsFalse(AddressableAssetSettings.InvokeAssetEntryCommand("cmd1", new AddressableAssetEntry[] { }));
+                Assert.IsFalse(AddressableAssetSettings.InvokeAssetEntryCommand("cmd1", new AddressableAssetEntry[] {}));
             });
             AddressableAssetSettings.UnregisterCustomAssetEntryCommand("cmd1");
         }
@@ -1315,7 +1306,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CustomEntryCommand_WhenCommandHasNullEntries_ReturnsFalseAndLogsError()
         {
-            AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => { });
+            AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => {});
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Asset Entry Command 'cmd1' called with null entry collection.");
@@ -1330,14 +1321,14 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Asset Entry Command 'cmd' not found.  Ensure that it is registered by calling RegisterCustomAssetEntryCommand.");
-                Assert.IsFalse(AddressableAssetSettings.InvokeAssetEntryCommand("cmd", new AddressableAssetEntry[] { }));
+                Assert.IsFalse(AddressableAssetSettings.InvokeAssetEntryCommand("cmd", new AddressableAssetEntry[] {}));
             });
         }
 
         [Test]
         public void CustomEntryCommand_RegisterWithValidIdAndFunc_Succeeds()
         {
-            AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => { });
+            AddressableAssetSettings.RegisterCustomAssetEntryCommand("cmd1", s => {});
             CollectionAssert.Contains(AddressableAssetSettings.CustomAssetEntryCommands, "cmd1");
             AddressableAssetSettings.UnregisterCustomAssetEntryCommand("cmd1");
         }
@@ -1358,9 +1349,9 @@ namespace UnityEditor.AddressableAssets.Tests
         public void CustomEntryCommand_RegisterWithInvalidParameters_Fails()
         {
             LogAssert.Expect(LogType.Error, "RegisterCustomAssetEntryCommand - invalid command id.");
-            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand("", s => { }));
+            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand("", s => {}));
             LogAssert.Expect(LogType.Error, "RegisterCustomAssetEntryCommand - invalid command id.");
-            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand(null, s => { }));
+            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand(null, s => {}));
             LogAssert.Expect(LogType.Error, $"RegisterCustomAssetEntryCommand - command functor for id 'valid'.");
             Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetEntryCommand("valid", null));
             CollectionAssert.IsEmpty(AddressableAssetSettings.CustomAssetEntryCommands);
@@ -1371,7 +1362,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             string notSet = null;
             AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => notSet = "set");
-            AddressableAssetSettings.InvokeAssetGroupCommand("cmd1", new AddressableAssetGroup[] { });
+            AddressableAssetSettings.InvokeAssetGroupCommand("cmd1", new AddressableAssetGroup[] {});
             Assert.AreEqual("set", notSet);
             AddressableAssetSettings.UnregisterCustomAssetGroupCommand("cmd1");
         }
@@ -1379,7 +1370,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CustomGroupCommand_RegisterWithValidIdAndFunc_Succeeds()
         {
-            AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => { });
+            AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => {});
             CollectionAssert.Contains(AddressableAssetSettings.CustomAssetGroupCommands, "cmd1");
             AddressableAssetSettings.UnregisterCustomAssetGroupCommand("cmd1");
         }
@@ -1400,9 +1391,9 @@ namespace UnityEditor.AddressableAssets.Tests
         public void CustomGroupCommand_RegisterWithInvalidParameters_Fails()
         {
             LogAssert.Expect(LogType.Error, "RegisterCustomAssetGroupCommand - invalid command id.");
-            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand("", s => { }));
+            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand("", s => {}));
             LogAssert.Expect(LogType.Error, "RegisterCustomAssetGroupCommand - invalid command id.");
-            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand(null, s => { }));
+            Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand(null, s => {}));
             LogAssert.Expect(LogType.Error, $"RegisterCustomAssetGroupCommand - command functor for id 'valid'.");
             Assert.IsFalse(AddressableAssetSettings.RegisterCustomAssetGroupCommand("valid", null));
             CollectionAssert.IsEmpty(AddressableAssetSettings.CustomAssetGroupCommands);
@@ -1415,7 +1406,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Encountered exception when running Asset Group Command 'cmd1': Exception of type 'System.Exception' was thrown.");
-                Assert.IsFalse(AddressableAssetSettings.InvokeAssetGroupCommand("cmd1", new AddressableAssetGroup[] { }));
+                Assert.IsFalse(AddressableAssetSettings.InvokeAssetGroupCommand("cmd1", new AddressableAssetGroup[] {}));
             });
             AddressableAssetSettings.UnregisterCustomAssetGroupCommand("cmd1");
         }
@@ -1423,7 +1414,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CustomGroupCommand_WhenCommandHasNullGroups_ReturnsFalseAndLogsError()
         {
-            AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => { });
+            AddressableAssetSettings.RegisterCustomAssetGroupCommand("cmd1", s => {});
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Asset Group Command 'cmd1' called with null group collection.");
@@ -1438,7 +1429,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() =>
             {
                 LogAssert.Expect(LogType.Error, $"Asset Group Command 'cmd' not found.  Ensure that it is registered by calling RegisterCustomAssetGroupCommand.");
-                Assert.IsFalse(AddressableAssetSettings.InvokeAssetGroupCommand("cmd", new AddressableAssetGroup[] { }));
+                Assert.IsFalse(AddressableAssetSettings.InvokeAssetGroupCommand("cmd", new AddressableAssetGroup[] {}));
             });
         }
 
@@ -1473,6 +1464,114 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.OverridePlayerVersion = "";
             ReloadSettings();
             Assert.AreEqual("", Settings.OverridePlayerVersion);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_UseUnityWebRequestForLocalBundles()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().UseUnityWebRequestForLocalBundles = true;
+
+            bool expectedValue = false;
+            settings.UseUnityWebRequestForLocalBundles = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().UseUnityWebRequestForLocalBundles);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_BundleTimeout()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().Timeout = 1;
+
+            int expectedValue = 0;
+            settings.BundleTimeout = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().Timeout);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_BundleRetryCount()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().RetryCount = 1;
+
+            int expectedValue = 0;
+            settings.BundleRetryCount = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().RetryCount);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_BundleRedirectLimit()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().RedirectLimit = 0;
+
+            int expectedValue = -1;
+            settings.BundleRedirectLimit = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().RedirectLimit);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_InternalIdNamingMode()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().InternalIdNamingMode = AssetNamingMode.Dynamic;
+
+            var expectedValue = AssetNamingMode.FullPath;
+            settings.InternalIdNamingMode = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().InternalIdNamingMode);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_InternalBundleIdMode()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().InternalBundleIdMode = BundleInternalIdMode.GroupGuid;
+
+            var expectedValue = BundleInternalIdMode.GroupGuidProjectIdHash;
+            settings.InternalBundleIdMode = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().InternalBundleIdMode);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_AssetLoadMode()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().AssetLoadMode = AssetLoadMode.AllPackedAssetsAndDependencies;
+
+            var expectedValue = AssetLoadMode.RequestedAssetAndDependencies;
+            settings.AssetLoadMode = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().AssetLoadMode);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_BundledAssetProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedValue = new SerializedType() { Value = typeof(BundledAssetProvider) };
+            settings.BundledAssetProviderType = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType);
+        }
+
+        [Test]
+        public void CanSetGroupSettings_AssetBundleProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedValue = new SerializedType() { Value = typeof(AssetBundleProvider) };
+            settings.AssetBundleProviderType = expectedValue;
+            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType);
         }
     }
 }

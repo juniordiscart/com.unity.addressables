@@ -231,13 +231,13 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// The build path on disk of the default local content catalog
         /// </summary>
         [SerializeField]
-        internal string LocalCatalogBuildPath;
+        public string LocalCatalogBuildPath;
 
         /// <summary>
         /// The build path of the remote content catalog, if one was built
         /// </summary>
         [SerializeField]
-        internal string RemoteCatalogBuildPath;
+        public string RemoteCatalogBuildPath;
 
         internal string m_FilePath;
 
@@ -518,6 +518,11 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public bool UniqueBundleIds;
 
             /// <summary>
+            /// Addressables setting value set for if the use wants to Disable Binary Catalogs and use Json Catalogs
+            /// </summary>
+            public bool EnableJsonCatalog;
+
+            /// <summary>
             /// Addressables setting value set for if the build used non recursive dependency calculation
             /// </summary>
             public bool NonRecursiveBuilding;
@@ -555,11 +560,6 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         [Serializable]
         public class AddressablesRuntimeData
         {
-            /// <summary>
-            /// Runtime setting value set for if the runtime will submit profiler events
-            /// </summary>
-            public bool ProfilerEvents;
-
             /// <summary>
             /// Runtime setting value set for if resource manager exceptions are logged or not
             /// </summary>
@@ -824,11 +824,17 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                 [Serializable]
                 public struct AssetDependency
                 {
+                    /// <summary>
+                    /// The root Asset.
+                    /// </summary>
                     [SerializeReference]
-                    internal ExplicitAsset rootAsset;
+                    public ExplicitAsset rootAsset;
 
+                    /// <summary>
+                    /// The dependent Asset.
+                    /// </summary>
                     [SerializeReference]
-                    internal ExplicitAsset dependencyAsset;
+                    public ExplicitAsset dependencyAsset;
 
                     internal AssetDependency(ExplicitAsset root, ExplicitAsset depAsset)
                     {
@@ -1016,8 +1022,11 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             [SerializeReference]
             public List<DataFromOtherAsset> OtherAssets = new List<DataFromOtherAsset>();
 
+            /// <summary>
+            /// A list of referenced explicit assets located in other AssetBundles. 
+            /// </summary>
             [SerializeReference]
-            internal List<ExplicitAsset> ExternalReferences = new List<ExplicitAsset>();
+            public List<ExplicitAsset> ExternalReferences = new List<ExplicitAsset>();
 
             /// <summary>
             /// The final filename of the AssetBundle file
@@ -1059,12 +1068,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// <summary>
             /// Object name within the Asset
             /// </summary>
-            [SerializeField] internal string ObjectName;
+            [SerializeField] public string ObjectName;
 
             /// <summary>
             /// Component name if AssetType is a MonoBehaviour or Component
             /// </summary>
-            [SerializeField] internal string ComponentName;
+            [SerializeField] public string ComponentName;
 
             /// <summary>
             /// Type of Object
@@ -1084,16 +1093,22 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// <summary>
             /// References to other Objects
             /// </summary>
-            [SerializeField] internal List<ObjectReference> References = new List<ObjectReference>();
+            [SerializeField] public List<ObjectReference> References = new List<ObjectReference>();
         }
 
         /// <summary>
         /// Identification of an Object within the same file
         /// </summary>
         [Serializable]
-        internal class ObjectReference
+        public class ObjectReference
         {
+            /// <summary>
+            /// The index of the Asset within the file.
+            /// </summary>
             public int AssetId;
+            /// <summary>
+            /// The indices of the Objects referenced within the same or other files.
+            /// </summary>
             public List<int> ObjectIds;
         }
 
@@ -1198,7 +1213,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// List of Assets that reference this Asset
             /// </summary>
             [SerializeReference]
-            internal List<ExplicitAsset> ReferencingAssets = new List<ExplicitAsset>();
+            public List<ExplicitAsset> ReferencingAssets = new List<ExplicitAsset>();
         }
 
         /// <summary>

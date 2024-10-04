@@ -23,6 +23,5 @@ There are the following settings used for catalogs:
 To minimize the catalog size, use the following settings:
 
 * **Compress the local catalog**: If your primary concern is how big the catalog is in your build, there is an option in [Catalog settings](xref:addressables-asset-settings) called **Compress Local Catalog**. This option builds catalog that ships with your game into an AssetBundle. Compressing the catalog makes the file itself smaller, but note that this does increase catalog load time.  
-* **Disable built-in scenes and Resources**: Addressables provides the ability to load content from Resources and from the built-in scenes list. By default this feature is enabled, which can bloat the catalog if you do not need this feature. To disable it, select the **Built In Data** group in the Groups window (**Window** > **Asset Management** > **Addressables** > **Groups**). From the settings for that group, you can disable **Include Resources Folders** and **Include Build Settings Scenes**. Disabling these options only removes the references to those asset types from the Addressables catalog. The content itself is still built into the player you create, and you can still load it via legacy API. 
- 
+
 There are several group settings that can help reduce the catalog size, such as __Internal Asset Naming Mode__. For more information refer to [Advanced Group settings](xref:addressables-content-packing-and-loading-schema).

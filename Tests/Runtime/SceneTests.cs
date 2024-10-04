@@ -80,13 +80,13 @@ namespace SceneTests
         [SetUp]
         public void SetUp()
         {
-            m_StartingSceneCount = m_Addressables.SceneOperationCount;
+            m_StartingSceneCount = m_Addressables.ActiveSceneInstances;
         }
 
         [TearDown]
         public void TearDown()
         {
-            Assert.AreEqual(m_StartingSceneCount, m_Addressables.SceneOperationCount);
+            Assert.AreEqual(m_StartingSceneCount, m_Addressables.ActiveSceneInstances);
         }
 
         [UnityTest]
@@ -104,6 +104,123 @@ namespace SceneTests
 
             yield return UnloadSceneFromHandler(op, m_Addressables);
             yield return UnloadSceneFromHandler(op1, m_Addressables);
+        }
+
+        [UnityTest]
+        public IEnumerator SceneReleaseMode_SceneReleaseOnSceneUnloaded_SceneHandleIsInvalid()
+        {
+            AsyncOperationHandle<SceneInstance> op = default;
+            AsyncOperationHandle<SceneInstance> op1 = default;
+
+            try
+            {
+                // get the scenes active, so can be recreated later
+                Dictionary<string, GameObject[]> initialScenes = MoveAllSceneRootsToDDOL();
+
+                op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+                yield return op;
+                Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
+                Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
+                Assert.AreEqual(1, m_Addressables.ActiveSceneInstances);
+
+                op1 = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Single));
+                yield return op1;
+                Assert.AreEqual(AsyncOperationStatus.Succeeded, op1.Status);
+                Assert.AreEqual(sceneKeys[1], SceneManager.GetSceneByName(sceneKeys[1]).name);
+                Assert.AreEqual(1, m_Addressables.ActiveSceneInstances);
+                Assert.IsFalse(op.IsValid(), "Scene handle expected to not be valid as second the scene is loaded with single mode, and this handle should be released OnSceneUnloaded");
+                Assert.IsTrue(op1.IsValid(), "New single scene handle should be succeeded and valid");
+
+                RecreateScenes(initialScenes);
+
+                yield return UnloadSceneFromHandler(op1, m_Addressables);
+                Assert.AreEqual(0, m_Addressables.ActiveSceneInstances);
+            }
+            finally
+            {
+                if (op.IsValid())
+                    m_Addressables.UnloadSceneAsync(op);
+                if (op1.IsValid())
+                    m_Addressables.UnloadSceneAsync(op1);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SceneReleaseMode_SceneReleaseOnSceneUnloaded_SceneHandleIsValid()
+        {
+            AsyncOperationHandle<SceneInstance> op = default;
+            AsyncOperationHandle<SceneInstance> op1 = default;
+
+            try
+            {
+                // get the scenes active, so can be recreated later
+                Dictionary<string, GameObject[]> initialScenes = MoveAllSceneRootsToDDOL();
+
+                op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive), SceneReleaseMode.OnlyReleaseSceneOnHandleRelease);
+                yield return op;
+                Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
+                Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
+                Assert.AreEqual(1, m_Addressables.ActiveSceneInstances);
+
+                op1 = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Single));
+                yield return op1;
+                Assert.AreEqual(AsyncOperationStatus.Succeeded, op1.Status);
+                Assert.AreEqual(sceneKeys[1], SceneManager.GetSceneByName(sceneKeys[1]).name);
+                Assert.AreEqual(1, m_Addressables.ActiveSceneInstances);
+                Assert.IsTrue(op.IsValid(), "Scene handle expected to be valid. Where the second the scene is loaded with single mode, and unloads first scene. This handle should not be released OnSceneUnloaded");
+                Assert.IsTrue(op1.IsValid(), "New single scene handle should be succeeded and valid");
+
+                RecreateScenes(initialScenes);
+                yield return UnloadSceneFromHandler(op, m_Addressables, false);
+                yield return UnloadSceneFromHandler(op1, m_Addressables);
+                Assert.AreEqual(0, m_Addressables.ActiveSceneInstances);
+            }
+            finally
+            {
+                if (op.IsValid())
+                    m_Addressables.UnloadSceneAsync(op);
+                if (op1.IsValid())
+                    m_Addressables.UnloadSceneAsync(op1);
+            }
+        }
+
+        private static void LogActiceSceneNames()
+        {
+            Debug.Log("Loaded scenes are:");
+            for (int i = 0; i < SceneManager.sceneCount; ++i)
+            {
+                var s = SceneManager.GetSceneAt(i);
+                Debug.Log("Currently loaded scene = " + s.name);
+            }
+        }
+
+        private static void RecreateScenes(Dictionary<string, GameObject[]> initialScenes)
+        {
+            foreach (KeyValuePair<string, GameObject[]> scene in initialScenes)
+            {
+                Scene s = SceneManager.CreateScene(scene.Key);
+                foreach (GameObject g in scene.Value)
+                {
+                    SceneManager.MoveGameObjectToScene(g, s);
+                }
+            }
+        }
+
+        private static Dictionary<string, GameObject[]> MoveAllSceneRootsToDDOL()
+        {
+            Dictionary<string, GameObject[]> initialScenes = new Dictionary<string, GameObject[]>();
+            for (int i = 0; i < SceneManager.sceneCount; ++i)
+            {
+                var s = SceneManager.GetSceneAt(i);
+                initialScenes.Add(s.name, s.GetRootGameObjects());
+                GameObject[] roots = s.GetRootGameObjects();
+                foreach (var root in roots)
+                {
+                    GameObject.DontDestroyOnLoad(root);
+                }
+            }
+
+            return initialScenes;
         }
 
         [UnityTest]
@@ -126,7 +243,7 @@ namespace SceneTests
             LogAssert.ignoreFailingMessages = true;
             var loc = new ResourceLocationBase("scene", "asdf", typeof(SceneProvider).FullName, typeof(SceneInstance),
                 new ResourceLocationBase("invalid", "nobundle", typeof(AssetBundleProvider).FullName, typeof(AssetBundleResource)));
-            var op = m_Addressables.LoadSceneAsync(loc);
+            var op = m_Addressables.LoadSceneAsync(loc, new LoadSceneParameters(LoadSceneMode.Single));
             yield return op;
 
             Assert.AreEqual(AsyncOperationStatus.Failed, op.Status);
@@ -345,6 +462,7 @@ namespace SceneTests
             Assert.AreEqual(1, m_Addressables.m_SceneInstances.Count);
             var sceneInst = op.m_InternalOp.Result;
             yield return m_Addressables.UnloadSceneAsync(sceneInst);
+            LogAssert.NoUnexpectedReceived();
 
             Assert.AreEqual(0, m_Addressables.m_SceneInstances.Count);
         }
@@ -494,14 +612,6 @@ namespace SceneTests
         protected override TestBuildScriptMode BuildScriptMode
         {
             get { return TestBuildScriptMode.Fast; }
-        }
-    }
-
-    class SceneTests_VirtualMode : SceneTests
-    {
-        protected override TestBuildScriptMode BuildScriptMode
-        {
-            get { return TestBuildScriptMode.Virtual; }
         }
     }
 

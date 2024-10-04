@@ -55,7 +55,6 @@ namespace UnityEngine.ResourceManagement.Tests
         {
             m_RM = new ResourceManager();
             m_RM.CallbackHooksEnabled = false;
-            m_RM.postProfilerEvents = true;
 
             m_Provider = new MockProvider();
             m_Provider.ProvideCallback = ProvideBasicCallback;
@@ -400,100 +399,6 @@ namespace UnityEngine.ResourceManagement.Tests
             m_RM.Update(0.0f);
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
             Assert.AreEqual(5, op.Result);
-            op.Release();
-        }
-
-        [Test]
-        public void ProvideResource_ReceiveDiagnosticsCallback_IGenericProviderOperationHasLocation()
-        {
-            m_Provider.ProvideCallback = (pi) => { pi.Complete(int.Parse(pi.Location.InternalId), true, null); };
-            m_RM.ResourceProviders.Add(m_Provider);
-            List<ResourceManager.DiagnosticEventContext> eventsRecieved = new List<ResourceManager.DiagnosticEventContext>();
-            m_RM.RegisterDiagnosticCallback(ctx => { eventsRecieved.Add(ctx); });
-
-            var locations = new ResourceLocationBase("1", "1", m_Provider.ProviderId, typeof(object));
-            AsyncOperationHandle<object> op = m_RM.ProvideResource<object>(locations);
-
-            m_RM.Update(0.0f);
-            m_RM.ClearDiagnosticCallbacks();
-
-            for (int i = 0; i < eventsRecieved.Count; ++i)
-            {
-                if (eventsRecieved[i].OperationHandle.m_InternalOp is IGenericProviderOperation)
-                {
-                    Assert.NotNull(eventsRecieved[i].Location);
-                    Assert.IsTrue(eventsRecieved[i].Location.InternalId == "1");
-                }
-            }
-
-            op.Release();
-        }
-
-        [Test]
-        public void ProvideResource_ReceiveDiagnosticsCallback_CreateAndComplete()
-        {
-            m_Provider.ProvideCallback = (pi) => { pi.Complete(int.Parse(pi.Location.InternalId), true, null); };
-            m_RM.ResourceProviders.Add(m_Provider);
-            List<ResourceManager.DiagnosticEventContext> eventsRecieved = new List<ResourceManager.DiagnosticEventContext>();
-            m_RM.RegisterDiagnosticCallback(ctx => { eventsRecieved.Add(ctx); });
-
-            var locations = new ResourceLocationBase("1", "1", m_Provider.ProviderId, typeof(object));
-            AsyncOperationHandle<object> op = m_RM.ProvideResource<object>(locations);
-
-            m_RM.Update(0.0f);
-            m_RM.ClearDiagnosticCallbacks();
-
-            bool created = false;
-            bool completed = false;
-            for (int i = 0; i < eventsRecieved.Count; ++i)
-            {
-                if (eventsRecieved[i].Type == ResourceManager.DiagnosticEventType.AsyncOperationCreate)
-                {
-                    Assert.NotNull(eventsRecieved[i].Location);
-                    Assert.IsTrue(eventsRecieved[i].Location.InternalId == "1");
-                    Assert.IsFalse(completed);
-                    Assert.IsFalse(created);
-                    created = true;
-                }
-                else if (eventsRecieved[i].Type == ResourceManager.DiagnosticEventType.AsyncOperationComplete)
-                {
-                    Assert.NotNull(eventsRecieved[i].Location);
-                    Assert.True(eventsRecieved[i].Location.InternalId == "1");
-                    Assert.IsFalse(completed);
-                    Assert.IsTrue(created);
-                    completed = true;
-                }
-                else if (eventsRecieved[i].Type == ResourceManager.DiagnosticEventType.AsyncOperationDestroy)
-                {
-                    Assert.NotNull(eventsRecieved[i].Location);
-                    Assert.True(eventsRecieved[i].Location.InternalId == "1");
-                    Assert.IsTrue(completed);
-                    Assert.IsTrue(created);
-                }
-            }
-
-            op.Release();
-        }
-
-        [Test]
-        public void ProvideResource_ReceiveDiagnosticsCallback_MultipleCallbacks()
-        {
-            m_Provider.ProvideCallback = (pi) => { pi.Complete(int.Parse(pi.Location.InternalId), true, null); };
-            m_RM.ResourceProviders.Add(m_Provider);
-
-            bool callback1 = false, callback2 = false;
-            m_RM.RegisterDiagnosticCallback(ctx => { callback1 = true; });
-            m_RM.RegisterDiagnosticCallback(ctx => { callback2 = true; });
-
-            var locations = new ResourceLocationBase("1", "1", m_Provider.ProviderId, typeof(object));
-            AsyncOperationHandle<object> op = m_RM.ProvideResource<object>(locations);
-
-            m_RM.Update(0.0f);
-            m_RM.ClearDiagnosticCallbacks();
-
-            Assert.IsTrue(callback1);
-            Assert.IsTrue(callback2);
-
             op.Release();
         }
 

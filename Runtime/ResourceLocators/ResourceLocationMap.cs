@@ -87,7 +87,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         /// </summary>
         Dictionary<object, IList<IResourceLocation>> locations;
 
-#if ENABLE_BINARY_CATALOG
+#if !ENABLE_JSON_CATALOG
         /// <summary>
         /// Enumeration of all locations for this locator.
         /// </summary>
