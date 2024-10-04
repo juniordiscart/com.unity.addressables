@@ -72,7 +72,7 @@ namespace UnityEngine.AddressableAssets
 
         AsyncOperationHandle<bool> m_ActiveCleanBundleCacheOperation;
 
-        internal int SceneOperationCount
+        internal int ActiveSceneInstances
         {
             get { return m_SceneInstances.Count; }
         }
@@ -152,8 +152,11 @@ namespace UnityEngine.AddressableAssets
                     m_SceneInstances.Remove(s);
                     m_resultToHandle.Remove(s.Result);
 
-                    var op = SceneProvider.ReleaseScene(m_ResourceManager, sceneHandle);
-                    AutoReleaseHandleOnCompletion(op);
+                    if (sceneHandle.Result.ReleaseSceneOnSceneUnloaded)
+                    {
+                        var op = SceneProvider.ReleaseScene(m_ResourceManager, sceneHandle);
+                        AutoReleaseHandleOnCompletion(op);
+                    }
 
 					m_ResourceManager.CleanupSceneInstances(scene);
                     break;
@@ -290,7 +293,7 @@ namespace UnityEngine.AddressableAssets
         internal bool GetResourceLocations(object key, Type type, out IList<IResourceLocation> locations)
         {
             if (type == null && (key is AssetReference))
-				type = (key as AssetReference).SubObjectType;
+                type = (key as AssetReference).SubObjectType;
 
             key = EvaluateKey(key);
 
@@ -482,10 +485,10 @@ namespace UnityEngine.AddressableAssets
 
         public ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(string catalogLocation) where T : IResourceProvider
         {
-#if ENABLE_BINARY_CATALOG
-            string hashFilePath = catalogLocation.Replace(".bin", ".hash");
-#else
+#if ENABLE_JSON_CATALOG
             string hashFilePath = catalogLocation.Replace(".json", ".hash");
+#else
+            string hashFilePath = catalogLocation.Replace(".bin", ".hash");
 #endif
             return CreateCatalogLocationWithHashDependencies<T>(catalogLocation, hashFilePath);
         }
@@ -523,6 +526,9 @@ namespace UnityEngine.AddressableAssets
                 catalogLoc.Dependencies.Add(hashResourceLocation);
                 var cacheResourceLocation = new ResourceLocationBase(cacheHashFilePath, cacheHashFilePath, typeof(TextDataProvider).FullName, typeof(string));
                 cacheResourceLocation.Data = hashOptions.Copy();
+                catalogLoc.Dependencies.Add(cacheResourceLocation);
+
+                //If you're explicitly loading a contnet catalog, we'll just set the "local" filepath to be the same as the "cached" one
                 catalogLoc.Dependencies.Add(cacheResourceLocation);
             }
 
@@ -841,7 +847,7 @@ namespace UnityEngine.AddressableAssets
                 SceneInstance sceneInstance = (SceneInstance)Convert.ChangeType(handle.Result, typeof(SceneInstance));
                 if (sceneInstance.Scene.isLoaded && handle.ReferenceCount == 1)
                 {
-                    if (SceneOperationCount == 1 && m_SceneInstances.First().Equals(handle))
+                    if (ActiveSceneInstances == 1 && m_SceneInstances.First().Equals(handle))
                         m_SceneInstances.Clear();
                     UnloadSceneAsync(handle, UnloadSceneOptions.None, true);
                 }
@@ -909,10 +915,10 @@ namespace UnityEngine.AddressableAssets
                                                                          $"be setup using CreateCatalogLocationWithHashDependencies");
 
             var internalIdHash = catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote].InternalId;
-#if ENABLE_BINARY_CATALOG
-            var internalIdCat = internalIdHash.Replace(".hash", ".bin");
-#else
+#if ENABLE_JSON_CATALOG
             var internalIdCat = internalIdHash.Replace(".hash", ".json");
+#else
+            var internalIdCat = internalIdHash.Replace(".hash", ".bin");
 #endif
             var uwr = new UnityWebRequest(internalIdCat, UnityWebRequest.kHttpVerbHEAD);
             AsyncOperationBase<UnityWebRequest> uwrAsyncOp = new UnityWebRequestOperation(uwr);
@@ -1003,7 +1009,7 @@ namespace UnityEngine.AddressableAssets
 
         static List<IResourceLocation> GatherDependenciesFromLocations(IList<IResourceLocation> locations)
         {
-            var locHash = new HashSet<IResourceLocation>();
+            var locHash = new HashSet<IResourceLocation>(new ResourceLocationComparer());
             foreach (var loc in locations)
             {
                 if (loc.ResourceType == typeof(IAssetBundleResource))
@@ -1319,54 +1325,44 @@ namespace UnityEngine.AddressableAssets
             return true;
         }
 
-        internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, object key, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100)
+        internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, object key, LoadSceneParameters loadSceneParameters,
+            SceneReleaseMode releaseMode = SceneReleaseMode.ReleaseSceneWhenSceneUnloaded, bool activateOnLoad = true, int priority = 100)
         {
-            return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadSceneParameters, activateOnLoad, priority, false)));
+            return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadSceneParameters, releaseMode, activateOnLoad, priority, false)));
+
         }
 
-        internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, IResourceLocation key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true,
-            int priority = 100)
+        internal AsyncOperationHandle<SceneInstance> LoadSceneWithChain(AsyncOperationHandle dep, IResourceLocation key, LoadSceneParameters loadSceneParameters,
+            SceneReleaseMode releaseMode = SceneReleaseMode.ReleaseSceneWhenSceneUnloaded, bool activateOnLoad = true, int priority = 100)
         {
-            return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadMode, activateOnLoad, priority, false)));
+            return TrackHandle(ResourceManager.CreateChainOperation(dep, op => LoadSceneAsync(key, loadSceneParameters, releaseMode, activateOnLoad, priority, false)));
+
         }
 
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key)
-        {
-            return LoadSceneAsync(key, new LoadSceneParameters(LoadSceneMode.Single));
-        }
-
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100, bool trackHandle = true)
+        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key,
+            LoadSceneParameters loadSceneParameters, SceneReleaseMode releaseMode = SceneReleaseMode.ReleaseSceneWhenSceneUnloaded,
+            bool activateOnLoad = true, int priority = 100, bool trackHandle = true)
         {
             QueueEditorUpdateIfNeeded();
             if (ShouldChainRequest)
-                return LoadSceneWithChain(ChainOperation, key, loadSceneParameters, activateOnLoad, priority);
+                return LoadSceneWithChain(ChainOperation, key, loadSceneParameters, releaseMode, activateOnLoad, priority);
 
             IList<IResourceLocation> locations;
             if (!GetResourceLocations(key, typeof(SceneInstance), out locations))
                 return ResourceManager.CreateCompletedOperationWithException<SceneInstance>(default(SceneInstance), new InvalidKeyException(key, typeof(SceneInstance), this));
 
-            return LoadSceneAsync(locations[0], loadSceneParameters, activateOnLoad, priority, trackHandle);
+            return LoadSceneAsync(locations[0], loadSceneParameters, releaseMode, activateOnLoad, priority, trackHandle);
         }
 
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location)
-        {
-            return LoadSceneAsync(location, new LoadSceneParameters(LoadSceneMode.Single));
-        }
-
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100,
-            bool trackHandle = true)
-        {
-            return LoadSceneAsync(location, new LoadSceneParameters(loadMode), activateOnLoad, priority, trackHandle);
-        }
-
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100,
-            bool trackHandle = true)
+        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location,
+            LoadSceneParameters loadSceneParameters, SceneReleaseMode releaseMode = SceneReleaseMode.ReleaseSceneWhenSceneUnloaded,
+            bool activateOnLoad = true, int priority = 100, bool trackHandle = true)
         {
             QueueEditorUpdateIfNeeded();
             if (ShouldChainRequest)
-                return LoadSceneWithChain(ChainOperation, location, loadSceneParameters, activateOnLoad, priority);
+                return LoadSceneWithChain(ChainOperation, location, loadSceneParameters, releaseMode, activateOnLoad, priority);
 
-            var handle = ResourceManager.ProvideScene(SceneProvider, location, loadSceneParameters, activateOnLoad, priority);
+            var handle = ResourceManager.ProvideScene(SceneProvider, location, loadSceneParameters, releaseMode, activateOnLoad, priority);
             if (trackHandle)
                 return TrackHandle(handle);
 
