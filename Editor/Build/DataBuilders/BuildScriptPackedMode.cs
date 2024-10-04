@@ -146,6 +146,18 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             var now = DateTime.Now;
             var aaSettings = builderInput.AddressableSettings;
+#if ENABLE_CCD
+            // we have to populate the ccd managed data every time we build.
+            try
+            {
+                CcdBuildEvents.Instance.PopulateCcdManagedData(aaSettings, aaSettings.activeProfileId);
+            }
+            catch (Exception e)
+            {
+                Addressables.LogError("Unable to populated CCD Managed Data. You may need to refresh remote data in the profile window.");
+                throw;
+            }
+#endif
 
             m_AllBundleInputDefs = new List<AssetBundleBuild>();
             m_GroupToBundleNames = new Dictionary<AddressableAssetGroup, (string, string)[]>();

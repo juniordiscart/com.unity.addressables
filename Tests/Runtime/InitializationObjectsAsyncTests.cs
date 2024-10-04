@@ -205,7 +205,7 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
             MaximumCacheSize = Caching.currentCacheForWriting.maximumAvailableStorageSpace
         };
 
-        string cacheDirectoryOverride = "TestDirectory";
+        string cacheDirectoryOverride = Application.persistentDataPath + "/TestDirectory";
         //int expirationDelay = 4321;
         long maxCacheSize = 9876;
         bool compressionEnabled = !preTestCacheData.CompressionEnabled;

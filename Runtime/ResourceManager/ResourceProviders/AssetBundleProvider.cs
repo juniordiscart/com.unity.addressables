@@ -311,10 +311,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 		internal UnityWebRequest CreateWebRequest(string url)
 		{
+            string sanitizedUrl = Uri.UnescapeDataString(url);
+
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
-            Uri uri = new Uri(url.Replace(" ", "%20"));
+            Uri uri = new Uri(sanitizedUrl.Replace(" ", "%20"));
 #else
-            Uri uri = new Uri(Uri.EscapeUriString(url));
+            Uri uri = new Uri(Uri.EscapeUriString(sanitizedUrl));
 #endif
 
 			if (m_Options == null)
@@ -507,6 +509,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         m_AssetBundle = downloadHandler.assetBundle;
 			}
 #endif
+                WebRequestQueue.DequeueRequest(op);
+
                 if (!m_RequestCompletedCallbackCalled)
 			{
 				m_RequestOperation.completed -= WebRequestOperationCompleted;
@@ -514,8 +518,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 }
             }
 
-            if (!m_Completed && m_Source == BundleSource.Local) {
-
+            if (!m_Completed && m_Source == BundleSource.Local)
+            {
                 // we don't have to check for done with local files as calling
                 // m_requestOperation.assetBundle is blocking and will wait for the file to load
                 if (!m_RequestCompletedCallbackCalled)
@@ -659,7 +663,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			{
 				if (m_Options.Timeout > 0)
 					m_ProvideHandle.ResourceManager.AddUpdateReceiver(this);
-                AddBundleToProfiler(m_Source == BundleSource.Cache ? Profiling.ContentStatus.Loading : Profiling.ContentStatus.Downloading, m_Source );
+                AddBundleToProfiler(m_Source == BundleSource.Cache ? Profiling.ContentStatus.Loading : Profiling.ContentStatus.Downloading, m_Source);
 				m_RequestOperation.completed += WebRequestOperationCompleted;
 			}
 		}
@@ -693,6 +697,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             }
 
             m_RequestCompletedCallbackCalled = true;
+            UnityWebRequestUtilities.LogOperationResult(op);
 			CompleteBundleLoad((op as AssetBundleCreateRequest).assetBundle);
 		}
 
@@ -833,6 +838,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         {
             m_UnloadingBundles = new Dictionary<string, AssetBundleUnloadOperation>();
         }
+
         /// <summary>
         /// Stores async operations that unload the requested AssetBundles.
         /// </summary>

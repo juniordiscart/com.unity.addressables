@@ -127,6 +127,9 @@ Refer to [Customizing initialization](xref:addressables-api-initialize-async) fo
 
 ## Cloud Content Delivery
 
-|**Property**|**Description**|
-|---|---|
-|**Enable Experimental CCD Features**|Enable this property to enable experimental [CCD features](AddressablesCCD.md).|
+| **Property**                 | **Description**                                                                                           |
+|------------------------------|-----------------------------------------------------------------------------------------------------------|
+| **Enable CCD Features**      | Enable this property to enable [CCD features](AddressablesCCD.md).                                        |
+| **Log HTTP Requests**        | Enable this property to log http requests to the CCD Management API.                                      |
+| **Log HTTP Request Headers** | Enable this property to additionally log request headers when logging requests to the CCD Management API. |
+

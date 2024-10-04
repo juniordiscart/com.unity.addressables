@@ -1191,7 +1191,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             string destinationPath = TimeStampedReportPath(layout.BuildStart);
             using (m_Log.ScopedStep(LogLevel.Info, "Writing BuildReport File"))
+            {
                 layout.WriteToFile(destinationPath, k_PrettyPrint);
+                layout.m_FilePath = destinationPath;
+            }
 
             if (ProjectConfigData.BuildLayoutReportFileFormat == ProjectConfigData.ReportFileFormat.TXT)
             {

@@ -38,7 +38,11 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     { AssetType.Prefab, "d_Prefab Icon" },
                     { AssetType.Model, "d_PrefabModel Icon" },
                     { AssetType.Material, "d_Material Icon" },
+#if UNITY_2023_3_OR_NEWER
+                    { AssetType.PhysicsMaterial, "d_PhysicsMaterial Icon" },
+#else
                     { AssetType.PhysicsMaterial, "d_PhysicMaterial Icon" },
+#endif
                     { AssetType.PhysicsMaterial2D, "d_PhysicsMaterial2D Icon" },
                     { AssetType.TextAsset, "d_TextAsset Icon" },
                     { AssetType.Scene, "d_SceneAsset Icon" },

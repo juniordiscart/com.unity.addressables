@@ -277,7 +277,7 @@ namespace AddressableAssetsIntegrationTests
                 }
 
                 InvalidKeyException expected = new InvalidKeyException(guid, typeof(TextAsset));
-                string message = expected.FormatMessage(InvalidKeyException.Format.TypeMismatch, typeof(GameObject).ToString());
+                string message = $"Exception of type 'UnityEngine.AddressableAssets.InvalidKeyException' was thrown. No Asset found for Key={guid} with Type={typeof(TextAsset)}. Key exists as Type={typeof(GameObject)}, which is not assignable from the requested Type={typeof(TextAsset)}";
                 Assert.AreEqual(message, handle.OperationException.Message,
                     "InvalidKeyException message not the same as expected for when a similar Location exists with same key and a different type");
             }
@@ -317,8 +317,7 @@ namespace AddressableAssetsIntegrationTests
                 Assert.AreEqual(goLoadHandle.Status, AsyncOperationStatus.Failed);
 
                 string path = UnityEditor.AssetDatabase.GUIDToAssetPath(keyString);
-                InvalidKeyException expected = new InvalidKeyException(keyString, typeof(GameObject));
-                string message = expected.FormatProjectAssetMessage(path, typeof(GameObject).FullName);
+                string message = $"Exception of type 'UnityEngine.AddressableAssets.InvalidKeyException' was thrown. No Location found for Key={keyString}. Asset exists in project at Path={path}, verify the asset is marked as Addressable.";
                 Assert.AreEqual(message, goLoadHandle.OperationException.Message,
                     "InvalidKeyException message not the same as expected for when a asset in project is not addressable but attempting to load through guid");
             }

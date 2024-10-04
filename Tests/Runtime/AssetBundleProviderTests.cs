@@ -221,6 +221,7 @@ namespace AddressableTests.SyncAddressables
             var nonExistingPath = "https://127.0.0.1/non-existing-bundle";
             var loc = new ResourceLocationBase(nonExistingPath, nonExistingPath, typeof(AssetBundleProvider).FullName, typeof(AssetBundleResource));
             var d = new AssetBundleRequestOptions();
+            d.BundleName = "non-existing-bundle";
             d.RetryCount = 3;
             d.BundleName = "fakebundlename";
             loc.Data = d;
@@ -275,6 +276,18 @@ namespace AddressableTests.SyncAddressables
         }
 #endif
 
+        [Test]
+        [TestCase("http://www.example.com/index with space.html", "http://www.example.com/index%20with%20space.html")]
+        [TestCase("http://www.example.com/index%20with%20space.html", "http://www.example.com/index%20with%20space.html")]
+        [TestCase("http://www.example.com/index with space :andcolons.html", "http://www.example.com/index%20with%20space%20:andcolons.html")]
+        public void CreateWebRequestReturnsCorrectlySpacedUrlPerPlatform(string inputUrl, string expectedUrl)
+        {
+            var abr = new AssetBundleResource();
+            var webRequest = abr.CreateWebRequest(inputUrl);
+            Assert.AreEqual(webRequest.url, expectedUrl);
+        }
+
+#if !UNITY_PS5
         [UnityTest]
         public IEnumerator LoadBundleAsync_WithUnfinishedUnload_WaitsForUnloadAndCompletes()
         {
@@ -300,6 +313,7 @@ namespace AddressableTests.SyncAddressables
             Assert.IsNotNull(h.Result);
             h.Release();
         }
+#endif
 
         [Test]
         // Only testing against important errors instead of full list

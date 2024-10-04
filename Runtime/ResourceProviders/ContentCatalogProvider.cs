@@ -293,7 +293,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                             }
                             else
                             {
-                                Addressables.LogError($"Unable to load dependent bundle from location : {m_BundlePath}");
+                                Addressables.LogError($"Unable to load dependent bundle from file location : {m_BundlePath}");
                                 m_OpInProgress = false;
                             }
                         };
@@ -302,6 +302,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
 
                 private void WebRequestOperationCompleted(AsyncOperation op)
                 {
+                    UnityWebRequestUtilities.LogOperationResult(op);
                     UnityWebRequestAsyncOperation remoteReq = op as UnityWebRequestAsyncOperation;
                     var webReq = remoteReq.webRequest;
                     DownloadHandlerAssetBundle downloadHandler = webReq.downloadHandler as DownloadHandlerAssetBundle;
@@ -315,7 +316,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     }
                     else
                     {
-                        Addressables.LogError($"Unable to load dependent bundle from location : {m_BundlePath}");
+                        Addressables.LogError($"Unable to load dependent bundle from remote location : {m_BundlePath}");
                         m_OpInProgress = false;
                     }
 

@@ -27,6 +27,8 @@ If a group's __Update Restrictions__ option was set to __Prevent Updates__ in th
 
 When you create the update build, the new catalog maps the changed assets to their new, remote AssetBundles, while still mapping the unchanged assets to their original AssetBundles. Checking for content update restrictions doesn't check groups with __Prevent Updates__ disabled.
 
+An asset is considered as changed based on the hash returned by [AssetDatabase.GetAssetDependencyHash]. This editor API has limitations and may not accurately reflect AssetBundle changes that are calculated at build time. For example it computes hash of the content of .cs files. This means that performing whitespace changes in a .cs file will result in a different hash, but the actual AssetBundle containing the file is unchanged. See [Changes to scripts that require rebuilding Addressables] for more information.
+
 To run the tool:
 
 1. Open the __Addressables Groups__ window in the Unity Editor (__Window__ > __Asset Management__ > __Addressables__ > __Groups__).
@@ -35,3 +37,6 @@ To run the tool:
 
 >[!IMPORTANT]
 > Before you run the __Check for Content Update Restrictions__ tool, make a branch with your version control system. The tool rearranges your asset groups in a way suited for updating content. Branching ensures that next time you ship a full player build, you can return to your preferred content arrangement.
+
+[AssetDatabase.GetAssetDependencyHash](xref:UnityEditor.AssetDatabase.GetAssetDependencyHash(System.String))
+[Changes to scripts that require rebuilding Addressables](builds-update-build.md##changes-to-scripts-that-require-rebuilding-addressabes)

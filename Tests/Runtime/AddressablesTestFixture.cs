@@ -57,6 +57,11 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         Assert.IsNull(m_Addressables);
         m_Addressables = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
         m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
+        yield return InitAddressables();
+    }
+
+    protected virtual IEnumerator InitAddressables()
+    {
         var op = m_Addressables.InitializeAsync(m_RuntimeSettingsPath, null, false);
         yield return op;
         Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);

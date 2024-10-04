@@ -540,12 +540,31 @@ namespace UnityEditor.AddressableAssets.Settings
 #else
         bool m_CCDEnabled = true;
 #endif
-
 		public bool CCDEnabled
 		{
 			get { return m_CCDEnabled; }
 			set { m_CCDEnabled = value; }
 		}
+#if CCD_REQUEST_LOGGING
+        [SerializeField]
+        bool m_CcdLogRequests = false;
+
+        [SerializeField]
+        bool m_CcdLogRequestHeaders = false;
+
+
+        internal bool CCDLogRequests
+        {
+            get { return m_CcdLogRequests; }
+            set { m_CcdLogRequests = value; }
+        }
+
+        internal bool CCDLogRequestHeaders
+        {
+            get { return m_CcdLogRequestHeaders; }
+            set { m_CcdLogRequestHeaders = value; }
+        }
+#endif
 
 		[SerializeField]
 		int m_maxConcurrentWebRequests = 3;

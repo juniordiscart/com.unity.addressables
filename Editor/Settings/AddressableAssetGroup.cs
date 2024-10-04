@@ -290,7 +290,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="postEvent">Determines if this method call will post an event to the internal addressables event system</param>
         public void ClearSchemas(bool deleteAssets, bool postEvent = true)
         {
-            m_SchemaSet.ClearSchemas(deleteAssets);
+            m_SchemaSet?.ClearSchemas(deleteAssets);
             SetDirty(AddressableAssetSettings.ModificationEvent.GroupRemoved, this, postEvent, true);
         }
 

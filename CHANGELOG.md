@@ -4,6 +4,26 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.0.8] - 2024-01-19
+- Documents the behavior of using WaitForCompletion while a bundle is being unloaded.
+- Prevent a KeyNotFoundException from being logged to the console.
+- Fixed issue where a NullReferenceException occurs when using WaitForCompletion and the max number of concurrent requests is set to 1.
+- Fix error message to report not found when loading non-Addressable asset by guid
+- Fixed issue where there is missing asset data in the Addressables Profiler for binary catalogs.
+- Fixed an issue the error "Cannot read BuildLayout header, BuildLayout has not open for a file" would occur after a build
+- Added note about the limitations of the Check for Content Update Restrictions tool.
+- Fixed issue where an ArgumentException can occur when viewing multiple assets in the Addressables Profiler.
+
+Fixed an issue where a broken script on any Addressable Asset would make it impossible to select Addressable Assets in the AssetReference inspector
+Add migration upgrade prompt for legacy path pairs (ex. RemoteLoadPath)
+Add logging of catalog and asset bundle http operations.
+Add UI to trigger CCD management API http call logging (requires newer CCD package)
+CCD Automatic Profiles can now be one per-profile, rather than one per AddressableSettings instance
+CCD Manager is built when using the Build to CCD and the standard Build content menu
+
+## [2.0.7] - 2023-12-12
+- Updating ScriptableBuildPipeline reference.
+
 ## [2.0.6] - 2023-10-30
 - Updating ScriptableBuildPipeline reference.
 

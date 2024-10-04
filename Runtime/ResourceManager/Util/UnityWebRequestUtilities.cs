@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Text;
 using UnityEngine.Networking;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace UnityEngine.ResourceManagement.Util
 {
@@ -9,6 +11,8 @@ namespace UnityEngine.ResourceManagement.Util
     /// </summary>
     public class UnityWebRequestUtilities
     {
+        const string k_AddressablesLogConditional = "ADDRESSABLES_LOG_ALL";
+
         /// <summary>
         /// Determines if a web request resulted in an error.
         /// </summary>
@@ -50,6 +54,43 @@ namespace UnityEngine.ResourceManagement.Util
 #endif
             return op.isDone;
         }
+
+
+        internal static void LogOperationResult(AsyncOperation op)
+        {
+            var webRequestOperation = op as UnityWebRequestAsyncOperation;
+            if (webRequestOperation != null)
+            {
+                var webRequest = webRequestOperation.webRequest;
+                var result = new UnityWebRequestResult(webRequest);
+#if UNITY_2020_1_OR_NEWER
+                if (result.Result == UnityWebRequest.Result.Success)
+                {
+                    Log(result.ToString());
+                    return;
+                }
+#else
+            if (string.IsNullOrEmpty(result.Error)) {
+                Log(result.ToString());
+                return;
+            }
+#endif
+
+                LogError(result.ToString());
+            }
+        }
+
+        [Conditional(k_AddressablesLogConditional)]
+        internal static void Log(string msg)
+        {
+            Debug.Log(msg);
+        }
+
+        internal static void LogError(string msg)
+        {
+            Debug.LogError(msg);
+        }
+
     }
 
     /// <summary>

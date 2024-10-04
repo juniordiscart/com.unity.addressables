@@ -265,5 +265,43 @@ namespace UnityEditor.AddressableAssets.Tests
             val = AssetReferenceDrawerUtilities.ConstructNoAssetLabel(typeof(List<AssetReferenceGameObject>));
             Assert.AreEqual(expected, val, "Type restricted is expected in display string shown");
         }
+
+        #if UNITY_EDITOR
+        [Test]
+        public void AssetPostProcessor_GetTypesForAssetPath_DoesNotErrorOnNullValue()
+        {
+            var prevPathToTypes = AssetPathToTypes.s_PathToTypes;
+            try
+            {
+                AssetPathToTypes.s_PathToTypes = new Dictionary<string, HashSet<Type>>();
+                var inputArray = new UnityEngine.Object[] { null, null, null };
+                var value = AssetPathToTypes.AddTypesToPath(inputArray, "fakePath");
+                Assert.AreEqual(0, value.Count);
+            }
+            finally
+            {
+                AssetPathToTypes.s_PathToTypes = prevPathToTypes;
+            }
+        }
+
+        [Test]
+        public void AssetPostProcessor_GetTypesForAssetPath_CorrectlyStoresValidValue()
+        {
+            var prevPathToTypes = AssetPathToTypes.s_PathToTypes;
+            try
+            {
+                AssetPathToTypes.s_PathToTypes = new Dictionary<string, HashSet<Type>>();
+                var inputArray = new UnityEngine.Object[] { new GameObject()};
+                var value = AssetPathToTypes.AddTypesToPath(inputArray, "gameObjectPath");
+                Assert.AreEqual(1, value.Count);
+                Assert.IsTrue(AssetPathToTypes.s_PathToTypes.TryGetValue("gameObjectPath", out var types));
+                Assert.IsTrue(types.Contains(typeof(GameObject)));
+            }
+            finally
+            {
+                AssetPathToTypes.s_PathToTypes = prevPathToTypes;
+            }
+        }
+        #endif
     }
 }

@@ -368,7 +368,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             if (showDropdown)
             {
-                ProfileDataSourceDropdownWindow dataSourceDropdownWindow = new ProfileDataSourceDropdownWindow(fixedDropdownRect, groupType);
+                ProfileDataSourceDropdownWindow dataSourceDropdownWindow = new ProfileDataSourceDropdownWindow(GetSelectedProfile(), fixedDropdownRect, groupType);
                 //TODO: Add Event Handler Here
                 dataSourceDropdownWindow.ValueChanged += DataSourceDropdownValueChanged;
                 PopupWindow.Show(dsDropdownRect, dataSourceDropdownWindow);
@@ -417,7 +417,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 if (selectedGroupType.GroupTypePrefix == AddressableAssetSettings.CcdManagerGroupTypePrefix)
                 {
-                    return $"{selectedGroupType.GroupTypePrefix} ({m_ProfileDataSource.currentEnvironment.name})";
+                    return $"{selectedGroupType.GroupTypePrefix} ({m_ProfileDataSource.GetEnvironmentName(settings.profileSettings, GetSelectedProfile().id)})";
                 }
 #endif
                 return selectedGroupType.GroupTypePrefix;

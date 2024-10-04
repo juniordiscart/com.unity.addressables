@@ -315,11 +315,17 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             var bundledCatalog = new ContentCatalogProvider.InternalOp.BundledCatalog(bundleFilePath);
             bundledCatalog.LoadCatalogFromBundleAsync();
 
-            LogAssert.Expect(LogType.Error, $"Unable to load dependent bundle from location : {bundleFilePath}");
+#if UNITY_2020_1_OR_NEWER
+            LogAssert.Expect(LogType.Error, new Regex($"ProtocolError : HTTP/1.1 404 Not Found\r?\nResponseCode : 404, Method : GET\r?\n.*url : {bundleFilePath}.*", RegexOptions.Multiline));
+#else
+            LogAssert.Expect(LogType.Error, new Regex($"HTTP/1.1 404 Not Found\r?\nResponseCode : 404, Method : GET\r?\n.*url : {bundleFilePath}.*", RegexOptions.Multiline));
+#endif
+            LogAssert.Expect(LogType.Error, $"Unable to load dependent bundle from remote location : {bundleFilePath}");
 
             yield return new WaitWhile(() => bundledCatalog.OpInProgress);
 
             Assert.IsFalse(bundledCatalog.OpIsSuccess);
+
         }
 
         [UnityTest]

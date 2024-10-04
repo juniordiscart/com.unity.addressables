@@ -27,50 +27,50 @@ namespace AddressableAssetSettingsResourceLocationTests
 
 #if UNITY_EDITOR
         //We're temporarily removing this setup since it's causing errors on Yamato
-        //internal override void Setup(AddressableAssetSettings settings, string tempAssetFolder)
-        //{
+        internal override void Setup(AddressableAssetSettings settings, string tempAssetFolder)
+        {
 
-        //    string folderGuid = AssetDatabase.CreateFolder(tempAssetFolder, k_FolderAddress);
+            string folderGuid = AssetDatabase.CreateFolder(tempAssetFolder, k_FolderAddress);
 
-        //    Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
-        //    EditorSceneManager.SaveScene(scene, $"{tempAssetFolder}/{k_FolderAddress}/subscene.unity");
-        //    EditorSceneManager.CloseScene(scene, true);
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            EditorSceneManager.SaveScene(scene, $"{tempAssetFolder}/{k_FolderAddress}/subscene.unity");
+            EditorSceneManager.CloseScene(scene, true);
 
-        //    AssetDatabase.Refresh();
+            AssetDatabase.Refresh();
 
-        //    GameObject testObject = new GameObject("TestObject");
-        //    GameObject testObject2 = new GameObject("TestObject2");
-        //    GameObject subFolderEntry = new GameObject("SubFolder");
-        //    string path = tempAssetFolder + "/test.prefab";
-        //    string path2 = tempAssetFolder + "/test2.prefab";
-        //    string path3 = $"{tempAssetFolder}/{k_FolderAddress}/subfolder.prefab";
-        //    PrefabUtility.SaveAsPrefabAsset(testObject, path);
-        //    PrefabUtility.SaveAsPrefabAsset(testObject2, path2);
-        //    PrefabUtility.SaveAsPrefabAsset(subFolderEntry, path3);
-        //    string guid = AssetDatabase.AssetPathToGUID(path);
-        //    string guid2 = AssetDatabase.AssetPathToGUID(path2);
+            GameObject testObject = new GameObject("TestObject");
+            GameObject testObject2 = new GameObject("TestObject2");
+            GameObject subFolderEntry = new GameObject("SubFolder");
+            string path = tempAssetFolder + "/test.prefab";
+            string path2 = tempAssetFolder + "/test2.prefab";
+            string path3 = $"{tempAssetFolder}/{k_FolderAddress}/subfolder.prefab";
+            PrefabUtility.SaveAsPrefabAsset(testObject, path);
+            PrefabUtility.SaveAsPrefabAsset(testObject2, path2);
+            PrefabUtility.SaveAsPrefabAsset(subFolderEntry, path3);
+            string guid = AssetDatabase.AssetPathToGUID(path);
+            string guid2 = AssetDatabase.AssetPathToGUID(path2);
 
-        //    AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, settings.DefaultGroup);
-        //    entry.address = k_ValidKey;
+            AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, settings.DefaultGroup);
+            entry.address = k_ValidKey;
 
-        //    entry = settings.CreateOrMoveEntry(guid2, settings.DefaultGroup);
-        //    entry.m_Address = k_InvalidKey;
+            entry = settings.CreateOrMoveEntry(guid2, settings.DefaultGroup);
+            entry.m_Address = k_InvalidKey;
 
-        //    AddressableAssetEntry folder = settings.CreateOrMoveEntry(folderGuid, settings.DefaultGroup);
-        //    folder.address = k_FolderAddress;
-        //    folder.IsFolder = true;
-        //}
+            AddressableAssetEntry folder = settings.CreateOrMoveEntry(folderGuid, settings.DefaultGroup);
+            folder.address = k_FolderAddress;
+            folder.IsFolder = true;
+        }
 
-        //protected override void OnRuntimeSetup()
-        //{
-        //    // Only keep AddressableAssetSettingsLocator
-        //    List<IResourceLocator> locators = m_Addressables.ResourceLocators.ToList();
-        //    foreach (IResourceLocator locator in locators)
-        //    {
-        //        if (locator.GetType() != typeof(AddressableAssetSettingsLocator))
-        //            m_Addressables.RemoveResourceLocator(locator);
-        //    }
-        //}
+        protected override void OnRuntimeSetup()
+        {
+            // Only keep AddressableAssetSettingsLocator
+            List<IResourceLocator> locators = m_Addressables.ResourceLocators.ToList();
+            foreach (IResourceLocator locator in locators)
+            {
+                if (locator.GetType() != typeof(AddressableAssetSettingsLocator))
+                    m_Addressables.RemoveResourceLocator(locator);
+            }
+        }
 
         [Test]
         public void WhenKeyIsValid_AddressableAssetSettingsLocator_ReturnsLocations()

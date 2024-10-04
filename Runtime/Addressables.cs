@@ -15,6 +15,7 @@ using UnityEngine.Networking;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditorInternal;
 #endif
 
 namespace UnityEngine.AddressableAssets
@@ -174,9 +175,13 @@ namespace UnityEngine.AddressableAssets
 
 
         internal const string BaseInvalidKeyMessageFormat = "{0}, Key={1}, Type={2}";
+#if UNITY_EDITOR
+        internal const string EditorNoLocationMessageFormat = "{0} No Location found for Key={1}. Asset exists in project at Path={2}, verify the asset is marked as Addressable.";
+#endif
         internal const string NoLocationMessageFormat = "{0} No Location found for Key={1}";
-        internal const string MultipleTypeMismatchMessageFormat = "{0} No Asset found with for Key={1} with Type={2}. Key exists as multiple Types={3}, which is not assignable from the requested Type={2}";
-        internal const string TypeMismatchMessageFormat = "{0} No Asset found with for Key={1} with Type={2}. Key exists as Type={3}, which is not assignable from the requested Type={2}";
+
+        internal const string MultipleTypeMismatchMessageFormat = "{0} No Asset found for Key={1} with Type={2}. Key exists as multiple Types={3}, which is not assignable from the requested Type={2}";
+        internal const string TypeMismatchMessageFormat = "{0} No Asset found for Key={1} with Type={2}. Key exists as Type={3}, which is not assignable from the requested Type={2}";
         internal const string MultipleTypesMessageFormat = "{0} Enumerable key contains multiple Types. {1}, all Keys are expected to be strings";
 
         internal const string MergeModeNoLocationMessageFormat = "\nNo Location found for Key={0}";
@@ -203,9 +208,9 @@ namespace UnityEngine.AddressableAssets
 
             // Single
             TypeMismatch,
-            //return $"{base.Message} No Asset found with for Key={keyString} with Type={Type}. Key exists as Type={availableType}, which is not assignable from the requested Type={Type}";
+            //return $"{base.Message} No Asset found for Key={keyString} with Type={Type}. Key exists as Type={availableType}, which is not assignable from the requested Type={Type}";
             MultipleTypeMismatch,
-            //return $"{base.Message} No Asset found with for Key={keyString} with Type={Type}. Key exists as multiple Types={csv}, which is not assignable from the requested Type={Type}";
+            //return $"{base.Message} No Asset found for Key={keyString} with Type={Type}. Key exists as multiple Types={csv}, which is not assignable from the requested Type={Type}";
 
             // merge
             MergeModeBase,
@@ -243,6 +248,13 @@ namespace UnityEngine.AddressableAssets
                     }
                     return string.Format(MultipleTypesMessageFormat, base.Message, types);
                 case Format.NoLocation:
+#if UNITY_EDITOR
+                    string assetPath = AssetDatabase.GUIDToAssetPath(Key.ToString());
+                    if (!string.IsNullOrEmpty(assetPath))
+                    {
+                        return string.Format(EditorNoLocationMessageFormat, base.Message, Key.ToString(), assetPath);
+                    }
+#endif
                     return string.Format(NoLocationMessageFormat, base.Message, Key.ToString());// $"{base.Message} No Location found for Key={keyString}";
                 case Format.TypeMismatch:
                     return string.Format(TypeMismatchMessageFormat, base.Message, Key.ToString(), Type.FullName, foundWithTypeString);
@@ -282,13 +294,6 @@ namespace UnityEngine.AddressableAssets
                     throw new ArgumentOutOfRangeException(nameof(format), format, null);
             }
         }
-
-#if UNITY_EDITOR
-        internal string FormatProjectAssetMessage(string projectPath, string projectType)
-        {
-            return string.Format(EditorGUIDKeyMessageFormat, base.Message, Key.ToString(), projectPath, projectType);
-        }
-#endif
 
         /// <summary>
         /// Stores information about the exception.
@@ -340,22 +345,41 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
+
         string GetMessageForSingleKey(string keyString)
         {
             HashSet<Type> typesAvailableForKey = GetTypesForKey(keyString);
             if (typesAvailableForKey.Count == 0)
             {
-#if UNITY_EDITOR
-                string path = AssetDatabase.GUIDToAssetPath(keyString);
-                Type projectAssetType = string.IsNullOrEmpty(path) ? null : AssetDatabase.GetMainAssetTypeAtPath(path);
-                if (projectAssetType != null)
-                    return FormatProjectAssetMessage(path, projectAssetType.ToString());
-#endif
-                return FormatMessage(Format.NoLocation);
+                return FormatNotFoundMessage(keyString);
             }
 
             if (typesAvailableForKey.Count == 1)
             {
+                return FormatTypeNotAssignableMessage(keyString, typesAvailableForKey);
+            }
+
+            return FormatMultipleAssignableTypesMessage(keyString, typesAvailableForKey);
+        }
+
+
+            private string FormatNotFoundMessage(string keyString)
+            {
+                return FormatMessage(Format.NoLocation);
+            }
+
+#if UNITY_EDITOR
+        private string FormatEditorTypeNotAssignableMessage(string keyString, string projectPath)
+        {
+            Type projectAssetType = string.IsNullOrEmpty(projectPath) ? null : AssetDatabase.GetMainAssetTypeAtPath(projectPath);
+            if (projectAssetType != null)
+                return string.Format(EditorGUIDKeyMessageFormat, base.Message, Key.ToString(), projectPath, projectAssetType.ToString());
+            return string.Format(BaseInvalidKeyMessageFormat, base.Message, keyString, Type);
+        }
+#endif
+
+        private string FormatTypeNotAssignableMessage(string keyString, HashSet<Type> typesAvailableForKey)
+        {
                 Type availableType = null;
                 foreach (Type type in typesAvailableForKey)
                     availableType = type;
@@ -364,6 +388,8 @@ namespace UnityEngine.AddressableAssets
                 return FormatMessage(Format.TypeMismatch, availableType.ToString());
             }
 
+        private string FormatMultipleAssignableTypesMessage(string keyString, HashSet<Type> typesAvailableForKey)
+        {
             StringBuilder csv = new StringBuilder(512);
             int count = 0;
             foreach (Type type in typesAvailableForKey)
@@ -527,7 +553,11 @@ namespace UnityEngine.AddressableAssets
             get
             {
 #if UNITY_EDITOR
-                if (EditorSettings.enterPlayModeOptionsEnabled && reinitializeAddressables)
+                // Addressables in the Editor can be reinitialized when entering or exiting playmode.
+                // This waits until we are on the main thread so that calls like Addressables.Log don't
+                // end up calling the reinitialization code and blowing up if they're being called on
+                // a background thread.
+                if (InternalEditorUtility.CurrentThreadIsMainThread() && reinitializeAddressables && EditorSettings.enterPlayModeOptionsEnabled)
                 {
                     reinitializeAddressables = false;
                     m_AddressablesInstance.ReleaseSceneManagerOperation();

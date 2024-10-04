@@ -153,10 +153,14 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         {
             if (m_BuildReportItems.Count > 0)
             {
-                if (m_BuildReportItems[0].Layout.ReadFull())
-                    m_Window.Consume(m_BuildReportItems[0].Layout);
-                else
-                    Debug.LogWarning($"Unable to load build report at {m_BuildReportItems[0].FilePath}.");
+                if (File.Exists(m_BuildReportItems[0].FilePath))
+                {
+                    BuildLayout layout = BuildLayout.Open(m_BuildReportItems[0].FilePath, readFullFile: true);
+                    if (layout != null)
+                        m_Window.Consume(layout);
+                    else
+                        Debug.LogWarning($"Unable to load build report at {m_BuildReportItems[0].FilePath}.");
+                }
             }
         }
 

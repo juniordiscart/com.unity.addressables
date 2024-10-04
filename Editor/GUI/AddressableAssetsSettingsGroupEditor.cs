@@ -539,9 +539,13 @@ namespace UnityEditor.AddressableAssets.GUI
 			return displayMenus;
 		}
 
-        private static void OnBuildAddressables(object context)
+
+
+        private static void OnBuildAddressables(object ctx)
 		{
-            BuildAddressablesWithResult((BuildMenuContext)context);
+            BuildMenuContext buildAddressablesContext = (BuildMenuContext)ctx;
+            UpgradeNotifications.Show(buildAddressablesContext.Settings);
+            OnBuildAddressables(buildAddressablesContext);
 		}
 
 		internal static void OnBuildAddressables(BuildMenuContext context)
@@ -586,8 +590,9 @@ namespace UnityEditor.AddressableAssets.GUI
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
         private static void OnBuildCcd(object ctx)
         {
-            BuildMenuContext buildAddressableContext = (BuildMenuContext)ctx;
-            OnBuildCcd(buildAddressableContext);
+            BuildMenuContext buildAddressablesContext = (BuildMenuContext)ctx;
+            UpgradeNotifications.Show(buildAddressablesContext.Settings);
+            OnBuildCcd(buildAddressablesContext);
         }
 
         private static async void OnBuildCcd(BuildMenuContext context)

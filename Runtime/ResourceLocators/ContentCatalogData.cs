@@ -244,6 +244,8 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 cd.InstanceProviderData = reader.ReadObject<ObjectInitializationData>(h.instanceProvider);
                 cd.SceneProviderData = reader.ReadObject<ObjectInitializationData>(h.sceneProvider);
                 cd.ResourceProviderData = reader.ReadObjectArray<ObjectInitializationData>(h.initObjectsArray).ToList();
+
+                cd.m_BuildResultHash = reader.ReadString(h.buildResultHash);
                 return cd;
             }
 
@@ -273,7 +275,8 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     idOffset = writer.WriteString(cd.ProviderId),
                     instanceProvider = writer.WriteObject(cd.InstanceProviderData, false),
                     sceneProvider = writer.WriteObject(cd.SceneProviderData, false),
-                    initObjectsArray = writer.WriteObjects(cd.m_ResourceProviderData, false)
+                    initObjectsArray = writer.WriteObjects(cd.m_ResourceProviderData, false),
+                    buildResultHash = writer.WriteString(cd.m_BuildResultHash)
                 };
                 writer.Write(headerOffset, in header);
 
@@ -823,6 +826,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 public uint instanceProvider;
                 public uint sceneProvider;
                 public uint initObjectsArray;
+                public uint buildResultHash;
             }
 
             public struct KeyData

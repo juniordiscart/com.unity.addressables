@@ -7,12 +7,14 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using System.Text;
 using System.Net.Http;
+using UnityEditor.AddressableAssets.Build;
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
 using Unity.Services.Core;
 using Unity.Services.Ccd.Management;
 using Unity.Services.Ccd.Management.Http;
 using Unity.Services.Ccd.Management.Models;
+using UnityEditor.AddressableAssets.Build;
 #endif
 
 namespace UnityEditor.AddressableAssets.Settings
@@ -26,6 +28,7 @@ namespace UnityEditor.AddressableAssets.Settings
         const string DEFAULT_NAME = "ProfileDataSourceSettings";
         const string CONTENT_RANGE_HEADER = "Content-Range";
         static string DEFAULT_SETTING_PATH = $"{DEFAULT_PATH}/{DEFAULT_NAME}.asset";
+        internal const string ENVIRONMENT_NAME = "EnvironmentName";
 
 #if ENABLE_CCD
         internal const string MANAGED_ENVIRONMENT = "ManagedEnvironment";
@@ -100,7 +103,7 @@ namespace UnityEditor.AddressableAssets.Settings
         internal List<Environment> environments = new List<Environment>();
 
         [SerializeField]
-        internal Environment currentEnvironment;
+        private Environment currentEnvironment;
 
         /// <summary>
         /// Creates, if needed, and returns the profile data source settings for the project
@@ -183,6 +186,7 @@ namespace UnityEditor.AddressableAssets.Settings
             ProfileGroupType defaultCcdManager = new ProfileGroupType(AddressableAssetSettings.CcdManagerGroupTypePrefix);
             defaultCcdManager.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, buildPath));
             defaultCcdManager.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, loadPath));
+            defaultCcdManager.AddVariable(new ProfileGroupType.GroupTypeVariable(ENVIRONMENT_NAME, "production"));
             return defaultCcdManager;
         }
 #endif
@@ -241,7 +245,7 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 Addressables.Log("Syncing CCD Environments, Buckets, and Badges.");
             }
-            
+
             var profileGroupTypes = new List<ProfileGroupType>();
 
             var environments = await GetEnvironments();
@@ -258,7 +262,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 var envProgress = 1;
                 foreach (var environment in environments)
                 {
-                    var bucketDictionary = await GetAllBucketsAsync(environment.id);
+                    CcdBuildEvents.Instance.ConfigureCcdManagement(AddressableAssetSettingsDefaultObject.Settings, environment.id);
+                    var bucketDictionary = await GetAllBucketsAsync();
                     var bucketProgress = 1;
                     foreach (var kvp in bucketDictionary)
                     {
@@ -316,9 +321,8 @@ $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environme
             return settings.profileGroupTypes;
         }
 
-        internal static async Task<Dictionary<Guid, CcdBucket>> GetAllBucketsAsync(string environment)
+        internal static async Task<Dictionary<Guid, CcdBucket>> GetAllBucketsAsync()
         {
-            CcdManagement.SetEnvironmentId(environment);
             int page = 1;
             bool loop = true;
             List<CcdBucket> buckets = new List<CcdBucket>();
@@ -419,17 +423,49 @@ $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environme
             }
         }
 
-        internal void SetEnvironmentById(string id)
+        internal void SetEnvironmentById(AddressableAssetProfileSettings profileSettings, string profileId, string environmentId)
         {
-            Environment env = environments.Where(x => x.id == id).FirstOrDefault();
+            var environmentName = profileSettings.CreateValue(ENVIRONMENT_NAME, "");
+
+            Environment env = environments.FirstOrDefault(x => x.id == environmentId);
             if (env != null)
             {
-                currentEnvironment = env;
+                profileSettings.SetValue(profileId, ENVIRONMENT_NAME, env.name);
             }
             else
             {
-                throw new Exception("Unable to find environment by id");
+                throw new Exception($"Unable to find environment by id {environmentId}");
             }
+        }
+
+        internal string GetEnvironmentName(AddressableAssetProfileSettings profileSettings, string profileId)
+        {
+            var profileEnvironmentName = profileSettings.GetValueByName(profileId, ENVIRONMENT_NAME);
+            if (profileEnvironmentName != null)
+            {
+                return profileEnvironmentName;
+            }
+
+            // this is here for backwards compatability
+            if (currentEnvironment != null && !String.IsNullOrEmpty(currentEnvironment.name))
+            {
+                profileSettings.CreateValue(ENVIRONMENT_NAME, "");
+                profileSettings.SetValue(profileId, ENVIRONMENT_NAME, currentEnvironment.name);
+                return currentEnvironment.name;
+            }
+            throw new Exception($"Unable to find environment for profile {profileSettings.GetProfile(profileId).profileName}.");
+        }
+
+        internal string GetEnvironmentId(AddressableAssetProfileSettings profileSettings, string profileId)
+        {
+            var environmentName = GetEnvironmentName(profileSettings, profileId);
+            Environment env = environments.Where(x => x.name == environmentName).FirstOrDefault();
+            if (env == null)
+            {
+                throw new Exception($"Unable to find remote environment {environmentName}.");
+            }
+
+            return env.id;
         }
 #endif
         void ISerializationCallbackReceiver.OnBeforeSerialize()

@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "2.0.6",
+  "version": "2.0.8",
   "unity": "2023.1",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "2.1.0",
+    "com.unity.scriptablebuildpipeline": "2.1.2",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -21,16 +21,16 @@
     "com.unity.profiling.core": "1.0.2"
   },
   "_upm": {
-    "changelog": "- Updating ScriptableBuildPipeline reference."
+    "changelog": "- Documents the behavior of using WaitForCompletion while a bundle is being unloaded.\n- Prevent a KeyNotFoundException from being logged to the console.\n- Fixed issue where a NullReferenceException occurs when using WaitForCompletion and the max number of concurrent requests is set to 1.\n- Fix error message to report not found when loading non-Addressable asset by guid\n- Fixed issue where there is missing asset data in the Addressables Profiler for binary catalogs.\n- Fixed an issue the error \"Cannot read BuildLayout header, BuildLayout has not open for a file\" would occur after a build\n- Added note about the limitations of the Check for Content Update Restrictions tool.\n- Fixed issue where an ArgumentException can occur when viewing multiple assets in the Addressables Profiler.\n\nFixed an issue where a broken script on any Addressable Asset would make it impossible to select Addressable Assets in the AssetReference inspector\nAdd migration upgrade prompt for legacy path pairs (ex. RemoteLoadPath)\nAdd logging of catalog and asset bundle http operations.\nAdd UI to trigger CCD management API http call logging (requires newer CCD package)\nCCD Automatic Profiles can now be one per-profile, rather than one per AddressableSettings instance\nCCD Manager is built when using the Build to CCD and the standard Build content menu"
   },
   "upmCi": {
-    "footprint": "8f92f2e98ef1da90440a8f1286bd2acf7d4017e5"
+    "footprint": "2ce9b7197f5b2f035dcd5e61c40d4c6b3307f91e"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@2.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "9bc156d4ddc52e64653b038eb914c041cae71083"
+    "revision": "5244e030c3a00be55850b85103b7a3954b1108ba"
   },
   "samples": [
     {

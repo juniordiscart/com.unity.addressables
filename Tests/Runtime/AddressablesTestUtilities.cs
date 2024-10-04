@@ -65,6 +65,9 @@ static class AddressablesTestUtility
 
         Directory.CreateDirectory(RootFolder);
 
+        // create a non-addressable asset
+        AddressablesTestUtility.CreateAsset(RootFolder + "/nonaddressable0" + suffix + ".prefab", "nonAddressable0");
+
         var settings = AddressableAssetSettings.Create(RootFolder + "/Settings", "AddressableAssetSettings.Tests", false, true);
         settings.MaxConcurrentWebRequests = kMaxWebRequestCount;
         var group = settings.FindGroup("TestStuff" + suffix);
@@ -162,15 +165,12 @@ static class AddressablesTestUtility
         PrefabUtility.SaveAsPrefabAsset(go, hasBehaviorPath);
         settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(hasBehaviorPath), group, false, false);
 
-        List<SpriteAtlas> atlasesToPack = new List<SpriteAtlas>();
-        CreateFolderEntryAssets(RootFolder, settings, group, atlasesToPack);
+        CreateFolderEntryAssets(RootFolder, settings, group);
 
         CreateAsset(RootFolder + "/nonAddressableAsset.prefab", "nonAddressableAsset");
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-
-        SpriteAtlasUtility.PackAtlases(atlasesToPack.ToArray(), EditorUserBuildSettings.activeBuildTarget);
 
         RunBuilder(settings, testType, suffix);
         LogAssert.ignoreFailingMessages = currentIgnoreState;
@@ -179,7 +179,7 @@ static class AddressablesTestUtility
     }
 
 #if UNITY_EDITOR
-    static void CreateFolderEntryAssets(string RootFolder, AddressableAssetSettings settings, AddressableAssetGroup group, List<SpriteAtlas> atlases)
+    static void CreateFolderEntryAssets(string RootFolder, AddressableAssetSettings settings, AddressableAssetGroup group)
     {
         AssetDatabase.CreateFolder(RootFolder, "folderEntry");
         string folderPath = RootFolder + "/folderEntry";
@@ -227,14 +227,14 @@ static class AddressablesTestUtility
 
             string atlasPath = folderPath + "/atlas.spriteatlas";
             var sa = new SpriteAtlas();
-            AssetDatabase.CreateAsset(sa, atlasPath);
-            sa.Add(new UnityEngine.Object[]
+            sa.Add(new []
             {
                 AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(AssetDatabase.GUIDToAssetPath(spriteGuid))
             });
 
-            AssetDatabase.SaveAssetIfDirty(sa);
-            atlases.Add(sa);
+            AssetDatabase.CreateAsset(sa, atlasPath);
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { sa }, EditorUserBuildSettings.activeBuildTarget, false);
+            SpriteAtlasUtility.CleanupAtlasPacking();
         }
 
         var folderEntry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(folderPath), group, false, false);
@@ -265,7 +265,7 @@ static class AddressablesTestUtility
         foreach (var db in settings.DataBuilders)
         {
             var b = db as IDataBuilder;
-            if (b.GetType().Name != testType)
+            if (b?.GetType().Name != testType)
                 continue;
 
             buildContext.PathSuffix = "_TEST_" + suffix;
