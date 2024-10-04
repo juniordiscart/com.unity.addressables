@@ -551,6 +551,11 @@ namespace UnityEngine.ResourceManagement
             return m_AssetOperationCache.Count;
         }
 
+        internal void ClearOperationCache()
+        {
+            m_AssetOperationCache.Clear();
+        }
+
         /// <summary>
         /// Creates an operation that has already completed with a specified result and error message./>.
         /// </summary>

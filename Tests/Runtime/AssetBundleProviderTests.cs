@@ -38,7 +38,7 @@ namespace AddressableTests.SyncAddressables
 #if UNITY_EDITOR
         internal override void Setup(AddressableAssetSettings settings, string tempAssetFolder)
         {
-            AddressableAssetGroup regGroup = settings.CreateGroup("localNoUWRGroup", false, false, true,
+            AddressableAssetGroup regGroup = settings.CreateGroup("localNoUWRGroup", true, false, true,
                 new List<AddressableAssetGroupSchema>(), typeof(BundledAssetGroupSchema));
             regGroup.GetSchema<BundledAssetGroupSchema>().BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.OnlyHash;
 

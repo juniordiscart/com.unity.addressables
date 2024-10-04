@@ -2314,6 +2314,11 @@ namespace UnityEditor.AddressableAssets.Settings
 			return null;
 		}
 
+        internal void ClearFindAssetEntryCache()
+        {
+            m_FindAssetEntryCache = null;
+        }
+
 		internal bool IsAssetPathInAddressableDirectory(string assetPath, out string assetName)
 		{
 			if (!string.IsNullOrEmpty(assetPath))
@@ -3259,14 +3264,17 @@ namespace UnityEditor.AddressableAssets.Settings
 
 
         /// <summary>
-        /// Impementation of ISerializationCallbackReceiver, does nothing.
+        /// Impementation of ISerializationCallbackReceiver. Sorts collections for deterministic ordering
         /// </summary>
         public void OnBeforeSerialize()
         {
+            // m_InitializationObjects, m_DataBuilders, and m_GroupTemplateObjects are serialized by array index
+            profileSettings.profiles.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
+            m_GroupAssets.Sort((a, b) => string.CompareOrdinal(a.Guid, b.Guid));
         }
 
         /// <summary>
-        /// Impementation of ISerializationCallbackReceiver, used to set callbacks for ProfileValueReference changes.
+        /// Impementation of ISerializationCallbackReceiver. Used to set callbacks for ProfileValueReference changes.
         /// </summary>
         public void OnAfterDeserialize()
         {

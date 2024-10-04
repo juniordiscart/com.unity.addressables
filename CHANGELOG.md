@@ -4,6 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2024-03-19
+- Fix "Unable to verify target bucket for Remote Catalog: Not Found. Object could not be found" error
+- Fixed caching to prevent unnecessary refreshing of bucket data.
+- Sort collections on serialization to prevent unecessary merge conflicts
+- Add warnings and documentation to make it clear you need to release the handle from LoadDependenciesAsync
+
 ## [2.0.8] - 2024-01-19
 - Documents the behavior of using WaitForCompletion while a bundle is being unloaded.
 - Prevent a KeyNotFoundException from being logged to the console.

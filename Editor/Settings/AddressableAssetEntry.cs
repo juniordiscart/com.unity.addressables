@@ -642,17 +642,19 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Implementation of ISerializationCallbackReceiver.  Converts data to serializable form before serialization.
+        /// Implementation of ISerializationCallbackReceiver. Converts data to serializable form before serialization,
+        /// and sorts collections for deterministic ordering.
         /// </summary>
         public void OnBeforeSerialize()
         {
             m_SerializedLabels = new List<string>();
             foreach (var t in m_Labels)
                 m_SerializedLabels.Add(t);
+            m_SerializedLabels.Sort(string.CompareOrdinal);
         }
 
         /// <summary>
-        /// Implementation of ISerializationCallbackReceiver.  Converts data from serializable form after deserialization.
+        /// Implementation of ISerializationCallbackReceiver. Converts data from serializable form after deserialization.
         /// </summary>
         public void OnAfterDeserialize()
         {

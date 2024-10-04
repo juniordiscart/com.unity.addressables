@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using NUnit.Framework;
 using System.Collections;
 using System;
+using System.IO;
 using System.Linq;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceLocations;

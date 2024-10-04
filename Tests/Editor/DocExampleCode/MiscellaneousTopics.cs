@@ -138,7 +138,7 @@ namespace AddressableAssets.DocExampleCode
                 opList.Add(loadAssetHandle);
             }
 
-            //create a GroupOperation to wait on all the above loads at once. 
+            //create a GroupOperation to wait on all the above loads at once.
             var groupOp = Addressables.ResourceManager.CreateGenericGroupOperation(opList);
 
             if (!groupOp.IsDone)
@@ -170,6 +170,11 @@ namespace AddressableAssets.DocExampleCode
             {
                 AsyncOperationHandle downloadDependencies = Addressables.DownloadDependenciesAsync(key);
                 yield return downloadDependencies;
+                if(downloadDependencies.Status == AsyncOperationStatus.Failed)
+                    Debug.LogError("Failed to download dependencies for " + key);
+
+                // we need to release the download handle so the assets can be loaded
+                Addressables.Release(downloadDependencies);
             }
 
             #endregion

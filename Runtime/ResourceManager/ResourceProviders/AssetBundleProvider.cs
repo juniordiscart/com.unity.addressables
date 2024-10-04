@@ -282,6 +282,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		ulong m_LastDownloadedByteCount = 0;
 		float m_TimeoutTimer = 0;
 		int m_TimeoutOverFrames = 0;
+        internal bool m_DownloadOnly = false;
 
         internal Func<UnityWebRequestResult, bool> m_RequestRetryCallback = x => x.ShouldRetryDownloadError();
 
@@ -467,6 +468,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			m_ProvideHandle = provideHandle;
 			m_Options = m_ProvideHandle.Location.Data as AssetBundleRequestOptions;
 			m_BytesToDownload = -1;
+            m_DownloadOnly = m_ProvideHandle.Location is DownloadOnlyLocation;
 			m_ProvideHandle.SetProgressCallback(PercentComplete);
 			m_ProvideHandle.SetDownloadProgressCallbacks(GetDownloadStatus);
 			m_ProvideHandle.SetWaitForCompletionCallback(WaitForCompletionHandler);

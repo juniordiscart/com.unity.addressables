@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// Used to create template groups to make it easier for the user to create new groups.
     /// </summary>
     [CreateAssetMenu(fileName = "AddressableAssetGroupTemplate.asset", menuName = "Addressables/Group Templates/Blank Group Template")]
-    public class AddressableAssetGroupTemplate : ScriptableObject, IGroupTemplate
+    public class AddressableAssetGroupTemplate : ScriptableObject, IGroupTemplate, ISerializationCallbackReceiver
     {
         [SerializeField]
         private List<AddressableAssetGroupSchema> m_SchemaObjects = new List<AddressableAssetGroupSchema>();
@@ -271,6 +271,21 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             return -1;
+        }
+
+        /// <summary>
+        /// Implementation of ISerializationCallbackReceiver. Sorts collections for deterministic ordering.
+        /// </summary>
+        public void OnBeforeSerialize()
+        {
+            m_SchemaObjects.Sort(AddressableAssetGroupSchema.Compare);
+        }
+
+        /// <summary>
+        /// Implementation of ISerializationCallbackReceiver. Does nothing.
+        /// </summary>
+        public void OnAfterDeserialize()
+        {
         }
     }
 }

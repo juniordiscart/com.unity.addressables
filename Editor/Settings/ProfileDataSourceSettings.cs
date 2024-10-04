@@ -246,7 +246,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Addressables.Log("Syncing CCD Environments, Buckets, and Badges.");
             }
 
-            var profileGroupTypes = new List<ProfileGroupType>();
+            settings.profileGroupTypes.Clear();
 
             var environments = await GetEnvironments();
 
@@ -255,7 +255,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 EditorUtility.DisplayProgressBar("Syncing Profile Data Sources", "Fetching Environments", 0);
                 Addressables.Log($"Successfully fetched {environments.Count} environments.");
             }
-            profileGroupTypes.AddRange(CreateDefaultGroupTypes());
+            settings.profileGroupTypes.AddRange(CreateDefaultGroupTypes());
 
             try
             {
@@ -275,35 +275,12 @@ namespace UnityEditor.AddressableAssets.Settings
                         }
 
                         var badges = await GetAllBadgesAsync(bucket.Id.ToString());
-                        if (badges.Count == 0) badges.Add(new CcdBadge(name: "latest"));
-                        foreach (var badge in badges)
-                        {
-                            var groupType =
- new ProfileGroupType($"CCD{ProfileGroupType.k_PrefixSeparator}{projectId}{ProfileGroupType.k_PrefixSeparator}{environment.id}{ProfileGroupType.k_PrefixSeparator}{bucket.Id}{ProfileGroupType.k_PrefixSeparator}{badge.Name}");
-                            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBucket)}{nameof(CcdBucket.Name)}", bucket.Name));
-                            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBucket)}{nameof(CcdBucket.Id)}", bucket.Id.ToString()));
-                            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBadge)}{nameof(CcdBadge.Name)}", badge.Name));
-                            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(nameof(CcdBucket.Attributes.PromoteOnly), bucket.Attributes.PromoteOnly.ToString()));
-
-                            //Adding environment stub here
-                            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(Environment)}{nameof(Environment.name)}", environment.name));
-                            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(Environment)}{nameof(Environment.id)}", environment.id));
-
-                            string buildPath = $"{AddressableAssetSettings.kCCDBuildDataPath}/{environment.id}/{bucket.Id}/{badge.Name}";
-                            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, buildPath));
-
-                            string loadPath =
-$"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environment.name}/buckets/{bucket.Id}/release_by_badge/{badge.Name}/entry_by_path/content/?path=";
-                            groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, loadPath));
-
-                            profileGroupTypes.Add(groupType);
-                        }
+                        AddGroupTypeForRemoteBucket(projectId, environment.id, environment.name, bucket, badges);
                         bucketProgress++;
                     }
                     envProgress++;
                 }
 
-                settings.profileGroupTypes = profileGroupTypes;
                 settings.environments = environments.ToList();
                 if (showInfoLog) Addressables.Log("Successfully synced CCD Buckets and Badges.");
                 EditorUtility.SetDirty(settings);
@@ -320,6 +297,35 @@ $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environme
 
             return settings.profileGroupTypes;
         }
+
+        internal static void AddGroupTypeForRemoteBucket(string projectId, string environmentId, string environmentName, CcdBucket bucket, List<CcdBadge> badges)
+        {
+            var settings = GetSettings();
+            if (badges.Count == 0) badges.Add(new CcdBadge(name: "latest"));
+            foreach (var badge in badges)
+            {
+                var groupType =
+                    new ProfileGroupType(
+                        $"CCD{ProfileGroupType.k_PrefixSeparator}{projectId}{ProfileGroupType.k_PrefixSeparator}{environmentId}{ProfileGroupType.k_PrefixSeparator}{bucket.Id}{ProfileGroupType.k_PrefixSeparator}{badge.Name}");
+                groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBucket)}{nameof(CcdBucket.Name)}", bucket.Name));
+                groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBucket)}{nameof(CcdBucket.Id)}", bucket.Id.ToString()));
+                groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(CcdBadge)}{nameof(CcdBadge.Name)}", badge.Name));
+                groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(nameof(CcdBucket.Attributes.PromoteOnly), bucket.Attributes.PromoteOnly.ToString()));
+
+                //Adding environment stub here
+                groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(Environment)}{nameof(Environment.name)}", environmentName));
+                groupType.AddVariable(new ProfileGroupType.GroupTypeVariable($"{nameof(Environment)}{nameof(Environment.id)}", environmentId));
+
+                string buildPath = $"{AddressableAssetSettings.kCCDBuildDataPath}/{environmentId}/{bucket.Id}/{badge.Name}";
+                groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, buildPath));
+
+                string loadPath =
+                    $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environmentName}/buckets/{bucket.Id}/release_by_badge/{badge.Name}/entry_by_path/content/?path=";
+                groupType.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, loadPath));
+
+                settings.profileGroupTypes.Add(groupType);
+            }
+    }
 
         internal static async Task<Dictionary<Guid, CcdBucket>> GetAllBucketsAsync()
         {
@@ -470,6 +476,12 @@ $"https://{projectId}{m_CcdClientBasePath}/client_api/v1/environments/{environme
 #endif
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {
+            profileGroupTypes.Sort((x, y) => string.CompareOrdinal(x.GroupTypePrefix, y.GroupTypePrefix));
+            foreach (var profileGroupType in profileGroupTypes)
+            {
+                profileGroupType.Variables.Sort((x, y) => string.CompareOrdinal(x.Suffix,y.Suffix));
+            }
+            environments.Sort((x, y) => string.CompareOrdinal(x.id, y.id));
         }
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()

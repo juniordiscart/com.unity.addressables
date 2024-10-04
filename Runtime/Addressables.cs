@@ -1531,6 +1531,8 @@ namespace UnityEngine.AddressableAssets
         /// You can use the <see cref="AsyncOperationHandle"/> returned by this function to monitor and
         /// provide feedback on the download progress.
         ///
+        /// The returned handle must be released before Assets can be be loaded from the downloaded bundles.
+        ///
         /// See [Preloading dependencies](xref:addressables-api-download-dependencies-async) for more details.
         /// </remarks>
         /// <param name="key">The key of the assets to load dependencies for.</param>
@@ -1550,6 +1552,8 @@ namespace UnityEngine.AddressableAssets
         ///
         /// You can use the <see cref="AsyncOperationHandle"/> returned by this function to monitor and
         /// provide feedback on the download progress.
+        ///
+        /// The returned handle must be released before Assets can be be loaded from the downloaded bundles.
         ///
         /// See [Preloading dependencies](xref:addressables-api-download-dependencies-async) for more details.
         /// </remarks>
@@ -1573,6 +1577,8 @@ namespace UnityEngine.AddressableAssets
         ///
         /// You can use the <see cref="AsyncOperationHandle"/> returned by this function to monitor and
         /// provide feedback on the download progress.
+        ///
+        /// The returned handle must be released before Assets can be be loaded from the downloaded bundles.
         ///
         /// See [Preloading dependencies](xref:addressables-api-download-dependencies-async) for more details.
         /// </remarks>

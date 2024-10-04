@@ -167,5 +167,16 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
         }
+        public static int Compare(AddressableAssetGroupSchema x, AddressableAssetGroupSchema y)
+        {
+            if (x == null && y == null)
+                return 0;
+            if (x == null || x.SchemaSerializedObject == null || x.SchemaSerializedObject.targetObject == null)
+                return -1;
+            if (y == null || y.SchemaSerializedObject == null || y.SchemaSerializedObject.targetObject == null)
+                return 1;
+            // you can only have one schema of a given type in a set so using the name should be ok.
+            return string.CompareOrdinal(x.SchemaSerializedObject.targetObject.name, y.SchemaSerializedObject.targetObject.name);
+        }
     }
 }

@@ -20,7 +20,10 @@ namespace UnityEditor.AddressableAssets
 
         private const string UsageEvent = "addressablesUsageEvent";
         private const string BuildEvent = "addressablesBuildEvent";
+
+#if UNITY_2023_1_OR_NEWER
         private static PackageManager.PackageInfo packageInfo = PackageManager.PackageInfo.FindForPackageName("com.unity.addressables");
+#endif
         private const string packageName = "com.unity.addressables";
 
         #if UNITY_2023_3_OR_NEWER

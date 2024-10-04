@@ -432,6 +432,12 @@ namespace UnityEditor.AddressableAssets.Build
                     return true;
                 }
 
+                if (settings.m_CcdManagedData.IsConfigured())
+                {
+                    // this has been configured by a previous run
+                    return true;
+                }
+
 
                 // existing automatic bucket loaded from cache
                 var bucketIdVariable = dataSource
@@ -450,11 +456,15 @@ namespace UnityEditor.AddressableAssets.Build
                 }
 
                 // otherwise try to create
-                CcdManagement.SetEnvironmentId(settings.m_CcdManagedData.EnvironmentId);
-                await CreateManagedBucket(EditorUserBuildSettings.activeBuildTarget.ToString());
-                // we created a bucket so refresh our data sources so we ensure they're up to date
-                await RefreshDataSources();
-
+                var environmentId = ProfileDataSourceSettings.GetSettings().GetEnvironmentId(settings.profileSettings, settings.activeProfileId);
+                CcdManagement.SetEnvironmentId(environmentId); // this should be getting the value from the active profile
+                var ccdBucket = await CreateManagedBucket(EditorUserBuildSettings.activeBuildTarget.ToString());
+                if (ccdBucket == null) {
+                    // the bucket already exists, we shouldn't be here if refresh was called
+                    ccdBucket = await GetExistingManagedBucket();
+                }
+                var environmentName = ProfileDataSourceSettings.GetSettings().GetEnvironmentName(settings.profileSettings, settings.activeProfileId);
+                ProfileDataSourceSettings.AddGroupTypeForRemoteBucket(CloudProjectSettings.projectId, environmentId, environmentName, ccdBucket, new List<CcdBadge>());
                 PopulateCcdManagedData(settings, settings.activeProfileId);
 
                 // I should put this value into the data source list
@@ -735,12 +745,16 @@ namespace UnityEditor.AddressableAssets.Build
                 return groupType;
             }
 
-            var groupTypes = ProfileDataSourceSettings.GetSettings().GetGroupTypesByPrefix(string.Join(
+            var environmentId = ProfileDataSourceSettings.GetSettings().GetEnvironmentId(settings.profileSettings, settings.activeProfileId);
+            // if we haven't setup an automatic group since refresh we do it here
+            IEnumerable<ProfileGroupType> groupTypes = ProfileDataSourceSettings.GetSettings().GetGroupTypesByPrefix(string.Join(
                 ProfileGroupType.k_PrefixSeparator.ToString(), "CCD", CloudProjectSettings.projectId,
                 ProfileDataSourceSettings.GetSettings().GetEnvironmentId(settings.profileSettings, settings.activeProfileId)));
+            // if we have setup an automatic group we load it here
+            groupTypes = groupTypes.Concat(ProfileDataSourceSettings.GetSettings().GetGroupTypesByPrefix(AddressableAssetSettings.CcdManagerGroupTypePrefix));
             var automaticGroupType = groupTypes.FirstOrDefault(gt =>
-                gt.GetVariableBySuffix($"{nameof(CcdBucket)}{nameof(CcdBucket.Name)}").Value ==
-                EditorUserBuildSettings.activeBuildTarget.ToString());
+                gt.GetVariableBySuffix($"{nameof(CcdBucket)}{nameof(CcdBucket.Name)}")?.Value == EditorUserBuildSettings.activeBuildTarget.ToString()
+                && gt.GetVariableBySuffix($"{nameof(ProfileDataSourceSettings.Environment)}{nameof(ProfileDataSourceSettings.Environment.id)}")?.Value == environmentId);
             if (automaticGroupType == null)
             {
                 // the bucket does not yet exist
@@ -826,15 +840,21 @@ namespace UnityEditor.AddressableAssets.Build
             {
                 if (e.ErrorCode == CcdManagementErrorCodes.AlreadyExists)
                 {
-                    var buckets = await ProfileDataSourceSettings.GetAllBucketsAsync();
-                    ccdBucket = buckets.First(bucket =>
-                        bucket.Value.Name == EditorUserBuildSettings.activeBuildTarget.ToString()).Value;
+                    return null;
                 }
                 else
                 {
                     throw;
                 }
             }
+            return ccdBucket;
+        }
+
+        async Task<CcdBucket> GetExistingManagedBucket()
+        {
+            var buckets = await ProfileDataSourceSettings.GetAllBucketsAsync();
+            var ccdBucket = buckets.First(bucket =>
+                bucket.Value.Name == EditorUserBuildSettings.activeBuildTarget.ToString()).Value;
             return ccdBucket;
         }
 

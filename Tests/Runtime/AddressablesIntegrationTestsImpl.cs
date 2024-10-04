@@ -2368,6 +2368,67 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual(bundleCountBefore, AssetBundleProvider.AssetBundleCount);
         }
 
+        [UnityTest]
+        public IEnumerator DownloadDependencies_CannotLoadAssetWhenHandleNotReleased()
+        {
+#if ENABLE_CACHING
+            if (string.IsNullOrEmpty(TypeName) || TypeName == "BuildScriptFastMode")
+            {
+                Assert.Ignore($"Skipping test {nameof(DownloadDependencies_CannotLoadAssetWhenHandleNotReleased)} for {TypeName}, AssetBundle based test.");
+            }
+            Caching.ClearCache();
+
+            yield return Init();
+            int bundleCountBefore = AssetBundle.GetAllLoadedAssetBundles().Count();
+            Assert.AreEqual(0, bundleCountBefore);
+            string label = AddressablesTestUtility.GetPrefabLabel("BASE");
+            AsyncOperationHandle op = m_Addressables.DownloadDependenciesAsync(label);
+            yield return op;
+            Assert.IsTrue(op.IsValid());
+
+            var handle = m_Addressables.LoadAssetAsync<IList<Object>>("test0BASE");
+            yield return handle;
+            Assert.IsNull(handle.Result);
+#if UNITY_EDITOR
+            Assert.AreEqual("Unable to load dependent bundle from location Assets/BuildScriptPackedMode_AssetsToDelete_BASE/test0BASE.prefab.\nRelease the handle returned by DownloadDependenciesAsync or call it with autoReleaseHandle set to true.", handle.OperationException.Message);
+#else
+            Assert.AreEqual("Unable to load dependent bundle from location Assets/BuildScriptPackedMode_AssetsToDelete_BASE/test0BASE.prefab", handle.OperationException.Message);
+#endif
+            handle.Release();
+            op.Release();
+#else
+            Assert.Ignore();
+            yield break;
+#endif
+        }
+
+        [UnityTest]
+        public IEnumerator DownloadDependencies_CanLoadAssetWhenHandleIsReleased()
+        {
+#if ENABLE_CACHING
+            Caching.ClearCache();
+
+            yield return Init();
+            int bundleCountBefore = AssetBundle.GetAllLoadedAssetBundles().Count();
+            Assert.AreEqual(0, bundleCountBefore);
+            string label = AddressablesTestUtility.GetPrefabLabel("BASE");
+            AsyncOperationHandle op = m_Addressables.DownloadDependenciesAsync(label);
+            yield return op;
+            Assert.IsTrue(op.IsValid());
+            op.Release();
+
+            var handle = m_Addressables.LoadAssetAsync<IList<Object>>("test0BASE");
+            yield return handle;
+            Assert.IsTrue(handle.IsValid());
+            Assert.IsNotNull(handle.Result);
+            handle.Release();
+#else
+            Assert.Ignore();
+            yield break;
+#endif
+        }
+
+
         [Test]
         public void AssetBundleProvider_CanSet_UnloadingBundles()
         {
