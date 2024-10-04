@@ -26,16 +26,16 @@ void Start()
     //Basic use case of forcing a synchronous load of a GameObject
     var op = Addressables.LoadAssetAsync<GameObject>("myGameObjectKey");
     GameObject go = op.WaitForCompletion();
-    
+
     //Do work...
-    
+
     Addressables.Release(op);
 }
 ```
 
-## Scene limitations
+## Deadlocks caused by scene limitations
 
-Unity can't complete scene loading synchronously. Calling `WaitForCompletion` on an operation returned from [`Addressables.LoadSceneAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadSceneAsync*) doesn't completely load the scene, even if `activateOnLoad `is set to `true`. It waits for dependencies and assets to complete but the scene activation must be done asynchronously. 
+Unity can't complete scene loading synchronously. Calling `WaitForCompletion` on an operation returned from [`Addressables.LoadSceneAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadSceneAsync*) doesn't completely load the scene, even if `activateOnLoad `is set to `true`. It waits for dependencies and assets to complete but the scene activation must be done asynchronously.
 
 This can be done using the `sceneHandle`, or by the [`AsyncOperation`](xref:UnityEngine.AsyncOperation) from `ActivateAsync` on the `SceneInstance`:
 
@@ -45,24 +45,28 @@ IEnumerator LoadScene(string myScene)
     var sceneHandle = Addressables.LoadSceneAsync(myScene, LoadSceneMode.Additive);
     SceneInstance sceneInstance = sceneHandle.WaitForCompletion();
     yield return sceneInstance.ActivateAsync();
-    
+
     //Do work... the scene is now complete and integrated
 }
 ```
 
 Unity can't unload a scene synchronously. Calling `WaitForCompleted` on a scene unload doesn't unload the scene or any assets, and a warning is logged to the Console.
 
-Because of limitations with scene integration on the main thread through the `SceneManager` API, you can lock the Unity Editor or Player when calling `WaitForCompletion` to load scenes. This issue happens when loading two scenes in succession, with the second scene load request having `WaitForCompletion` called from its `AsyncOperationHandle`. 
+Because of limitations with scene integration on the main thread through the `SceneManager` API, you can lock the Unity Editor or Player when calling `WaitForCompletion` to load scenes. This issue happens when loading two scenes in succession, with the second scene load request having `WaitForCompletion` called from its `AsyncOperationHandle`.
 
 Scene loading takes extra frames to fully integrate on the main thread, and `WaitForCompletion` locks the main thread, so you might have a situation where Addressables has been informed by the `SceneManager` that the first scene is fully loaded, even though it hasn't finished all operations. At this point, the scene is fully loaded, but the `SceneManager` attempts to call `UnloadUnusedAssets`, on the main thread, if the scene was loaded in `Single` mode. Then, the second scene load request locks the main thread with `WaitForCompletion`, but can't begin loading because `SceneManager` requires the `UnloadUnusedAssets` to complete before the next scene can begin loading.
 
 To avoid this deadlock, either load successive scenes asynchronously, or add a delay between scene load requests.
 
+Another issue is calling `WaitForCompletion` on an asynchronous operation during `Awake` when a scene is not yet fully loaded. This can block the main thread and prevent other asynchronous operations (i.e. unloading a bundle) in progress from completing. To avoid this deadlock, call `WaitForCompletion` during `Start` instead.
+
+Note that Addressables has a callback registered to [`SceneManager.sceneUnloaded`](xref:UnityEngine.SceneManagement.SceneManager.sceneUnloaded(UnityEngine.Events.UnityAction`1<UnityEngine.SceneManagement.Scene>)) that will release any unloaded addressable scenes. This can trigger scene bundle unloading if no other scenes from the bundle are loaded.
+
 ## Custom operations
 
 Addressables supports custom `AsyncOperation` instances which support unique implementations of `InvokeWaitForCompletion`. This method can be overridden to implement custom synchronous operations.
 
-Custom operations work with `ChainOperation` and `GroupsOperation` instances. If you want to complete chained operations synchronously, make your custom operations implement `InvokeWaitForCompletion` and create a `ChainOperation` using your custom operations. Similarly, `GroupOperations` are well suited to make a collection of `AsyncOperations`, including custom operations, complete together.  
+Custom operations work with `ChainOperation` and `GroupsOperation` instances. If you want to complete chained operations synchronously, make your custom operations implement `InvokeWaitForCompletion` and create a `ChainOperation` using your custom operations. Similarly, `GroupOperations` are well suited to make a collection of `AsyncOperations`, including custom operations, complete together.
 
 Both `ChainOperation` and `GroupOperation` have their own implementations of `InvokeWaitForCompletion` that relies on the `InvokeWaitForCompletion` implementations of the operations they depend on.
 
