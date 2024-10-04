@@ -12,7 +12,7 @@ When Unity loads an Addressable, the system increments the reference count. When
 
 To avoid memory leaks, where assets remain in memory after they're no longer needed, mirror every call to a load method with a call to a release method. You can release an asset with a reference to the asset instance itself or with the result handle that the original load operation returns.
 
-However, Unity doesn't unload released assets from memory immediately. The memory that an asset uses isn't freed until the AssetBundle it belongs to is also unloaded. You can call [`Resources.UnloadUnusedAssets`](xref:UnityEngine.Resources.UnloadUnusedAssets) to unload released assets, but it's a slow operation which can cause frame rate hitches.
+However, Unity doesn't unload released assets from memory immediately, as the memory that an asset uses isn't freed until the AssetBundle it belongs to is also unloaded.
 
 AssetBundles have their own reference count, and the system treats them like Addressables with the assets they contain as dependencies. When you load an asset from a bundle, the bundle's reference count increases and when you release the asset, the bundle reference count decreases. When a bundle's reference count returns to zero, that means none of the assets contained in the bundle are still in use. Unity then unloads the bundle and all the assets contained in it from memory.
 
@@ -27,10 +27,7 @@ If an asset is no longer referenced, indicated by the released status and disabl
 * Later, when `tank` loads, the Profiler displays a single ref-count for both `tree` and `tank`, and two ref-counts for the `stuff` AssetBundle.
 * If you release `tree`, its ref-count becomes zero, and the blue bar goes away.
 
-In this example, the `tree` asset isn't unloaded at this point. You can load an AssetBundle, or its partial contents, but you can't unload part of an AssetBundle. No asset in `stuff` unloads until the AssetBundle is unloaded. 
-
-The exception to this rule is the engine interface [`Resources.UnloadUnusedAssets`](xref:UnityEngine.Resources.UnloadUnusedAssets). Executing this method in the earlier example causes `tree` to unload. Because the Addressables system isn't aware of these events, the Profiler graph only reflects the Addressables ref-counts (not exactly what memory holds). If you use [`Resources.UnloadUnusedAssets`](xref:UnityEngine.Resources.UnloadUnusedAssets), it's a slow operation, and should only be called on a screen that won't display any hitches, such as a loading screen.
-
+In this example, the `tree` asset isn't unloaded at this point. You can load an AssetBundle, or its partial contents, but you can't unload part of an AssetBundle. No asset in `stuff` unloads until the AssetBundle is unloaded.
 
 ## Avoid asset churn
 

@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2023-10-30
+- Updating ScriptableBuildPipeline reference.
+
 ## [2.0.3] - 2023-08-27
 - ProfileValueReference.GetValue is now the preferred method of getting bulid and load paths. A new method has been added that allows token evaluation to be toggled on and off. Using this method ensures that custom build and load paths are handled properly.
 - In the Editor when a sprite is no longer available it will be cleared when the property drawer is viewed. 
@@ -34,6 +37,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed an issue where "Failed to remove scene from Addressables profiler" warning occurs when a scene is unloaded.
 - Fixed an exception getting thrown in the Addressables Report when drilling into a bundle chain
 - Fixed string deduplication in binary catalogs.  Certain data sets were causing data to expand.
+
+## [1.21.18] - 2023-09-23
+- Fixed an issue where scene InternalId collisions were very likely when using dynamic internal asset naming
+- Fixed an issue where Android paths were being delimited with '\' rather than '/'
 
 ## [1.21.17] - 2023-08-16
 - Fixed issue where sprite is missing normal texture when using "Use Existing Build" build mode

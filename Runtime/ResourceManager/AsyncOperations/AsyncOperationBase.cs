@@ -290,7 +290,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             if (IsDone && !m_InDeferredCallbackQueue)
             {
                 m_InDeferredCallbackQueue = true;
-                m_RM.RegisterForDeferredCallback(this, incrementReferenceCount);
+                m_RM?.RegisterForDeferredCallback(this, incrementReferenceCount);
             }
         }
 

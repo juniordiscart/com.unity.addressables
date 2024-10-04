@@ -85,6 +85,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         var activeScenePath = EditorSceneManager.GetActiveScene().path;
 
         string rootFolder = GetGeneratedAssetsPath();
+        Directory.CreateDirectory(rootFolder);
         AddressableAssetSettings settings = CreateSettings("Settings", rootFolder);
 
         Setup(settings, rootFolder);
@@ -114,7 +115,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     protected AddressableAssetSettings CreateSettings(string name, string rootFolder)
     {
         if (Directory.Exists(rootFolder))
-            Directory.Delete(rootFolder, true);
+            DirectoryUtility.DeleteDirectory(rootFolder, false);
         Directory.CreateDirectory(rootFolder);
         return AddressableAssetSettings.Create(Path.Combine(rootFolder, name), "AddressableAssetSettings.Tests", false, true);
     }

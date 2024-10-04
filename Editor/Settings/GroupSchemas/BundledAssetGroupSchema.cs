@@ -836,7 +836,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 enumValue = enumValue == 0 ? 1 : enumValue == 1 ? 0 : enumValue;
 
                 EditorGUI.BeginChangeCheck();
-                int newValue = EditorGUI.Popup(position, new GUIContent(label.text, "Controls how the output AssetBundle's will be named."), enumValue, contents);
+                int newValue = EditorGUI.Popup(position, new GUIContent(label.text, "Controls how the output AssetBundles will be named."), enumValue, contents);
                 if (EditorGUI.EndChangeCheck())
                 {
                     newValue = newValue == 0 ? 1 : newValue == 1 ? 0 : newValue;
