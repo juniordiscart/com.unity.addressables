@@ -75,6 +75,7 @@ namespace AddressableAssetsIntegrationTests
         [TearDown]
         public void TearDown()
         {
+            AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
             if (m_Addressables != null)
             {
                 Assert.AreEqual(0, m_Addressables.ResourceManager.DeferredCompleteCallbacksCount);

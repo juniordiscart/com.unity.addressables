@@ -499,12 +499,36 @@ namespace UnityEditor.AddressableAssets.Settings
             return null;
         }
 
-        BuildProfile GetDefaultProfile()
+        internal BuildProfile GetDefaultProfile()
         {
-            BuildProfile profile = null;
+            BuildProfile defaultProfile = null;
             if (m_Profiles.Count > 0)
-                profile = m_Profiles[0];
-            return profile;
+            {
+                if (m_Profiles[0].profileName != k_RootProfileName)
+                {
+                    int rootProfileIndex = -1;
+                    for (int i = 0; i < m_Profiles.Count; i++)
+                    {
+                        if (m_Profiles[i].profileName == k_RootProfileName)
+                        {
+                            rootProfileIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (rootProfileIndex != -1)
+                    {
+                        BuildProfile rootProfile = m_Profiles[rootProfileIndex];
+                        m_Profiles[rootProfileIndex] = m_Profiles[0];
+                        m_Profiles[0] = rootProfile;
+
+                        defaultProfile = rootProfile;
+                    }
+                }
+                else
+                    defaultProfile = m_Profiles[0];
+            }
+            return defaultProfile;
         }
 
         bool ValidateProfiles()
@@ -913,6 +937,22 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public void OnAfterDeserialize()
         {
+        }
+
+        internal void SortProfiles()
+        {
+            BuildProfile defaultProfile = GetDefaultProfile();
+
+            if (m_Profiles.Count <= 1)
+                return;
+
+            List<BuildProfile> otherProfiles = m_Profiles.GetRange(1, m_Profiles.Count - 1);
+            otherProfiles.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
+
+            for (int i = 1; i < m_Profiles.Count; i++)
+            {
+                m_Profiles[i] = otherProfiles[i - 1];
+            }
         }
     }
 }

@@ -3277,7 +3277,7 @@ namespace UnityEditor.AddressableAssets.Settings
         public void OnBeforeSerialize()
         {
             // m_InitializationObjects, m_DataBuilders, and m_GroupTemplateObjects are serialized by array index
-            profileSettings.profiles.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
+            profileSettings.SortProfiles();
             m_GroupAssets.Sort((a, b) => string.CompareOrdinal(a?.Guid, b?.Guid));
         }
 

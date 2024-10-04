@@ -33,8 +33,6 @@ To convert your scenes:
 
 You can now split your one, large Addressable Scene group into multiple groups. The best way to do that depends on the project goals. To proceed, you can move your Scenes into their own groups so that you can load and unload each of them independently of each other. You can avoid duplicating an asset referenced from two different bundles by making the asset itself Addressable. It's often better to move shared assets to their own group as well to reduce dependencies among AssetBundles.
 
-You can now split your one, large Addressable scene group into multiple groups. The best way to do that depends on the project goals. To proceed, you can move your scenes into their own groups so that you can load and unload each of them independently of each other.
-
 To avoid duplicating an asset referenced from two different bundles, make the asset Addressable. It's often better to move shared assets to their own group to reduce the amount of dependencies among your AssetBundles.
 
 

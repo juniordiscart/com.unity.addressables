@@ -381,5 +381,96 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Assert.AreEqual(count, list.Distinct().Count());
         }
+
+        [Test]
+        public void WhenInvalidDefaultProfileState_GetDefaultProfileDoesNotLogError()
+        {
+            Assert.IsNotNull(Settings.profileSettings);
+
+            try
+            {
+                var idDefault = Settings.profileSettings.Reset();
+                Settings.profileSettings.AddProfile("A Test Profile", idDefault);
+                Settings.profileSettings.AddProfile("B Test Profile", idDefault);
+
+                List<AddressableAssetProfileSettings.BuildProfile> profiles = Settings.profileSettings.profiles;
+
+                var temp = profiles[0];
+                profiles[0] = profiles[2];
+                profiles[2] = temp;
+
+                var defaultProfile = Settings.profileSettings.GetDefaultProfile();
+                Assert.IsTrue(defaultProfile != null);
+                Assert.AreEqual(idDefault, defaultProfile.id, "GetDefaultProfile did not return the default profile.");
+            }
+            finally
+            {
+                Settings.profileSettings.Reset();
+            }
+        }
+
+        [Test]
+        public void WhenNoProfiles_SortDoesNotLogError()
+        {
+            Assert.IsNotNull(Settings.profileSettings);
+
+            try
+            {
+                Settings.profileSettings.profiles.Clear();
+                Assert.DoesNotThrow(() => Settings.profileSettings.SortProfiles(), "SortProfiles should not log errors when there are no profiles.");
+            }
+            finally
+            {
+                Settings.profileSettings.Reset();
+            }
+        }
+
+        [Test]
+        public void CanSortAndRenameProfiles()
+        {
+            Assert.IsNotNull(Settings.profileSettings);
+            var defaultProfileInitId = Settings.profileSettings.Reset();
+
+            string idSuffix = defaultProfileInitId.Substring(1);
+            string idDefault = '4' + idSuffix;
+            string idA = '1' + idSuffix;
+            string idB = '2' + idSuffix;
+            string idC = '3' + idSuffix;
+
+            var defaultProfile = Settings.profileSettings.GetProfile(defaultProfileInitId);
+            defaultProfile.id = idDefault;
+
+            string profileIdB = Settings.profileSettings.AddProfile("B Test Profile", idDefault);
+            var profileB = Settings.profileSettings.GetProfile(profileIdB);
+            profileB.id = idB;
+
+            string profileIdA = Settings.profileSettings.AddProfile("A Test Profile", idDefault);
+            var profileA = Settings.profileSettings.GetProfile(profileIdA);
+            profileA.id = idA;
+
+            string profileIdC = Settings.profileSettings.AddProfile("C Test Profile", idDefault);
+            var profileC = Settings.profileSettings.GetProfile(profileIdC);
+            profileC.id = idC;
+
+            try
+            {
+                List<string> profileIds = new List<string> { profileIdC, profileA.id, profileIdB };
+                profileIds.Sort((a, b) => string.CompareOrdinal(a, b));
+                Settings.profileSettings.SortProfiles();
+
+                var currentProfiles = Settings.profileSettings.profiles;
+                Assert.AreEqual(idDefault, currentProfiles[0].id, "After all profiles were sorted, the default profile is no longer the first profile.");
+
+                Assert.AreEqual(idA, currentProfiles[1].id);
+                Assert.AreEqual(idB, currentProfiles[2].id);
+                Assert.AreEqual(idC, currentProfiles[3].id);
+
+                Assert.IsTrue(Settings.profileSettings.RenameProfile(profileA, "a test profile"), "After all profiles were sorted, renaming a non-default profile failed.");
+            }
+            finally
+            {
+                Settings.profileSettings.Reset();
+            }
+        }
     }
 }

@@ -598,7 +598,18 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 			if (loadType == LoadType.Local)
 			{
+                //download only bundles loads should not load local bundles
+                if (m_ProvideHandle.Location is DownloadOnlyLocation)
+                {
+                    m_Source = BundleSource.Local;
+                    m_RequestOperation = null;
+                    m_ProvideHandle.Complete<AssetBundleResource>(null, true, null);
+                    m_Completed = true;
+                }
+                else
+                {
                 LoadLocalBundle();
+                }
                 return;
             }
 
@@ -904,6 +915,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				throw new ArgumentNullException("location");
 			if (asset == null)
 			{
+                if(!(location is DownloadOnlyLocation))
 				Debug.LogWarningFormat("Releasing null asset bundle from location {0}.  This is an indication that the bundle failed to load.", location);
 				return;
 			}
@@ -933,7 +945,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         {
             //We need to transform the ID first
             //so we don't try and load the same bundle twice if the user is manipulating the path at runtime.
-            return new IdCacheKey(rm.TransformInternalId(location));
+            return new IdCacheKey(location.GetType(), rm.TransformInternalId(location));
         }
 	}
 }

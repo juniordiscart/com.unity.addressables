@@ -107,7 +107,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 throw new ArgumentNullException("location");
             if (asset == null)
             {
-                Debug.LogWarningFormat("Releasing null asset bundle from location {0}.  This is an indication that the bundle failed to load.", location);
+                if (!(location is DownloadOnlyLocation))
+                    Debug.LogWarningFormat("Releasing null asset bundle from location {0}.  This is an indication that the bundle failed to load.", location);
                 return;
             }
 

@@ -4,6 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2024-09-24
+- Added back Analyze Rule toolset
+- Fixed issue where the content of the list with Addressable Assets Groups is improperly indented when displayed in Group Hierarchy with Dashes Group View.
+- Fixed issue where “Profile rename failed because default profile cannot be renamed“ error is thrown when renaming a new profile in Addressables Profiles.
+- Fixed a memory leak where asset bundles would not get unloaded when a scene was unloaded before completing load.
+- Fixed loading error when the loading from an assetbundle that is currently being preloaded.
+
 ## [2.2.2] - 2024-06-26
 - Fix KeyNotFoundException when clicking on local bundles in the profiler.
 - Fix bundles incorrectly marked as released in the Profiler when they are still active

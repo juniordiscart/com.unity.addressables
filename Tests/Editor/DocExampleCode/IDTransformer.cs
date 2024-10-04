@@ -1,7 +1,7 @@
 namespace AddressableAssets.DocExampleCode
 {
     //Prevent Unity from actually registering the rule in this example
-    using RuntimeInitializeOnLoadMethod = DummyAttribute;
+    using RuntimeInitializeOnLoadMethod = Dummy;
 
 #if UNITY_EDITOR
 

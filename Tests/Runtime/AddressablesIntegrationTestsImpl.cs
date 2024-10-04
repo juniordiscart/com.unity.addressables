@@ -2544,12 +2544,12 @@ namespace AddressableAssetsIntegrationTests
         }
 
         [UnityTest]
-        public IEnumerator DownloadDependencies_CannotLoadAssetWhenHandleNotReleased()
+        public IEnumerator DownloadDependencies_CanLoadAssetWhenHandleNotReleased()
         {
 #if ENABLE_CACHING
             if (string.IsNullOrEmpty(TypeName) || TypeName == "BuildScriptFastMode")
             {
-                Assert.Ignore($"Skipping test {nameof(DownloadDependencies_CannotLoadAssetWhenHandleNotReleased)} for {TypeName}, AssetBundle based test.");
+                Assert.Ignore($"Skipping test {nameof(DownloadDependencies_CanLoadAssetWhenHandleNotReleased)} for {TypeName}, AssetBundle based test.");
             }
             Caching.ClearCache();
 
@@ -2563,12 +2563,8 @@ namespace AddressableAssetsIntegrationTests
 
             var handle = m_Addressables.LoadAssetAsync<IList<Object>>("test0BASE");
             yield return handle;
-            Assert.IsNull(handle.Result);
-#if UNITY_EDITOR
-            Assert.AreEqual("Unable to load dependent bundle from location Assets/BuildScriptPackedMode_AssetsToDelete_BASE/test0BASE.prefab.\nRelease the handle returned by DownloadDependenciesAsync or call it with autoReleaseHandle set to true.", handle.OperationException.Message);
-#else
-            Assert.AreEqual("Unable to load dependent bundle from location Assets/BuildScriptPackedMode_AssetsToDelete_BASE/test0BASE.prefab", handle.OperationException.Message);
-#endif
+            Assert.IsNotNull(handle.Result);
+
             handle.Release();
             op.Release();
 #else

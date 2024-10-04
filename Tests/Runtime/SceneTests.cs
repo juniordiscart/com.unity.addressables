@@ -4,6 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
@@ -471,15 +473,16 @@ namespace SceneTests
         public IEnumerator SceneTests_UnloadSceneAsync_UnloadSceneDecreaseRefOnlyOnce()
         {
             var op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+            Assert.AreEqual(2, op.ReferenceCount);
             yield return op;
+            Assert.AreEqual(1, op.ReferenceCount);
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
             Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
-
-            Addressables.ResourceManager.Acquire(op);
-            yield return UnloadSceneFromHandlerRefCountCheck(op, m_Addressables);
-
-            // Cleanup
-            Addressables.Release(op);
+            var ulOp = m_Addressables.UnloadSceneAsync(op);
+            Assert.AreEqual(1, op.ReferenceCount);
+            yield return ulOp;
+            Assert.IsFalse(op.IsValid());
+            AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
         }
 
         [UnityTest]
@@ -721,6 +724,33 @@ namespace SceneTests
         }
 
         [UnityTest]
+        public IEnumerator UnloadSceneAsyncWithHAndle_BeforeLoadSceneAsyncFinishes_UnloadsAssetBundles()
+        {
+            int bundleCountBeforeTest = AssetBundle.GetAllLoadedAssetBundles().Count();
+            var loadOp = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Additive));
+            var unloadOp = m_Addressables.UnloadSceneAsync(loadOp);
+            yield return unloadOp;
+            AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
+            Assert.AreEqual(bundleCountBeforeTest, AssetBundle.GetAllLoadedAssetBundles().Count());
+        }
+
+        [UnityTest]
+        public IEnumerator UnloadSceneAsyncWithSceneManager_BeforeLoadSceneAsyncFinishes_UnloadsAssetBundles()
+        {
+            int bundleCountBeforeTest = AssetBundle.GetAllLoadedAssetBundles().Count();
+            var loadOp = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Additive));
+            string allDone = null;
+            loadOp.Completed += (op)=>
+            {
+                SceneManager.UnloadSceneAsync(SceneManager.GetSceneAt(SceneManager.sceneCount - 1)).completed += o=> allDone = "true";
+            };
+            while (allDone != "true")
+                yield return null;
+            AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
+            Assert.AreEqual(bundleCountBeforeTest, AssetBundle.GetAllLoadedAssetBundles().Count());
+        }
+
+        [UnityTest]
         public IEnumerator SceneTests_UnloadSceneAsync_UnloadSceneAfterAcquireAndDoNotDestroyOnLoadDoesNotUnloadDependenciesUntilSecondRelease()
         {
             // Setup scene
@@ -749,18 +779,11 @@ namespace SceneTests
             yield return UnloadSceneFromHandlerRefCountCheck(activeScene, m_Addressables);
 
             Assert.NotNull(GameObject.Find(instOp.Result.name));
-            Assert.IsFalse(activeScene.Result.Scene.isLoaded);
+            Assert.IsFalse(activeScene.IsValid());
             int bundleCountAfterUnload = AssetBundle.GetAllLoadedAssetBundles().Count();
             Assert.AreEqual(bundleCountAfterInstantiate, bundleCountAfterUnload);
 
-            var activeSceneCpy = activeScene;
-            Assert.IsTrue(activeScene.IsValid());
-            activeSceneCpy.Release();
-
-            yield return activeScene;
-
             // Cleanup
-            Assert.IsFalse(activeScene.IsValid());
             instOp.Release();
             AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
             int bundleCountEndTest = AssetBundle.GetAllLoadedAssetBundles().Count();

@@ -126,3 +126,4 @@ The Addressables system provides the following tools and windows to help you man
 * [Addressable Groups window](xref:addressables-groups-window): The main interface for managing assets, group settings, and making builds.
 * [Profiles window](xref:addressables-profiles): Helps set up paths used by your builds.
 * [Build layout report](xref:addressables-build-layout-report): Describes the AssetBundles produced by a content build.
+* [Analyze tool](xref:addressables-analyze-tool): the Analyze tool runs analysis rules that check whether your Addressables content conforms to the set of rules you have defined. The Addressables system provides some basic rules, such as checking for duplicate assets; you can add your own rules using the [AnalyzeRule] class.

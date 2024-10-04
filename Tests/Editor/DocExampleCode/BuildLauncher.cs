@@ -1,6 +1,6 @@
 namespace AddressableAssets.DocExampleCode
 {
-    using MenuItem = DummyAttribute;
+    using MenuItem = Dummy;
 
     #region doc_BuildLauncher
 

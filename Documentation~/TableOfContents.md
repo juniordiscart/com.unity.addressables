@@ -87,6 +87,7 @@
   * [Preload dependencies](DownloadDependenciesAsync.md)
   * [Load content from multiple projects](MultiProject.md)
 * [Diagnostic tools](DiagnosticTools.md)
+  * [Analyze tool](editor/tools/AnalyzeTool.md)
   * [Addressables Profiler module](ProfilerModule.md)
   * [Build layout report](BuildLayoutReport.md)
   * [Build profile log](BuildProfileLog.md)
