@@ -57,7 +57,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         public bool IsLocalCatalogInBundle = false;
 
         internal Dictionary<IResourceLocation, InternalOp> m_LocationToCatalogLoadOpMap = new Dictionary<IResourceLocation, InternalOp>();
-        ResourceManager m_RM;
 
         /// <summary>
         /// Constructor for this provider.
@@ -65,7 +64,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         /// <param name="resourceManagerInstance">The resource manager to use.</param>
         public ContentCatalogProvider(ResourceManager resourceManagerInstance)
         {
-            m_RM = resourceManagerInstance;
             m_BehaviourFlags = ProviderBehaviourFlags.CanProvideWithFailedDependencies;
         }
 
@@ -174,11 +172,23 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                     else
                     {
 #if !ENABLE_JSON_CATALOG
+                        if (Path.GetExtension(idToLoad) == ".json")
+                        {
+                            m_ProviderInterface.Complete<ContentCatalogData>(null, false, new Exception("Expecting to load catalogs in binary format but the catalog provided is in .json format. To load it enable Addressable Asset Settings > Catalog > Enable Json Catalog."));
+                            return;
+                        }
+
                         ResourceLocationBase location = new ResourceLocationBase(idToLoad, idToLoad,
                             typeof(BinaryAssetProvider<ContentCatalogData.Serializer>).FullName, typeof(ContentCatalogData));
                         location.Data = providerLoadRequestOptions;
                         m_ProviderInterface.ResourceManager.ResourceProviders.Add(new BinaryAssetProvider<ContentCatalogData.Serializer>());
 #else
+                        if (Path.GetExtension(idToLoad) == ".bin")
+                        {
+                            m_ProviderInterface.Complete<ContentCatalogData>(null, false, new Exception("Expecting to load catalogs in .json format but the catalog provided is in binary format. To load it disable Addressable Asset Settings > Catalog > Enable Json Catalog."));
+                            return;
+                        }
+
                         ResourceLocationBase location = new ResourceLocationBase(idToLoad, idToLoad,
                            typeof(JsonAssetProvider).FullName, typeof(ContentCatalogData));
                         location.Data = providerLoadRequestOptions;
@@ -196,7 +206,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             void CatalogLoadOpCompleteCallback(AsyncOperationHandle<ContentCatalogData> op)
             {
                 m_ContentCatalogData = op.Result;
-                m_ProviderInterface.ResourceManager.Release(op);
+                op.Release();
                 OnCatalogLoaded(m_ContentCatalogData);
             }
 
@@ -421,10 +431,10 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 Addressables.LogFormat("Addressables - Content catalog load result = {0}.", ccd);
                 if (ccd != null)
                 {
-                    ResourceManagement.Profiling.ProfilerRuntime.AddCatalog(Hash128.Parse(ccd.m_BuildResultHash));
+                    ResourceManagement.Profiling.ProfilerRuntime.AddCatalog(Hash128.Parse(ccd.BuildResultHash));
 
                     ccd.location = m_ProviderInterface.Location;
-                    ccd.localHash = m_LocalHashValue;
+                    ccd.LocalHash = m_LocalHashValue;
                     if (!string.IsNullOrEmpty(m_RemoteHashValue) && !string.IsNullOrEmpty(m_LocalDataPath))
                     {
 #if ENABLE_CACHING
@@ -457,7 +467,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                             return;
                         }
 #endif
-                        ccd.localHash = m_RemoteHashValue;
+                        ccd.LocalHash = m_RemoteHashValue;
                     }
 #if ENABLE_CACHING
                     else if (string.IsNullOrEmpty(m_LocalDataPath) && string.IsNullOrEmpty(Application.persistentDataPath))

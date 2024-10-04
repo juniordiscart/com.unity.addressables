@@ -387,6 +387,93 @@ namespace UnityEditor.AddressableAssets.Tests
             }
         }
 
+        [Test]
+        public void GatherFolderEntries_RecurseAll_WhenSubEntry_IsMarkedAddrAndHasLabelAdded_FolderEntryHasNoLabelAdded()
+        {
+            AddressableAssetEntry mainFolderEntry = null;
+            AddressableAssetEntry prefabEntry = null;
+            string mainFolderPath = GetAssetPath("TestFolder");
+            var testGroup2 = Settings.CreateGroup("testGroup2", false, false, false, null, typeof(BundledAssetGroupSchema));
+
+            try
+            {
+                //Setup
+                string prefabPath = Path.Combine(mainFolderPath, "mainFolder.prefab").Replace('\\', '/');
+                Directory.CreateDirectory(mainFolderPath);
+                PrefabUtility.SaveAsPrefabAsset(new GameObject("mainFolderAsset"), prefabPath);
+
+                string mainFolderGuid = AssetDatabase.AssetPathToGUID(mainFolderPath);
+                string prefabGuid = AssetDatabase.AssetPathToGUID(prefabPath);
+                mainFolderEntry = Settings.CreateOrMoveEntry(mainFolderGuid, m_testGroup, false);
+
+                //Test
+                List<AddressableAssetEntry> entries = new List<AddressableAssetEntry>();
+                mainFolderEntry.GatherFolderEntries(entries, true, false, null);
+                Assert.AreEqual(1, entries.Count);
+                prefabEntry = entries[0];
+                Assert.AreEqual(prefabEntry.AssetPath, prefabPath);
+
+                prefabEntry.SetLabel("test", true, true);
+                Settings.MoveEntry(prefabEntry, testGroup2);
+                Assert.AreEqual(1, prefabEntry.labels.Count);
+                Assert.AreEqual(0, mainFolderEntry.labels.Count);
+            }
+            finally
+            {
+                //Cleanup
+                Settings.RemoveAssetEntry(mainFolderEntry, false);
+                Settings.RemoveAssetEntry(prefabEntry, false);
+                Directory.Delete(mainFolderPath, true);
+
+                Settings.RemoveGroup(testGroup2);
+            }
+        }
+
+
+        [Test]
+        public void GatherFolderEntries_NoRecurseAll_WhenSubFolderEntry_IsMarkedAddrAndHasLabelAdded_FolderEntryHasNoLabelAdded()
+        {
+            AddressableAssetEntry mainFolderEntry = null;
+            AddressableAssetEntry subFolderEntry = null;
+            string mainFolderPath = GetAssetPath("TestFolder");
+            var testGroup2 = Settings.CreateGroup("testGroup2", false, false, false, null, typeof(BundledAssetGroupSchema));
+
+            try
+            {
+                //Setup
+                string subFolderPath = Path.Combine(mainFolderPath, "SubFolder").Replace('\\', '/');
+                string prefabPath = Path.Combine(subFolderPath, "subFolder.prefab").Replace('\\', '/');
+                Directory.CreateDirectory(mainFolderPath);
+                Directory.CreateDirectory(subFolderPath);
+                PrefabUtility.SaveAsPrefabAsset(new GameObject("subFolderAsset"), prefabPath);
+
+                string mainFolderGuid = AssetDatabase.AssetPathToGUID(mainFolderPath);
+                string prefabGuid = AssetDatabase.AssetPathToGUID(prefabPath);
+                mainFolderEntry = Settings.CreateOrMoveEntry(mainFolderGuid, m_testGroup, false);
+
+                //Test
+                List<AddressableAssetEntry> entries = new List<AddressableAssetEntry>();
+                mainFolderEntry.GatherFolderEntries(entries, false, false, null);
+                Assert.AreEqual(1, entries.Count);
+                subFolderEntry = entries[0];
+                Assert.AreEqual(subFolderEntry.AssetPath, subFolderPath);
+
+                subFolderEntry.SetLabel("test", true, true);
+                Settings.MoveEntry(subFolderEntry, testGroup2);
+                Assert.AreEqual(1, subFolderEntry.labels.Count);
+                Assert.AreEqual(0, mainFolderEntry.labels.Count);
+            }
+            finally
+            {
+                //Cleanup
+                Settings.RemoveAssetEntry(mainFolderEntry, false);
+                Settings.RemoveAssetEntry(subFolderEntry, false);
+                Directory.Delete(mainFolderPath, true);
+
+                Settings.RemoveGroup(testGroup2);
+            }
+        }
+
         [TestCase(true)]
         [TestCase(false)]
         public void WhenGatherFolderEntries_ReturnsCorrectAssetObjects(bool includeSubObjects)
@@ -485,6 +572,43 @@ namespace UnityEditor.AddressableAssets.Tests
                 //Cleanup
                 Settings.RemoveAssetEntry(mainFolderEntry, false);
                 Directory.Delete(testAssetFolder, true);
+            }
+        }
+
+        [Test]
+        public void GetFolderSubEntry_WhenFolderSubEntry_IsMarkedAddrAndHasLabelAdded_FolderEntryHasNoLabelAdded()
+        {
+            AddressableAssetEntry mainFolderEntry = null;
+            AddressableAssetEntry prefabEntry = null;
+            string testAssetFolder = GetAssetPath("TestFolder");
+            var testGroup2 = Settings.CreateGroup("testGroup2", false, false, false, null, typeof(BundledAssetGroupSchema));
+
+            try
+            {
+                //Setup
+                string mainPrefabPath = Path.Combine(testAssetFolder, "mainFolder.prefab").Replace('\\', '/');
+                Directory.CreateDirectory(testAssetFolder);
+                PrefabUtility.SaveAsPrefabAsset(new GameObject("mainFolderAsset"), mainPrefabPath);
+
+                string mainFolderGuid = AssetDatabase.AssetPathToGUID(testAssetFolder);
+                string mainPrefabGuid = AssetDatabase.AssetPathToGUID(mainPrefabPath);
+                mainFolderEntry = Settings.CreateOrMoveEntry(mainFolderGuid, m_testGroup, false);
+
+                //Test
+                prefabEntry = mainFolderEntry.GetFolderSubEntry(mainPrefabGuid, mainPrefabPath);
+                prefabEntry.SetLabel("test", true, true);
+                Settings.MoveEntry(prefabEntry, testGroup2);
+                Assert.AreEqual(1, prefabEntry.labels.Count);
+                Assert.AreEqual(0, mainFolderEntry.labels.Count);
+            }
+            finally
+            {
+                //Cleanup
+                Settings.RemoveAssetEntry(mainFolderEntry, false);
+                Settings.RemoveAssetEntry(prefabEntry, false);
+                Directory.Delete(testAssetFolder, true);
+
+                Settings.RemoveGroup(testGroup2);
             }
         }
 

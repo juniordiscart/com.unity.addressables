@@ -617,7 +617,7 @@ namespace UnityEngine.AddressableAssets
                 return;
             }
 
-            Addressables.Release(m_Operation);
+            m_Operation.Release();
             m_Operation = default(AsyncOperationHandle);
         }
 
@@ -842,7 +842,7 @@ namespace UnityEngine.AddressableAssets
             {
                 if (s.name == value.name && s.GetType() == value.GetType())
                 {
-                    m_SubObjectGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value));
+                    m_SubObjectGUID = String.Empty;
                     m_SubObjectName = s.name;
                     m_SubObjectType = s.GetType().AssemblyQualifiedName;
                     m_EditorAssetChanged = true;

@@ -55,11 +55,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var defaultGroup = Settings.DefaultGroup;
             // the way our package isolation tests work the tests are built into their own package
             // which means we have to load expected files from a different location
-            m_PackagePath = "Packages/com.unity.addressables/Tests/Editor";
-            if (Directory.Exists("Packages/com.unity.addressables.tests"))
-            {
-                m_PackagePath = "Packages/com.unity.addressables.tests/Tests/Editor";
-            }
+            m_PackagePath = AddressablesTestUtility.GetPackagePath() + "/Tests/Editor";
         }
 
         internal string GetExpectedPath(string filename)

@@ -36,6 +36,23 @@ namespace AddressableAssetsIntegrationTests
 {
     internal abstract partial class AddressablesIntegrationTests : IPrebuildSetup
     {
+        class FakeTypedOperation : AsyncOperationBase<GameObject>
+        {
+            public FakeTypedOperation()
+            {
+                m_RM = new ResourceManager();
+            }
+
+            public object GetResultAsObject()
+            {
+                return null;
+            }
+
+            protected override void Execute()
+            {
+            }
+        }
+
         [UnityTest]
         public IEnumerator AsyncCache_IsCleaned_OnFailedOperation()
         {
@@ -72,7 +89,12 @@ namespace AddressableAssetsIntegrationTests
             yield return Init();
 
             //Test
-            Assert.DoesNotThrow(() => { m_Addressables.LoadResourceLocationsAsync(AddressablesTestUtility.GetPrefabLabel("BASE"), typeof(GameObject)); });
+            Assert.DoesNotThrow(() => {
+                var handle = m_Addressables.LoadResourceLocationsAsync(AddressablesTestUtility.GetPrefabLabel("BASE"), typeof(GameObject));
+                handle.Release();
+            });
+
+            yield return null; //< Process deferred callback
         }
 
         [UnityTest]
@@ -348,7 +370,6 @@ namespace AddressableAssetsIntegrationTests
 
                 InvalidKeyException expectedEx = new InvalidKeyException(keys, typeof(GameObject));
                 string message = handle.OperationException.Message;
-                string types = "Types=System.String, System.Int32";
                 string expected = expectedEx.FormatMessage(InvalidKeyException.Format.MultipleTypesRequested);
 
                 bool equalOne = message == expected;
@@ -611,12 +632,48 @@ namespace AddressableAssetsIntegrationTests
             op.Release();
         }
 
+        class AtlasSpriteProviderStub : AtlasSpriteProvider
+        {
+            public bool provideWasCalled = false;
+            public bool releaseWasCalled = false;
+            public override string ProviderId => nameof(AtlasSpriteProviderStub);
+            public override void Provide(ProvideHandle providerInterface)
+            {
+                provideWasCalled = true;
+                var sprite = Sprite.Create(new Texture2D(32, 32), new Rect(0, 0, 1, 1), new Vector2(0, 0));
+                providerInterface.Complete(sprite, true, null);
+            }
+            public override void Release(IResourceLocation location, object obj)
+            {
+                if (obj is Sprite sprite)
+                    Object.Destroy(sprite);
+                releaseWasCalled = true;
+            }
+        }
+        [UnityTest]
+        public IEnumerator AtlasSpriteProviderIsCalledForProvideAndRelease()
+        {
+            //Setup
+            yield return Init();
+            var rm = m_Addressables.ResourceManager;
+            var prov = new AtlasSpriteProviderStub();
+            rm.ResourceProviders.Insert(0, prov);
+            var handle = rm.ProvideResource<Sprite>(new ResourceLocationBase("", "id", nameof(AtlasSpriteProviderStub), typeof(Sprite)));
+
+            while (!handle.IsDone)
+                yield return null;
+
+            Assert.IsTrue(prov.provideWasCalled);
+            handle.Release();
+            Assert.IsTrue(prov.releaseWasCalled);
+            rm.ResourceProviders.RemoveAt(0);
+        }
+
         [UnityTest]
         public IEnumerator CanLoadSpriteByName()
         {
             //Setup
             yield return Init();
-
             var op = m_Addressables.LoadAssetAsync<Sprite>("sprite[botright]");
             yield return op;
             Assert.IsNotNull(op.Result);
@@ -630,6 +687,8 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual(typeof(Sprite), op2.Result.GetType());
             Assert.AreEqual("topleft", op2.Result.name);
             op2.Release();
+
+            yield return null; //< Process deferred callback
         }
 
         [UnityTest]
@@ -840,7 +899,7 @@ namespace AddressableAssetsIntegrationTests
             }
 
             Assert.AreEqual(3, typesSeen.Count);
-            m_Addressables.Release(handle);
+            handle.Release();
         }
 
         [UnityTest]
@@ -860,7 +919,7 @@ namespace AddressableAssetsIntegrationTests
             }
 
             Assert.AreEqual(3, typesSeen.Count);
-            m_Addressables.Release(handle);
+            handle.Release();
         }
 
         [UnityTest]
@@ -874,7 +933,7 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual(1, handle.Result.Count);
             Assert.AreEqual(typeof(Mesh), handle.Result[0].ResourceType);
 
-            m_Addressables.Release(handle);
+            handle.Release();
         }
 
         [UnityTest]
@@ -901,8 +960,28 @@ namespace AddressableAssetsIntegrationTests
 
             Assert.AreEqual(3, typesSeen.Count);
 
-            m_Addressables.Release(assetReferenceHandle);
-            m_Addressables.Release(handle);
+            assetReferenceHandle.Release();
+            handle.Release();
+        }
+
+        [UnityTest]
+        public IEnumerator LoadSubAssetFromAssetWithMultipleSubAssetTypes()
+        {
+            yield return Init();
+
+            AsyncOperationHandle assetReferenceHandle = m_Addressables.InstantiateAsync(AssetReferenceObjectKey);
+            yield return assetReferenceHandle;
+            Assert.IsNotNull(assetReferenceHandle.Result as GameObject);
+            AssetReferenceTestBehavior behavior =
+                (assetReferenceHandle.Result as GameObject).GetComponent<AssetReferenceTestBehavior>();
+
+            var handle = m_Addressables.LoadAssetAsync<Material>(behavior.ReferenceWithMultiTypedSubObjectSubReference);
+            yield return handle;
+
+            Assert.NotNull(handle.Result);
+
+            assetReferenceHandle.Release();
+            handle.Release();
         }
 
         [UnityTest]
@@ -922,8 +1001,8 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual(1, handle.Result.Count);
             Assert.AreEqual(typeof(Material), handle.Result[0].ResourceType);
 
-            m_Addressables.Release(assetReferenceHandle);
-            m_Addressables.Release(handle);
+            assetReferenceHandle.Release();
+            handle.Release();
         }
 
         [UnityTest]
@@ -1100,8 +1179,8 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op1.Status);
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op2.Status);
 
-            m_Addressables.Release(op1);
-            m_Addressables.Release(op2);
+            op1.Release();
+            op2.Release();
             if (Directory.Exists(kCatalogFolderPath))
                 Directory.Delete(kCatalogFolderPath, true);
         }
@@ -1144,8 +1223,8 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op1.Status);
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op2.Status);
 
-            m_Addressables.Release(op1);
-            m_Addressables.Release(op2);
+            op1.Release();
+            op2.Release();
             if (Directory.Exists(kCatalogFolderPath))
                 Directory.Delete(kCatalogFolderPath, true);
         }
@@ -1165,8 +1244,10 @@ namespace AddressableAssetsIntegrationTests
 
             Assert.AreEqual(AsyncOperationStatus.Failed, op1.Status);
 
-            m_Addressables.Release(op1);
+            op1.Release();
             LogAssert.ignoreFailingMessages = ignoreValue;
+
+            yield return null; //< Process deferred callback
         }
 
         private const string kCatalogRemotePath = "remotecatalog" + kCatalogExt;
@@ -1259,7 +1340,7 @@ namespace AddressableAssetsIntegrationTests
             Assert.IsTrue(File.Exists(cachedHashPath));
             Assert.AreEqual("123", File.ReadAllText(cachedHashPath));
 
-            m_Addressables.Release(op1);
+            op1.Release();
             Directory.Delete(kCatalogFolderPath, true);
             File.Delete(cachedDataPath);
             File.Delete(cachedHashPath);
@@ -1295,10 +1376,102 @@ namespace AddressableAssetsIntegrationTests
             Assert.IsTrue(File.Exists(cachedHashPath));
             Assert.AreEqual("123", File.ReadAllText(cachedHashPath));
 
-            m_Addressables.Release(op1);
+            op1.Release();
             Directory.Delete(kCatalogFolderPath, true);
             File.Delete(cachedDataPath);
             File.Delete(cachedHashPath);
+        }
+
+        [UnityTest]
+        public IEnumerator LoadingContentCatalog_WhenJsonEnabled_LoadJsonCatalog_Suceeds()
+        {
+            yield return Init();
+
+            string fakeCatalogFullPath = Path.Combine(kCatalogFolderPath, "remotecatalog.json");
+
+            if (!CreateCatalogAtFakeRemotePath(fakeCatalogFullPath))
+                Assert.Ignore($"Skipping test {TestContext.CurrentContext.Test.Name} due to missing CatalogLocation.");
+            WriteHashFileForCatalog(fakeCatalogFullPath, "123");
+
+            var catalogOp = m_Addressables.LoadContentCatalogAsync(fakeCatalogFullPath, false);
+            yield return catalogOp;
+
+            Assert.AreEqual(catalogOp.Status, AsyncOperationStatus.Succeeded);
+
+            catalogOp.Release();
+        }
+
+        [UnityTest]
+        public IEnumerator LoadingContentCatalog_WhenJsonEnabled_LoadBinaryCatalog_FailsWithError()
+        {
+            yield return Init();
+
+            string fakeCatalogFullPath = Path.Combine(kCatalogFolderPath, "remotecatalog.bin");
+
+            if (!CreateCatalogAtFakeRemotePath(fakeCatalogFullPath))
+                Assert.Ignore($"Skipping test {TestContext.CurrentContext.Test.Name} due to missing CatalogLocation.");
+            WriteHashFileForCatalog(fakeCatalogFullPath, "123");
+
+            var catalogOp = m_Addressables.LoadContentCatalogAsync(fakeCatalogFullPath, false);
+            yield return catalogOp;
+
+            Assert.AreEqual(catalogOp.Status, AsyncOperationStatus.Failed);
+            Assert.IsTrue(catalogOp.OperationException != null);
+            Assert.AreEqual("ChainOperation failed because dependent operation failed", catalogOp.OperationException.Message);
+            Assert.IsTrue(catalogOp.OperationException.InnerException != null);
+            Assert.AreEqual("Failed to load content catalog.", catalogOp.OperationException.InnerException.Message);
+            Assert.IsTrue(catalogOp.OperationException.InnerException.InnerException != null);
+            Assert.AreEqual("Expecting to load catalogs in .json format but the catalog provided is in binary format. To load it disable Addressable Asset Settings > Catalog > Enable Json Catalog.",
+                catalogOp.OperationException.InnerException.InnerException.Message);
+
+            catalogOp.Release();
+        }
+#else
+        [UnityTest]
+        public IEnumerator LoadingContentCatalog_WhenJsonDisabled_LoadBinaryCatalog_Suceeds()
+        {
+            yield return Init();
+
+            string fakeCatalogFullPath = Path.Combine(kCatalogFolderPath, "remotecatalog.bin");
+
+            if (!CreateCatalogAtFakeRemotePath(fakeCatalogFullPath))
+                Assert.Ignore($"Skipping test {TestContext.CurrentContext.Test.Name} due to missing CatalogLocation.");
+            WriteHashFileForCatalog(fakeCatalogFullPath, "123");
+
+            var catalogOp = m_Addressables.LoadContentCatalogAsync(fakeCatalogFullPath, false);
+            yield return catalogOp;
+
+            Assert.AreEqual(catalogOp.Status, AsyncOperationStatus.Succeeded);
+
+            catalogOp.Release();
+        }
+
+        [UnityTest]
+        public IEnumerator LoadingContentCatalog_WhenJsonDisabled_LoadJsonCatalog_FailsWithError()
+        {
+            yield return Init();
+
+            string fakeCatalogFullPath = Path.Combine(kCatalogFolderPath, "remotecatalog.json");
+
+            if (!CreateCatalogAtFakeRemotePath(fakeCatalogFullPath))
+                Assert.Ignore($"Skipping test {TestContext.CurrentContext.Test.Name} due to missing CatalogLocation.");
+            WriteHashFileForCatalog(fakeCatalogFullPath, "123");
+
+            var catalogOp = m_Addressables.LoadContentCatalogAsync(fakeCatalogFullPath, false);
+            yield return catalogOp;
+
+            Assert.AreEqual(catalogOp.Status, AsyncOperationStatus.Failed);
+            Assert.IsTrue(catalogOp.OperationException != null);
+            Assert.AreEqual("ChainOperation failed because dependent operation failed", catalogOp.OperationException.Message);
+            Assert.IsTrue(catalogOp.OperationException.InnerException != null);
+            Assert.AreEqual("Failed to load content catalog.", catalogOp.OperationException.InnerException.Message);
+            Assert.IsTrue(catalogOp.OperationException.InnerException.InnerException != null);
+            Assert.AreEqual("Expecting to load catalogs in binary format but the catalog provided is in .json format. To load it enable Addressable Asset Settings > Catalog > Enable Json Catalog.",
+                catalogOp.OperationException.InnerException.InnerException.Message);
+
+            catalogOp.Release();
+
+            yield return null; //< Process deferred callback
         }
 #endif
 
@@ -1359,8 +1532,8 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual("123", File.ReadAllText(cachedHashPath));
             Assert.AreEqual("123", File.ReadAllText(cachedHashPathTwo));
 
-            m_Addressables.Release(op1);
-            m_Addressables.Release(op2);
+            op1.Release();
+            op2.Release();
             Directory.Delete(kCatalogFolderPath, true);
             File.Delete(cachedDataPath);
             File.Delete(cachedHashPath);
@@ -1413,7 +1586,7 @@ namespace AddressableAssetsIntegrationTests
             Assert.NotNull(op1.Result);
 
             // Cleanup
-            Addressables.Release(op1);
+            op1.Release();
             Directory.Delete(kCatalogFolderPath, true);
             File.Delete(cachedDataPath);
             File.Delete(cachedHashPath);
@@ -1459,7 +1632,7 @@ namespace AddressableAssetsIntegrationTests
             Assert.IsFalse(File.Exists(cachedHashPath));
 
             // Cleanup
-            Addressables.Release(op1);
+            op1.Release();
             Directory.Delete(kCatalogFolderPath, true);
             File.Delete(cachedDataPath);
             File.Delete(cachedHashPath);
@@ -1513,7 +1686,7 @@ namespace AddressableAssetsIntegrationTests
 
             var op1 = m_Addressables.LoadContentCatalogAsync(fullRemotePath, false);
             yield return op1;
-            m_Addressables.Release(op1);
+            op1.Release();
 
             Assert.IsTrue(File.Exists(cachedDataPath));
             Assert.IsTrue(File.Exists(cachedHashPath));
@@ -1526,13 +1699,13 @@ namespace AddressableAssetsIntegrationTests
 
             Assert.AreEqual("456", File.ReadAllText(cachedHashPath));
 
-            m_Addressables.Release(op2);
+            op2.Release();
             Directory.Delete(kCatalogFolderPath, true);
             File.Delete(cachedDataPath);
             File.Delete(cachedHashPath);
         }
 
-        #if ENABLE_JSON_CATALOG
+#if ENABLE_JSON_CATALOG
         [UnityTest]
         public IEnumerator UpdateContentCatalog_UpdatesCachedData_IfCacheCorrupted()
         {
@@ -1567,7 +1740,7 @@ namespace AddressableAssetsIntegrationTests
             Assert.IsTrue(File.Exists(cachedHashPath));
             Assert.AreEqual(File.ReadAllText(cachedDataPath), File.ReadAllText(fullRemotePath));
 
-            m_Addressables.Release(op);
+            op.Release();
             Directory.Delete(kCatalogFolderPath, true);
             File.Delete(cachedDataPath);
             File.Delete(cachedHashPath);
@@ -1596,7 +1769,7 @@ namespace AddressableAssetsIntegrationTests
 
             var op1 = m_Addressables.LoadContentCatalogAsync(fullRemotePath, false);
             yield return op1;
-            m_Addressables.Release(op1);
+            op1.Release();
 
             Assert.IsFalse(File.Exists(cachedDataPath));
             Assert.IsFalse(File.Exists(cachedHashPath));
@@ -2138,7 +2311,9 @@ namespace AddressableAssetsIntegrationTests
                 yield return null;
             Assert.IsTrue(gop.IsDone);
             Assert.AreEqual(AsyncOperationStatus.Failed, gop.Status);
-            m_Addressables.Release(gop);
+            gop.Release();
+
+            yield return null; //< Process deferred callback
         }
 
         [UnityTest]
@@ -2154,7 +2329,7 @@ namespace AddressableAssetsIntegrationTests
             Assert.NotNull(gop.Result);
             Assert.AreEqual(1, gop.Result.Count);
             Assert.AreEqual(AsyncOperationStatus.Succeeded, gop.Status);
-            m_Addressables.Release(gop);
+            gop.Release();
         }
 
         [UnityTest]
@@ -2211,7 +2386,7 @@ namespace AddressableAssetsIntegrationTests
             Assert.IsTrue(locationHandle.Result != null, "Failed to get Location for " + label);
             Assert.AreEqual(1, locationHandle.Result.Count, "Failed to get Location for " + label);
             IResourceLocation loc = locationHandle.Result[0];
-            Addressables.Release(locationHandle);
+            locationHandle.Release();
 
             foreach (IResourceLocation dependency in loc.Dependencies)
             {
@@ -2502,7 +2677,7 @@ namespace AddressableAssetsIntegrationTests
 
             AsyncOperationHandle referenceHandle = behavior.Reference.OperationHandle;
             Assert.IsTrue(behavior.Reference.IsValid());
-            m_Addressables.Release(referenceHandle);
+            referenceHandle.Release();
             yield return referenceHandle;
             Assert.IsFalse(behavior.Reference.IsValid());
 
@@ -2546,7 +2721,7 @@ namespace AddressableAssetsIntegrationTests
             AsyncOperationHandle<Object> assetRefHandle = m_Addressables.LoadAssetAsync<Object>(behavior.ReferenceWithSubObject);
             yield return assetRefHandle;
             Assert.IsNotNull(assetRefHandle.Result);
-            m_Addressables.Release(assetRefHandle);
+            assetRefHandle.Release();
             handle.Release();
         }
 
@@ -2561,7 +2736,7 @@ namespace AddressableAssetsIntegrationTests
             Assert.AreEqual(assetRefHandle.Result.Length, 2);
             Assert.AreEqual(assetRefHandle.Result[0].name, "assetWithSubObjects");
             Assert.AreEqual(assetRefHandle.Result[1].name, "sub-shown");
-            m_Addressables.Release(assetRefHandle);
+            assetRefHandle.Release();
         }
 
         [UnityTest]
@@ -2767,8 +2942,8 @@ namespace AddressableAssetsIntegrationTests
                 GroupOperation group = new GroupOperation();
                 TestInternalOp = new TestAssetBundleResourceInternalOp(new TestAssetBundleResource());
                 TestInternalOp.m_RM = Addressables.Instance.ResourceManager;
-                provideHandle.ResourceManager.Acquire(TestInternalOp.Handle);
-                provideHandle.ResourceManager.Acquire(TestInternalOp.Handle);
+                var opRef1 = provideHandle.ResourceManager.Acquire(TestInternalOp.Handle);
+                var opRef2 = provideHandle.ResourceManager.Acquire(TestInternalOp.Handle);
                 group.Init(new List<AsyncOperationHandle>() {new AsyncOperationHandle(TestInternalOp)});
                 op.Init(provideHandle.ResourceManager, null, provideHandle.Location, group.Handle);
                 op.m_RM = Addressables.Instance.ResourceManager;
@@ -2776,8 +2951,8 @@ namespace AddressableAssetsIntegrationTests
                 TestInternalOp.InvokeExecute();
                 base.Provide(handle);
                 provideHandle.Complete(TestInternalOp.Result, TestInternalOp.Status == AsyncOperationStatus.Succeeded, TestInternalOp.OperationException);
-                provideHandle.ResourceManager.Release(TestInternalOp.Handle);
-                provideHandle.ResourceManager.Release(TestInternalOp.Handle);
+                opRef1.Release();
+                opRef2.Release();
             }
 
             internal class TestAssetBundleResource : IAssetBundleResource
@@ -3131,7 +3306,7 @@ namespace AddressableAssetsIntegrationTests
             dumbUpdate.CallComplete();
             yield return clearCache;
             Assert.IsTrue(clearCache.IsValid());
-            m_Addressables.Release(clearCache);
+            clearCache.Release();
             Assert.IsFalse(clearCache.IsValid());
         }
 
@@ -3161,7 +3336,7 @@ namespace AddressableAssetsIntegrationTests
             dumbUpdate.CallComplete();
             yield return clearCache;
             Assert.IsTrue(clearCache.IsValid());
-            m_Addressables.Release(clearCache);
+            clearCache.Release();
             Assert.IsFalse(clearCache.IsValid());
         }
 
@@ -3190,7 +3365,7 @@ namespace AddressableAssetsIntegrationTests
             dumbUpdate.CallComplete();
             yield return clearCache;
             Assert.IsTrue(clearCache.IsValid());
-            m_Addressables.Release(clearCache);
+            clearCache.Release();
             Assert.IsFalse(clearCache.IsValid());
         }
 
@@ -3225,7 +3400,7 @@ namespace AddressableAssetsIntegrationTests
             dumbUpdate.CallComplete();
             yield return clearCache;
             Assert.IsTrue(clearCache.IsValid());
-            m_Addressables.Release(clearCache);
+            clearCache.Release();
             Assert.IsFalse(clearCache.IsValid());
         }
 

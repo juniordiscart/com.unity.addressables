@@ -456,6 +456,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.AreEqual(new ComplexObject(i), re.ReadObject<ComplexObject>(ids[i]));
         }
 
+#if !ENABLE_JSON_CATALOG
         //https://jira.unity3d.com/browse/ADDR-3459
         [Test]
         [TestCase(short.MinValue, 0)]
@@ -503,7 +504,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Assert.AreEqual(expectedRedirectLimit, result.RedirectLimit);
         }
-
+#endif
         [Test]
         public void TestComplexObjectArray([Values(1024, 1024 * 1024)]int chunkSize, [Values(1, 32, 256, 1024)]int count, [Values(0, 10, 1024)]int cacheSize)
         {

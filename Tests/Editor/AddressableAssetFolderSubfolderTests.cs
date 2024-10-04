@@ -102,7 +102,7 @@ namespace UnityEditor.AddressableAssets.Tests
         public void Build_WithAddrParentFolderAndAddrSubfolders_InSeparateGroups_Succeeds()
         {
             var context = new AddressablesDataBuilderInput(Settings);
-            foreach (IDataBuilder db in Settings.DataBuilders)
+            foreach (IDataBuilder db in Settings.DataBuilders.Cast<IDataBuilder>())
             {
                 if (db.CanBuildData<AddressablesPlayerBuildResult>())
                     db.BuildData<AddressablesPlayerBuildResult>(context);

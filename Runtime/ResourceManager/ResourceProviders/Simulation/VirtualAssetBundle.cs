@@ -159,6 +159,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         [SerializeField]
         internal string m_AssetPath;
 
+        public string AssetPath { get => m_AssetPath; set => m_AssetPath = value; }
+
         /// <summary>
         /// Construct a new VirtualAssetBundleEntry
         /// </summary>
@@ -552,7 +554,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
                 if (!(Context is IResourceLocation))
                     return false;
                 var location = Context as IResourceLocation;
-                var assetPath = m_AssetInfo.m_AssetPath;
+                var assetPath = m_AssetInfo.AssetPath;
                 object result = null;
 
                 var pt = m_provideHandle.Type;

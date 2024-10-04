@@ -65,8 +65,8 @@ namespace AddressableAssets.DocExampleCode
 
         void ReleaseResourcesLocation()
         {
-            Addressables.Release(locHandle);
-            Addressables.Release(instHandleLocation);
+            locHandle.Release();
+            instHandleLocation.Release();
         }
 
         // When ready to release the asset, call ReleaseResourcesLocation().
@@ -105,7 +105,7 @@ namespace AddressableAssets.DocExampleCode
 
         void ReleaseResourcesKey()
         {
-            Addressables.Release(handleKey);
+            handleKey.Release();
         }
 
         // When ready to release the asset, call ReleaseResourcesKey().

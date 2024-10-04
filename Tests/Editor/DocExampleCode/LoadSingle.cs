@@ -26,7 +26,7 @@ namespace AddressableAssets.DocExampleCode
 
         void OnDestroy()
         {
-            Addressables.Release(opHandle);
+            opHandle.Release();
         }
     }
 

@@ -36,6 +36,8 @@ Always release the download operation handle after you have read the `Result` ob
 
 [!code-cs[sample](../Tests/Editor/DocExampleCode/Preload.cs#doc_Preload)]
 
+To note: On the WebGL platform, this API always returns the size of the AssetBundle, even if the AssetBundle has been cached.  Cached AssetBundles are not stored on the local file system, but persisted as part of the IndexedDB of the browser.  [WebGL Caching](https://docs.unity3d.com/Manual/webgl-caching.html)
+
 ### Clear the dependency cache
 
 If you want to clear any AssetBundles cached by Addressables, call [`Addressables.ClearDependencyCacheAsync`](xref:UnityEngine.AddressableAssets.Addressables.ClearDependencyCacheAsync*). This method clears the cached AssetBundles containing the assets identified by a key along with any bundles containing those assets' dependencies.

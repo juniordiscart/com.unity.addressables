@@ -434,7 +434,21 @@ namespace UnityEditor.AddressableAssets.GUI
             if (s_Cache == null && aaSettings != null)
                 s_Cache = new AddressableAssetSettings.Cache<int, List<TargetInfo>>(aaSettings);
             if (s_Cache != null && s_Cache.TryGetCached(selectionHashCode, out targetInfos))
-                return targetInfos;
+            {
+                bool isValid = true;
+                foreach(var targetInfo in targetInfos)
+                {
+                    if (targetInfo.MainAssetEntry?.parentGroup == null)
+                    {
+                        isValid = false;
+                        break;
+                    }
+                }
+                if (isValid)
+                    return targetInfos;
+                else
+                    s_Cache.Remove(selectionHashCode);
+            }
 
             targetInfos = new List<TargetInfo>(targets.Length);
             AddressableAssetEntry entry;

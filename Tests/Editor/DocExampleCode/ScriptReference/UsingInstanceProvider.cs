@@ -51,8 +51,8 @@ namespace AddressableAssets.DocExampleCode
 
         void ReleaseResources()
         {
-            Addressables.Release(locHandle);
-            Addressables.Release(instHandle);
+            locHandle.Release();
+            instHandle.Release();
         }
 
         // When ready to release the asset, call ReleaseResources().

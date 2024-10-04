@@ -467,7 +467,7 @@ namespace UnityEditor.AddressableAssets
                 if (selected == -1)
                     pathType = PathType.Custom;
                 else
-                    pathType = prefixToTypeMap[groupTypes[selected].GroupTypePrefix];
+                    pathType = prefixToTypeMap.GetValueOrDefault(groupTypes[selected].GroupTypePrefix, PathType.Custom);
 
                 if (pathType == PathType.Custom)
                 {

@@ -78,8 +78,11 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         //used to check the version of the data in case the format needs to change in the future
         const int kVersion = 2;
 
+        /// <summary>
+        /// Stores the local catalog hash
+        /// </summary>
         [NonSerialized]
-        internal string localHash;
+        public string LocalHash;
 
         [NonSerialized]
         internal IResourceLocation location;
@@ -89,6 +92,11 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
         [SerializeField]
         internal string m_BuildResultHash;
+
+        /// <summary>
+        /// Stores the hash for the build result
+        /// </summary>
+        public string BuildResultHash { get => m_BuildResultHash; set => m_BuildResultHash = value; }
 
         /// <summary>
         /// Stores the id of the data provider.
@@ -245,7 +253,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 cd.SceneProviderData = reader.ReadObject<ObjectInitializationData>(h.sceneProvider);
                 cd.ResourceProviderData = reader.ReadObjectArray<ObjectInitializationData>(h.initObjectsArray).ToList();
 
-                cd.m_BuildResultHash = reader.ReadString(h.buildResultHash);
+                cd.BuildResultHash = reader.ReadString(h.buildResultHash);
                 return cd;
             }
 
@@ -276,7 +284,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     instanceProvider = writer.WriteObject(cd.InstanceProviderData, false),
                     sceneProvider = writer.WriteObject(cd.SceneProviderData, false),
                     initObjectsArray = writer.WriteObjects(cd.m_ResourceProviderData, false),
-                    buildResultHash = writer.WriteString(cd.m_BuildResultHash)
+                    buildResultHash = writer.WriteString(cd.BuildResultHash)
                 };
                 writer.Write(headerOffset, in header);
 

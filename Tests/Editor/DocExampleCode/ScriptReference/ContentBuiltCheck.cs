@@ -1,5 +1,6 @@
 namespace AddressableAssets.DocExampleCode
 {
+    /*
     #region CONTENT_BUILT_CHECK
 
 #if UNITY_EDITOR
@@ -37,4 +38,5 @@ namespace AddressableAssets.DocExampleCode
 #endif
 
     #endregion
+    */
 }

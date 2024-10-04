@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.U2D;
 
@@ -25,6 +26,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             string spriteKey = string.IsNullOrEmpty(subKey) ? mainKey : subKey;
             var sprite = atlas.GetSprite(spriteKey);
             providerInterface.Complete(sprite, sprite != null, sprite != null ? null : new System.Exception($"Sprite failed to load for location {providerInterface.Location.PrimaryKey}."));
+        }
+
+        /// <inheritdoc/>
+        public override void Release(IResourceLocation location, object obj)
+        {
+            if (obj is Sprite sprite)
+                Object.Destroy(sprite);
         }
     }
 }

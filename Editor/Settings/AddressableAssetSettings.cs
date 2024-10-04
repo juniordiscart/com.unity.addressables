@@ -61,6 +61,13 @@ namespace UnityEditor.AddressableAssets.Settings
 				m_TargetInfoCache.Add(key, value);
 			}
 
+            public void Remove(T1 key)
+            {
+                if (!IsValid())
+                    m_CurrentCacheVersion = m_Settings.currentHash;
+                m_TargetInfoCache.Remove(key);
+            }
+
 			private bool IsValid()
 			{
 				if (m_TargetInfoCache.Count > 0)
@@ -1186,8 +1193,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
 		internal void DataBuilderCompleted(IDataBuilder builder, IDataBuilderResult result)
 		{
-			if (OnDataBuilderComplete != null)
-				OnDataBuilderComplete(this, builder, result);
+            OnDataBuilderComplete?.Invoke(this, builder, result);
 		}
 
 		/// <summary>
@@ -2176,10 +2182,8 @@ namespace UnityEditor.AddressableAssets.Settings
 			{
 				if (postEvent)
 				{
-					if (OnModificationGlobal != null)
-						OnModificationGlobal(this, modificationEvent, eventData);
-					if (OnModification != null)
-						OnModification(this, modificationEvent, eventData);
+                    OnModificationGlobal?.Invoke(this, modificationEvent, eventData);
+                    OnModification?.Invoke(this, modificationEvent, eventData);
 				}
 
 				if (settingsModified && IsPersisted)
@@ -2259,8 +2263,13 @@ namespace UnityEditor.AddressableAssets.Settings
 			if (m_FindAssetEntryCache != null)
 			{
 				if (m_FindAssetEntryCache.TryGetCached(guid, out foundEntry))
+                {
+                   if (foundEntry?.parentGroup == null)
+                        m_FindAssetEntryCache.Remove(guid);
+                   else
 					return foundEntry;
 			}
+            }
 			else
 				m_FindAssetEntryCache = new Cache<string, AddressableAssetEntry>(this);
 
@@ -3042,8 +3051,7 @@ namespace UnityEditor.AddressableAssets.Settings
 			else
 				Debug.Log($"Addressable content successfully built (duration : {TimeSpan.FromSeconds(result.Duration).ToString("g")})");
 
-			if (BuildScript.buildCompleted != null)
-				BuildScript.buildCompleted(result);
+            BuildScript.buildCompleted?.Invoke(result);
 			AssetDatabase.Refresh();
 			return result;
 		}
@@ -3270,7 +3278,7 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             // m_InitializationObjects, m_DataBuilders, and m_GroupTemplateObjects are serialized by array index
             profileSettings.profiles.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
-            m_GroupAssets.Sort((a, b) => string.CompareOrdinal(a.Guid, b.Guid));
+            m_GroupAssets.Sort((a, b) => string.CompareOrdinal(a?.Guid, b?.Guid));
         }
 
         /// <summary>

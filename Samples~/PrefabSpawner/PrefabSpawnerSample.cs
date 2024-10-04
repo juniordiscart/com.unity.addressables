@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -60,6 +60,6 @@ public class PrefabSpawnerSample : MonoBehaviour
 
         //Release the AsyncOperationHandles which destroys the GameObject
         foreach (var handle in handles)
-            Addressables.Release(handle);
+            handle.Release();
     }
 }

@@ -13,14 +13,12 @@ internal class ListWithEvents<T> : IList<T>
 
     private void InvokeAdded(T element)
     {
-        if (OnElementAdded != null)
-            OnElementAdded(element);
+        OnElementAdded?.Invoke(element);
     }
 
     private void InvokeRemoved(T element)
     {
-        if (OnElementRemoved != null)
-            OnElementRemoved(element);
+        OnElementRemoved?.Invoke(element);
     }
 
     public T this[int index]

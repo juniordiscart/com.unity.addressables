@@ -214,7 +214,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             {
                 if (m_DestroyedAction != null)
                 {
-                    m_DestroyedAction.Invoke(new AsyncOperationHandle<TObject>(this));
+                    m_DestroyedAction.Invoke(Handle);
                     m_DestroyedAction.Clear();
                 }
 
@@ -384,7 +384,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             if (m_CompletedActionT != null)
             {
-                m_CompletedActionT.Invoke(new AsyncOperationHandle<TObject>(this));
+                m_CompletedActionT.Invoke(Handle);
                 m_CompletedActionT.Clear();
             }
 

@@ -34,7 +34,7 @@ namespace AddressableAssets.DocExampleCode
                 = Addressables.UpdateCatalogs();
 
             yield return updateHandle;
-            Addressables.Release(updateHandle);
+            updateHandle.Release();
         }
 
         #endregion
@@ -55,10 +55,10 @@ namespace AddressableAssets.DocExampleCode
                 AsyncOperationHandle<List<IResourceLocator>> updateHandle
                     = Addressables.UpdateCatalogs(catalogsToUpdate);
                 yield return updateHandle;
-                Addressables.Release(updateHandle);
+                updateHandle.Release();
             }
 
-            Addressables.Release(checkForUpdateHandle);
+            checkForUpdateHandle.Release();
         }
 
         #endregion
@@ -144,7 +144,7 @@ namespace AddressableAssets.DocExampleCode
             if (!groupOp.IsDone)
                 yield return groupOp;
 
-            Addressables.Release(loadResourceLocationsHandle);
+            loadResourceLocationsHandle.Release();
 
             //take a gander at our results.
             foreach (var item in _preloadedObjects)
@@ -174,7 +174,7 @@ namespace AddressableAssets.DocExampleCode
                     Debug.LogError("Failed to download dependencies for " + key);
 
                 // we need to release the download handle so the assets can be loaded
-                Addressables.Release(downloadDependencies);
+                downloadDependencies.Release();
             }
 
             #endregion

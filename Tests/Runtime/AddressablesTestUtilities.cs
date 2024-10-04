@@ -18,16 +18,30 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.U2D;
 #endif
 
-static class AddressablesTestUtility
+public static class AddressablesTestUtility
 {
-    static public void Reset(AddressablesImpl aa)
+    // when we build the package we build a test only package which puts all the files
+    // into com.unity.addressables.tests, we need to detect this and return the correct
+    // path
+    public static string GetPackagePath()
+    {
+        var packagePath = "Packages/com.unity.addressables";
+        if (Directory.Exists("Packages/com.unity.addressables.tests"))
+        {
+            packagePath = "Packages/com.unity.addressables.tests";
+        }
+
+        return packagePath;
+    }
+
+    private static void Reset(AddressablesImpl aa)
     {
         aa.ClearResourceLocators();
         aa.ResourceManager.ResourceProviders.Clear();
         aa.InstanceProvider = null;
     }
 
-    static public void TearDown(string testType, string pathFormat, string suffix)
+    public static void TearDown(string testType, string pathFormat, string suffix)
     {
 #if UNITY_EDITOR
         Reset(Addressables.Instance);
@@ -36,17 +50,17 @@ static class AddressablesTestUtility
 #endif
     }
 
-    static public string GetPrefabLabel(string suffix)
+    public static string GetPrefabLabel(string suffix)
     {
         return "prefabs" + suffix;
     }
 
-    static public string GetPrefabAlternatingLabel(string suffix, int index)
+    public static string GetPrefabAlternatingLabel(string suffix, int index)
     {
         return string.Format("prefabs_{0}{1}", ((index % 2) == 0) ? "even" : "odd", suffix);
     }
 
-    static public string GetPrefabUniqueLabel(string suffix, int index)
+    public static string GetPrefabUniqueLabel(string suffix, int index)
     {
         return string.Format("prefab_{0}{1}", index, suffix);
     }
@@ -54,7 +68,7 @@ static class AddressablesTestUtility
     public const int kPrefabCount = 10;
     public const int kMaxWebRequestCount = 5;
 
-    static public void Setup(string testType, string pathFormat, string suffix, bool useUnityWebRequestForLocalBundles)
+    public static void Setup(string testType, string pathFormat, string suffix, bool useUnityWebRequestForLocalBundles)
     {
 #if UNITY_EDITOR
         bool currentIgnoreState = LogAssert.ignoreFailingMessages;

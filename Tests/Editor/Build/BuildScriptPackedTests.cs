@@ -490,10 +490,13 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void ErrorCheckBundleSettings_FindsNoProblemsInDefaultScema()
         {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
             var group = Settings.CreateGroup("PackedTest", false, false, false, null, typeof(BundledAssetGroupSchema));
             var schema = group.GetSchema<BundledAssetGroupSchema>();
 
-            var errorStr = BuildScriptPackedMode.ErrorCheckBundleSettings(schema, group, Settings);
+            var errorStr = BuildScriptBase.ErrorCheckBundleSettings(group, aaContext);
             LogAssert.NoUnexpectedReceived();
             Assert.IsTrue(string.IsNullOrEmpty(errorStr));
         }
@@ -501,11 +504,14 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void ErrorCheckBundleSettings_WarnsOfMismatchedBuildPath()
         {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
             var group = Settings.CreateGroup("PackedTest", false, false, false, null, typeof(BundledAssetGroupSchema));
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             schema.BuildPath.Id = "BadPath";
 
-            var errorStr = BuildScriptPackedMode.ErrorCheckBundleSettings(schema, group, Settings);
+            var errorStr = BuildScriptBase.ErrorCheckBundleSettings(group, aaContext);
             LogAssert.NoUnexpectedReceived();
             Assert.IsTrue(errorStr.Contains("is set to the dynamic-lookup version of StreamingAssets, but BuildPath is not."));
         }
@@ -513,11 +519,14 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void ErrorCheckBundleSettings_WarnsOfMismatchedLoadPath()
         {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
             var group = Settings.CreateGroup("PackedTest", false, false, false, null, typeof(BundledAssetGroupSchema));
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             schema.LoadPath.Id = "BadPath";
 
-            var errorStr = BuildScriptPackedMode.ErrorCheckBundleSettings(schema, group, Settings);
+            var errorStr = BuildScriptBase.ErrorCheckBundleSettings(group, aaContext);
             LogAssert.NoUnexpectedReceived();
             Assert.IsTrue(errorStr.Contains("is set to the dynamic-lookup version of StreamingAssets, but LoadPath is not."));
         }
@@ -525,11 +534,14 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenUsingLocalContentAndCompressionIsLZMA_ErrorCheckBundleSettings_LogsWarning()
         {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
             var group = Settings.CreateGroup("PackedTest", false, false, false, null, typeof(BundledAssetGroupSchema));
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             schema.Compression = BundledAssetGroupSchema.BundleCompressionMode.LZMA;
 
-            BuildScriptPackedMode.ErrorCheckBundleSettings(schema, group, Settings);
+            var errorStr = BuildScriptBase.ErrorCheckBundleSettings(group, aaContext);
             LogAssert.Expect(LogType.Warning, $"Bundle compression is set to LZMA, but group {group.Name} uses local content.");
         }
 

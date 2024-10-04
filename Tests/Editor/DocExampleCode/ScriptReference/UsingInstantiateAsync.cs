@@ -89,7 +89,7 @@ namespace AddressableAssets.DocExampleCode
 
         void ReleaseResourcesLocation()
         {
-            Addressables.Release(locHandle);
+            locHandle.Release();
             Addressables.ReleaseInstance(instanceLocation);
         }
 
@@ -156,7 +156,7 @@ namespace AddressableAssets.DocExampleCode
 
         void ReleaseUntrackedResources()
         {
-            Addressables.Release(handleUntracked);
+            handleUntracked.Release();
         }
 
         // When ready to release the asset, call ReleaseUntrackedResources().

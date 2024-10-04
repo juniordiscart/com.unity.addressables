@@ -4,10 +4,24 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2024-06-26
+- Fix KeyNotFoundException when clicking on local bundles in the profiler.
+- Fix bundles incorrectly marked as released in the Profiler when they are still active
+- Improved error message when trying to load a catalog in an unexpected file format.
+- Fixed issue where operation that uses WaitForCompletion can timeout much earlier than it should.
+- The build scripts were reworked so that you can extend them or copy them outside the package without having to fork the entire package.
+- A Version field was added to the Addressables object for getting the package version in the Editor.
+- Fixed an issue where tearing down the Addressables instance could happen before user tear down code was getting called.
+- Sort collections to make serialized editor files deterministic
+- Fixed issue where labels on an addressable sub-entry are incorrectly added to the former parent entry.
+- Added support for calling Release() on AsyncOperationHandles directly that couldn't before.
+- Fixed sub-object loading from AssetReferences for types that are not Sprites in a SpriteAtlas.
+
+
 ## [2.1.0] - 2024-03-19
 - Fix "Unable to verify target bucket for Remote Catalog: Not Found. Object could not be found" error
 - Fixed caching to prevent unnecessary refreshing of bucket data.
-- Sort collections on serialization to prevent unecessary merge conflicts
+- Sort collections on serialization to prevent unnecessary merge conflicts
 - Add warnings and documentation to make it clear you need to release the handle from LoadDependenciesAsync
 
 ## [2.0.8] - 2024-01-19
@@ -63,6 +77,8 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Fixed an issue where "Failed to remove scene from Addressables profiler" warning occurs when a scene is unloaded.
 - Fixed an exception getting thrown in the Addressables Report when drilling into a bundle chain
 - Fixed string deduplication in binary catalogs.  Certain data sets were causing data to expand.
+- Removed the Analyze Rule API and corresponding tool
+- Removed the Event Viewer API and corresponding tool
 
 ## [1.21.18] - 2023-09-23
 - Fixed an issue where scene InternalId collisions were very likely when using dynamic internal asset naming

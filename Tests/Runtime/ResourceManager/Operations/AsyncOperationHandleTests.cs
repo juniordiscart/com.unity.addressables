@@ -204,5 +204,129 @@ namespace UnityEngine.ResourceManagement.Tests
             actualCount = DestructiveGetRefCount(typelessHandle);
             Assert.AreEqual(expectedCount, actualCount);
         }
+
+        [Test]
+        public void AsyncOperationHandle_Version_FromOp()
+        {
+            var op = new FakeTypedOperation() { m_Version = 12345 };
+            var handle = new AsyncOperationHandle<GameObject>(op);
+            Assert.AreEqual(op.Version, handle.Version);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_Version_FromOp_Typeless()
+        {
+            var op = (IAsyncOperation)new FakeTypedOperation() { m_Version = 12345 };
+            var handle = new AsyncOperationHandle(op);
+            Assert.AreEqual(op.Version, handle.Version);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_Version_ConstructParam()
+        {
+            var op = new FakeTypedOperation() { m_Version = 12345 };
+            var expected = 987654;
+            var handle = new AsyncOperationHandle<GameObject>(op, expected);
+            Assert.AreEqual(expected, handle.Version);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_Version_ConstructParam_Typeless()
+        {
+            var op = (IAsyncOperation)new FakeTypedOperation() { m_Version = 12345 };
+            var expected = 987654;
+            var handle = new AsyncOperationHandle(op, expected);
+            Assert.AreEqual(expected, handle.Version);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_Version_CopiedByAcquire()
+        {
+            var expected = 987654;
+            var op = new FakeTypedOperation() { m_Version = expected };
+            var handle = new AsyncOperationHandle<GameObject>(op);
+            var handle2 = handle.Acquire();
+            Assert.AreEqual(expected, handle2.Version);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_Version_CopiedByAcquire_Typeless()
+        {
+            var expected = 987654;
+            var op = (IAsyncOperation)new FakeTypedOperation() { m_Version = expected };
+            var handle = new AsyncOperationHandle(op);
+            var handle2 = handle.Acquire();
+            Assert.AreEqual(expected, handle2.Version);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_LocationName_Default()
+        {
+            var op = new FakeTypedOperation();
+            var handle = new AsyncOperationHandle<GameObject>(op);
+            Assert.IsNull(handle.LocationName);
+        }
+        [Test]
+        public void AsyncOperationHandle_LocationName_Default_Typeless()
+        {
+            var op = new FakeTypedOperation();
+            var handle = new AsyncOperationHandle<GameObject>(op);
+            Assert.IsNull(handle.LocationName);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_LocationName_Set()
+        {
+            var expected = "LocationNameSet";
+            var handle = new AsyncOperationHandle<GameObject>(null);
+            handle.LocationName = expected;
+            Assert.AreEqual(expected, handle.LocationName);
+        }
+        [Test]
+        public void AsyncOperationHandle_LocationName_Set_Typeless()
+        {
+            var expected = "LocationNameSet";
+            var handle = new AsyncOperationHandle(null);
+            handle.LocationName = expected;
+            Assert.AreEqual(expected, handle.LocationName);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_LocationName_ConstructParam()
+        {
+            var op = new FakeTypedOperation();
+            var expected = "LocationNameConstructParam";
+            var handle = new AsyncOperationHandle<GameObject>(op, expected);
+            Assert.AreEqual( expected, handle.LocationName);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_LocationName_ConstructParam_Typeless()
+        {
+            var op = (IAsyncOperation)new FakeTypedOperation();
+            var expected = "LocationNameConstructParam";
+            var handle = new AsyncOperationHandle(op, expected);
+            Assert.AreEqual(expected, handle.LocationName);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_LocationName_CopiedByAcquire()
+        {
+            var op = new FakeTypedOperation();
+            var expected = "LocationNameConstructParam";
+            var handle = new AsyncOperationHandle<GameObject>(op, expected);
+            var handle2 = handle.Acquire();
+            Assert.AreEqual(expected, handle2.LocationName);
+        }
+
+        [Test]
+        public void AsyncOperationHandle_LocationName_CopiedByAcquire_Typeless()
+        {
+            var op = (IAsyncOperation)new FakeTypedOperation();
+            var expected = "LocationNameConstructParam";
+            var handle = new AsyncOperationHandle(op, expected);
+            var handle2 = handle.Acquire();
+            Assert.AreEqual(expected, handle2.LocationName);
+        }
     }
 }

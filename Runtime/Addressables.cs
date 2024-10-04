@@ -569,6 +569,18 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
+        /// Returns the Addressables package version in Unity 2019.3 or newer
+        /// </summary>
+        public static string Version
+        {
+#if (UNITY_EDITOR)
+            get => UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(Addressables).Assembly).version;
+#else
+            get => "";
+#endif
+        }
+
+        /// <summary>
         /// Stores the ResourceManager associated with this Addressables instance.
         /// </summary>
         public static ResourceManager ResourceManager
@@ -591,7 +603,16 @@ namespace UnityEngine.AddressableAssets
         static void SetAddressablesReInitFlagOnExitPlayMode(PlayModeStateChange change)
         {
             if (change == PlayModeStateChange.EnteredEditMode || change == PlayModeStateChange.ExitingPlayMode)
+            {
+                EditorApplication.delayCall -= EnableReinitializeAddressablesFlag;
+                EditorApplication.delayCall += EnableReinitializeAddressablesFlag;
+            }
+        }
+
+        static void EnableReinitializeAddressablesFlag()
+        {
                 reinitializeAddressables = true;
+            EditorApplication.delayCall -= EnableReinitializeAddressablesFlag;
         }
 
 #endif
@@ -1441,7 +1462,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="handle">The operation handle to release.</param>
         public static void Release<TObject>(AsyncOperationHandle<TObject> handle)
         {
-            m_Addressables.Release(handle);
+            handle.Release();
         }
 
         /// <summary>
@@ -1450,7 +1471,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="handle">The operation handle to release.</param>
         public static void Release(AsyncOperationHandle handle)
         {
-            m_Addressables.Release(handle);
+            handle.Release();
         }
 
         /// <summary>
@@ -1470,7 +1491,7 @@ namespace UnityEngine.AddressableAssets
         /// <returns>Returns true if the instance was successfully released.</returns>
         public static bool ReleaseInstance(AsyncOperationHandle handle)
         {
-            m_Addressables.Release(handle);
+            handle.Release();
             return true;
         }
 
@@ -1481,7 +1502,7 @@ namespace UnityEngine.AddressableAssets
         /// <returns>Returns true if the instance was successfully released.</returns>
         public static bool ReleaseInstance(AsyncOperationHandle<GameObject> handle)
         {
-            m_Addressables.Release(handle);
+            handle.Release();
             return true;
         }
 

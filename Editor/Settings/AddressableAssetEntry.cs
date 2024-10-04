@@ -547,7 +547,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 if (entry != null)
                 {
-                    entry.m_Labels = m_Labels;
+                    entry.m_Labels.UnionWith(m_Labels);
                     if (entryFilter == null || entryFilter(entry))
                         assets.Add(entry);
 
@@ -572,7 +572,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         var entry = settings.CreateSubEntryIfUnique(AssetDatabase.AssetPathToGUID(folder), address + GetRelativePath(folder, path), this);
                         if (entry != null)
                         {
-                            entry.m_Labels = m_Labels;
+                            entry.m_Labels.UnionWith(m_Labels);
                             entry.IsFolder = true;
                             if (entryFilter == null || entryFilter(entry))
                                 assets.Add(entry);
@@ -616,7 +616,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 var folderEntry = settings.CreateSubEntryIfUnique(folderGuid, address + "/" + folderPath.Remove(assetPath.Length), this);
                 if (folderEntry != null)
                 {
-                    folderEntry.m_Labels = m_Labels;
+                    folderEntry.m_Labels.UnionWith(m_Labels);
                     folderEntry.IsFolder = true;
                 }
                 else
@@ -627,7 +627,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
             if (assetEntry != null)
             {
-                assetEntry.m_Labels = m_Labels;
+                assetEntry.m_Labels.UnionWith(m_Labels);
                 assetEntry.IsFolder = false;
             }
 

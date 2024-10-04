@@ -26,10 +26,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             int m_Priority;
             private AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
             ResourceManager m_ResourceManager;
+            ISceneProvider2 m_provider;
 
-            public SceneOp(ResourceManager rm)
+            public SceneOp(ResourceManager rm, ISceneProvider2 provider)
             {
                 m_ResourceManager = rm;
+                m_provider = provider;
             }
 
             internal override DownloadStatus GetDownloadStatus(HashSet<object> visited)
@@ -44,9 +46,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             public void Init(IResourceLocation location, LoadSceneParameters loadSceneParameters, SceneReleaseMode releaseMode, bool activateOnLoad, int priority, AsyncOperationHandle<IList<AsyncOperationHandle>> depOp)
             {
-                m_DepOp = depOp;
-                if (m_DepOp.IsValid())
-                    m_DepOp.Acquire();
+                m_DepOp = depOp.IsValid() ? depOp.Acquire() : depOp;
 
                 m_Location = location;
                 m_LoadSceneParameters = loadSceneParameters;
@@ -156,12 +156,17 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 }
 #endif
             }
-
             protected override void Destroy()
             {
-                //the scene will be unloaded via the UnloadSceneOp as it waits correctlyf or the unload to complete before releasing the load op
+                if (m_Inst.Scene.IsValid())
+                {
+                    var unloadOp = m_provider.ReleaseScene(m_ResourceManager, Handle, UnloadSceneOptions.None);
+                    unloadOp.ReleaseHandleOnCompletion();
+                }
+
                 if (m_DepOp.IsValid())
                     m_DepOp.Release();
+
                 base.Destroy();
             }
 
@@ -208,7 +213,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             public void Init(AsyncOperationHandle<SceneInstance> sceneLoadHandle, UnloadSceneOptions options)
             {
-                if (sceneLoadHandle.ReferenceCount > 0)
+                if (sceneLoadHandle.IsValid())
                 {
                     m_sceneLoadHandle = sceneLoadHandle;
                     m_Instance = m_sceneLoadHandle.Result;
@@ -247,8 +252,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             private void UnloadSceneCompleted(AsyncOperation obj)
             {
                 Complete(m_Instance, true, "");
-                if (m_sceneLoadHandle.IsValid())
+
+                // ReleaseSceneOnHandleRelease : ReferenceCount > 0 check necessary as operation is in process of being destroyed
+                if (m_sceneLoadHandle.IsValid()
+                    && m_sceneLoadHandle.ReferenceCount > 0)
+                {
                     m_sceneLoadHandle.Release();
+                }
             }
 
             private void UnloadSceneCompletedNoRelease(AsyncOperation obj)
@@ -281,7 +291,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             if (location.HasDependencies)
                 depOp = resourceManager.ProvideResourceGroupCached(location.Dependencies, location.DependencyHashCode, typeof(IAssetBundleResource), null);
 
-            SceneOp op = new SceneOp(resourceManager);
+            SceneOp op = new SceneOp(resourceManager, this);
             op.Init(location, loadSceneParameters, releaseMode, activateOnLoad, priority, depOp);
 
             var handle = resourceManager.StartOperation<SceneInstance>(op, depOp);

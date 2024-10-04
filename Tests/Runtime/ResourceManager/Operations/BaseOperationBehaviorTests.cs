@@ -276,7 +276,7 @@ namespace UnityEngine.ResourceManagement.Tests
             foreach (var o in mdpco)
                 o.CompleteNow();
             AssertExpectedDownloadStatus(gOp.GetDownloadStatus(), 4096, 4096, 1f);
-            m_RM.Release(gOp);
+            gOp.Release();
         }
 
         [Test]
@@ -293,7 +293,7 @@ namespace UnityEngine.ResourceManagement.Tests
             m_RM.Update(.1f);
             Assert.IsTrue(chainOp.IsDone);
             AssertExpectedDownloadStatus(chainOp.GetDownloadStatus(), 1024, 1024, 1f);
-            m_RM.Release(chainOp);
+            chainOp.Release();
         }
 
         [Test]
@@ -321,7 +321,7 @@ namespace UnityEngine.ResourceManagement.Tests
             AssertExpectedDownloadStatus(gOp.GetDownloadStatus(), 512, 1024, .5f);
             o.CompleteNow();
             AssertExpectedDownloadStatus(gOp.GetDownloadStatus(), 1024, 1024, 1f);
-            m_RM.Release(gOp);
+            gOp.Release();
         }
 
         class TestOp : AsyncOperationBase<int>
@@ -360,6 +360,65 @@ namespace UnityEngine.ResourceManagement.Tests
             op.Start(null, default, null);
             op.Complete(1, true, null);
         }
+
+
+        [Test]
+        public void ReleaseHandleOnCompletion_Typed()
+        {
+            var op = new TestOp();
+
+            var handle = op.Handle;
+            handle.ReleaseHandleOnCompletion();
+
+            Assert.IsTrue(handle.IsValid());
+
+            op.Start(null, default, null);
+
+            Assert.IsTrue(handle.IsValid());
+
+            op.Complete(1, true, null);
+
+            Assert.IsFalse(handle.IsValid());
+        }
+
+        [Test]
+        public void ReleaseHandleOnCompletion_Typeless()
+        {
+            var op = new TestOp();
+
+            var handle = (AsyncOperationHandle)op.Handle; //< Typeless handle
+            handle.ReleaseHandleOnCompletion();
+
+            Assert.IsTrue(handle.IsValid());
+
+            op.Start(null, default, null);
+
+            Assert.IsTrue(handle.IsValid());
+
+            op.Complete(1, true, null);
+
+            Assert.IsFalse(handle.IsValid());
+        }
+
+        [Test]
+        public void OperationIsEqual_OnAcquire()
+        {
+            var op = new TestOp();
+            var handle = op.Handle; //< Typed handle
+            var handle2 = m_RM.Acquire(handle);
+            Assert.AreEqual(handle, handle2);
+        }
+
+#if false /// TODO: Future major revision to support non-void return for `AsyncOperationHandle ResourceManager::Acquire(AsyncOperationHandle)`
+        [Test]
+        public void OperationIsEqual_OnAcquire_Typeless()
+        {
+            var op = new TestOp();
+            var handle = (AsyncOperationHandle)op.Handle; //< Typeless handle
+            var handle2 = m_RM.Acquire(handle);
+            Assert.AreEqual(handle, handle2);
+        }
+#endif
 
         [Test]
         public void WhenOperationIsReused_HasExecutedIsReset()

@@ -43,7 +43,7 @@ namespace AddressableAssets.DocExampleCode
 
         private void OnDestroy()
         {
-            Addressables.Release(loadHandle);
+            loadHandle.Release();
             // Release all the loaded assets associated with loadHandle
             // Note that if you do not make loaded addressables a child of this object,
             // then you will need to devise another way of releasing the handle when

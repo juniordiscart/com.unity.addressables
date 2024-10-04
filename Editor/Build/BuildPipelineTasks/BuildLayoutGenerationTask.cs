@@ -38,12 +38,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         }
 
         /// <summary>
-        /// The mapping of the old to new bundle names.
+        /// The mapping of the old to new bundle names. Instead of using this directly inject 
+	/// the value through IBuildLayoutParUse BuildLayoutParameters.BundleNameRemap instead
         /// </summary>
         public Dictionary<string, string> BundleNameRemap
         {
-            get { return m_BundleNameRemap; }
-            set { m_BundleNameRemap = value; }
+            get { return m_BuildLayoutParameters.BundleNameRemap; }
+            set { m_BuildLayoutParameters.BundleNameRemap = value; }
         }
 
 #pragma warning disable 649
@@ -70,11 +71,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         [InjectContext(ContextUsage.In)]
         IBundleBuildResults m_BuildBundleResults;
+
+        [InjectContext(ContextUsage.In)]
+        IBuildLayoutParameters m_BuildLayoutParameters;
 #pragma warning restore 649
 
-        internal Dictionary<string, string> m_BundleNameRemap;
         internal AddressablesDataBuilderInput m_AddressablesInput;
-        internal ContentCatalogData m_ContentCatalogData;
 
         private bool IsContentUpdateBuild => m_AddressablesInput != null && m_AddressablesInput.PreviousContentState != null;
 
@@ -693,14 +695,14 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             layout.RemoteCatalogBuildPath = aaContext.Settings.RemoteCatalogBuildPath.GetValue(aaContext.Settings);
 
             AddressableAssetSettings aaSettings = aaContext.Settings;
-            if (m_ContentCatalogData != null)
-                layout.BuildResultHash = m_ContentCatalogData.m_BuildResultHash;
+            if (m_BuildLayoutParameters.BuildResultHash != null)
+                layout.BuildResultHash = m_BuildLayoutParameters.BuildResultHash;
 
             using (m_Log.ScopedStep(LogLevel.Info, "Generate Basic Information"))
             {
                 SetLayoutMetaData(layout, aaSettings);
                 layout.AddressablesEditorSettings = GetAddressableEditorSettings(aaSettings);
-                layout.AddressablesRuntimeSettings = GetAddressableRuntimeSettings(aaContext, m_ContentCatalogData);
+                layout.AddressablesRuntimeSettings = GetAddressableRuntimeSettings(aaContext);
             }
 
             if (IsContentUpdateBuild)
@@ -847,7 +849,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             if (aaContext.bundleToAssetGroup.TryGetValue(b.Name, out var grpName))
             {
                 var assetGroup = lookup.GroupLookup[grpName];
-                b.Name = m_BundleNameRemap[b.Name];
+                b.Name = m_BuildLayoutParameters.BundleNameRemap[b.Name];
                 b.Group = assetGroup;
                 lookup.FilenameToBundle[b.Name] = b;
                 var filePath = Path.Combine(lookup.GroupNameToBuildPath[assetGroup.Name], b.Name);
@@ -862,7 +864,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 // bundleToAssetGroup doesn't contain the builtin bundles. The builtin content is built using values from the default group
                 AddressableAssetGroup defaultGroup = aaContext.Settings.DefaultGroup;
-                b.Name = m_BundleNameRemap[b.Name];
+                b.Name = m_BuildLayoutParameters.BundleNameRemap[b.Name];
                 b.Group = lookup.GroupLookup[defaultGroup.Guid]; // should this be set?
                 lookup.FilenameToBundle[b.Name] = b;
 
@@ -1161,7 +1163,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             layoutOut.PlayerBuildVersion = aaSettings.PlayerBuildVersion;
         }
 
-        static BuildLayout.AddressablesRuntimeData GetAddressableRuntimeSettings(AddressableAssetsBuildContext aaContext, ContentCatalogData contentCatalog)
+        BuildLayout.AddressablesRuntimeData GetAddressableRuntimeSettings(AddressableAssetsBuildContext aaContext)
         {
             if (aaContext.runtimeData == null)
             {
@@ -1175,8 +1177,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             runtimeSettings.CatalogLoadPaths = new List<string>();
             foreach (ResourceLocationData catalogLocation in aaContext.runtimeData.CatalogLocations)
                 runtimeSettings.CatalogLoadPaths.Add(catalogLocation.InternalId);
-            if (contentCatalog != null)
-                runtimeSettings.CatalogHash = contentCatalog.localHash;
+            if (m_BuildLayoutParameters.CatalogHash != null)
+                runtimeSettings.CatalogHash = m_BuildLayoutParameters.CatalogHash;
 
             return runtimeSettings;
         }

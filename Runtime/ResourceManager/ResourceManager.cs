@@ -147,6 +147,9 @@ namespace UnityEngine.ResourceManagement
             internal bool incrementRefCount;
         }
 
+        internal int DeferredCompleteCallbacksCount { get => m_DeferredCompleteCallbacks.Count; }
+        internal int DeferredCallbackCount { get => m_DeferredCallbacksToRegister?.Count ?? 0; }
+
         Action<IAsyncOperation> m_ReleaseOpNonCached;
         Action<IAsyncOperation> m_ReleaseOpCached;
         Action<IAsyncOperation> m_ReleaseInstanceOp;
@@ -595,6 +598,16 @@ namespace UnityEngine.ResourceManagement
         public void Release(AsyncOperationHandle handle)
         {
             handle.Release();
+        }
+
+        /// <summary>
+        /// Increment reference count of operation handle.
+        /// </summary>
+        /// <param name="handle">The handle to the resource to increment the reference count for.</param>
+        /// <returns>A new handle to the operation. This handle must also be released.</returns>
+        public AsyncOperationHandle<TObject> Acquire<TObject>(AsyncOperationHandle<TObject> handle)
+        {
+            return handle.Acquire();
         }
 
         /// <summary>

@@ -27,13 +27,13 @@ namespace AddressableAssets.DocExampleCode
             }
             else
             {
-                Addressables.Release(obj);
+                obj.Release();
             }
         }
 
         void OnDestroy()
         {
-            Addressables.Release(opHandle);
+            opHandle.Release();
         }
     }
 
