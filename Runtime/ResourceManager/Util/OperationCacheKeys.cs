@@ -17,6 +17,12 @@ namespace UnityEngine.ResourceManagement.Util
         public string ID;
         public Type locationType;
 
+        public IdCacheKey(string id)
+        {
+            ID = id;
+            locationType = typeof(object);
+        }
+
         public IdCacheKey(Type locType, string id)
         {
             ID = id;

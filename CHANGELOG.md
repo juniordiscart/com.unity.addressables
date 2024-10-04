@@ -4,7 +4,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [2.3.0] - 2024-09-24
+## [2.3.1] - 2024-09-24
 - Added back Analyze Rule toolset
 - Fixed issue where the content of the list with Addressable Assets Groups is improperly indented when displayed in Group Hierarchy with Dashes Group View.
 - Fixed issue where “Profile rename failed because default profile cannot be renamed“ error is thrown when renaming a new profile in Addressables Profiles.

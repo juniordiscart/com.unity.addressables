@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "unity": "2023.1",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -24,13 +24,13 @@
     "changelog": "- Added back Analyze Rule toolset\n- Fixed issue where the content of the list with Addressable Assets Groups is improperly indented when displayed in Group Hierarchy with Dashes Group View.\n- Fixed issue where “Profile rename failed because default profile cannot be renamed“ error is thrown when renaming a new profile in Addressables Profiles.\n- Fixed a memory leak where asset bundles would not get unloaded when a scene was unloaded before completing load.\n- Fixed loading error when the loading from an assetbundle that is currently being preloaded."
   },
   "upmCi": {
-    "footprint": "62e84f7886ebb75af6061728b59a677ad306610d"
+    "footprint": "b030090d56ffea904f65741c87fdbde086ee60a1"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@2.3/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "da6584e77b95eb8c8cc350ad4d95cc1a1aff1a34"
+    "revision": "07437a2b040d7118b57c4acd9b60fdfbb434dd56"
   },
   "samples": [
     {
