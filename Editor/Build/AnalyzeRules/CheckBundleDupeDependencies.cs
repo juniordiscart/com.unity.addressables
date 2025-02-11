@@ -19,9 +19,24 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// </summary>
         protected internal struct CheckDupeResult
         {
+            /// <summary>
+            /// The group that contains an asset that is being duplicated
+            /// </summary>
             public AddressableAssetGroup Group;
+
+            /// <summary>
+            /// The path of the file that contains a duplicate asset
+            /// </summary>
             public string DuplicatedFile;
+
+            /// <summary>
+            /// The path of the asset getting duplicated
+            /// </summary>
             public string AssetPath;
+
+            /// <summary>
+            /// The guid of the group causing a duplication
+            /// </summary>
             public GUID DuplicatedGroupGuid;
         }
 
@@ -30,6 +45,10 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         /// </summary>
         protected internal struct ExtraCheckBundleDupeData
         {
+            /// <summary>
+            /// If true, the Analyze tree will organize results based on affected assets first. Otherwise,
+            /// we'll lead with Asset Bundle info first
+            /// </summary>
             public bool ResultsInverted;
         }
 

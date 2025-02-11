@@ -103,11 +103,12 @@ namespace UnityEditor.AddressableAssets.Settings
                             var newPath = $"{folder}/{newName}{extension}".Replace('\\', '/');
                             if (path != newPath)
                             {
+                                // we have to set the new name now as the group gets reserialized as part of OnPostprocessAllAssets during the move
+                                name = m_GroupName = newName;
                                 var setPath = AssetDatabase.MoveAsset(path, newPath);
                                 bool success = false;
                                 if (string.IsNullOrEmpty(setPath))
                                 {
-                                    name = m_GroupName = newName;
                                     success = RenameSchemaAssets();
                                 }
 

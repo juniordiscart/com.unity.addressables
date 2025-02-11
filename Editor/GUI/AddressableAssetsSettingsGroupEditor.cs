@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Editor.GUI;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Diagnostics;
 using UnityEditor.AddressableAssets.Settings;
@@ -72,11 +73,11 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		[FormerlySerializedAs("treeState")]
 		[SerializeField]
-		TreeViewState m_TreeState;
+        internal AddressableAssetEntryTreeViewState m_TreeState;
 
 		[FormerlySerializedAs("mchs")]
 		[SerializeField]
-		MultiColumnHeaderState m_Mchs;
+        internal MultiColumnHeaderState m_Mchs;
 
 		internal AddressableAssetEntryTreeView m_EntryTree;
 
@@ -206,7 +207,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-		void OnSettingsModification(AddressableAssetSettings s, AddressableAssetSettings.ModificationEvent e, object o)
+        internal void OnSettingsModification(AddressableAssetSettings s, AddressableAssetSettings.ModificationEvent e, object o)
 		{
 			if (m_EntryTree == null)
 				return;
@@ -879,6 +880,7 @@ namespace UnityEditor.AddressableAssets.GUI
 				AddressableAssetSettingsDefaultObject.Settings.OnModification -= OnSettingsModification;
 				m_ModificationRegistered = false;
 			}
+            m_EntryTree?.SerializeState(AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_Settings)));
 		}
 
 		public bool OnGUI(Rect pos)
@@ -909,7 +911,7 @@ namespace UnityEditor.AddressableAssets.GUI
 		internal AddressableAssetEntryTreeView InitialiseEntryTree()
 		{
 			if (m_TreeState == null)
-				m_TreeState = new TreeViewState();
+                m_TreeState = new AddressableAssetEntryTreeViewState();
 
 			var headerState = AddressableAssetEntryTreeView.CreateDefaultMultiColumnHeaderState();
 			if (MultiColumnHeaderState.CanOverwriteSerializedFields(m_Mchs, headerState))
@@ -918,9 +920,24 @@ namespace UnityEditor.AddressableAssets.GUI
 
 			m_SearchField = new SearchField();
 			m_EntryTree = new AddressableAssetEntryTreeView(m_TreeState, m_Mchs, this);
+
+            m_EntryTree.DeserializeState(AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_Settings)));
+            UpdateSavedColumnWidths(m_TreeState, m_Mchs);
+
 			m_EntryTree.Reload();
 			return m_EntryTree;
 		}
+
+        internal void UpdateSavedColumnWidths(AddressableAssetEntryTreeViewState treeState, MultiColumnHeaderState mchs)
+        {
+            if (treeState.columnWidths?.Length == mchs.columns.Length)
+            {
+                for (var i = 0; i < mchs.columns.Length; i++)
+                {
+                    mchs.columns[i].width = treeState.columnWidths[i];
+                }
+            }
+        }
 
 		public void Reload()
 		{

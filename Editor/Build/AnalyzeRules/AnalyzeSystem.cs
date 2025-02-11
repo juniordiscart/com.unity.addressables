@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets.Build
         ///   {
         ///       static RegisterMyRule()
         ///       {
-        ///           AnalyzeSystem.RegisterNewRule&lt;MyRule&gt;();
+        ///           AnalyzeSystem.RegisterNewRule<MyRule>();
         ///       }
         ///   }
         /// </code>

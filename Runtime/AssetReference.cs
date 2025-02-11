@@ -300,13 +300,15 @@ namespace UnityEngine.AddressableAssets
         string m_SubObjectName;
 
         [SerializeField]
-        string m_SubObjectGUID;
-
-        [SerializeField]
         string m_SubObjectType = null;
 
         AsyncOperationHandle m_Operation;
 #if UNITY_EDITOR
+        // we store the SubObjectGUID in the Editor to track things like renames
+        // and still point to the correct object in the UI
+        [SerializeField]
+        string m_SubObjectGUID;
+
         virtual protected internal Type DerivedClassType { get; }
 #endif
         /// <summary>
@@ -335,8 +337,6 @@ namespace UnityEngine.AddressableAssets
             {
                 if (m_AssetGUID == null)
                     m_AssetGUID = string.Empty;
-                if (!string.IsNullOrEmpty(m_SubObjectGUID))
-                    return string.Format("{0}[{1}]", m_AssetGUID, m_SubObjectGUID);
                 if (!string.IsNullOrEmpty(m_SubObjectName))
                     return string.Format("{0}[{1}]", m_AssetGUID, m_SubObjectName);
                 return m_AssetGUID;
@@ -360,6 +360,7 @@ namespace UnityEngine.AddressableAssets
             set { m_SubObjectName = value; }
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Stores the guid of the sub object (if available).
         /// </summary>
@@ -368,13 +369,16 @@ namespace UnityEngine.AddressableAssets
             get { return m_SubObjectGUID; }
             set { m_SubObjectGUID = value; }
         }
+#endif
 
         internal virtual Type SubObjectType
         {
             get
             {
+#if UNITY_EDITOR
                 if (!string.IsNullOrEmpty(m_SubObjectGUID) && m_SubObjectType != null)
                     return Type.GetType(m_SubObjectType);
+#endif
                 if (!string.IsNullOrEmpty(m_SubObjectName) && m_SubObjectType != null)
                     return Type.GetType(m_SubObjectType);
                 return null;
@@ -817,13 +821,13 @@ namespace UnityEngine.AddressableAssets
 
                 var foundMatch = false;
                 var subObjects = AssetReferenceUtilities.GetAtlasSpritesAndPackables(ref atlas);
-                foreach ((Object sprite, Object packable) in subObjects)
+                foreach ((Object sprite, string guid) in subObjects)
                 {
                     var namesMatch = AssetReferenceUtilities.FormatName(sprite.name) == spriteName;
                     if (namesMatch)
                     {
                         foundMatch = true;
-                        m_SubObjectGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(packable));
+                        m_SubObjectGUID = guid;
                     }
                 }
                 if (!foundMatch)

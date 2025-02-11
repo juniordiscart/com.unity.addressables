@@ -504,9 +504,9 @@ namespace UnityEditor.AddressableAssets.Settings
 
             var requiresUpdate = false;
             var foundSubObject = false;
-            foreach ((Object sprite, Object packable) in subObjects)
+            foreach ((Object sprite, string guid) in subObjects)
             {
-                var path = AssetDatabase.GetAssetPath(packable);
+                var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (string.IsNullOrEmpty(path))
                 {
                     continue;
@@ -529,7 +529,6 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 var formattedSpriteName = FormatName(sprite.name);
                 var namesMatch =  formattedSpriteName == assetReference.SubObjectName;
-                var guid = AssetDatabase.AssetPathToGUID(path);
                 if (guid == assetReference.SubObjectGUID)
                 {
                     foundSubObject = true;

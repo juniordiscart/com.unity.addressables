@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Editor.GUI;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.AddressableAssets;
 using Debug = UnityEngine.Debug;
 using static UnityEditor.AddressableAssets.Settings.AddressablesFileEnumeration;
 using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using Assert = UnityEngine.Assertions.Assert;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
@@ -23,6 +25,7 @@ namespace UnityEditor.AddressableAssets.GUI
 		string m_FirstSelectedGroup;
 		private readonly Dictionary<AssetEntryTreeViewItem, bool> m_SearchedEntries = new Dictionary<AssetEntryTreeViewItem, bool>();
 		private bool m_ForceSelectionClear = false;
+        private static string kTreeViewPrefPrefixHeaders = nameof(AddressableAssetEntryTreeView) + ".Headers";
 
 		enum ColumnId
 		{
@@ -43,12 +46,12 @@ namespace UnityEditor.AddressableAssets.GUI
 		};
 
 		internal AddressableAssetEntryTreeView(AddressableAssetSettings settings)
-			: this(new TreeViewState(), CreateDefaultMultiColumnHeaderState(), new AddressableAssetsSettingsGroupEditor(ScriptableObject.CreateInstance<AddressableAssetsWindow>()))
+            : this(new AddressableAssetEntryTreeViewState(), CreateDefaultMultiColumnHeaderState(), new AddressableAssetsSettingsGroupEditor(ScriptableObject.CreateInstance<AddressableAssetsWindow>()))
 		{
 			m_Editor.settings = settings;
 		}
 
-		public AddressableAssetEntryTreeView(TreeViewState state, MultiColumnHeaderState mchs, AddressableAssetsSettingsGroupEditor ed) : base(state, new MultiColumnHeader(mchs))
+        public AddressableAssetEntryTreeView(AddressableAssetEntryTreeViewState state, MultiColumnHeaderState mchs, AddressableAssetsSettingsGroupEditor ed) : base(state, new MultiColumnHeader(mchs))
 		{
 			showBorder = true;
 			m_Editor = ed;
@@ -84,6 +87,7 @@ namespace UnityEditor.AddressableAssets.GUI
 		void OnSortingChanged(MultiColumnHeader mch)
 		{
             //This is where the sort happens in the groups view
+            SortGroups();
 			SortChildren(rootItem);
 			Reload();
 		}
@@ -160,6 +164,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			var root = new TreeViewItem(-1, -1);
 			using (new AddressablesFileEnumerationScope(BuildAddressableTree(m_Editor.settings)))
 			{
+                SortGroups();
 				foreach (var group in m_Editor.settings.groups)
 					AddGroupChildrenBuild(group, root);
 			}
@@ -176,6 +181,7 @@ namespace UnityEditor.AddressableAssets.GUI
 				return rows;
 			}
 
+            SortGroups();
 			if (!string.IsNullOrEmpty(customSearchString))
 			{
 				SortChildren(root);
@@ -292,10 +298,37 @@ namespace UnityEditor.AddressableAssets.GUI
 			m_SearchedEntries.Clear();
 		}
 
+        void SortGroups()
+        {
+            if (state is AddressableAssetEntryTreeViewState s)
+            {
+                if (s?.sortOrder == null)
+                {
+                    return;
+                }
+                
+                // we have added or remove groups, sort alphabetically first
+                if (m_Editor.settings.groups.Count != s.sortOrder.Length)
+                {
+                    m_Editor.settings.groups.Sort((group1, group2) => string.CompareOrdinal(group1.Name, group2.Name));
+                }
+                // do group sort, this is completely manual
+                m_Editor.settings.groups.Sort( (group1, group2) =>
+                {
+                    var index1 = Array.IndexOf(s.sortOrder, group1.Guid);
+                    var index2 = Array.IndexOf(s.sortOrder, group2.Guid);
+                    return index1.CompareTo(index2);
+                });
+                UpdateSortOrder();
+            }
+
+        }
+
 		void SortChildren(TreeViewItem root)
 		{
 			if (!root.hasChildren)
 				return;
+
 			foreach (var child in root.children)
 			{
 				if (child != null && IsExpanded(child.id))
@@ -1081,13 +1114,12 @@ namespace UnityEditor.AddressableAssets.GUI
 			var groupTemplate = context as AddressableAssetGroupTemplate;
 			if (groupTemplate != null)
 			{
-				AddressableAssetGroup newGroup = m_Editor.settings.CreateGroup(groupTemplate.Name, false, false, true, null, groupTemplate.GetTypes());
+                var newGroup = m_Editor.settings.CreateGroup(groupTemplate.Name, false, false, true, null, groupTemplate.GetTypes());
 				groupTemplate.ApplyToAddressableAssetGroup(newGroup);
 			}
 			else
 			{
 				m_Editor.settings.CreateGroup("", false, false, false, null);
-				Reload();
 			}
 		}
 
@@ -1111,8 +1143,10 @@ namespace UnityEditor.AddressableAssets.GUI
 		internal void RemoveMissingReferencesImpl()
 		{
 			if (m_Editor.settings.RemoveMissingGroupReferences())
+            {
 				m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.GroupRemoved, null, true, true);
 		}
+        }
 
 		protected void DeleteGroup(object context)
 		{
@@ -1374,6 +1408,7 @@ namespace UnityEditor.AddressableAssets.GUI
 								m_Editor.settings.groups.Insert(args.insertAtIndex, group);
 						}
 
+                        SerializeState(AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_Editor.settings)));
 						m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.GroupMoved, m_Editor.settings.groups, true, true);
 						Reload();
 					}
@@ -1402,8 +1437,10 @@ namespace UnityEditor.AddressableAssets.GUI
                                     m_Editor.settings.MoveEntry(entry, parent, false, false);
 								}
 
+                            SerializeState(AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_Editor.settings)));
 								foreach (AddressableAssetGroup modifiedGroup in modifiedGroups)
 									AddressableAssetUtility.OpenAssetIfUsingVCIntegration(modifiedGroup);
+                            
 								m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entries, true, false);
 							}
 						}
@@ -1504,7 +1541,6 @@ namespace UnityEditor.AddressableAssets.GUI
 							{
 								if (m_Editor.settings.FindGroup(g => g.Guid == loadedGroup.Guid) == null)
 								{
-									m_Editor.settings.groups.Add(loadedGroup);
 									modified = true;
 								}
 							}
@@ -1512,8 +1548,12 @@ namespace UnityEditor.AddressableAssets.GUI
 					}
 
 					if (modified)
+                    {
+                        UpdateSortOrder();
 						m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.GroupAdded,
-							m_Editor.settings, true, true);
+                            m_Editor.settings, true, false);
+                    }
+
 				}
 			}
 
@@ -1524,6 +1564,61 @@ namespace UnityEditor.AddressableAssets.GUI
 		{
 			return AssetDatabase.GetMainAssetTypeAtPath(path) == typeof(AddressableAssetGroup);
 		}
+
+        private string GetEditorPreferenceKey(string key, GUID guid)
+        {
+            return $"{key}.{guid.ToString()}";
+        }
+
+        public void SerializeState(GUID guid)
+        {
+
+            if (state is AddressableAssetEntryTreeViewState s)
+            {
+                UpdateSortOrder();
+                var settings = AddressableAssetGroupSortSettings.GetSettings();
+                settings.sortOrder = new string[s.sortOrder.Length];
+                for (var i = 0; i < s.sortOrder.Length; i++)
+                {
+                    settings.sortOrder[i] = s.sortOrder[i];
+                }
+
+                AddressableAssetUtility.OpenAssetIfUsingVCIntegration(settings);
+                EditorUtility.SetDirty(settings);
+            }
+            EditorPrefs.SetString(GetEditorPreferenceKey(kTreeViewPrefPrefixHeaders, guid), JsonUtility.ToJson(multiColumnHeader.state));
+        }
+
+        private void UpdateSortOrder()
+        {
+            if (state is AddressableAssetEntryTreeViewState s)
+            {
+                s.sortOrder = new string[m_Editor.settings.groups.Count()];
+                for (var i = 0; i < m_Editor.settings.groups.Count(); i++)
+                {
+                    s.sortOrder[i] = m_Editor.settings.groups[i].Guid;
+                }
+            }
+        }
+
+        public void DeserializeState(GUID guid)
+        {
+            string columnHeaderState = EditorPrefs.GetString(GetEditorPreferenceKey(kTreeViewPrefPrefixHeaders, guid), "");
+            if (!string.IsNullOrEmpty(columnHeaderState))
+            {
+                JsonUtility.FromJsonOverwrite(columnHeaderState, multiColumnHeader.state);
+            }
+
+            if (state is AddressableAssetEntryTreeViewState s)
+            {
+                var settings = AddressableAssetGroupSortSettings.GetSettings();
+                s.sortOrder = new string[settings.sortOrder.Length];
+                for (var i = 0; i < settings.sortOrder.Length; i++)
+                {
+                    s.sortOrder[i] = settings.sortOrder[i];
+                }
+            }
+        }
 	}
 
 	class AssetEntryTreeViewItem : TreeViewItem

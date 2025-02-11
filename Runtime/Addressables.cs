@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.Serialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
@@ -73,7 +74,8 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public bool CanUpdateContent
         {
-            get { return !string.IsNullOrEmpty(LocalHash) && CatalogLocation != null && CatalogLocation.HasDependencies && CatalogLocation.Dependencies.Count == 2; }
+            get { return !string.IsNullOrEmpty(LocalHash) && CatalogLocation != null && CatalogLocation.HasDependencies && CatalogLocation.Dependencies.Count == (int) ContentCatalogProvider.DependencyHashIndex.Count;
+            }
         }
 
         internal void UpdateContent(IResourceLocator locator, string hash, IResourceLocation loc)

@@ -100,6 +100,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
+            m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestCatalogProvider(kNewLocatorId));
             m_Addressables.AddResourceLocator(new TestLocator(kLocatorId), "same", catalogLoc);
             var op = m_Addressables.CheckForCatalogUpdates(false);
@@ -114,10 +115,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         public IEnumerator CheckForUpdates_Returns_NonEmptyList_When_HashesDontMatch()
         {
             var remoteHashLoc = new ResourceLocationBase("RemoteHash", "Remote", kRemoteHashProviderId, typeof(string));
+            var cachedHashLoc = new ResourceLocationBase("CachedHash", "Cached", kLocalHashProviderId, typeof(string));
             var localHashLoc = new ResourceLocationBase("LocalHash", "Local", kLocalHashProviderId, typeof(string));
-            var catalogLoc = new ResourceLocationBase("cat", "cat_id", nameof(TestCatalogProvider), typeof(IResourceLocator), remoteHashLoc, localHashLoc);
+            var catalogLoc = new ResourceLocationBase("cat", "cat_id", nameof(TestCatalogProvider), typeof(IResourceLocator), remoteHashLoc, cachedHashLoc, localHashLoc);
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId, "different"));
+            m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestCatalogProvider(kNewLocatorId));
             m_Addressables.AddResourceLocator(new TestLocator(kLocatorId), "same", catalogLoc);
@@ -142,16 +145,19 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         public IEnumerator CheckForUpdates_Returns_OnlyModifiedResults()
         {
             var remoteHashLoc = new ResourceLocationBase("RemoteHash1", "Remote", kRemoteHashProviderId + 1, typeof(string));
+            var cachedHashLoc = new ResourceLocationBase("CachedHash", "Cached", kLocalHashProviderId + 1, typeof(string));
             var localHashLoc = new ResourceLocationBase("LocalHash1", "Local", kLocalHashProviderId + 1, typeof(string));
-            var catalogLoc = new ResourceLocationBase("cat1", "cat_id", nameof(TestCatalogProvider), typeof(IResourceLocator), remoteHashLoc, localHashLoc);
+            var catalogLoc = new ResourceLocationBase("cat1", "cat_id", nameof(TestCatalogProvider), typeof(IResourceLocator), remoteHashLoc, cachedHashLoc, localHashLoc);
 
             var remoteHashLoc2 = new ResourceLocationBase("RemoteHash2", "Remote", kRemoteHashProviderId + 2, typeof(string));
+            var cachedHashLoc2 = new ResourceLocationBase("CachedHash2", "Cached", kLocalHashProviderId + 2, typeof(string));
             var localHashLoc2 = new ResourceLocationBase("LocalHash2", "Local", kLocalHashProviderId + 2, typeof(string));
-            var catalogLoc2 = new ResourceLocationBase("cat2", "cat_id", nameof(TestCatalogProvider), typeof(IResourceLocator), remoteHashLoc2, localHashLoc2);
+            var catalogLoc2 = new ResourceLocationBase("cat2", "cat_id", nameof(TestCatalogProvider), typeof(IResourceLocator), remoteHashLoc2, cachedHashLoc2, localHashLoc2);
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId + 1, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId + 1, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId + 2, "different"));
+            m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId + 2, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId + 2, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestCatalogProvider(kNewLocatorId));
             m_Addressables.AddResourceLocator(new TestLocator(kLocatorId), "same", catalogLoc);
@@ -171,10 +177,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         public IEnumerator UpdateContent_UpdatesCatalogs_Returns_ListOfLocators()
         {
             var remoteHashLoc = new ResourceLocationBase("RemoteHash", "Remote", kRemoteHashProviderId, typeof(string));
+            var cachedHashLoc = new ResourceLocationBase("CachedHash", "Cached", kLocalHashProviderId, typeof(string));
             var localHashLoc = new ResourceLocationBase("LocalHash", "Local", kLocalHashProviderId, typeof(string));
-            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, localHashLoc);
+            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, cachedHashLoc, localHashLoc);
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId, "different"));
+            m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestCatalogProvider(kNewLocatorId));
             m_Addressables.AddResourceLocator(new TestLocator(kLocatorId, remoteHashLoc, localHashLoc, catalogLoc), "same", catalogLoc);
@@ -196,10 +204,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         public IEnumerator UpdateContent_UpdatesCatalogs_Returns_ListOfLocators_WhenCheckForUpdateIsNotCalled()
         {
             var remoteHashLoc = new ResourceLocationBase("RemoteHash", "Remote", kRemoteHashProviderId, typeof(string));
+            var cachedHashLoc = new ResourceLocationBase("CachedHash", "Cached", kLocalHashProviderId, typeof(string));
             var localHashLoc = new ResourceLocationBase("LocalHash", "Local", kLocalHashProviderId, typeof(string));
-            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, localHashLoc);
+            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, cachedHashLoc, localHashLoc);
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId, "different"));
+            m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestCatalogProvider(kNewLocatorId));
             m_Addressables.AddResourceLocator(new TestLocator(kLocatorId, remoteHashLoc, localHashLoc, catalogLoc), "same", catalogLoc);
@@ -219,10 +229,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
 #if ENABLE_CACHING
             var remoteHashLoc = new ResourceLocationBase("RemoteHash", "Remote", kRemoteHashProviderId, typeof(string));
+            var cachedHashLoc = new ResourceLocationBase("CachedHash", "Cached", kLocalHashProviderId, typeof(string));
             var localHashLoc = new ResourceLocationBase("LocalHash", "Local", kLocalHashProviderId, typeof(string));
-            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, localHashLoc);
+            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, cachedHashLoc, localHashLoc);
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId, "different"));
+            m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestCatalogProvider(kNewLocatorId));
             m_Addressables.AddResourceLocator(new TestLocator(kLocatorId, remoteHashLoc, localHashLoc, catalogLoc), "same", catalogLoc);
@@ -258,10 +270,12 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
 #if ENABLE_CACHING
             var remoteHashLoc = new ResourceLocationBase("RemoteHash", "Remote", kRemoteHashProviderId, typeof(string));
+            var cachedHashLoc = new ResourceLocationBase("CachedHash", "Cached", kLocalHashProviderId, typeof(string));
             var localHashLoc = new ResourceLocationBase("LocalHash", "Local", kLocalHashProviderId, typeof(string));
-            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, localHashLoc);
+            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, cachedHashLoc, localHashLoc);
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId, "different"));
+            m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestCatalogProvider(kNewLocatorId));
             m_Addressables.AddResourceLocator(new TestLocator(kLocatorId, remoteHashLoc, localHashLoc, catalogLoc), "same", catalogLoc);
@@ -289,13 +303,15 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         {
 #if !ENABLE_CACHING && !PLATFORM_SWITCH
             var remoteHashLoc = new ResourceLocationBase("RemoteHash", "Remote", kRemoteHashProviderId, typeof(string));
+            var cachedHashLoc = new ResourceLocationBase("CachedHash", "Cached", kLocalHashProviderId, typeof(string));
             var localHashLoc = new ResourceLocationBase("LocalHash", "Local", kLocalHashProviderId, typeof(string));
-            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, localHashLoc);
+            var catalogLoc = new ResourceLocationBase("cat", "cat_id", typeof(TestCatalogProvider).FullName, typeof(object), remoteHashLoc, cachedHashLoc, localHashLoc);
 
             //causes a compile err.  Needs re-evaluation on ps4
             //m_Addressables.RuntimePath = m_RuntimeSettingsPath;
 
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kRemoteHashProviderId, "different"));
+            m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestHashProvider(kLocalHashProviderId, "same"));
             m_Addressables.ResourceManager.ResourceProviders.Add(new TestCatalogProvider(kNewLocatorId));
             m_Addressables.AddResourceLocator(new TestLocator(kLocatorId, remoteHashLoc, localHashLoc, catalogLoc), "same", catalogLoc);

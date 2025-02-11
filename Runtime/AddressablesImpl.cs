@@ -511,23 +511,27 @@ namespace UnityEngine.AddressableAssets
                 {
                     tmpPath = ResourceManagerConfig.StripQueryParameters(hashFilePath);
                 }
+                // remote hash file location
+                var hashResourceLocation = new ResourceLocationBase(hashFilePath, hashFilePath, typeof(TextDataProvider).FullName, typeof(string))
+                {
+                    Data = hashOptions.Copy()
+                };
+                catalogLoc.Dependencies.Add(hashResourceLocation);
+
 #if UNITY_SWITCH
                 string cacheHashFilePath = hashFilePath; // ResourceLocationBase does not allow empty string id
 #else
                 // The file name of the local cached catalog + hash file is the hash code of the remote hash path, without query parameters (if any).
                 string cacheHashFilePath = ResolveInternalId(kCacheDataFolder + tmpPath.GetHashCode() + ".hash");
 #endif
-                var hashResourceLocation = new ResourceLocationBase(hashFilePath, hashFilePath, typeof(TextDataProvider).FullName, typeof(string))
-                {
-                    Data = hashOptions.Copy()
-                };
-                catalogLoc.Dependencies.Add(hashResourceLocation);
+                // cached hash file location
                 var cacheResourceLocation = new ResourceLocationBase(cacheHashFilePath, cacheHashFilePath, typeof(TextDataProvider).FullName, typeof(string))
                 {
                     Data = hashOptions.Copy()
                 };
                 catalogLoc.Dependencies.Add(cacheResourceLocation);
 
+                // local hash file location
                 //If you're explicitly loading a content catalog, we'll just set the "local" filepath to be the same as the "cached" one
                 catalogLoc.Dependencies.Add(cacheResourceLocation);
             }

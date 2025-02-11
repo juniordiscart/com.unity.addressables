@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.3.7] - 2024-12-04
+- The group edit window saves sort order and enabled columns. Groups are not sorted but can be reordered by dragging and dropping and that state is saved. This ordering has been moved to the Addressables data folder into the file AddressableAssetGroupSortSettings. This file can be added to .gitignore for per user sorting, or can be checked into version control for team sorting.
+- Fix "IndexOutOfRangeException" console message when assigning an addressable SpriteAtlas to an AssetReferenceSprite.
+- Make SubObjectGUID an Editor only field. It would not work properly at Runtime due to the lack of AssetDatabase, but this makes it explicit at compile time.
+- Switch the Runtime key to never use the SubObjectGUID and always use SubObjectName for subobjects.
+- CheckCatalogUpdate now returns 1 when there is an update available.
+- CanBuildPlayer has been switched to using the Bee postprocessor and should return better error messages on failure.
+
 ## [2.3.1] - 2024-09-24
 - Added back Analyze Rule toolset
 - Fixed issue where the content of the list with Addressable Assets Groups is improperly indented when displayed in Group Hierarchy with Dashes Group View.
