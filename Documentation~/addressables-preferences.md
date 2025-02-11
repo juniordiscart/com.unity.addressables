@@ -8,4 +8,4 @@ The Addressables package adds its own section to the Unity Editor [Preferences](
 
 ## Additional resources
 
-* [Building Addressables content with Player builds](build-player-builds.md) 
+* [Building Addressables content with Player builds](build-player-builds.md)

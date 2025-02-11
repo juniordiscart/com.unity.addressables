@@ -20,7 +20,7 @@ namespace AddressableAssets.DocExampleCode
         {
             float x = 0, z = 0;
             loadHandle = Addressables.LoadAssetsAsync<GameObject>(
-                keys, // Either a single key or a List of keys 
+                keys, // Either a single key or a List of keys
                 addressable =>
                 {
                     //Gets called for every loaded asset
@@ -36,7 +36,7 @@ namespace AddressableAssets.DocExampleCode
                             z++;
                         }
                     }
-                }, Addressables.MergeMode.Union, // How to combine multiple labels 
+                }, Addressables.MergeMode.Union, // How to combine multiple labels
                 false); // Whether to fail if any asset fails to load
             loadHandle.Completed += LoadHandle_Completed;
         }

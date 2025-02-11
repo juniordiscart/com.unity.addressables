@@ -1,4 +1,4 @@
-﻿# The Summary Tab
+# The Summary Tab
 
 ![](../../images/BuildReportSummaryView.png)
 

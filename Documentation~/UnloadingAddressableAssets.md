@@ -8,7 +8,7 @@ The Addressables system uses reference counting to check whether an asset is in 
 
 When you unload a scene, the AssetBundle it belongs to is unloaded. This unloads assets associated with the scene, including any GameObjects moved from the original scene to a different scene.
 
-Unity automatically calls `UnloadUnusedAssets` when it loads a scene using the [`LoadSceneMode.Single`](xref:UnityEngine.SceneManagement.LoadSceneMode.Single) mode. To prevent the scene and its assets from being unloaded, keep a reference to the scene load operation handle until you want to unload the scene manually. To do this, use [`ResourceManager.Acquire`](xref:UnityEngine.ResourceManagement.ResourceManager.Acquire(UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle)) on the load operation handle. 
+Unity automatically calls `UnloadUnusedAssets` when it loads a scene using the [`LoadSceneMode.Single`](xref:UnityEngine.SceneManagement.LoadSceneMode.Single) mode. To prevent the scene and its assets from being unloaded, keep a reference to the scene load operation handle until you want to unload the scene manually. To do this, use [`ResourceManager.Acquire`](xref:UnityEngine.ResourceManagement.ResourceManager.Acquire(UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle)) on the load operation handle.
 
 >[!IMPORTANT]
 >Conventional methods of preserving the assets such as [`Object.DontDestroyOnLoad`](xref:UnityEngine.Object.DontDestroyOnLoad(UnityEngine.Object)) or [`HideFlags.DontUnloadUnusedAsset`](xref:UnityEngine.HideFlags.DontUnloadUnusedAsset) don't work.

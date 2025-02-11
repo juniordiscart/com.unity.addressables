@@ -42,7 +42,7 @@ The build layout report contains the following information:
 Provides a summary of the build.
 
 | **Name**| **Description** |
-|:---|:---| 
+|:---|:---|
 | **Addressable Groups**| The number of groups included in the build. |
 | **Explicit Assets Addressed**| The number of Addressable assets in the build (this number doesn't include assets in the build that are referenced by an Addressable asset, but which aren't marked as Addressable). |
 | **Total Bundle**| The number of AssetBundles created by the build, including how many contain Scene data. |
@@ -55,7 +55,7 @@ Provides a summary of the build.
 Reports how Addressables packed the assets in a group into AssetBundles.
 
 | **Name**| **Description** |
-|:---|:---| 
+|:---|:---|
 | **Group summary**| Name, number of bundles created for group, total size, and number of explicit assets built for the group. |
 | **Schemas**| Schemas and settings for the group. |
 | **Asset bundles**| See [AssetBundle information](#assetbundle-information). |
@@ -65,7 +65,7 @@ Reports how Addressables packed the assets in a group into AssetBundles.
 Reports details for each AssetBundle built for a group.
 
 | **Name**| **Description** |
-|:---|:---| 
+|:---|:---|
 | **File name**| The file name of the AssetBundle. |
 | **Size**| The size of the AssetBundle |
 | **Compression**| The compression setting used for the bundle. |
@@ -80,7 +80,7 @@ Reports details for each AssetBundle built for a group.
 Provides Information for each asset in the Explicit Assets section.
 
 | **Name**| **Description** |
-|:---|:---| 
+|:---|:---|
 | **Asset path**| The path to the asset in your project |
 | **Total Size**|  |
 | **Size from Objects**|  |
@@ -95,7 +95,7 @@ Provides Information for each asset in the Explicit Assets section.
 Provides details about each serialized file in an AssetBundle archive
 
 | **Name**| **Description** |
-|:---|:---| 
+|:---|:---|
 | **File summary**| Index in file list, number and size of serialized MonoScripts in the file |
 | **File sections**| A serialized file can have one or more of the following sections: <br/> &#8226; No extension<br/> &#8226; .resS<br/> &#8226; .resource<br/> &#8226; .sharedAssets |
 | **Data from Other Assets**| Dependent assets referenced by assets in the file. |

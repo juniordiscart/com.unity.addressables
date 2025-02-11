@@ -1,4 +1,4 @@
-﻿---
+---
 uid: addressables-report-overview
 ---
 

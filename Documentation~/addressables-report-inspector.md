@@ -1,10 +1,10 @@
-﻿# Addressables Report Inspector reference
+# Addressables Report Inspector reference
 
 You can use the Inspector to view in depth information about any given asset or AssetBundle. When you select an asset or AssetBundle in [the Explore tab](AddressablesReportOverview.md#explore-tab) or [the Potential Issues tab](AddressablesReportPotentialIssuesTab.md) the Inspector panel displays information about the selected asset or AssetBundle.
 
 ![](images/addressables-report-inspector.png)
 
-The Inspector panel has the following sections: 
+The Inspector panel has the following sections:
 
 * **Summary panel**: Displays information about an Asset or AssetBundle, such as its file size, its group, and any labels associated with it. Additionally, the summary panel has buttons that you can use to navigate to various places within both the Build Report and the Editor, depending on whether you select an Asset or an AssetBundle.
 * **References panel**: Displays the chain of dependencies surrounding a given asset.

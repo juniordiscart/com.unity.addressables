@@ -1,6 +1,6 @@
 # Create an update build
 
-When you distribute content remotely, you can perform a differential update of the previously published build to minimize the amount of data your users must download (compared to a full build). 
+When you distribute content remotely, you can perform a differential update of the previously published build to minimize the amount of data your users must download (compared to a full build).
 
 Once you have configured your remote groups properly and have a previous build which contains remote content, you can perform a content update build by:
 
@@ -10,9 +10,9 @@ Once you have configured your remote groups properly and have a previous build w
 4. Locate the `addressables_content_state.bin` file produced by the build you are updating. (The default location is in your `Assets/AddressableAssetsData/TargetPlatform` folder.)
 5. Click __Open__ to start the update build.
 
-To update existing clients, copy the updated remote content to your hosting service (after appropriate testing). (An update build does include all of your local and remote content -- any player builds you create after a content update build will contain a complete set of Addressable assets.) 
+To update existing clients, copy the updated remote content to your hosting service (after appropriate testing). (An update build does include all of your local and remote content -- any player builds you create after a content update build will contain a complete set of Addressable assets.)
 
-Updating a previous build does not change the `addressables_content_state.bin` file. Use the same version of the file for future update builds (until you publish another full build created from the __New Build__ menu). 
+Updating a previous build does not change the `addressables_content_state.bin` file. Use the same version of the file for future update builds (until you publish another full build created from the __New Build__ menu).
 
 See [Content Update Builds](ContentUpdateWorkflow.md) for information on how and when to use content update builds.
 

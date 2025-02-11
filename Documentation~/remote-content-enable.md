@@ -1,6 +1,6 @@
 # Enable remote distribution
 
-To enable remote distribution of your content, you must enable the remote catalog and set up the [groups](Groups.md) containing the assets you want to host remotely.  
+To enable remote distribution of your content, you must enable the remote catalog and set up the [groups](Groups.md) containing the assets you want to host remotely.
 
 ## Enabling the remote catalog
 

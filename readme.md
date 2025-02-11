@@ -6,7 +6,7 @@ Asset Bundle system, and in certain ways, also seeks to dispose of the Resources
 This variant, forked from the original Addressables-project, adds support for building your assets across several
 catalogs, ideal for managing additional content or DLC for your game.
 
-This package currently tracks version `2.3.1` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if
+This package currently tracks version `2.3.16` of the vanilla Addressables packages. Checkout a `multi-catalog` tag if
 you require a specific version.
 
 ## Notes before you begin

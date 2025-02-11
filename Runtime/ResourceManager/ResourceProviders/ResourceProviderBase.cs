@@ -69,8 +69,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <summary>
         /// Get the default type of object that this provider can provide.
         /// </summary>
-        /// <param name="location"></param>
-        /// <returns></returns>
+        /// <param name="location">The Resource location that points to the asset you want the default type of.</param>
+        /// <returns>The default Type of of the object if one is found, null otherwise.</returns>
         public virtual Type GetDefaultType(IResourceLocation location)
         {
             return typeof(object);

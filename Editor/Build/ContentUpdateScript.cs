@@ -158,7 +158,7 @@ namespace UnityEditor.AddressableAssets.Build
     }
 
     /// <summary>
-    /// Data stored with each build that is used to generated content updates.
+    /// Data stored with each build that is used to generated content updates. This file should be preserved with each build to ensure that an update can be created.
     /// </summary>
     [Serializable]
     public class AddressablesContentState
@@ -569,7 +569,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// <summary>
         /// Loads cache data from a specific location
         /// </summary>
-        /// <param name="contentStateDataPath"></param>
+        /// <param name="contentStateDataPath">The path of the content state bin file.</param>
         /// <returns>The ContentState object.</returns>
         public static AddressablesContentState LoadContentState(string contentStateDataPath)
         {

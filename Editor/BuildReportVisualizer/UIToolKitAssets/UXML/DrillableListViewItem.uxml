@@ -3,6 +3,6 @@
     <ui:VisualElement class="DrillableListViewItem">
         <ui:Image name="DrillableListViewItemIcon" class="TreeViewItemIcon"/>>
         <ui:Label name="DrillableListViewItemName" text="-----" class="DrillableListViewItemText"/>
-		<ui:Button name="DrillableListViewButton" class="DrillableListViewItemButton" text="References To"/>
+          <ui:Button name="DrillableListViewButton" class="DrillableListViewItemButton" text="References To"/>
     </ui:VisualElement>
 </ui:UXML>

@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 namespace UnityEditor.AddressableAssets
 {
 	/// <summary>
-	/// Class used to get and set the default Addressable Asset settings object.
+    /// Class used to get and set the default <see cref="AddressableAssetSettings"/> object.
 	/// </summary>
 	[CreateAssetMenu(menuName = "Addressables/New Default Object", fileName = "DefaultObject")]
 	public class AddressableAssetSettingsDefaultObject : ScriptableObject
@@ -15,7 +15,7 @@ namespace UnityEditor.AddressableAssets
 		public static Action<AddressableAssetSettings> onDefaultObjectsettingsChanged;
 
 		/// <summary>
-		/// Default name for the addressable assets settings
+        /// Default name for the <see cref="AddressableAssetSettings"/>.
 		/// </summary>
 		public const string kDefaultConfigAssetName = "AddressableAssetSettings";
 
@@ -25,12 +25,12 @@ namespace UnityEditor.AddressableAssets
 		public const string kDefaultConfigFolder = "Assets/AddressableAssetsData";
 
 		/// <summary>
-		/// The name of the default config object
+        /// The name of the default config object.
 		/// </summary>
 		public const string kDefaultConfigObjectName = "com.unity.addressableassets";
 
 		/// <summary>
-		/// Default path for addressable asset settings assets.
+        /// Default path for <see cref="AddressableAssetSettings"/> assets.
 		/// </summary>
 		public static string DefaultAssetPath
 		{
@@ -108,7 +108,7 @@ namespace UnityEditor.AddressableAssets
 		}
 
 		/// <summary>
-		/// Gets the default addressable asset settings object.  This will return null during editor startup if EditorApplication.isUpdating or EditorApplication.isCompiling are true.
+        /// Gets the default <see cref="AddressableAssetSettings"/> object.  This will return null during editor startup if <see cref="EditorApplication.isUpdating"/> or <see cref="EditorApplication.isCompiling"/> are true.
 		/// </summary>
 		public static AddressableAssetSettings Settings
 		{
@@ -174,10 +174,10 @@ namespace UnityEditor.AddressableAssets
 		}
 
 		/// <summary>
-		/// Gets the settings object with the option to create a new one if it does not exist.
+        /// Gets the <see cref="AddressableAssetSettings"/> object with the option to create a new one if it does not exist.
 		/// </summary>
 		/// <param name="create">If true and no settings object exists, a new one will be created using the default config folder and asset name.</param>
-		/// <returns>The default settings object.</returns>
+        /// <returns>The default <see cref="AddressableAssetSettings"/> object.</returns>
 		public static AddressableAssetSettings GetSettings(bool create)
 		{
 			if (Settings == null && create)

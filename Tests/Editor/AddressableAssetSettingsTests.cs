@@ -1557,9 +1557,31 @@ namespace UnityEditor.AddressableAssets.Tests
             var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
             group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
 
-            var expectedValue = new SerializedType() { Value = typeof(BundledAssetProvider) };
-            settings.BundledAssetProviderType = expectedValue;
-            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType);
+            var expectedAssetBundleProviderValue = group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType;
+            {
+                var expectedBundledAssetProviderValue = new SerializedType() { Value = typeof(BundledAssetProvider) };
+                settings.BundledAssetProviderType = expectedBundledAssetProviderValue;
+                settings.UpdateBundledAssetProviderType();
+                Assert.AreEqual(expectedBundledAssetProviderValue, group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType, "The value of BundledAssetProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedAssetBundleProviderValue, group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType, "The value of AssetBundleProviderType should be unchanged.");
+        }
+
+        [Test]
+        public void CanSetGroupSettings_UpdateBundledAssetProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedAssetBundleProviderValue = group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType;
+            {
+                var expectedBundledAssetProviderValue = new SerializedType() { Value = typeof(BundledAssetProvider) };
+                settings.m_BundledAssetProviderType = expectedBundledAssetProviderValue;
+                settings.UpdateBundledAssetProviderType();
+                Assert.AreEqual(expectedBundledAssetProviderValue, group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType, "The value of BundledAssetProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedAssetBundleProviderValue, group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType, "The value of AssetBundleProviderType should be unchanged.");
         }
 
         [Test]
@@ -1569,9 +1591,30 @@ namespace UnityEditor.AddressableAssets.Tests
             var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
             group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
 
-            var expectedValue = new SerializedType() { Value = typeof(AssetBundleProvider) };
-            settings.AssetBundleProviderType = expectedValue;
-            Assert.AreEqual(expectedValue, group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType);
+            var expectedBundledAssetProviderValue = group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType;
+            {
+                var expectedAssetBundleProviderValue = new SerializedType() { Value = typeof(AssetBundleProvider) };
+                settings.AssetBundleProviderType = expectedAssetBundleProviderValue;
+                Assert.AreEqual(expectedAssetBundleProviderValue, group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType, "The value of AssetBundleProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedBundledAssetProviderValue, group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType, "The value of BundledAssetProviderType should be unchanged.");
+        }
+
+        [Test]
+        public void CanSetGroupSettings_UpdateAssetBundleProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedBundledAssetProviderValue = group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType;
+            {
+                var expectedAssetBundleProviderValue = new SerializedType() { Value = typeof(AssetBundleProvider) };
+                settings.m_AssetBundleProviderType = expectedAssetBundleProviderValue;
+                settings.UpdateAssetBundleProviderType();
+                Assert.AreEqual(expectedAssetBundleProviderValue, group.GetSchema<BundledAssetGroupSchema>().AssetBundleProviderType, "The value of AssetBundleProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedBundledAssetProviderValue, group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType, "The value of BundledAssetProviderType should be unchanged.");
         }
     }
 }

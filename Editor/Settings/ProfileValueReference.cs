@@ -70,7 +70,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Return a profile value using the provided profile settings object and a profile id.
         /// </summary>
         /// <remarks>
-        /// This handles custom values that are stored as the id of the variable. 
+        /// This handles custom values that are stored as the id of the variable.
         /// </remarks>
         /// <param name="profileSettings">The profile settings object.</param>
         /// <param name="profileId">The profile id.</param>

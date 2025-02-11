@@ -1,15 +1,15 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+     using System;
     using UnityEngine;
-	
-	internal class UsingRemoveResourceLocator
+
+     internal class UsingRemoveResourceLocator
     {
-		#region SAMPLE
-		public void UsingRemoveResourceLocatorSample()
-		{
-			
-		}
-		#endregion
-	}
+          #region SAMPLE
+          public void UsingRemoveResourceLocatorSample()
+          {
+
+          }
+          #endregion
+     }
 }

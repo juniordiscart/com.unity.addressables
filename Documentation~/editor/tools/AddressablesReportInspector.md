@@ -1,4 +1,4 @@
-﻿# The Inspector Panel
+# The Inspector Panel
 
 The Inspector Panel allows you to view more in depth information about any given Asset or Asset Bundle within the explore view. Left clicking on an Asset or Asset Bundle within [the Explore Tab](AddressablesReportExploreTab.md) or [the Potential Issues Tab](AddressablesReportPotentialIssuesTab.md) will update the inspector panel with the selected Asset or AssetBundle.
 

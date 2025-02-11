@@ -15,7 +15,7 @@ Loading Addressable assets uses asynchronous operations. Refer to [Operations](x
 
 ## Use AssetReferences
 
-To use an `AssetReference`, add an `AssetReference` field to a `MonoBehaviour` or `ScriptableObject`. After you create an object of that type, you can assign an asset to the field in your object's Inspector window. 
+To use an `AssetReference`, add an `AssetReference` field to a `MonoBehaviour` or `ScriptableObject`. After you create an object of that type, you can assign an asset to the field in your object's Inspector window.
 
 > [!NOTE]
 > If you assign a non-Addressable asset to an AssetReference field, Unity automatically makes that asset Addressable and adds it to your default Addressables group. AssetReferences also let you use Addressable assets in a Scene that isn't itself Addressable.

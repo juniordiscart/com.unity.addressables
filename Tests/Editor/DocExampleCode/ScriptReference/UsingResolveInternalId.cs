@@ -1,15 +1,15 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+     using System;
     using UnityEngine;
-	
-	internal class UsingResolveInternalId
+
+     internal class UsingResolveInternalId
     {
-		#region SAMPLE
-		public void UsingResolveInternalIdSample()
-		{
-			
-		}
-		#endregion
-	}
+          #region SAMPLE
+          public void UsingResolveInternalIdSample()
+          {
+
+          }
+          #endregion
+     }
 }

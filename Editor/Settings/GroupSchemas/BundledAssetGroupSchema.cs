@@ -1529,26 +1529,32 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         /// <summary>
         /// A group of build target platforms that share the recommended schema settings.
         /// </summary>
+        /// <remarks>
+        /// For example, builds that target 32-bit and 64-bit Windows are under the same group and have the same recommended schema settings.
+        /// </remarks>
+        /// <example>
+        /// <code source="../../../Tests/Editor/DocExampleCode/ScriptReference/UsingDefaultSchemaSettingsBuildTargetGroup.cs" region="SAMPLE"/>
+        /// </example>
         public enum DefaultSchemaSettingsBuildTargetGroup
         {
             /// <summary>
-            /// The default build target group.
+            /// The default schema settings build target group.
             /// </summary>
             Default = 0,
             /// <summary>
-            /// The Standalone build target group.
+            /// The Standalone schema settings build target group.
             /// </summary>
             StandaloneWindows = 1,
             /// <summary>
-            /// The iOS build target group.
+            /// The iOS schema settings build target group.
             /// </summary>
             iOS = BuildTargetGroup.iOS,
             /// <summary>
-            /// The Android build target group.
+            /// The Android schema settings build target group.
             /// </summary>
             Android = BuildTargetGroup.Android,
             /// <summary>
-            /// The WebGL build target group.
+            /// The WebGL schema settings build target group.
             /// </summary>
             WebGL = BuildTargetGroup.WebGL
         };
@@ -1758,7 +1764,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         /// Returns the corresponding DefaultSchemaSettingsBuildTargetGroup for the build target specified.
         /// </summary>
         /// <param name="buildTarget">The build target.</param>
-        /// <returns>The corresponding DefaultSchemaSettingsBuildTargetGroup.
+        /// <returns>The corresponding DefaultSchemaSettingsBuildTargetGroup.</returns>
         public DefaultSchemaSettingsBuildTargetGroup GetDefaultSchemaSettingsBuildTargetGroup(BuildTarget buildTarget)
         {
             if (buildTarget == BuildTarget.StandaloneWindows || buildTarget == BuildTarget.StandaloneWindows64)
@@ -1790,6 +1796,10 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 #endif
         }
 
+        /// <summary>
+        /// Get the default settings for an Addressable Group schema
+        /// </summary>
+        /// <returns>A set of recommended schema settings</returns>
         public DefaultSchemaSettings GetDefaultSchemaSettings()
         {
             if (SelectedPathPairIndex > 2)

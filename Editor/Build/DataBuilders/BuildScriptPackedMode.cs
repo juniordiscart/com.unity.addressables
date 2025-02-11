@@ -315,9 +315,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// The method that does the actual building after all the groups have been processed.
         /// </summary>
         /// <param name="builderInput">The generic builderInput of the</param>
-        /// <param name="aaContext"></param>
-        /// <typeparam name="TResult"></typeparam>
-        /// <returns></returns>
+        /// <param name="aaContext">Addressables context object</param>
+        /// <typeparam name="TResult">The type of IDataBuilderResult object to be produced by the build</typeparam>
+        /// <returns>The IDataBuilderResult produced by the build</returns>
         protected virtual TResult DoBuild<TResult>(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext) where TResult : IDataBuilderResult
         {
             var genericResult = AddressableAssetBuildResult.CreateResult<TResult>();
@@ -1098,7 +1098,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <param name="schema">The schema to process</param>
         /// <param name="assetGroup">The group this schema was pulled from</param>
         /// <param name="aaContext">The general Addressables build builderInput</param>
-        /// <returns></returns>
+        /// <returns>The error string, if any.</returns>
         protected virtual string ProcessGroupSchema(AddressableAssetGroupSchema schema, AddressableAssetGroup assetGroup, AddressableAssetsBuildContext aaContext)
         {
             var bundledAssetSchema = schema as BundledAssetGroupSchema;

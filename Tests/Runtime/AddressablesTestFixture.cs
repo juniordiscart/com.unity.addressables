@@ -196,7 +196,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
 #if UNITY_EDITOR
     internal static string CreateScene(string assetPath)
     {
-        var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Additive);
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
         EditorSceneManager.SaveScene(scene, assetPath);
         return AssetDatabase.AssetPathToGUID(scene.path);
     }

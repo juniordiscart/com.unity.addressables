@@ -6,7 +6,7 @@ uid: addressables-modification-events
 
 You can use modification events to signal to parts of the Addressables system when certain data is manipulated, such as when an `AddressableAssetGroup` or an `AddressableAssetEntry` is added or removed.
 
-Modification events are triggered as part of `SetDirty` calls inside of Addressables. `SetDirty` is used to indicate when an asset needs to be re-serialized by the `AssetDatabase`.  As part of `SetDirty`, two modification event callbacks can trigger: 
+Modification events are triggered as part of `SetDirty` calls inside of Addressables. `SetDirty` is used to indicate when an asset needs to be re-serialized by the `AssetDatabase`.  As part of `SetDirty`, two modification event callbacks can trigger:
 
 * `public static event Action<AddressableAssetSettings, ModificationEvent, object> OnModificationGlobal`
 * `public Action<AddressableAssetSettings, ModificationEvent, object> OnModification { get; set; }`

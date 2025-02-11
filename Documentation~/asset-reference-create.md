@@ -1,6 +1,6 @@
-# Create asset reference fields 
+# Create asset reference fields
 
-To add an [`AssetReference`](xref:UnityEngine.AddressableAssets.AssetReference) or one of its subclasses, to a `MonoBehaviour` or `ScriptableObject`, declare it as a serializable field in the class: 
+To add an [`AssetReference`](xref:UnityEngine.AddressableAssets.AssetReference) or one of its subclasses, to a `MonoBehaviour` or `ScriptableObject`, declare it as a serializable field in the class:
 
 [!code-cs[sample](../Tests/Editor/DocExampleCode/DeclaringReferences.cs#doc_DeclaringReferences)]
 

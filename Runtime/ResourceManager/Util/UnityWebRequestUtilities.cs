@@ -17,7 +17,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// Determines if a web request resulted in an error.
         /// </summary>
         /// <param name="webReq">The web request.</param>
-        /// <param name="result"></param>
+        /// <param name="result">Web request result</param>
         /// <returns>True if a web request resulted in an error.</returns>
         public static bool RequestHasErrors(UnityWebRequest webReq, out UnityWebRequestResult result)
         {

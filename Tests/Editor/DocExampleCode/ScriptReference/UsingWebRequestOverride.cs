@@ -1,6 +1,6 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+     using System;
     using UnityEngine;
 
     #region SAMPLE

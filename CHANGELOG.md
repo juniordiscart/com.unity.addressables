@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.3.16] - 2024-01-08
+- Fixed compile error due to using restricted namespaces
+- Moved AddressableAssetEntryTreeViewState into the UnityEditor.AddressableAssets namespace to fix compile errors in user code.
+
 ## [2.3.7] - 2024-12-04
 - The group edit window saves sort order and enabled columns. Groups are not sorted but can be reordered by dragging and dropping and that state is saved. This ordering has been moved to the Addressables data folder into the file AddressableAssetGroupSortSettings. This file can be added to .gitignore for per user sorting, or can be checked into version control for team sorting.
 - Fix "IndexOutOfRangeException" console message when assigning an addressable SpriteAtlas to an AssetReferenceSprite.
@@ -64,8 +68,8 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 
 ## [2.0.3] - 2023-08-27
 - ProfileValueReference.GetValue is now the preferred method of getting bulid and load paths. A new method has been added that allows token evaluation to be toggled on and off. Using this method ensures that custom build and load paths are handled properly.
-- In the Editor when a sprite is no longer available it will be cleared when the property drawer is viewed. 
-- Add a SubObjectGUID to sprite atlases and use GUIDs for the runtime loading key if is exists. 
+- In the Editor when a sprite is no longer available it will be cleared when the property drawer is viewed.
+- Add a SubObjectGUID to sprite atlases and use GUIDs for the runtime loading key if is exists.
 - Catalog hashes get build with the local catalog now.  This prevents remote catalogs from getting downloaded if they match what was shipped with a player
 - Added overloads to LoadAssetsAsync to accept a single string as a key
 - Added bundle request retry override.
@@ -129,7 +133,7 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 ## [1.21.10] - 2023-04-10
 - Fixed Addressables profiler not correctly displaying loaded Asset subObjects where a Asset was loaded due to a direct reference to one of its subObjects.
 - Fixed an issue where bundles built with the Append Hash to FIlename bundle naming option had strange interactions with the Prevent Updates option
-- Improved performance of BuildLayoutGenerationTask 
+- Improved performance of BuildLayoutGenerationTask
 
 ## [1.21.9] - 2023-03-07
 - Removed code within WriteObjectToByteList that would never be reached
@@ -348,7 +352,7 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Improved performance of displaying Addressables Inspector in a very large Project.
 - Fixed issue where buildlayout.txt would contain incorrect bundle names if a group's bundle naming scheme was set to filename
 - Fixed an issue where some platforms were caching catalogs that don't support caching
-- Fixed an issue where the popup windows for creating new profiles path variables would appear in seemingly random places. 
+- Fixed an issue where the popup windows for creating new profiles path variables would appear in seemingly random places.
 - Fixed an issue where the popup window for creating a Build and Load path variable pair would not properly display its save button
 - Added note in Hosting Services docs about modifying firewall settings when testing on other devices.
 - Added handling of possible exceptions when caching catalog files.
@@ -372,25 +376,25 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Users can now supply a callback to receive the UnityWebRequest before being sent by web-based providers
 - Added new API to clear the bundle cache for nonreferenced remote asset bundles. UpdateCatalogs has a new optional parameter called autoCleanBundleCache that when enabled will clear the bundle cache for nonreferenced remote asset bundles.
 - New public APIs
-	- BundledAssetGroupSchema.AssetLoadMode
-	- AssetBundleProvider.AssetBundleRequestOptions.AssetLoadMode
-	- Addressables.WebRequestOverride
-	- ResourceManager.WebRequestOverride
-	- AddressableAssetSettings.DisableVisibleSubAssetRepresentations
-	- Exposed Auto release parameter added to InitializeAsync
-	- BundleRuleBase
-	- GenerateLocationListsTask.ProcessInput (formally RunInteral)
-	- BuildScriptPackedMode.PrepGroupBundlePacking
-	- UnloadSceneAsync APIs with exposed UnloadSceneOptions parameter
-	- Addressables.CleanBundleCache
-	- New parameter for Addressables.UpdateCatalogs to auto clean the bundle cache
+    - BundledAssetGroupSchema.AssetLoadMode
+    - AssetBundleProvider.AssetBundleRequestOptions.AssetLoadMode
+    - Addressables.WebRequestOverride
+    - ResourceManager.WebRequestOverride
+    - AddressableAssetSettings.DisableVisibleSubAssetRepresentations
+    - Exposed Auto release parameter added to InitializeAsync
+    - BundleRuleBase
+    - GenerateLocationListsTask.ProcessInput (formally RunInteral)
+    - BuildScriptPackedMode.PrepGroupBundlePacking
+    - UnloadSceneAsync APIs with exposed UnloadSceneOptions parameter
+    - Addressables.CleanBundleCache
+    - New parameter for Addressables.UpdateCatalogs to auto clean the bundle cache
        - ProfileGroupType introduces a new workflow of grouping profile variables in the Addressables Profiles window, otherwise known as path pairs.
 
 ## [1.18.15] - 2021-07-26
 - Improved Addressables inspector for Assets.
 - Fixed issue where the hosting window would use an exceptionally high (8-20%) amount of CPU while open with a hosting service created
 - Added update on profile change, changed to remove preceding slashes and change all to forward slash for hosting service
-- Added documentation explaining why we are unable to support WaitForCompletion (sync Addressables) on WebGL 
+- Added documentation explaining why we are unable to support WaitForCompletion (sync Addressables) on WebGL
 
 ## [1.18.13] - 2021-07-13
 - Fixed issue where Addressables would not use a custom Asset Bundle Provider if the default group was empty
@@ -401,7 +405,7 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Fixed issue where NullReferenceException was logged when multi-selecting with Resource in Groups TreeView.
 - Fixed issue where Check for Content Update Restrictions excludes dependencies for folder entries.
 - Fixed issue where AddPostCatalogUpdatesInternal would attempt to remove the hash from strings that did not include a hash, occassionally leading to incorrect bundle names in catalog.json
-- Load AssetBundles Asynchronously from UnityWebRequest for supported Editor versions 
+- Load AssetBundles Asynchronously from UnityWebRequest for supported Editor versions
 - Fixed issue where hidden files were being flagged in GetDownloadSizeAsync when "Use Asset Database (fastest)" is enabled.
 - Added logic for auto releasing completion handle in InitializeAsync
 - Fixed issue where AssetBundleProvider would fail to retry on download dailed
@@ -470,7 +474,7 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Made AddressableAssetSettings.ContentStateBuildPath public api access.
 - Add option for building MonoScript bundle. This approach improves multi bundle dependencies to the same MonoScript.
 - Added documentation for AddressableAssetSettings options.
-- Improved error handling of failed unity web requests and some other operations. 
+- Improved error handling of failed unity web requests and some other operations.
 - Users can now look into the InnerException property of an operation's exception for additional details"
 - Fixed issue where .json and .asmdef files in the root of a package folder cannot be marked as Addressable.
 - Fixed issue where unmodifiable assets cannot be marked as Addressable.
@@ -542,7 +546,7 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Change to use full path for name of cached catalog.
 
 ## [1.17.2-preview] - 2021-01-14
-- Add silent fail option to providers to get rid of error when cache not found as expected 
+- Add silent fail option to providers to get rid of error when cache not found as expected
 - Hierarchy now fully displayed in search results when 'show groups as hierarchy' and 'hierarchical search' options are enabled
 - OnValidate is now called when an AssetReference changes
 - Fixed bugs in Use Asset Database play mode related to multiple folders with matching addresses
@@ -617,7 +621,7 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Allow assets that are inside a com.unity* package to be marked as addressable
 
 ## [1.16.10] - 2020-11-04
-- Added internal naming option for the Bundled Asset Group Schema.  Instead of using the full path, there are options to use the asset guid or the hashcode of the guid.  These values are stable and wont change if the asset path changes, reducing the need to rebuild a bundle if paths change but contents do not.  The internal ids stored in the content catalog will generally be shorter than asset paths - 32 bytes for the full guid, 8 bytes for the guid hash. 
+- Added internal naming option for the Bundled Asset Group Schema.  Instead of using the full path, there are options to use the asset guid or the hashcode of the guid.  These values are stable and wont change if the asset path changes, reducing the need to rebuild a bundle if paths change but contents do not.  The internal ids stored in the content catalog will generally be shorter than asset paths - 32 bytes for the full guid, 8 bytes for the guid hash.
 - Added option to exclude sub catalog entries by file extension
 - Added options to exclude catalog entries for address, labels, and guids
 - Added option to optimize catalog size by extracting duplicated string in urls and file paths
@@ -671,7 +675,7 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Additional Fast Mode optimizations
 - Fixed issue where a released operation was not properly cleaned-up
 - Fixed issue where renaming an AssetGroup with a name that contained a period led to unusual renaming behavior.
-- Removed Analyze Rule "Check Sprite Atlas To...".  This check was not actually valid.  See "SpriteAtlas dependencies" section of "Memory Management" page in Addressables documentation for more information. 
+- Removed Analyze Rule "Check Sprite Atlas To...".  This check was not actually valid.  See "SpriteAtlas dependencies" section of "Memory Management" page in Addressables documentation for more information.
 - UnloadSceneAsync calls that attempt to unload a scene that is still currently loading are now chained with the load operation and will complete after the load is finished.
 - The MaxConcurrentWebRequests exposed on the AddressableAssetSettings object now gets set during runtime initialization
 - Fix performance issues drawing AssetReferences with subassets caused by earlier changes to AssetReferenceDrawer
@@ -688,10 +692,10 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - Fix bug where lists of AssetReferenceSprites were not displayed or set right by AssetReferenceDrawer. Also fixed where multiple selected objects in project hierarchy couldn't set all lists of AssetReferences elements.
 - Added better error logging when unrecognized file in build.
 - Added error log when building asset bundles during player build.
-- Added "Hide Events" context menu option in Event Viewer 
+- Added "Hide Events" context menu option in Event Viewer
 - Fixed a bug where running the "Check Scene to Addressable Duplicate Dependencies" analyze rule multiple times would cause a duplicate key exception
 - The "Check Scene to Addressable Duplicate Dependencies" analyze rule now only considers scenes that are enabled in the build settings.
-- Fixed a bug where an error would be thrown when Unity 2019 opens and if the hosting window was previously left open 
+- Fixed a bug where an error would be thrown when Unity 2019 opens and if the hosting window was previously left open
 - Fixed a bug where changes to a service where not applied in the hosting window
 - Fixed a bug where profile selection in the inspector was incorrectly reverted to the default one on domain reload
 - Added documentation for LoadResourceLocationsAsync
@@ -714,15 +718,15 @@ CCD Manager is built when using the Build to CCD and the standard Build content 
 - AsyncOperationHandle<bool> ClearDependencyCacheAsync has been added.  The new API takes an autoReleaseHandle parameter and returns the AsyncOperationHandle.
 - Made the AsyncOperationHandle in AssetReference public.
 - Fixed loading of items from Resources and the built in ScenesList.
-- Improved the performance of loading local content on Android by using LoadFromFileAsync instead of UnityWebRequest. Please note that the bundle compression mode for all local content (on any platform) should be LZ4 or uncompressed to have optimal load performance. 
+- Improved the performance of loading local content on Android by using LoadFromFileAsync instead of UnityWebRequest. Please note that the bundle compression mode for all local content (on any platform) should be LZ4 or uncompressed to have optimal load performance.
 - Fixed issue where some Addressables settings were not being saved if they were only serialized properties or textfields like 'Build Remote Catalog'
 - Fixed a bug where DiagnosticEvents would be created even if 'Send Profiler Events' was set to false.
 - Refactored the DebugNames of many of the most common implementations of AsyncOperationHandle to improve readability in the event viewer.
-- Events in the Event viewer should now display more accurately in the case of Repeated loads and unloads of the same object. 
+- Events in the Event viewer should now display more accurately in the case of Repeated loads and unloads of the same object.
 - AddressableAssetEntry now overrides ToString() to return the address of the entry
 - Added support for setting multiple assets and subasset references at a time for field in GameObject script in the AssetReference Inspector
 - Improved performance of the GenerateLocationLists task
-- Refactored DiagnosticEventCollector.RegisterEventHandler so that events are always handled in frame order. 
+- Refactored DiagnosticEventCollector.RegisterEventHandler so that events are always handled in frame order.
 - Fixed bug where the Event Viewer would not work when connected to a standalone player.
 - Added docs describing the process of connecting the Event Viewer to a standalone player.
 - Fixed exception that was getting thrown on Editor restart regarding accessing EditorSettings.enterPlayModeOptionsEnabled during serialization.

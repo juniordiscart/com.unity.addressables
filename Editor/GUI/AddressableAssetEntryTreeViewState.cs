@@ -2,7 +2,7 @@ using System;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
-namespace Editor.GUI
+namespace UnityEditor.AddressableAssets.GUI
 {
     [Serializable]
     public class AddressableAssetEntryTreeViewState : TreeViewState

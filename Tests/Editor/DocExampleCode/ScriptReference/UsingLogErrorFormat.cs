@@ -1,6 +1,6 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+     using System;
     using UnityEngine;
     using UnityEngine.AddressableAssets;
 
@@ -9,8 +9,8 @@ namespace AddressableAssets.DocExampleCode
 
         #region SAMPLE
         public void UsingLogErrorFormatSample()
-        {            
-            Addressables.LogErrorFormat("{0:o}[{1}]Unloading bundle", DateTime.Now, this.GetType().Name);            
+        {
+            Addressables.LogErrorFormat("{0:o}[{1}]Unloading bundle", DateTime.Now, this.GetType().Name);
         }
         #endregion
 

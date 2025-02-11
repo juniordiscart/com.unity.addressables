@@ -5,7 +5,8 @@ using UnityEngine.ResourceManagement.ResourceLocations;
 namespace UnityEngine.AddressableAssets.ResourceLocators
 {
     /// <summary>
-    /// Interface used by the Addressables system to find the locations of a given key.
+    /// Interface used by the Addressables system to find the locations of a given key.  An implementation of this interface must transform a key into an <see cref="IResourceLocation"/>.
+    /// The content catalog is the primary resource locator as it contains a mapping of keys to locations.  Custom locators could pull their location data from an online source.
     /// </summary>
     public interface IResourceLocator
     {

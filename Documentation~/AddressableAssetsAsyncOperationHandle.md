@@ -5,7 +5,7 @@ uid: addressables-async-operation-handling
 
 Many tasks in the Addressables need to load or download information before they can return a result. To avoid blocking program execution, Addressables implements such tasks as asynchronous operations.
 
-In contrast to a [synchronous operation](SynchronousAddressables.md), which doesn’t return control until the result is available, an asynchronous operation returns control to the calling method almost immediately. However, the results might not be available until some time in the future. 
+In contrast to a [synchronous operation](SynchronousAddressables.md), which doesn’t return control until the result is available, an asynchronous operation returns control to the calling method almost immediately. However, the results might not be available until some time in the future.
 
 When you call a method, such as [`LoadAssetAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadAssetAsync*), it doesn't return the loaded assets directly. Instead, it returns an [`AsyncOperationHandle`](xref:UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle) object, which you can use to access the loaded assets when they become available.
 
@@ -20,7 +20,7 @@ You can use the following techniques to wait for the results of an asynchronous 
 
 ## Release AsyncOperationHandle instances
 
-Methods like [`LoadAssetsAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadAssetsAsync*) return [`AsyncOperationHandle`](xref:UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle) instances that give the results of the operation and a way to release both the results and the operation object itself. 
+Methods like [`LoadAssetsAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadAssetsAsync*) return [`AsyncOperationHandle`](xref:UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle) instances that give the results of the operation and a way to release both the results and the operation object itself.
 
 You must keep the handle object for as long as you want to use the results. Depending on the situation, that might be one frame, until the end of a level, or even the lifetime of the application. Use the [`Addressables.Release`](xref:UnityEngine.AddressableAssets.Addressables.Release*) method to release operation handles and any associated Addressable assets.
 
@@ -32,7 +32,7 @@ If an operation is unsuccessful, you should still release the operation handle. 
 
 ## Coroutine and IEnumerator operation handling
 
-[`AsyncOperationHandle`](xref:UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle) implements the [`IEnumerator`](xref:System.Collections.IEnumerator) interface and continues iteration until the operation is complete. 
+[`AsyncOperationHandle`](xref:UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle) implements the [`IEnumerator`](xref:System.Collections.IEnumerator) interface and continues iteration until the operation is complete.
 
 In a coroutine, you can yield the operation handle to wait for the next iteration. When complete, the execution flow continues to the following statements. You can implement the [MonoBehaviour `Start`](https://docs.unity3d.com/ScriptReference/MonoBehaviour.Start.html) method as a coroutine, which is a good way to have a GameObject load and instantiate the assets it needs.
 
@@ -46,7 +46,7 @@ Refer to the Unity User Manual documentation on [Coroutines](xref:Coroutines) fo
 
 ### Group operations in a coroutine
 
-To perform several operations before moving on to the next step in your game logic, such as to load prefabs and other assets before you start a level, you can combine them with a single call to the [`Addressables.LoadAssetsAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadAssetsAsync*) method, if all the operations load assets. 
+To perform several operations before moving on to the next step in your game logic, such as to load prefabs and other assets before you start a level, you can combine them with a single call to the [`Addressables.LoadAssetsAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadAssetsAsync*) method, if all the operations load assets.
 
 The `AsyncOperationHandle` for this method works the same as [`LoadAssetAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadAssetAsync*). You can yield the handle in a coroutine to wait until all the assets in the operation load. You can also pass a callback method to `LoadAssetsAsync` and the operation calls that method when it finishes loading a specific asset. Refer to [Loading multiple assets](load-assets.md#load-multiple-assets) for an example.
 

@@ -6,37 +6,87 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
-
+    /// <summary>
+    /// UI item used to display assets in the Addressables Build Report
+    /// </summary>
     public class AssetsViewBuildReportItem : IAddressablesBuildReportItem
     {
+        /// <summary>
+        /// The name of the asset
+        /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// The name of the AssetBundle where the asset is stored
+        /// </summary>
         public string BundleName { get; set; }
 
+        /// <summary>
+        /// The Addressable Group the asset belonged to
+        /// </summary>
         public string GroupName { get; set; }
 
+        /// <summary>
+        /// The total size of the asset and its dependencies
+        /// </summary>
         public ulong FileSizePlusRefs { get; set; }
 
+        /// <summary>
+        /// The size of the uncompressed asset
+        /// </summary>
         public ulong FileSizeUncompressed { get; set; }
 
+        /// <summary>
+        /// The file size of the AssetBundle where the asset is stored
+        /// </summary>
         public ulong BundleSize { get; set; }
 
+        /// <summary>
+        /// The ids of assets this asset references
+        /// </summary>
         public int RefsTo { get; set; }
 
+        /// <summary>
+        /// The ids that reference this asset
+        /// </summary>
         public int RefsBy { get; set; }
 
+        /// <summary>
+        /// Data store for Assets explicitly defined in an AssetBundle
+        /// </summary>
         public BuildLayout.ExplicitAsset ExplicitAsset { get; set; }
 
+        /// <summary>
+        /// Data store for implicit Asset references
+        /// </summary>
         public BuildLayout.DataFromOtherAsset DataFromOtherAsset { get; set; }
 
+        /// <summary>
+        /// Data store for the AssetBundle the asset is stored in
+        /// </summary>
         public BuildLayout.Bundle Bundle { get; set; }
 
+        /// <summary>
+        /// If this asset is an implicit dependecy, this is the list of all the AssetBundles where the asset was duplicated
+        /// </summary>
         public List<BuildLayout.Bundle> Bundles { get; set; }
 
+        /// <summary>
+        /// The total size with dependencies
+        /// </summary>
         public ulong SizeWDependencies => 9999;
 
+        /// <summary>
+        /// Used to build the GUI for the asset data
+        /// </summary>
+        /// <param name="rootVisualElement">The visual element container</param>
         public virtual void CreateGUI(VisualElement rootVisualElement) { }
 
+        /// <summary>
+        /// Get specific data for a given column
+        /// </summary>
+        /// <param name="colName">The name of the column to get data for</param>
+        /// <returns>The display string for a GUI element</returns>
         public virtual string GetCellContent(string colName)
         {
             if (colName == BuildReportUtility.AssetsContentViewColAssetName)
@@ -75,6 +125,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return "";
         }
 
+        /// <summary>
+        /// Get sortable content data for a column
+        /// </summary>
+        /// <param name="colName">The name of the column to get data for</param>
+        /// <returns>The display string for a GUI element</returns>
         public string GetSortContent(string colName)
         {
             if (colName == BuildReportUtility.AssetsContentViewColSizePlusRefs)
@@ -87,13 +142,25 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
+    /// <summary>
+    /// The type header for the asset view
+    /// </summary>
     public class AssetsViewTypeHeader : AssetsViewBuildReportItem
     {
+        /// <summary>
+        /// Create a new type header object
+        /// </summary>
+        /// <param name="name">The title name to use</param>
         public AssetsViewTypeHeader(string name)
         {
             Name = name;
         }
 
+        /// <summary>
+        /// Get the content for a given cell
+        /// </summary>
+        /// <param name="colName">The name of the column to get data for</param>
+        /// <returns>The display data for the cell</returns>
         public override string GetCellContent(string colName)
         {
             if (colName == BuildReportUtility.AssetsContentViewColAssetName)
@@ -104,15 +171,25 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             }
         }
 
+        /// <summary>
+        /// Build the GUI for a given asset
+        /// </summary>
+        /// <param name="rootVisualElement">The visual element container</param>
         public override void CreateGUI(VisualElement rootVisualElement)
         {
 
         }
     }
 
-
+    /// <summary>
+    /// Container for the UI data for an AssetBundle
+    /// </summary>
     public class AssetsViewBuildReportBundle : AssetsViewBuildReportItem, IAddressablesBuildReportBundle
     {
+        /// <summary>
+        /// Create a UI element data container for a Bundle
+        /// </summary>
+        /// <param name="bundle">The AssetBundle you're creating data for</param>
         public AssetsViewBuildReportBundle(BuildLayout.Bundle bundle)
         {
             Name = bundle.Name;
@@ -128,8 +205,16 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
+    /// <summary>
+    /// Container for UI element (Unrelated Assets)
+    /// </summary>
     public class AssetsViewBuildReportUnrelatedAssets : AssetsViewBuildReportItem
     {
+        /// <summary>
+        /// Create a UI container for Unrelated Assets
+        /// </summary>
+        /// <param name="assetSize">The file size of the assets</param>
+        /// <param name="assetCount">The number of assets</param>
         public AssetsViewBuildReportUnrelatedAssets(ulong assetSize, int assetCount)
         {
             Name = $"({assetCount} unrelated assets)";
@@ -139,18 +224,35 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
+    /// <summary>
+    /// Container for UI element (Assets)
+    /// </summary>
     public class AssetsViewBuildReportAsset : AssetsViewBuildReportItem, IAddressablesBuildReportAsset
     {
+        /// <summary>
+        /// For a given asset, the assets in the same AssetBundle it references
+        /// </summary>
         public List<BuildLayout.ExplicitAsset> InternallyReferencedAssets { get; }
 
+        /// <summary>
+        /// For a given asset, the assets in different AssetBundles it references
+        /// </summary>
         public List<BuildLayout.ExplicitAsset> ExternallyReferencedAssets { get; }
 
+        /// <summary>
+        /// Asset data from implicit (non-Addressable) dependencies
+        /// </summary>
         public List<BuildLayout.DataFromOtherAsset> ImplicitDependencies { get; }
 
-
+        /// <summary>
+        /// Asset data for explicit (Addressable) dependencies
+        /// </summary>
         List<BuildLayout.ExplicitAsset> ReferencingAssets { get; }
 
-
+        /// <summary>
+        /// Create the UI container for an Addressable asset
+        /// </summary>
+        /// <param name="asset">The Addressable asset</param>
         public AssetsViewBuildReportAsset(BuildLayout.ExplicitAsset asset)
         {
             ExplicitAsset = asset;
@@ -177,6 +279,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             RefsBy = asset.ReferencingAssets != null ? asset.ReferencingAssets.Count : -1;
         }
 
+        /// <summary>
+        /// Create a UI container for a non-Addressable asset
+        /// </summary>
+        /// <param name="asset">The non-Addressable asset</param>
         public AssetsViewBuildReportAsset(BuildLayout.DataFromOtherAsset asset)
         {
             DataFromOtherAsset = asset;

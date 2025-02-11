@@ -5,7 +5,7 @@ For this examples, the build and load paths used by default are [UnityEngine.Add
 
 Custom play mode scripts inherit from BuildScriptBase.  There are several overridable methods, such as ClearCachedData, IsDataBuilt, and CanBuildData<T>.  However, the most noteable method to override is BuildDataImplementation<TResult>.  This is the method that is used to setup or build content.
 
-The CanBuildData<T> determines if the customs script shows up in the Build/New Build/ menu or the Play Mode Scripts menu.  If the data type being built is AddressablesPlayModeBuildResult, the script shows up in the Play Mode Scripts menu.  If the type is AddressablesPlayerBuildResult, the script shows up in the Build/New Build/ menu.  
+The CanBuildData<T> determines if the customs script shows up in the Build/New Build/ menu or the Play Mode Scripts menu.  If the data type being built is AddressablesPlayModeBuildResult, the script shows up in the Play Mode Scripts menu.  If the type is AddressablesPlayerBuildResult, the script shows up in the Build/New Build/ menu.
 
 The ScriptableObject of the class has already been created, but the Create menu can be used to make another ScriptableObject if you desire.  For this CustomPlayModeScript the create menu path is Addressables/Content Builders/Use CustomPlayMode Script.  By default, this creates a CustomPlayMode.asset ScriptableObject.  The same goes for the CustomBuildScript.
 

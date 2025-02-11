@@ -1,26 +1,30 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Numerics;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.TestTools;
 using File = System.IO.File;
 using Path = System.IO.Path;
 
-/**
- * This test exists because we frequently suggest that our users extend or copy and paste the builder script
- * files to customize or make their own. We didn't check this on every release and so internal API usage
- * had crept in and made it impossible to do this without copying the entire package. This test verifies
- * that you can copy the script into your own namespace and it will compile.
- */
+/// <summary>
+/// This test exists because we frequently suggest that our users extend or copy and paste the builder script
+/// files to customize or make their own. We didn't check this on every release and so internal API usage
+/// had crept in and made it impossible to do this without copying the entire package. This test verifies
+/// that you can copy the script into your own namespace and it will compile.
+/// </summary>
 public class VerifyPublicBuildScripts
 {
     private string m_PackagePath;
     private string m_SamplePath;
-    private string m_FolderPath = $"Assets{Path.DirectorySeparatorChar}ScriptFolder";
+    private string m_FolderPath = $"Assets{Path.DirectorySeparatorChar}ScriptFolder/Editor";
 
-
+    /// <summary>
+    /// Test setup for validating build scripts
+    /// </summary>
     [SetUp]
     public void SetUp()
     {
@@ -29,6 +33,8 @@ public class VerifyPublicBuildScripts
             AssetDatabase.DeleteAsset(m_FolderPath);
         }
         AssetDatabase.CreateFolder("Assets", "ScriptFolder");
+        AssetDatabase.CreateFolder("Assets/ScriptFolder", "Editor");
+
         m_PackagePath = "Packages/com.unity.addressables";
         m_SamplePath = "Samples";
         if (Directory.Exists(String.Join($"{Path.DirectorySeparatorChar}", new [] {m_PackagePath, "Samples~"})))
@@ -44,6 +50,10 @@ public class VerifyPublicBuildScripts
         var testFilePath = String.Join($"{Path.DirectorySeparatorChar}", new[] { m_FolderPath, Path.GetFileName(loadScenePath) });
         File.Copy(fullPath, testFilePath);
     }
+
+    /// <summary>
+    /// Test tear down
+    /// </summary>
     [TearDown]
     public void TearDown()
     {
@@ -62,6 +72,11 @@ public class VerifyPublicBuildScripts
         "Samples/CustomBuildAndPlaymodeScripts/Editor/CustomPlayModeScript.cs",
     };
 
+    /// <summary>
+    /// Verify that the public build scripts aren't using internal APIs directly
+    /// </summary>
+    /// <param name="buildScriptPath">The filepath of the build script</param>
+    /// <returns>IEnumerator for async test</returns>
     [UnityTest]
     public IEnumerator Verify_BuildScript_HasNoInternalApis([ValueSource(nameof(BuildScripts))] string buildScriptPath)
     {

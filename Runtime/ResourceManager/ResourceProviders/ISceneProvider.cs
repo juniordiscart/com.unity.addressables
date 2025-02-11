@@ -8,9 +8,20 @@ using UnityEngine.SceneManagement;
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
 {
+    /// <summary>
+    /// How to release the Addressable scene
+    /// </summary>
     public enum SceneReleaseMode
     {
+        /// <summary>
+        /// Release the scene handle when the scene is unloaded
+        /// </summary>
         ReleaseSceneWhenSceneUnloaded = 0,
+
+        /// <summary>
+        /// Do not release the scene handle on scene unload. Requires manual call to Release in order to ensure
+        /// AssetBundle is unloaded properly
+        /// </summary>
         OnlyReleaseSceneOnHandleRelease,
     }
 

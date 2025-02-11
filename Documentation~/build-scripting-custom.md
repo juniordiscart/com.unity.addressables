@@ -2,7 +2,7 @@
 
 To configure a new custom script, add it to the [Build and Play Mode Scripts](xref:addressables-asset-settings) list.
 
-Custom scripts extend the [`BuildScriptBase`](xref:UnityEditor.AddressableAssets.Build.DataBuilders.BuildScriptBase) class or implement the [`IDataBuilder`](xref:UnityEditor.AddressableAssets.Build.IDataBuilder) interface. There are several methods that you can override, such as `ClearCachedData` and `CanBuildData<T>`. If extending the `BuildScriptBase` class, the most notable method to override is `BuildDataImplementation<TResult>`. This is the method that's used to setup or build content. 
+Custom scripts extend the [`BuildScriptBase`](xref:UnityEditor.AddressableAssets.Build.DataBuilders.BuildScriptBase) class or implement the [`IDataBuilder`](xref:UnityEditor.AddressableAssets.Build.IDataBuilder) interface. There are several methods that you can override, such as `ClearCachedData` and `CanBuildData<T>`. If extending the `BuildScriptBase` class, the most notable method to override is `BuildDataImplementation<TResult>`. This is the method that's used to setup or build content.
 
 A custom script is either a Build Script or a Play Mode Script. This is determined by how the `CanBuildData<T>` method is implemented. Build scripts can only build data of the type `AddressablesPlayerBuildResult`, so the method is implemented in this way:
 
@@ -20,7 +20,7 @@ See the [Custom Build and Play Mode Scripts Sample](SamplesOverview.md) for an e
 
 ## Extend the default build script
 
-If you want to use the same basic build as the default build script [`BuildScriptPackedMode`](xref:UnityEditor.AddressableAssets.Build.DataBuilders.BuildScriptPackedMode), but want to treat specific groups or types of assets differently, you can extend and override the default build script. If the group or asset the build script is processing is one that you want to treat differently, you can run your own code. Otherwise, you can call the base class version of the function to use the default algorithm. 
+If you want to use the same basic build as the default build script [`BuildScriptPackedMode`](xref:UnityEditor.AddressableAssets.Build.DataBuilders.BuildScriptPackedMode), but want to treat specific groups or types of assets differently, you can extend and override the default build script. If the group or asset the build script is processing is one that you want to treat differently, you can run your own code. Otherwise, you can call the base class version of the function to use the default algorithm.
 
 Refer to the [Addressable variants project](https://github.com/Unity-Technologies/Addressables-Sample/tree/master/Advanced/Addressable%20Variants) for an example.
 

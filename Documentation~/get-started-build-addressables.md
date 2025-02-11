@@ -15,13 +15,13 @@ To start a content build from the Addressables Groups window:
 1. Open the Addressables Groups window (menu: __Windows > Asset Management > Addressables > Groups__).
 2. Choose an option from the __Build__ menu:
     * __New Build__: perform a build with a specific build script. Use the __Default Build Script__ if you don't have your own custom one.
-    * __Update a Previous Build__: builds an update based on an existing build. To update a previous build, the Addressables system needs the `addressables_content_state.bin` file produced by the earlier build. You can find this file in the `Assets/AddressableAssetsData/Platform` folder of your Unity Project. Refer to [Content Updates](xref:addressables-content-update-builds) for more information about updating content. 
-    * __Clean Build__: deletes cached build files. 
+    * __Update a Previous Build__: builds an update based on an existing build. To update a previous build, the Addressables system needs the `addressables_content_state.bin` file produced by the earlier build. You can find this file in the `Assets/AddressableAssetsData/Platform` folder of your Unity Project. Refer to [Content Updates](xref:addressables-content-update-builds) for more information about updating content.
+    * __Clean Build__: deletes cached build files.
 
 By default, the build creates files in the locations defined in your [Profile](xref:addressables-profiles) settings for the __LocalBuildPath__ and __RemoteBuildPath__ variables. The files that Unity uses for your player builds include AssetBundles (.bundle), catalog JSON and hash files, and settings files.
 
 > [!WARNING]
-> Don't change the local build or load paths from their default values. If you do, you must copy the local build artifacts from your custom build location to the project's [StreamingAssets](xref:StreamingAssets) folder before making a Player build. Altering these paths also precludes building your Addressables as part of the Player build. 
+> Don't change the local build or load paths from their default values. If you do, you must copy the local build artifacts from your custom build location to the project's [StreamingAssets](xref:StreamingAssets) folder before making a Player build. Altering these paths also precludes building your Addressables as part of the Player build.
 
 
 If you have groups that you build to the __RemoteBuildPath__, you must upload those AssetBundles, catalog, and hash files to your hosting server. If your Project doesn't use remote content, set all groups to use the local build and load paths.

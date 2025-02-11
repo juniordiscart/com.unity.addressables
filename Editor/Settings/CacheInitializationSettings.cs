@@ -7,7 +7,10 @@ using UnityEngine.Serialization;
 namespace UnityEditor.AddressableAssets.Settings
 {
     /// <summary>
-    /// Asset container for CacheInitializationData.
+    /// Asset container for <see cref="CacheInitializationData"/>.
+    /// A user can create one of these assets using the context menu option at Create->Addressables->Initialization->Cache Initialization Settings.
+    /// This object implements the <see cref="IObjectInitializationDataProvider"/> interface to create initialization data for the Addressables system.
+    /// In the Addressables Settings window, there is a list of Initialization Objects that this asset must be added to in order to be included in the build.
     /// </summary>
     [CreateAssetMenu(fileName = "CacheInitializationSettings.asset", menuName = "Addressables/Initialization/Cache Initialization Settings")]
     public class CacheInitializationSettings : ScriptableObject, IObjectInitializationDataProvider

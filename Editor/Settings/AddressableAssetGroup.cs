@@ -613,7 +613,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Get an entry via the asset guid.
         /// </summary>
         /// <param name="guid">The asset guid.</param>
-        /// <returns></returns>
+        /// <returns>The AddressableAssetEntry</returns>
         public virtual AddressableAssetEntry GetAssetEntry(string guid)
         {
             return GetAssetEntry(guid, false);
@@ -624,7 +624,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <param name="guid">The asset guid.</param>
         /// <param name="includeImplicit">Whether or not to include implicit asset entries in the search.</param>
-        /// <returns></returns>
+        /// <returns>The AddressableAssetEntry</returns>
         public virtual AddressableAssetEntry GetAssetEntry(string guid, bool includeImplicit)
         {
             if (m_EntryMap.TryGetValue(guid, out var entry))
@@ -695,7 +695,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Check to see if a group is the Default Group.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if it's the default group, false otherwise.</returns>
         public bool IsDefaultGroup()
         {
             return Guid == m_Settings.DefaultGroup.Guid;
@@ -704,7 +704,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Check if a group has the appropriate schemas and attributes that the Default Group requires.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if the Group isn't read only, false otherwise.</returns>
         public bool CanBeSetAsDefault()
         {
             return !m_ReadOnly;

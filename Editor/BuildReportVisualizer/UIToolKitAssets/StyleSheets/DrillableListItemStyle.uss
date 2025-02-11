@@ -1,6 +1,6 @@
 .DrillableListViewItem {
     flex-direction: row;
-	padding-top: 4px;
+     padding-top: 4px;
 }
 
 .TreeViewImplicitAsset{
@@ -33,16 +33,16 @@
 }
 
 .DrillableListViewItemText {
-	-unity-text-align: middle-left;
-	text-overflow: ellipsis;
-	overflow: hidden;
-	max-width: 64%;
-	width: 64%;
+     -unity-text-align: middle-left;
+     text-overflow: ellipsis;
+     overflow: hidden;
+     max-width: 64%;
+     width: 64%;
 }
 
 .DrillableListViewItemButton {
-	align-items: flex-end;
-	height: 16px;
+     align-items: flex-end;
+     height: 16px;
     width: 16px;
     background-color: rgba(0,0,0,0);
     border-color: rgba(0,0,0,0);
@@ -50,7 +50,7 @@
 
 .TreeViewItemIcon.NoIcon{
     background-image: resource('Packages/com.unity.addressables/Editor/BuildReportVisualizer/BuildReport Resources/Icons/FileNoIcon.png');
-	height: 16px;
+     height: 16px;
     width: 16px;
     flex-shrink: 0;
     margin-right: 4px;

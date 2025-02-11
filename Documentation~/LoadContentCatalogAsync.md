@@ -4,7 +4,7 @@ uid: addressables-api-load-content-catalog-async
 
 # Manage catalogs at runtime
 
-By default, the Addressables system manages the [catalog](build-content-catalogs.md) automatically at runtime. If you built your application with a remote catalog, the Addressables system automatically checks for a new catalog, and downloads the new version and loads it into memory. 
+By default, the Addressables system manages the [catalog](build-content-catalogs.md) automatically at runtime. If you built your application with a remote catalog, the Addressables system automatically checks for a new catalog, and downloads the new version and loads it into memory.
 
 You can load additional catalogs at runtime. For example, you can load a catalog produced by a separate, compatible project to load Addressable assets built by that project. Refer to [Loading content from multiple projects](xref:addressables-multiple-projects) for more information.
 
@@ -22,7 +22,7 @@ The hash file needs to be in the same location and have the same name as the cat
 
 Once you load a catalog, you can't unload it. However, you can update a loaded catalog. You must release the operation handle for the operation that loaded the catalog before updating a catalog. Refer to [Updating catalogs](#update-catalogs) for more information.
 
-In general, there is no reason to hold on to the operation handle after loading a catalog. You can release it automatically by setting the `autoReleaseHandle` parameter to true when loading a catalog, as shown in the following example: 
+In general, there is no reason to hold on to the operation handle after loading a catalog. You can release it automatically by setting the `autoReleaseHandle` parameter to true when loading a catalog, as shown in the following example:
 
 [!code-cs[sample](../Tests/Editor/DocExampleCode/MiscellaneousTopics.cs#doc_LoadAdditionalCatalog)]
 
@@ -35,7 +35,7 @@ If the catalog hash file is available, Addressables checks the hash when loading
 
 When you call the `UpdateCatalog` method, Unity blocks all other Addressable requests until the operation is complete. You can release the operation handle that `UpdateCatalog` returns immediately after the operation finishes, or set the `autoRelease` parameter to `true`.
 
-If you call `UpdateCatalog` without providing a list of catalogs, Addressables checks all the loaded catalogs for updates. 
+If you call `UpdateCatalog` without providing a list of catalogs, Addressables checks all the loaded catalogs for updates.
 
 [!code-cs[sample](../Tests/Editor/DocExampleCode/MiscellaneousTopics.cs#doc_UpdateCatalog)]
 

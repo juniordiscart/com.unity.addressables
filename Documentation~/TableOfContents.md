@@ -22,7 +22,7 @@
     * [Addressables Groups window reference](GroupsWindow.md)
     * [Group settings and schemas overview](GroupSchemas.md)
       * [Content Packing & Loading schema reference](ContentPackingAndLoadingSchema.md)
-      * [Content Update Restriction schema reference](UpdateRestrictionSchema.md) 
+      * [Content Update Restriction schema reference](UpdateRestrictionSchema.md)
   * [Profiles overview](AddressableAssetsProfiles.md)
     * [Profiles introduction](profiles-introduction.md)
     * [Create a profile](profiles-create.md)

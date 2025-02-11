@@ -1,7 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.IO;
 using NUnit.Framework;
 #if (UNITY_EDITOR && ENABLE_CCD)
 using Unity.Services.Ccd.Management.Models;
@@ -9,16 +6,8 @@ using Unity.Services.Ccd.Management.Models;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 #endif
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Initialization;
-using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.AddressableAssets.ResourceProviders;
-using UnityEngine.ResourceManagement.ResourceLocations;
-using UnityEngine.ResourceManagement.ResourceProviders;
-using UnityEngine.ResourceManagement.Util;
 using UnityEngine.TestTools;
 
 #if ENABLE_CCD
@@ -90,13 +79,31 @@ namespace AddressableTests.OptionalPackages.Ccd
                 projectGenesisId = CloudProjectSettings.projectId,
                 projectId = CloudProjectSettings.projectId
             });
+
+            ProfileDataSourceSettings.GetSettings().profileGroupTypes.Add(CreateAutomaticGroupType());
             ProfileDataSourceSettings.GetSettings().profileGroupTypes.Add(CreateGroupType(m_devEnvironmentId, m_devEnvironmentName, m_devBucketId, "false", m_myTestBadge));
             ProfileDataSourceSettings.GetSettings().profileGroupTypes.Add(CreateGroupType(m_prodEnvironmentId, m_prodEnvironmentName, m_prodBucketId, "false", m_myTestBadge));
         }
 
+        // this should match ProfileDataSourceSettings::CreateCcdManagerGroupType, the automatic needs to
+        // exist for the manager data to be filled in from the child profiles
+        private ProfileGroupType CreateAutomaticGroupType()
+        {
+            string automaticBuildPath = $"{AddressableAssetSettings.kCCDBuildDataPath}/ManagedEnvironment/ManagedBucket/ManagedBadge";
+            string automaticLoadPath =
+                $"https://{CloudProjectSettings.projectId}{ProfileDataSourceSettings.m_CcdClientBasePath}/client_api/v1/environments/{{CcdManager.EnvironmentName}}/buckets/{{CcdManager.BucketId}}/release_by_badge/{{CcdManager.Badge}}/entry_by_path/content/?path=";
+            var defaultCcdManager = new ProfileGroupType(AddressableAssetSettings.CcdManagerGroupTypePrefix);
+            defaultCcdManager.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kBuildPath, automaticBuildPath));
+            defaultCcdManager.AddVariable(new ProfileGroupType.GroupTypeVariable(AddressableAssetSettings.kLoadPath, automaticLoadPath));
+            defaultCcdManager.AddVariable(new ProfileGroupType.GroupTypeVariable("EnvironmentName", "production"));
+            return defaultCcdManager;
+        }
+
+        // This should exactly match ProfileDataSourceSettings::AddGroupTypeForRemoteBucket
         private ProfileGroupType CreateGroupType(string envId, string envName, string bucketId, string isPromotionOnly, string badgeName)
         {
             var bucketName = EditorUserBuildSettings.activeBuildTarget.ToString();
+
 
             var groupType =
                 new ProfileGroupType($"CCD{ProfileGroupType.k_PrefixSeparator}{CloudProjectSettings.projectId}{ProfileGroupType.k_PrefixSeparator}{envId}{ProfileGroupType.k_PrefixSeparator}{bucketId}{ProfileGroupType.k_PrefixSeparator}{badgeName}");
@@ -131,7 +138,9 @@ namespace AddressableTests.OptionalPackages.Ccd
         public void TearDown()
         {
             ResetCcdManager();
+#if UNITY_EDITOR
             ProfileDataSourceSettings.GetSettings().profileGroupTypes.Clear();
+#endif
         }
 
         protected override IEnumerator InitAddressables()

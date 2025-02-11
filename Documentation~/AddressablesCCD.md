@@ -20,14 +20,14 @@ You can set the remote `BuildPath` to a convenient value. If you have multiple p
 
 Set the remote `LoadPath` to one of the following two paths:
 
-* If you publish content using a badge: 
+* If you publish content using a badge:
 
 ```
   https://(ProjectID).client-api.unity3dusercontent.com/client_api/v1/environments/(EnvironmentName)/buckets/(BucketID)/release_by_badge/(BadgeName)/entry_by_path/content/?path=
 
 ```
 
-* If you publish using a release: 
+* If you publish using a release:
 
 ```
   https://(ProjectID).client-api.unity3dusercontent.com/client_api/v1/environments/(EnvironmentName)/buckets/(BucketID)/releases/(ReleaseID)/entry_by_path/content/?path=
@@ -79,7 +79,7 @@ Refer to [Groups](Groups.md) for information about how to modify groups.
 To generate and upload Addressable content to your CCD project:
 
 1. Set the profile you have set up for CCD as the active profile.
-2. Build your Addressables content. 
+2. Build your Addressables content.
    * If you are making a full content build, see [Building your Addressable content](builds-full-build.md).
    * If your are updating an existing build with modified remote content, see [Building for content updates](content-update-build-create.md).
 3. Upload the files created at the remote build path using the [CCD dashboard](https://docs.unity.com/ccd/Content/UnityCCDDashboard.htm) or [command-line interface](https://docs.unity.com/ccd/Content/UnityCCDCLI.htm).

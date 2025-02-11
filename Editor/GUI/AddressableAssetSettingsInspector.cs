@@ -403,8 +403,20 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (assetLoadMode != m_AasTarget.AssetLoadMode)
                     m_QueuedChanges.Add(() => m_AasTarget.AssetLoadMode = assetLoadMode);
 
+                EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("m_BundledAssetProviderType"), m_AssetProvider, true);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    m_QueuedChanges.Add(() => m_AasTarget.UpdateBundledAssetProviderType());
+                }
+
+                EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("m_AssetBundleProviderType"), m_BundleProvider, true);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    m_QueuedChanges.Add(() => m_AasTarget.UpdateAssetBundleProviderType());
+                }
+
                 GUILayout.Space(postBlockContentSpace);
             }
 

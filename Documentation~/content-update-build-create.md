@@ -21,9 +21,9 @@ Additionally, if you delete the local content bundles created by your Addressabl
 
 ## Check for Content Update Restrictions tool
 
-The __Check for Content Update Restrictions__ tool prepares your group organization for a content update build. The tool examines the `addressables_content_state.bin` file and group settings. 
+The __Check for Content Update Restrictions__ tool prepares your group organization for a content update build. The tool examines the `addressables_content_state.bin` file and group settings.
 
-If a group's __Update Restrictions__ option was set to __Prevent Updates__ in the previous build, the tool gives you the option to move any changed assets to a new remote group. Apply the suggested changes, or revert changes to these assets, unless you have a specific reason not to.  
+If a group's __Update Restrictions__ option was set to __Prevent Updates__ in the previous build, the tool gives you the option to move any changed assets to a new remote group. Apply the suggested changes, or revert changes to these assets, unless you have a specific reason not to.
 
 When you create the update build, the new catalog maps the changed assets to their new, remote AssetBundles, while still mapping the unchanged assets to their original AssetBundles. Checking for content update restrictions doesn't check groups with __Prevent Updates__ disabled.
 

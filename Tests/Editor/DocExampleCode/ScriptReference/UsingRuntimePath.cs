@@ -1,15 +1,15 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+     using System;
     using UnityEngine;
-	
-	internal class UsingRuntimePath
+
+     internal class UsingRuntimePath
     {
-		#region SAMPLE
-		public void UsingRuntimePathSample()
-		{
-			
-		}
-		#endregion
-	}
+          #region SAMPLE
+          public void UsingRuntimePathSample()
+          {
+
+          }
+          #endregion
+     }
 }

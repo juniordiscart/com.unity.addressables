@@ -4,12 +4,18 @@ using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 {
+    /// <summary>
+    /// Class used for sorting Addressables Groups
+    /// </summary>
     public class AddressableAssetGroupSortSettings : ScriptableObject
     {
         const string DEFAULT_PATH = "Assets/AddressableAssetsData";
         const string DEFAULT_NAME = "AddressableAssetGroupSortSettings";
         static string DEFAULT_SETTING_PATH = $"{DEFAULT_PATH}/{DEFAULT_NAME}.asset";
-        
+
+        /// <summary>
+        /// The sorted order of the Addressables Groups
+        /// </summary>
         [SerializeField]
         public string[] sortOrder;
 
@@ -42,12 +48,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 
             return settings;
         }
-        
+
         /// <summary>
         /// Gets the asset group sort settings for the project
         /// </summary>
-        /// <param name="path">Desired path to put settings</param>
-        /// <param name="settingName">Desired name for settings</param>
+        /// <param name="settings">The active AddressableAssetSettings object.</param>
         /// <returns>scriptable object with sort settings</returns>
         public static AddressableAssetGroupSortSettings GetSettings(AddressableAssetSettings settings)
         {

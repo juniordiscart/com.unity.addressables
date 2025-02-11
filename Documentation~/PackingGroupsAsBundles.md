@@ -6,8 +6,8 @@ uid: addressables-packing-groups
 
 You have a few options when choosing how the assets in a group are packed into AssetBundles:
 
-* You can pack all Addressables assigned to a group together in a single bundle. This corresponds to the **Pack Together** bundle mode. 
-* You can pack each Addressable assigned to a group separately in its own bundle. This corresponds to the **Pack Separately** bundle mode. 
+* You can pack all Addressables assigned to a group together in a single bundle. This corresponds to the **Pack Together** bundle mode.
+* You can pack each Addressable assigned to a group separately in its own bundle. This corresponds to the **Pack Separately** bundle mode.
 * You can pack all Addressables sharing the same set of labels into their own bundles. This corresponds to the **Pack Together By Label** bundle mode.
 
 For more information on bundle modes, refer to [Advanced Group Settings](xref:addressables-content-packing-and-loading-schema).
@@ -16,7 +16,7 @@ Scene assets are always packed separately from other Addressable assets in the g
 
 Assets in folders that are marked as Addressable and compound assets like sprite sheets are treated specially when you choose to pack each Addressable separately:
 
-* All the assets in a folder that are marked as Addressable are packed together in the same folder (except for assets in the folder that are individually marked as Addressable themselves). 
+* All the assets in a folder that are marked as Addressable are packed together in the same folder (except for assets in the folder that are individually marked as Addressable themselves).
 * Sprites in an Addressable Sprite Atlas are included in the same bundle.
 
 See [Content Packing & Loading settings](xref:addressables-content-packing-and-loading-schema) for more information.
@@ -38,7 +38,7 @@ Dangers of too many bundles:
 Dangers of too few bundles:
 
 * The UnityWebRequest (which Unity uses to download) does not resume failed downloads. So if a large bundle is downloading and your user loses connection, the download is started over once they regain connection.
-* Items can be loaded individually from bundles, but cannot be unloaded individually. For example, if you have 10 materials in a bundle, load all 10, then tell Addressables to release 9 of them, all 10 will likely be in memory. See [Memory management](xref:addressables-memory-management) for more information. 
+* Items can be loaded individually from bundles, but cannot be unloaded individually. For example, if you have 10 materials in a bundle, load all 10, then tell Addressables to release 9 of them, all 10 will likely be in memory. See [Memory management](xref:addressables-memory-management) for more information.
 
 ## Scale implications as your project grows larger
 

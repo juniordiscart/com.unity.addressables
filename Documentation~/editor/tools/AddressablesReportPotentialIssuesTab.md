@@ -1,4 +1,4 @@
-﻿# The Potential Issues View
+# The Potential Issues View
 
 ![](../../images/BuildReportPotentialIssuesView.png)
 

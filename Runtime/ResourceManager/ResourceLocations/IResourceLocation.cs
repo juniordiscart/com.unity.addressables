@@ -66,13 +66,22 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
     /// </summary>
     public class ResourceLocationComparer : IEqualityComparer<IResourceLocation>
     {
-        /// <inheritdoc >
+        /// <summary>
+        /// Check if two Resource locations are equal
+        /// </summary>
+        /// <param name="x">First location to compare</param>
+        /// <param name="y">Second location to compare</param>
+        /// <returns>True if they're equal, false otherwise</returns>
         public bool Equals(IResourceLocation x, IResourceLocation y)
         {
             return GetHashCode(x) == GetHashCode(y);
         }
 
-        /// <inheritdoc >
+        /// <summary>
+        /// Calculates the hash code for a Resource Location
+        /// </summary>
+        /// <param name="obj">The resource location to compute</param>
+        /// <returns>A hash code of the data in a Resource Location</returns>
         public int GetHashCode(IResourceLocation obj)
         {
             return obj.InternalId.GetHashCode() * 31 + obj.ResourceType.GetHashCode();

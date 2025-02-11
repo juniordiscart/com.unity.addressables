@@ -30,7 +30,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         static GUIStyle s_AssetLabelStyle = null;
         static GUIStyle s_AssetLabelIconStyle = null;
-        static GUIStyle s_AssetLabelXButtonStyle = null; 
+        static GUIStyle s_AssetLabelXButtonStyle = null;
 
         static AddressableAssetInspectorGUI()
         {
@@ -561,7 +561,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
             GroupsPopupUtility.DrawGroupsDropdown(s_GroupsDropdownLabelContent, displayGroup, enabledDropdown, mixedValueDropdown, false, AddressableAssetUtility.MoveEntriesToGroup, entries);
         }
-        
+
 
         internal class TargetInfo
         {

@@ -879,7 +879,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <param name="profileId">The profile id.</param>
         /// <param name="varId">The property id.</param>
-        /// <returns></returns>
+        /// <returns>The value of the variable for a given profile.</returns>
         public string GetValueById(string profileId, string varId)
         {
             BuildProfile profile = GetProfile(profileId);
@@ -891,7 +891,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <param name="profileId">The profile id.</param>
         /// <param name="varName">The variable name.</param>
-        /// <returns></returns>
+        /// <returns>The value of the variable for a given profile.</returns>
         public string GetValueByName(string profileId, string varName)
         {
             return GetValueById(profileId, GetVariableId(varName));

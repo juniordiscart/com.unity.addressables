@@ -281,29 +281,72 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         }
     }
 
-    // Nested interface that can be either a bundle or asset.
+    /// <summary>
+    /// Nested interface that can be either a bundle or asset.
+    /// </summary>
     public interface IAddressablesBuildReportItem
     {
+        /// <summary>
+        /// The name of the build report item
+        /// </summary>
         public string Name { get; }
 
+        /// <summary>
+        /// Create the UI element for a build report item
+        /// </summary>
+        /// <param name="rootVisualElement">The visual element container</param>
         void CreateGUI(VisualElement rootVisualElement);
 
+        /// <summary>
+        /// Get content for a cell given a column name
+        /// </summary>
+        /// <param name="colName">The name of the column</param>
+        /// <returns>The display string for the cell</returns>
         string GetCellContent(string colName);
 
+        /// <summary>
+        /// Get the sortable content
+        /// </summary>
+        /// <param name="colName">The name of the column</param>
+        /// <returns>The display string for the cell</returns>
         string GetSortContent(string colName);
 
     }
 
+    /// <summary>
+    /// Interface for an AssetBundle build report item
+    /// </summary>
     public interface IAddressablesBuildReportBundle
     {
+        /// <summary>
+        /// The AssetBundle data
+        /// </summary>
         public BuildLayout.Bundle Bundle { get; }
     }
 
+    /// <summary>
+    /// Interface for Asset build report item
+    /// </summary>
     public interface IAddressablesBuildReportAsset
     {
+        /// <summary>
+        /// The data to set if the asset is an explicit asset (Addressable)
+        /// </summary>
         public BuildLayout.ExplicitAsset ExplicitAsset { get; }
+
+        /// <summary>
+        /// The data to set if the asset is an implicit asset (non-Addressable, but pulled into an Asset Bundle)
+        /// </summary>
         public BuildLayout.DataFromOtherAsset DataFromOtherAsset { get; }
+
+        /// <summary>
+        /// The data for the AssetBundle the asset belongs to
+        /// </summary>
         public List<BuildLayout.Bundle> Bundles { get; }
+
+        /// <summary>
+        /// The total size of this asset plus its dependencies
+        /// </summary>
         public ulong SizeWDependencies { get; }
     }
 }

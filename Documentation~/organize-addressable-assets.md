@@ -22,7 +22,7 @@ Typical strategies for organizing assets include:
 * **Logical entity**: Group assets belonging to the same logical entity together. For example, UI layout assets, textures, sound effects. Or character models and animations.
 * **Type**: Group assets of the same type together. For example, music files, textures.
 
-Depending on the needs of your project, one of these strategies might make more sense than the others. For example, in a game with many levels, organizing according to concurrent usage might be the most efficient both from a project management and from a runtime memory performance standpoint. 
+Depending on the needs of your project, one of these strategies might make more sense than the others. For example, in a game with many levels, organizing according to concurrent usage might be the most efficient both from a project management and from a runtime memory performance standpoint.
 
 At the same time, you might use different strategies for different types of assets. For example, your UI assets for menu screens might all be grouped together in a level-based game that otherwise groups its level data separately. You might also pack a group that has the assets for a level into bundles that contain a particular asset type.
 

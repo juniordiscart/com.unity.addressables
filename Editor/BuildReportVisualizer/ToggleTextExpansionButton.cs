@@ -2,6 +2,9 @@ using UnityEngine.UIElements;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
+    /// <summary>
+    /// UI tool to toggle expansion in the Build Layout Report
+    /// </summary>
     public class ToggleTextExpansionButton
     {
         internal Button ToggleButton { get; set; }

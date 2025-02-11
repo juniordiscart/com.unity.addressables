@@ -452,9 +452,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
         /// <summary>
         /// Load an asset via its location.  The asset will actually be loaded via the AssetDatabase API.
         /// </summary>
-        /// <typeparam name="TObject"></typeparam>
-        /// <param name="location"></param>
-        /// <returns></returns>
+        /// <typeparam name="TObject">The type of object to load</typeparam>
+        /// <param name="location">The resource location</param>
+        /// <returns>The simulated async operation</returns>
         internal VBAsyncOperation<object> LoadAssetAsync(ProvideHandle provideHandle, IResourceLocation location)
         {
             if (location == null)

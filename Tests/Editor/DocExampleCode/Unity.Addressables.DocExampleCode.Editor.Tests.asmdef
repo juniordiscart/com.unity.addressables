@@ -1,11 +1,12 @@
 {
-    "name": "Unity.Addressables.Editor.Tests.DocExampleCode",
+    "name": "Unity.Addressables.DocExampleCode.Editor.Tests",
+    "rootNamespace": "",
     "references": [
         "Unity.Addressables.Editor",
         "Unity.Addressables",
         "Unity.ResourceManager",
         "Unity.ScriptableBuildPipeline.Editor",
-        "Unity.Addressables.Tests",
+        "UnityUnity.Addressables.Runtime.Tests",
         "Unity.Addressables.Editor.BuildReportVisualizer",
         "UnityEditor.TestRunner",
         "UnityEngine.TestRunner",

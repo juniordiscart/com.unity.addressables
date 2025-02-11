@@ -10,7 +10,7 @@ using UnityEngine.ResourceManagement.Util;
 namespace UnityEditor.AddressableAssets.Build
 {
     /// <summary>
-    /// Makes a new build of Addressables using the BuildScript selectable in the menu
+    /// Makes a new build of Addressables using the BuildScript selectable in the menu.
     /// </summary>
     public class AddressablesBuildMenuNewBuild : AddressableAssetsSettingsGroupEditor.IAddressablesBuildMenu
     {

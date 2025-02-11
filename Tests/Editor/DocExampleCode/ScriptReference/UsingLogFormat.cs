@@ -1,6 +1,6 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+     using System;
     using UnityEngine;
     using UnityEngine.AddressableAssets;
 
@@ -8,10 +8,10 @@ namespace AddressableAssets.DocExampleCode
     {
         #region SAMPLE
         public void UsingLogFormatSample()
-		{
-            
+          {
+
             Addressables.LogFormat("{0:o}[{1}]Downloaded bundle", DateTime.Now, this.GetType().Name);
-            
+
         }
         #endregion
     }

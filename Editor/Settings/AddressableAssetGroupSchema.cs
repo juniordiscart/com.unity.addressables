@@ -167,6 +167,12 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
         }
+        /// <summary>
+        /// Compare two AddressableAssetGroupSchemas to see if they're the same.
+        /// </summary>
+        /// <param name="x">Left hand side</param>
+        /// <param name="y">Right hand side</param>
+        /// <returns>0 if typre equal, 1 or -1 otherwise.</returns>
         public static int Compare(AddressableAssetGroupSchema x, AddressableAssetGroupSchema y)
         {
             if (x == null && y == null)

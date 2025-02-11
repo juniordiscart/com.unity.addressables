@@ -16,7 +16,7 @@ namespace AddressableAssets.DocExampleCode
         }
 
         // Gets called for every error scenario encountered during an operation.
-        // A common use case for this is having InvalidKeyExceptions fail silently when 
+        // A common use case for this is having InvalidKeyExceptions fail silently when
         // a location is missing for a given key.
         void CustomExceptionHandler(AsyncOperationHandle handle, Exception exception)
         {

@@ -1,4 +1,4 @@
-﻿# The Explore Tab
+# The Explore Tab
 
 ![](../../images/BuildReportMainView.png)
 

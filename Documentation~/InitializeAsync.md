@@ -4,7 +4,7 @@ uid: addressables-api-initialize-async
 
 # Addressables initialization
 
-The Addressables system initializes itself at runtime the first time you load an Addressable or make another call to an Addressable API. Call [`Addressables.InitializeAsync`](xref:UnityEngine.AddressableAssets.Addressables.InitializeAsync*) to initialize Addressables earlier. This method does nothing if initialization has already happened. 
+The Addressables system initializes itself at runtime the first time you load an Addressable or make another call to an Addressable API. Call [`Addressables.InitializeAsync`](xref:UnityEngine.AddressableAssets.Addressables.InitializeAsync*) to initialize Addressables earlier. This method does nothing if initialization has already happened.
 
 ## Initialization tasks
 
@@ -26,11 +26,11 @@ Set the following runtime properties before the initialization operation starts:
 
 * [Custom URL transform function](xref:addressables-api-transform-internal-id).
 * [ResourceManager exception handler](xref:UnityEngine.ResourceManagement.ResourceManager.ExceptionHandler).
-* Static properties used for any custom runtime placeholders in  [Profile variables](xref:addressables-profile-variables). 
+* Static properties used for any custom runtime placeholders in  [Profile variables](xref:addressables-profile-variables).
 
 ## Initialization objects
 
-You can attach objects to the Addressable Assets settings and pass them to the initialization process at runtime. For example, you can create a [`CacheInitializationSettings`](xref:UnityEditor.AddressableAssets.Settings.CacheInitializationSettings) object to initialize Unity's [`Cache`](xref:UnityEngine.Cache) settings at runtime. 
+You can attach objects to the Addressable Assets settings and pass them to the initialization process at runtime. For example, you can create a [`CacheInitializationSettings`](xref:UnityEditor.AddressableAssets.Settings.CacheInitializationSettings) object to initialize Unity's [`Cache`](xref:UnityEngine.Cache) settings at runtime.
 
 To create your own types of initialization object, create a ScriptableObject that implements the [`IObjectInitializationDataProvider`](xref:UnityEngine.ResourceManagement.Util.IObjectInitializationDataProvider) interface. Use this object to create the [`ObjectInitializationData`](xref:UnityEngine.ResourceManagement.Util.ObjectInitializationData) asset that Addressables includes with your the runtime data.
 

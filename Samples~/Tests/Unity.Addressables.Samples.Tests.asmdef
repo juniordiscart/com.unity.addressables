@@ -1,24 +1,29 @@
 {
     "name": "Unity.Addressables.Samples.Tests",
+    "rootNamespace": "",
     "references": [
         "Unity.Addressables",
         "Unity.ResourceManager",
         "Unity.Addressables.Editor",
         "Unity.ScriptableBuildPipeline.Editor",
-        "Unity.Addressables.Tests",
-        "Unity.Addressables.SamplesFolder"
-    ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+        "Unity.Addressables.SamplesFolder",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Addressables.Runtime.Tests"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
-    "precompiledReferences": [],
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS",
+        "UNITY_INCLUDE_TESTS",
         "UNITY_INCLUDE_TESTS"
-    ]
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

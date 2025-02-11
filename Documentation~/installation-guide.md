@@ -7,7 +7,7 @@ To install the Addressables package in your project, use the Package Manager:
 1. Select the Addressables package in the list.
 1. Click __Install__ (at the bottom, right-hand side of the Package Manager window).
 
-To set up the Addressables system in your Project after installation, open the __Addressables Groups__ window and click __Create Addressables Settings__. 
+To set up the Addressables system in your Project after installation, open the __Addressables Groups__ window and click __Create Addressables Settings__.
 
 ![](images/install-settings.png)<br/>*Before initializing the Addressables system in a Project*
 

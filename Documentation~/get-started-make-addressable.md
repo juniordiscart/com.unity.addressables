@@ -13,5 +13,5 @@ You can make an asset as Addressable in the following ways:
 
 Once you make an asset Addressable, the Addressables system adds it to a default group, unless you place it in a specific group. Addressables packs assets in a group into [AssetBundles](xref:AssetBundlesIntro) according to your group settings when you make a [content build](xref:addressables-builds). You can load these assets using the [Addressables API](xref:addressables-api-load-asset-async).
 
-> [!NOTE] 
+> [!NOTE]
 > If you make an asset in a [Resources folder](xref:SpecialFolders) Addressable, Unity moves the asset out of the Resources folder. You can move the asset to a different folder in your Project, but you cannot store Addressable assets in a Resources folder.

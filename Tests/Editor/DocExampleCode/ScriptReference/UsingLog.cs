@@ -1,12 +1,12 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+     using System;
     using UnityEngine;
     using UnityEngine.AddressableAssets;
 
     internal class UsingLog
     {
-	
+
         public void UsingLogSample()
         {
             #region SAMPLE

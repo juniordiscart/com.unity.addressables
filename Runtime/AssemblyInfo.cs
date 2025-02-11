@@ -7,6 +7,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Addressables.Editor")]
 [assembly: InternalsVisibleTo("Unity.Addressables.Editor.Tests")]
 #endif
-[assembly: InternalsVisibleTo("Unity.Addressables.Tests")]
+[assembly: InternalsVisibleTo("Unity.Addressables.Runtime.Tests")]
 [assembly: InternalsVisibleTo("Unity.Addressables.Samples.Tests")]
 [assembly: InternalsVisibleTo("Unity.Addressables.Android")]

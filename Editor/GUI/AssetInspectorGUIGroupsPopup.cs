@@ -327,7 +327,7 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 bool singleItem = groupItems != null && groupItems.Count == 1;
                 AssetEntryTreeViewItem item = groupItems[0];
-                bool validGroup = item.IsGroup && allowReadOnlyGroups ? true : !item.group.ReadOnly;               
+                bool validGroup = item.IsGroup && allowReadOnlyGroups ? true : !item.group.ReadOnly;
                 DragAndDrop.visualMode = (singleItem && validGroup) ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
             }
             else if (isDropping)

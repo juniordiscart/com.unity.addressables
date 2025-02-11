@@ -5,7 +5,7 @@ using UnityEngine;
 namespace UnityEditor.AddressableAssets.Build
 {
     /// <summary>
-    /// Data builder context object for Addressables.
+    /// Data builder context object for Addressables.  This contains all of the necessary input data to a build.
     /// </summary>
     public class AddressablesDataBuilderInput
     {

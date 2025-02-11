@@ -223,7 +223,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Removes the build report located at reportFilePath from the list of build reports shown in the Build Reports window
         /// </summary>
-        /// <param name="reportFilePath"></param>
+        /// <param name="reportFilePath">The file path of the report</param>
         public static void RemoveBuildReportFilePath(string reportFilePath)
         {
             ValidateData();

@@ -25,7 +25,7 @@ Your project's [group settings](xref:addressables-group-schemas) determine which
 
 ## Start a build
 
-You can start builds from a script or from the __Groups__ window. Refer to [Build scripting](xref:addressables-api-build-player-content) for more information on how to extend building Addressable content. 
+You can start builds from a script or from the __Groups__ window. Refer to [Build scripting](xref:addressables-api-build-player-content) for more information on how to extend building Addressable content.
 
 The Addressables system includes the following build scripts:
 

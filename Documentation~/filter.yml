@@ -1,29 +1,29 @@
-apiRules: 
-  - exclude: 
-      uidRegex: Tests$
-  - exclude: 
+apiRules:
+  - exclude:
+      uidRegex: \.Tests$
+  - exclude:
       uidRegex: .*Test.*
-  - exclude: 
+  - exclude:
       uidRegex: .*HideResourceFoldersScope.*
-  - exclude: 
+  - exclude:
       uidRegex: .*IgnoreFailingLogMessage.*
-  - exclude: 
+  - exclude:
       type: Namespace
-      uidRegex: GUI$
-  - exclude: 
+      uidRegex: \.GUI$
+  - exclude:
       type: Namespace
-      uidRegex: Unity.*\.Tests\..*$
-  - exclude: 
+      uidRegex: \.Unity.*\.Tests\..*$
+  - exclude:
       type: Namespace
-      uidRegex: DocExampleCode$
+      uidRegex: \.DocExampleCode$
   # hiding samples from api docs
   - exclude:
-      uidRegex: .*Global Namespace.AddressablesUtility.*
+      uidRegex: .*Global Namespace\.AddressablesUtility.*
   - exclude:
-      uidRegex: .*Global Namespace.ComponentReference.*
+      uidRegex: .*Global Namespace\.ComponentReference.*
   - exclude:
-      uidRegex: .*Global Namespace.DisableAssetImportOnBuild.*
+      uidRegex: .*Global Namespace\.DisableAssetImportOnBuild.*
   - exclude:
-      uidRegex: .*Global Namespace.LoadSceneForCustomBuild.*
+      uidRegex: .*Global Namespace\.LoadSceneForCustomBuild.*
   - exclude:
-      uidRegex: .*Global Namespace.PrefabSpawnerSample.*
+      uidRegex: .*Global Namespace\.PrefabSpawnerSample.*

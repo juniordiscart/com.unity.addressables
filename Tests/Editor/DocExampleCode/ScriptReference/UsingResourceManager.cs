@@ -1,15 +1,15 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+     using System;
     using UnityEngine;
-	
-	internal class UsingResourceManager
+
+     internal class UsingResourceManager
     {
-		#region SAMPLE
-		public void UsingResourceManagerSample()
-		{
-			
-		}
-		#endregion
-	}
+          #region SAMPLE
+          public void UsingResourceManagerSample()
+          {
+
+          }
+          #endregion
+     }
 }

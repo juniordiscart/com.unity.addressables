@@ -4,7 +4,7 @@ uid: addressables-script-ref
 
 # Addressables Script Reference
 
-This section of the documentation contains details of the scripting API that Unity provides for the Addressables package. 
+This section of the documentation contains details of the scripting API that Unity provides for the Addressables package.
 
 The scripting reference is organized according to the classes available to scripts, which are described along with their methods, properties, and any other information relevant to their use.
 

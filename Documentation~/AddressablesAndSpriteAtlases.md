@@ -8,7 +8,7 @@ Some `SpriteAtlas` options can change how Unity loads sprites. This is important
 
 The following examples explain how Addressables handles a `SpriteAtlas` differently than other assets:
 
-## Addressable sprites 
+## Addressable sprites
 
 ### Sprites in separate groups
 
@@ -16,7 +16,7 @@ You have three Addressable textures in three separate groups, where each texture
 
 ### Sprites in a non-Addressable SpriteAtlas
 
-The three textures in the previous example are put into a non-Addressable `SpriteAtlas`. In this case, Unity still generates three AssetBundles, but they're not the same size. One of the AssetBundles contains the atlas texture and uses about 1500KB. The other two AssetBundles only contain sprite metadata and list the atlas AssetBundle as a dependency. 
+The three textures in the previous example are put into a non-Addressable `SpriteAtlas`. In this case, Unity still generates three AssetBundles, but they're not the same size. One of the AssetBundles contains the atlas texture and uses about 1500KB. The other two AssetBundles only contain sprite metadata and list the atlas AssetBundle as a dependency.
 
 Although you can't control which AssetBundle contains the texture, the process is deterministic, so the same AssetBundle contains the texture through different rebuilds. This is the main difference from the standard duplication of dependencies. The sprites are dependent on the SpriteAtlas texture to load, and yet that texture is not built into all three AssetBundles, but is instead built only into one.
 
@@ -24,7 +24,7 @@ Although you can't control which AssetBundle contains the texture, the process i
 
 This time, the `SpriteAtlas` from the previous example is marked as Addressable in its own AssetBundle. Unity now creates four AssetBundles. The three AssetBundles with the sprites are each only a few KB and have a dependency on the fourth AssetBundle, which contains the `SpriteAtlas` and is about 1500KB. If you are using 2019.4 or older, the texture itself might end up elsewhere. The three sprite AssetBundles still depend on the `SpriteAtlas` AssetBundle. However, the `SpriteAtlas` AssetBundle can only contain metadata, and the texture can be in one of the other sprite AssetBundles.
 
-## Addressable prefabs with sprite dependencies 
+## Addressable prefabs with sprite dependencies
 
 ### Sprite prefabs
 

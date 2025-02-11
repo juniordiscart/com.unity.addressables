@@ -11,7 +11,8 @@
         "UnityEditor.TestRunner",
         "UnityEngine.TestRunner",
         "Unity.Services.Ccd.Management",
-        "Unity.Services.Core"
+        "Unity.Services.Core",
+        "Unity.Addressables.Runtime.Tests"
     ],
     "includePlatforms": [
         "Editor"
