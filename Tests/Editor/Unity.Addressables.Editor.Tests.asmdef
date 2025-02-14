@@ -6,7 +6,7 @@
         "Unity.Addressables",
         "Unity.ResourceManager",
         "Unity.ScriptableBuildPipeline.Editor",
-        "Unity.Addressables.Tests",
+        "Unity.Addressables.Runtime.Tests",
         "Unity.Addressables.Editor.BuildReportVisualizer",
         "UnityEditor.TestRunner",
         "UnityEngine.TestRunner",

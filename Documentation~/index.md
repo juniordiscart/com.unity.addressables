@@ -4,7 +4,7 @@ uid: addressables-home
 
 # Addressables package
 
-The Addressables package builds on Unity's [AssetBundles](xref:AssetBundlesIntro) system and provides a user interface to manage your AssetBundles. When you make an asset Addressable, you can use that asset's address to load it from anywhere. The Addressable system locates and returns the asset whether it's available in the local application or stored on a remote content delivery network. 
+The Addressables package builds on Unity's [AssetBundles](xref:AssetBundlesIntro) system and provides a user interface to manage your AssetBundles. When you make an asset Addressable, you can use that asset's address to load it from anywhere. The Addressable system locates and returns the asset whether it's available in the local application or stored on a remote content delivery network.
 
 You can use this package to distribute content remotely, manage content loading at runtime, control where your application's assets are hosted, and manage dependencies between assets.
 
@@ -19,7 +19,7 @@ You can use this package to distribute content remotely, manage content loading 
 | **[Diagnostic tools](xref:addressables-diagnostic-tools)**|Use built in tools to asses the setup and performance of your Addressable assets.|
 
 ## Additional resources
- 
+
 - Unity's [Addressables: Planning and best practices](https://blog.unity.com/engine-platform/addressables-planning-and-best-practices) blog post.
 - [AssetBundles documentation](xref:AssetBundlesIntro).
 - [Why use Addressables?](https://learn.unity.com/tutorial/why-use-addressables?courseId=64255c01edbc2a268fb0b800#) - Unity Learn course.

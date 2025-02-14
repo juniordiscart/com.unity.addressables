@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using UnityEditor.AddressableAssets.Diagnostics.Data;
 using UnityEngine.ResourceManagement;
 
@@ -6,7 +6,7 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics
 {
     public class EventDataSetTests
     {
-        //Note, we use EventDataSetStream.GetValue for these tests so that we can avoid testing multiple 
+        //Note, we use EventDataSetStream.GetValue for these tests so that we can avoid testing multiple
         //EventDataSet methods in the same test
         [Test]
         public void EventDataSet_AddSample_AddsToCorrectStream()

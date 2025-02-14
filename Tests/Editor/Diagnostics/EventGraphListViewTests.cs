@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using UnityEditor.AddressableAssets.Diagnostics.Data;
 using UnityEditor.AddressableAssets.Diagnostics.GUI;
 

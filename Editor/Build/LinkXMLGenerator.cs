@@ -10,25 +10,38 @@ namespace UnityEditor.AddressableAssets.Build
     public class LinkXmlGenerator : UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator
     {
 #pragma warning disable CA1061 // Do not hide base class methods
-        /// <inheritdoc />
+        /// <summary>
+        /// Add types to the LinkXML
+        /// </summary>
+        /// <param name="types">Types to add</param>
         public new void AddTypes(params Type[] types)
         {
             base.AddTypes(types);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Add types to the LinkXML
+        /// </summary>
+        /// <param name="types">Types to add</param>
         public new void AddTypes(IEnumerable<Type> types)
         {
             base.AddTypes(types);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Set Editor -> Runtime type mapping for player build
+        /// </summary>
+        /// <param name="a">Type to convert from</param>
+        /// <param name="b">Type to convert to</param>
         public new void SetTypeConversion(Type a, Type b)
         {
             base.SetTypeConversion(a, b);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Save LinkXML
+        /// </summary>
+        /// <param name="path">Path to save the LinkXML</param>
         public new void Save(string path)
         {
             base.Save(path);

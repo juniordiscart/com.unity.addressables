@@ -27,6 +27,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     [CreateAssetMenu(fileName = "BuildScriptVirtual.asset", menuName = "Addressables/Content Builders/Simulate Groups (advanced)")]
     public class BuildScriptVirtualMode : BuildScriptBase
     {
+        /// <summary>
+        /// Sets what extension to use for the catalog
+        /// </summary>
         protected internal const string kCatalogExt =
 #if ENABLE_BINARY_CATALOG
             ".bin";

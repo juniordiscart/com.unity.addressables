@@ -38,8 +38,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         }
 
         /// <summary>
-        /// The mapping of the old to new bundle names. Instead of using this directly inject 
-	/// the value through IBuildLayoutParUse BuildLayoutParameters.BundleNameRemap instead
+        /// The mapping of the old to new bundle names. Instead of using this directly inject
+    /// the value through IBuildLayoutParUse BuildLayoutParameters.BundleNameRemap instead
         /// </summary>
         public Dictionary<string, string> BundleNameRemap
         {

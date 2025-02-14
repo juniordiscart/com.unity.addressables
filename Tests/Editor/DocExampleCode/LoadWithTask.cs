@@ -18,12 +18,12 @@ namespace AddressableAssets.DocExampleCode
         public async void Start()
         {
             loadHandle = Addressables.LoadAssetsAsync<GameObject>(
-                keys, // Either a single key or a List of keys 
+                keys, // Either a single key or a List of keys
                 addressable =>
                 {
                     // Called for every loaded asset
                     Debug.Log(addressable.name);
-                }, Addressables.MergeMode.Union, // How to combine multiple labels 
+                }, Addressables.MergeMode.Union, // How to combine multiple labels
                 false); // Whether to fail if any asset fails to load
 
             // Wait for the operation to finish in the background

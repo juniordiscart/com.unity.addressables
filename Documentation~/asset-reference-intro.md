@@ -2,7 +2,7 @@
 
 An [`AssetReference`](xref:UnityEngine.AddressableAssets.AssetReference) is a type that can reference an Addressable asset.
 
-Use the `AssetReference` class in a `MonoBehaviour` or `ScriptableObject`. When you add a serializable `AssetReference` field to one of these classes, you can assign a value to the field in an Inspector window. You can restrict the assets that can be assigned to a field by type and by label. 
+Use the `AssetReference` class in a `MonoBehaviour` or `ScriptableObject`. When you add a serializable `AssetReference` field to one of these classes, you can assign a value to the field in an Inspector window. You can restrict the assets that can be assigned to a field by type and by label.
 
 ![image alt text](images/assetreference-inspector.png)<br/>*An Inspector window displaying several AssetReference fields*
 

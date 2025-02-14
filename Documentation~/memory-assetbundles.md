@@ -27,7 +27,7 @@ You can reduce the memory requirements of AssetBundle TypeTrees in the following
 * Disable TypeTrees, excludes TypeTree information from a bundle, and  makes the AssetBundles smaller. However, without TypeTree information, when you load older bundles with a newer version of Unity or make script changes in your project, you might get serialization errors or undefined behavior.
 *  Use simple data types to reduce TypeTree complexity.
 
-To test the impact that TypeTrees have on the size of AssetBundles, build them with and without TypeTrees disabled and compare their sizes. Use [`BuildAssetBundleOptions.DisableWriteTypeTree`](xref:UnityEditor.BuildAssetBundleOptions.DisableWriteTypeTree) to disable TypeTrees in your AssetBundles. 
+To test the impact that TypeTrees have on the size of AssetBundles, build them with and without TypeTrees disabled and compare their sizes. Use [`BuildAssetBundleOptions.DisableWriteTypeTree`](xref:UnityEditor.BuildAssetBundleOptions.DisableWriteTypeTree) to disable TypeTrees in your AssetBundles.
 
 >[!NOTE]
 >Some platforms require TypeTrees and ignore the `DisableWriteTypeTree` setting. Additionally, not all platforms support TypeTrees.

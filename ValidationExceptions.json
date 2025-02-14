@@ -1,0 +1,10 @@
+{
+    "ErrorExceptions":
+    [
+        {
+            "ValidationTest": "API Validation",
+            "ExceptionMessage": "Assembly \"Unity.Addressables.Editor.Tests.DocExampleCode\" no longer exists or is no longer included in build. This change requires a new major version.",
+            "PackageVersion": "1.23.1"
+        }
+    ]
+}

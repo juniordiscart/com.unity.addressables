@@ -585,7 +585,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// <summary>
         /// Loads cache data from a specific location
         /// </summary>
-        /// <param name="contentStateDataPath"></param>
+        /// <param name="contentStateDataPath">The path of the content state bin file.</param>
         /// <returns>The ContentState object.</returns>
         public static AddressablesContentState LoadContentState(string contentStateDataPath)
         {

@@ -229,7 +229,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="enable">Setting to true will add the label, false will remove it.</param>
         /// <param name="force">When enable is true, setting force to true will force the label to exist on the parent AddressableAssetSettings object if it does not already.</param>
         /// <param name="postEvent">Post modification event.</param>
-        /// <returns></returns>
+        /// <returns>True if the label was added, false otherwise.</returns>
         public bool SetLabel(string label, bool enable, bool force = false, bool postEvent = true)
         {
             if (enable)

@@ -17,9 +17,9 @@ If you use the same asset both in a scene and the Resources folder, then Unity m
 
 When you use Addressables in a project, it's best practice to move any scenes and data in the Resources folders into [Addressable groups](Groups.md) and manage them as Addressables.
 
-The Build Settings scene list must contain at least one scene. You can create a minimal scene that initializes your application. 
+The Build Settings scene list must contain at least one scene. You can create a minimal scene that initializes your application.
 
-A small amount of data in Resources folders typically doesn't cause performance issues. If you use third party packages that place assets there, you don't need to move them unless they cause problems. Addressable assets can't be stored in Resources folders. 
+A small amount of data in Resources folders typically doesn't cause performance issues. If you use third party packages that place assets there, you don't need to move them unless they cause problems. Addressable assets can't be stored in Resources folders.
 
 ## Reference sub-objects
 
@@ -29,7 +29,7 @@ If an `AssetReference` points to a sub-object of an asset that's Addressable, Un
 
 ## Asset and AssetBundle dependencies
 
-When you add an asset to an [Addressables group](Groups.md), that asset is packed into an AssetBundle when you make a [content build](xref:addressables-builds). In this case the asset is explicitly included in the bundle, which is called an explicit asset. 
+When you add an asset to an [Addressables group](Groups.md), that asset is packed into an AssetBundle when you make a [content build](xref:addressables-builds). In this case the asset is explicitly included in the bundle, which is called an explicit asset.
 
 If an asset references other assets, then the referenced assets are dependencies of the original asset. This is called an asset dependency. For example, if the asset is packed into AssetBundle A and the referenced assets are packed into AssetBundle B, then bundle B is a dependency of bundle A. This is called an AssetBundle dependency. Refer to the [AssetBundle dependencies manual page](xref:AssetBundles-Dependencies) for more information.
 
@@ -44,8 +44,8 @@ If more than one Addressable references the same implicit asset, then copies of 
 
 ![](images/addressables-multiple-assets.png)<br/>*Non-Addressable assets are copied to each bundle with a referencing Addressable*
 
-When an implicit asset is included in more than one bundle, multiple instances of that asset can be instantiated at runtime rather than the single instance that your game logic expects. If you change the instance state at runtime, only the object from the same bundle can detect the change because all the other assets now have their own individual instance rather than sharing the common one. 
+When an implicit asset is included in more than one bundle, multiple instances of that asset can be instantiated at runtime rather than the single instance that your game logic expects. If you change the instance state at runtime, only the object from the same bundle can detect the change because all the other assets now have their own individual instance rather than sharing the common one.
 
 To stop this duplication, you can make the implicit asset an Addressable asset and include it in one of the existing bundles or add it to a different bundle. The bundle the asset is added to is loaded whenever you load one of the Addressables that reference it. If the Addressables are packed into a different AssetBundle than the referenced asset, then the bundle containing the referenced asset is an AssetBundle dependency.
 
-The dependent bundle must be loaded when you load any asset in the current bundle, not just the asset containing the reference. Although none of the assets in this other AssetBundle are loaded, loading a bundle has its own runtime cost. Refer to [Memory implications of loading AssetBundle dependencies](memory-assetbundles.md) for more information. 
+The dependent bundle must be loaded when you load any asset in the current bundle, not just the asset containing the reference. Although none of the assets in this other AssetBundle are loaded, loading a bundle has its own runtime cost. Refer to [Memory implications of loading AssetBundle dependencies](memory-assetbundles.md) for more information.

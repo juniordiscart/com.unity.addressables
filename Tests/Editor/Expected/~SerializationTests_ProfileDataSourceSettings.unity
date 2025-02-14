@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7e3976da977cb49238499ea3b4c237ae, type: 3}
   m_Name: ProfileDataSourceSettings
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   profileGroupTypes:
   - m_GroupTypePrefix: Built-In
     m_Variables:
@@ -35,23 +35,23 @@ MonoBehaviour:
       m_Value: https://example.com/a/
   environments:
   - id: 0214d8a4-af63-4534-814f-431d180926d6
-    projectId: 
-    projectGenesisId: 
+    projectId:
+    projectGenesisId:
     name: production
     isDefault: 0
   - id: 7c9f9aeb-2b9d-4258-bf52-0d2b6118ac39
-    projectId: 
-    projectGenesisId: 
+    projectId:
+    projectGenesisId:
     name: staging
     isDefault: 0
   - id: a9ec150c-9a63-46ab-9a21-a3434afc7ab3
-    projectId: 
-    projectGenesisId: 
+    projectId:
+    projectGenesisId:
     name: development
     isDefault: 0
   currentEnvironment:
-    id: 
-    projectId: 
-    projectGenesisId: 
-    name: 
+    id:
+    projectId:
+    projectGenesisId:
+    name:
     isDefault: 0

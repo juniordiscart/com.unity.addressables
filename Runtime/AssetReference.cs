@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine.AddressableAssets.Utility;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
@@ -15,7 +16,7 @@ namespace UnityEngine.AddressableAssets
     /// <summary>
     /// Generic version of AssetReference class.  This should not be used directly as CustomPropertyDrawers do not support generic types.  Instead use the concrete derived classes such as AssetReferenceGameObject.
     /// </summary>
-    /// <typeparam name="TObject"></typeparam>
+    /// <typeparam name="TObject">The type of object to use with this AssetReference</typeparam>
     [Serializable]
     public class AssetReferenceT<TObject> : AssetReference where TObject : Object
     {
@@ -174,7 +175,19 @@ namespace UnityEngine.AddressableAssets
         {
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Checks whether the asset located at a path is valid for this asset reference. An asset is valid if
+        /// it is of the correct type or if one of its sub-assets are.
+        /// </summary>
+        /// <param name="path">The file path to the asset in question.</param>
+        /// <returns>Whether the referenced asset is valid.</returns>
+        /// <remarks>
+        /// The asset can be either a SpriteAtlas or a Sprite.
+        /// </remarks>
+        /// <example>
+        /// <para>The example below uses ValidateAsset to check if an asset at a specific path can be set.</para>
+        /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingAssetRefSpriteValidateAsset.cs" region="SAMPLE"/>
+        /// </example>
         public override bool ValidateAsset(string path)
         {
 #if UNITY_EDITOR
@@ -305,6 +318,9 @@ namespace UnityEngine.AddressableAssets
     [Serializable]
     public class AssetReference : IKeyEvaluator
     {
+        /// <summary>
+        /// Asset GUID
+        /// </summary>
         [FormerlySerializedAs("m_assetGUID")]
         [SerializeField]
         protected internal string m_AssetGUID = "";
@@ -317,6 +333,11 @@ namespace UnityEngine.AddressableAssets
 
         AsyncOperationHandle m_Operation;
 #if UNITY_EDITOR
+        // we store the SubObjectGUID in the Editor to track things like renames
+        // and still point to the correct object in the UI
+        [SerializeField]
+        string m_SubObjectGUID;
+
         virtual protected internal Type DerivedClassType { get; }
 #endif
         /// <summary>
@@ -368,10 +389,25 @@ namespace UnityEngine.AddressableAssets
             set { m_SubObjectName = value; }
         }
 
-		internal virtual Type SubObjectType
+#if UNITY_EDITOR
+        /// <summary>
+        /// Stores the guid of the sub object (if available).
+        /// </summary>
+        public virtual string SubObjectGUID
+        {
+            get { return m_SubObjectGUID; }
+            set { m_SubObjectGUID = value; }
+        }
+#endif
+
+        internal virtual Type SubObjectType
         {
             get
             {
+#if UNITY_EDITOR
+                if (!string.IsNullOrEmpty(m_SubObjectGUID) && m_SubObjectType != null)
+                    return Type.GetType(m_SubObjectType);
+#endif
                 if (!string.IsNullOrEmpty(m_SubObjectName) && m_SubObjectType != null)
                     return Type.GetType(m_SubObjectType);
                 return null;
@@ -390,6 +426,7 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Get the loading status of the internal operation.
         /// </summary>
+        /// <value>True if the operation is completed.  If the operation is not valid, it will return false as well.</value>
         public bool IsDone
         {
             get { return m_Operation.IsDone; }
@@ -635,7 +672,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="position">Position of the instantiated object.</param>
         /// <param name="rotation">Rotation of the instantiated object.</param>
         /// <param name="parent">The parent of the instantiated object.</param>
-        /// <returns></returns>
+        /// <returns>AsyncOperationHandle that points to the Instantiate operation of the GameObject</returns>
         public virtual AsyncOperationHandle<GameObject> InstantiateAsync(Vector3 position, Quaternion rotation, Transform parent = null)
         {
             return Addressables.InstantiateAsync(RuntimeKey, position, rotation, parent, true);
@@ -649,7 +686,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         /// <param name="parent">The parent of the instantiated object.</param>
         /// <param name="instantiateInWorldSpace">Option to retain world space when instantiated with a parent.</param>
-        /// <returns></returns>
+        /// <returns>AsyncOperationHandle that points to the Instantiate operation of the GameObject</returns>
         public virtual AsyncOperationHandle<GameObject> InstantiateAsync(Transform parent = null, bool instantiateInWorldSpace = false)
         {
             return Addressables.InstantiateAsync(RuntimeKey, parent, instantiateInWorldSpace, true);
@@ -869,10 +906,21 @@ namespace UnityEngine.AddressableAssets
                 return false;
             if (editorAsset.GetType() == typeof(SpriteAtlas))
             {
-                var spriteName = value.name;
-                if (spriteName.EndsWith("(Clone)", StringComparison.Ordinal))
-                    spriteName = spriteName.Replace("(Clone)", "");
-                if ((editorAsset as SpriteAtlas).GetSprite(spriteName) == null)
+                var spriteName = AssetReferenceUtilities.FormatName(value.name);
+                var atlas = editorAsset as SpriteAtlas;
+
+                var foundMatch = false;
+                var subObjects = AssetReferenceUtilities.GetAtlasSpritesAndPackables(ref atlas);
+                foreach ((Object sprite, string guid) in subObjects)
+                {
+                    var namesMatch = AssetReferenceUtilities.FormatName(sprite.name) == spriteName;
+                    if (namesMatch)
+                    {
+                        foundMatch = true;
+                        m_SubObjectGUID = guid;
+                    }
+                }
+                if (!foundMatch)
                 {
                     Debug.LogWarningFormat("Unable to find sprite {0} in atlas {1}.", spriteName, editorAsset.name);
                     return false;
@@ -926,7 +974,7 @@ namespace UnityEngine.AddressableAssets
             foreach (Object o in objectsForAsset)
             {
                 if (o != null)
-                value.Add(o.GetType());
+                    value.Add(o.GetType());
             }
 
             s_PathToTypes.Add(path, value);

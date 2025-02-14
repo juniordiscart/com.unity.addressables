@@ -27,7 +27,7 @@ Once you have your projects setup, the workflow generally is as follows:
 4. In source project, use [`Addressables.LoadContentCatalogAsync`](LoadContentCatalogAsync.md) to load the remote catalogs of your other various projects
 5. Proceed with game runtime as normal. Now that the catalogs are loaded, Addressables can load assets from any of these locations.
 
-It might be worth having a minimal amount of content built locally in the source project. Each project is unique, and has unique needs, but having a small set of content needed to run your game in the event of internet connection issues or other various problems is advisable. 
+It might be worth having a minimal amount of content built locally in the source project. Each project is unique, and has unique needs, but having a small set of content needed to run your game in the event of internet connection issues or other various problems is advisable.
 
 ## Handle shaders
 

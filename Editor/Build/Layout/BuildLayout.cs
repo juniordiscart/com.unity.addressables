@@ -263,12 +263,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         }
 
         /// <summary>
-        ///
+        /// Open a build layout file
         /// </summary>
         /// <param name="path">Path to the BuildLayout json file on disk</param>
         /// <param name="readHeader">If the basic header information should be read</param>
         /// <param name="readFullFile">If the full build layout should be read</param>
-        /// <returns></returns>
+        /// <returns>The loaded file</returns>
         public static BuildLayout Open(string path, bool readHeader = true, bool readFullFile = false)
         {
             if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path))

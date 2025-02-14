@@ -18,8 +18,8 @@ The Addressables Profiler is a Unity Editor Profiler module that you can use to 
 
 To open the Addressables Profiler:
 
-1. Open the Profiler window (__Window__ > __Analysis__ > __Profiler__). 
-1. In the top right of the Profiler window select the dropdown button labeled __Profiler Modules__. 
+1. Open the Profiler window (__Window__ > __Analysis__ > __Profiler__).
+1. In the top right of the Profiler window select the dropdown button labeled __Profiler Modules__.
 1. Enable the option named __Addressable Assets__.
 
 ## View the module
@@ -86,7 +86,7 @@ You can also use the type filter to filter by inclusion type. Use `explicit` whe
 
 ## Inspect content details
 
-When you select content from the Addressables Profiler module, the Inspector displays detailed information about the content, as follows: 
+When you select content from the Addressables Profiler module, the Inspector displays detailed information about the content, as follows:
 
 ![](images/profiler-inspector.png)<br/>_Selected content in the Inspector_
 

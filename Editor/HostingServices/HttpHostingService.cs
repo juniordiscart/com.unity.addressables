@@ -481,7 +481,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// <summary>
         /// Searches for the given relative path within the configured content root directores.
         /// </summary>
-        /// <param name="relativePath"></param>
+        /// <param name="relativePath">Relative filepath for content to find</param>
         /// <returns>The full system path to the file if found, or null if file could not be found</returns>
         protected virtual string FindFileInContentRoots(string relativePath)
         {
@@ -500,9 +500,9 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// <summary>
         /// Sends a file to the connected HTTP client
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="filePath"></param>
-        /// <param name="readBufferSize"></param>
+        /// <param name="context">The HttpListenerContext</param>
+        /// <param name="filePath">The filepath requested</param>
+        /// <param name="readBufferSize">Buffer size to use</param>
         protected virtual void ReturnFile(HttpListenerContext context, string filePath, int readBufferSize = k_FileReadBufferSize)
         {
             if (m_UploadSpeed > 0)

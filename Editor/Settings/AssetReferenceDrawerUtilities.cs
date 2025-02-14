@@ -8,6 +8,7 @@ using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.Utility;
 using UnityEngine.U2D;
 
 namespace UnityEditor.AddressableAssets.Settings
@@ -467,6 +468,102 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             return false;
+        }
+
+        internal static bool RefreshSubObjects(ref AssetReference assetReference)
+        {
+            if (assetReference == null)
+            {
+                return false;
+            }
+
+            var editorAsset = assetReference.GetEditorAssetInternal();
+            if (editorAsset == null)
+            {
+                return false;
+            }
+            if (!editorAsset.GetType().IsAssignableFrom(typeof(SpriteAtlas)))
+            {
+                return false;
+            }
+
+            var atlas = GetAtlas(ref assetReference);
+
+            var subObjects = AssetReferenceUtilities.GetAtlasSpritesAndPackables(ref atlas);
+            if (subObjects == null || subObjects.Count == 0)
+            {
+                assetReference.SubObjectName = null;
+                assetReference.SubObjectGUID = string.Empty;
+                return true;
+            }
+
+            var requiresUpdate = false;
+            var foundSubObject = false;
+            foreach ((Object sprite, string guid) in subObjects)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(path))
+                {
+                    continue;
+                }
+
+                if (sprite == null)
+                {
+                    continue;
+                }
+
+                SpriteImportMode mode = SpriteImportMode.None;
+                var type = AssetDatabase.GetMainAssetTypeAtPath(path);
+                bool isTexture = typeof(Texture2D).IsAssignableFrom(type);
+                if (isTexture)
+                {
+                    var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                    mode = (importer == null ? SpriteImportMode.None : importer.spriteImportMode);
+                }
+
+
+                var formattedSpriteName = FormatName(sprite.name);
+                var namesMatch =  formattedSpriteName == assetReference.SubObjectName;
+                if (guid == assetReference.SubObjectGUID)
+                {
+                    foundSubObject = true;
+                    if (mode == SpriteImportMode.None || mode == SpriteImportMode.Multiple)
+                    {
+                        // names in multiple do not change upon rename
+                        continue;
+                    }
+                    assetReference.SubObjectName = formattedSpriteName;
+                    requiresUpdate = !namesMatch;
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(assetReference.SubObjectGUID) && namesMatch)
+                {
+                    foundSubObject = true;
+                }
+            }
+
+            if (foundSubObject)
+            {
+                return requiresUpdate;
+            }
+
+            assetReference.SubObjectName = null;
+            assetReference.SubObjectGUID = string.Empty;
+            return true;
+        }
+
+        internal static SpriteAtlas GetAtlas(ref AssetReference assetReference)
+        {
+            var assetPath = AssetDatabase.GUIDToAssetPath(assetReference.AssetGUID);
+
+            var mainType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
+            if (mainType == typeof(SpriteAtlas))
+            {
+                return AssetDatabase.LoadAssetAtPath<SpriteAtlas>(assetPath);
+            }
+
+            return null;
         }
     }
 }

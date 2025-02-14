@@ -11,4 +11,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01e363df9994fd447956660126e96f98, type: 3}
   m_Name: InitFixture1
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:

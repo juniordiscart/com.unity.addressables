@@ -14,7 +14,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     {
         Dictionary<GameObject, AsyncOperationHandle<GameObject>> m_InstanceObjectToPrefabHandle = new Dictionary<GameObject, AsyncOperationHandle<GameObject>>();
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Provide an instance of a loaded GameObject
+        /// </summary>
+        /// <param name="resourceManager">The resource manager to use</param>
+        /// <param name="prefabHandle">The operation handle with a reference to the object to instantiate</param>
+        /// <param name="instantiateParameters">Container for data to specficy how to instantiate</param>
+        /// <returns>The instance GameObject</returns>
         public GameObject ProvideInstance(ResourceManager resourceManager, AsyncOperationHandle<GameObject> prefabHandle, InstantiationParameters instantiateParameters)
         {
             GameObject result = instantiateParameters.Instantiate(prefabHandle.Result);
@@ -22,7 +28,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             return result;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Destroy the instance and release one ref count on the operaiton handle
+        /// </summary>
+        /// <param name="resourceManager">The resource manager used to instantiate the GameObject</param>
+        /// <param name="instance">The instance GameObject to destroy</param>
         public void ReleaseInstance(ResourceManager resourceManager, GameObject instance)
         {
             // Guard for null - note that Unity overloads equality for GameObject so `default(GameObject) == null` is true so must use explicit `is null` type guard

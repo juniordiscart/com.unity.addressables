@@ -122,14 +122,14 @@ namespace UnityEngine.ResourceManagement
 		/// Functor to transform internal ids before being used by the providers.
 		/// </summary>
 		/// <remarks>
-		/// Used to assign a function to the [ResourceManager](xref:UnityEngine.ResourceManagement.ResourceManager)  that replaces location identifiers used at runtime.
+        /// <para>Used to assign a function to the [ResourceManager](xref:UnityEngine.ResourceManagement.ResourceManager)  that replaces location identifiers used at runtime.
 		/// This is useful when you want to load assets from a different location than the one specified in the content catalog,
 		/// for example downloading a remote AssetBundle from a different URL.
 		///
 		/// Assigning this value through the <see cref="Addressables"/> object will set the value on the <see cref="ResourceManager"/>.
 		/// 
-		/// The example below instantiates a GameObject from a local AssetBundle. The location identifier of the bundle is replaced with a file URI, and so the bundle is loaded via UnityWebRequest. 
-		/// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingInternalIdTransformFunc.cs" region="SAMPLE"/>/// 
+        /// The example below instantiates a GameObject from a local AssetBundle. The location identifier of the bundle is replaced with a file URI, and so the bundle is loaded via UnityWebRequest.</para>
+        /// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingInternalIdTransformFunc.cs" region="SAMPLE"/>
 		/// </remarks>
 		/// <value>A function taking an [IResourceLocation](xref:UnityEngine.ResourceManagement.ResourceLocations.IResourceLocation) and returning a transformed string location.</value>
 		/// <seealso href="xref:addressables-api-transform-internal-id">Transforming resource URLs</seealso>
@@ -149,7 +149,7 @@ namespace UnityEngine.ResourceManagement
 		/// Delegate that can be used to override the web request options before being sent.
 		/// </summary>
 		/// <remarks>
-		/// You can assign a function to the <see cref="Addressables"/> object's WebRequestOverride property to individually modify the <see cref="UnityWebRequest"/> which is used to download files.
+        /// <para>You can assign a function to the <see cref="Addressables"/> object's WebRequestOverride property to individually modify the <see cref="UnityWebRequest"/> which is used to download files.
 		///
 		/// This can be used to add custom request headers or query strings.
 		///
@@ -157,7 +157,7 @@ namespace UnityEngine.ResourceManagement
 		///
 		/// Assigning this value through the <see cref="Addressables"/> object will set the value on the <see cref="ResourceManager"/>.
 		/// 
-		/// For example you could add an Authorization header to authenticate with Cloud Content Delivery's private buckets.
+        /// For example you could add an Authorization header to authenticate with Cloud Content Delivery's private buckets.</para>
 		/// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingWebRequestOverride.cs" region="SAMPLE" />
 		/// </remarks>
 		/// <seealso href="xref:addressables-api-transform-internal-id#webrequest-override">Transforming resource URLs</seealso>
@@ -711,6 +711,7 @@ namespace UnityEngine.ResourceManagement
 		/// <summary>
 		/// Increment reference count of operation handle.
 		/// </summary>
+        /// <typeparam name="TObject">The expected object type for the operations.</typeparam>
 		/// <param name="handle">The handle to the resource to increment the reference count for.</param>
         /// <returns>A new handle to the operation. This handle must also be released.</returns>
         public AsyncOperationHandle<TObject> Acquire<TObject>(AsyncOperationHandle<TObject> handle)

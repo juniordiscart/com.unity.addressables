@@ -824,7 +824,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsTrue(success);
             Assert.AreEqual(fbxAssetGuid, guid);
             Assert.AreEqual(meshSubAsset.name, m_AssetReferenceDrawer.m_AssetRefObject.SubObjectName);
-            Assert.AreEqual(meshSubAsset.GetType(), m_AssetReferenceDrawer.m_AssetRefObject.SubOjbectType);
+            Assert.AreEqual(meshSubAsset.GetType(), m_AssetReferenceDrawer.m_AssetRefObject.SubObjectType);
         }
 
         [Test]

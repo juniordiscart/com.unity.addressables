@@ -104,7 +104,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         /// <summary>
-        /// Automatically release this handle upon Completed callback 
+        /// Automatically release this handle upon Completed callback
         /// </summary>
         public void ReleaseHandleOnCompletion()
         {
@@ -164,7 +164,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// Get hash code of this struct.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The hash code of this struct.</returns>
         public override int GetHashCode()
         {
             return m_InternalOp == null ? 0 : m_InternalOp.GetHashCode() * 17 + m_Version;
@@ -388,7 +388,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         }
 
         /// <summary>
-        /// Automatically release this handle upon Completed callback 
+        /// Automatically release this handle upon Completed callback
         /// </summary>
         public void ReleaseHandleOnCompletion()
         {
@@ -441,7 +441,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// Get dependency operations.
         /// </summary>
-        /// <param name="deps"></param>
+        /// <param name="deps">The list to add dependencies to</param>
         public void GetDependencies(List<AsyncOperationHandle> deps)
         {
             InternalOp.GetDependencies(deps);
@@ -450,7 +450,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// Get hash code of this struct.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The calculated hash code</returns>
         public override int GetHashCode()
         {
             return m_InternalOp == null ? 0 : m_InternalOp.GetHashCode() * 17 + m_Version;

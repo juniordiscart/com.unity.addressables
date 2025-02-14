@@ -7,7 +7,7 @@ using UnityEngine.AddressableAssets;
 namespace UnityEditor.AddressableAssets.Settings
 {
     /// <summary>
-    /// Used to store path pairs and act as an abstraction between path pairs and profile variables. 
+    /// Used to store path pairs and act as an abstraction between path pairs and profile variables.
     /// </summary>
     [Serializable]
     public class ProfileGroupType

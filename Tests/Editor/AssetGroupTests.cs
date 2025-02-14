@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.AddressableAssets.Settings;
@@ -196,7 +195,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 int builtInPackagesResourcesCount = ResourcesTestUtility.GetResourcesEntryCount(Settings, true);
                 CreatePrefabInResourcesSubFolder(assetPath);
                 AddressableAssetEntryTreeView treeView = new AddressableAssetEntryTreeView(
-                    new TreeViewState(),
+                    new AddressableAssetEntryTreeViewState(),
                     new MultiColumnHeaderState(new MultiColumnHeaderState.Column[2]),
                     new AddressableAssetsSettingsGroupEditor(new AddressableAssetsWindow()));
 

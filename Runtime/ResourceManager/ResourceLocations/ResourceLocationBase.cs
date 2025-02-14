@@ -95,7 +95,7 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         /// <summary>
         /// Returns the Internal name used by the provider to load this location
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The internal ID</returns>
         public override string ToString()
         {
             return m_Id;

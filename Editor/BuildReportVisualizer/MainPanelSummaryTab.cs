@@ -101,7 +101,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 {
                     int duplicationCount = dupeAsset.Bundles.Count;
                     if (duplicationCount > 1)
-                        duplicatedSize += (ulong) (duplicationCount - 1) * dupeAsset.Asset.SerializedSize;
+                        duplicatedSize += (ulong) (duplicationCount - 1) * (dupeAsset.Asset.SerializedSize + dupeAsset.Asset.StreamedSize);
                 }
 
                 SummaryRowBuilder duplicatedAssets = new SummaryRowBuilder("Potential Issues")

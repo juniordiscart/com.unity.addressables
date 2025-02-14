@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: FolderAndSprites
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 1
+      enableTightPacking: 1
+    variantMultiplier: 1
+    packables:
+    - {fileID: -1225389385, guid: 065f3a549d47bf443ac987c2c85d288d, type: 3}
+    - {fileID: 102900000, guid: 7d7ce0e3b38ec574cac71d9fa920fedb, type: 3}
+    - {fileID: 21300000, guid: 7facc2bacc8183d458d6d9bdf9b41d49, type: 3}
+    - {fileID: 102900000, guid: 2516eca0286f8b941981ae47f5cd8991, type: 3}
+    - {fileID: 21300000, guid: 5adf8732c8ad2cf438a913a6bb59543a, type: 3}
+    bindAsDefault: 1
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 92374720a3da75c409928a8766593042, type: 3}
+  - {fileID: 21300000, guid: dce619607aff2c743a71c871fc1ef705, type: 3}
+  - {fileID: 21300000, guid: 453ffb600c2bccd4b9a070d1935a310a, type: 3}
+  - {fileID: 21300000, guid: 3524bdd0f5786864eb6ca6746427ef96, type: 3}
+  - {fileID: 21300000, guid: e2966b41eeb854e429db79ff5be3e10b, type: 3}
+  - {fileID: 21300000, guid: aac31d610233a6848b14bc0bbf5df557, type: 3}
+  - {fileID: 21300000, guid: 30d21f91df64ea64abfbc7ce6ddcade2, type: 3}
+  - {fileID: 21300000, guid: 5adf8732c8ad2cf438a913a6bb59543a, type: 3}
+  - {fileID: 21300000, guid: cbc9df73f4dadc84d85e82a1537d1b97, type: 3}
+  - {fileID: 21300000, guid: d574c2b30e1c4bf43a250192fec32416, type: 3}
+  - {fileID: 21300000, guid: 33017f44427a0414eb0eceb6a3f55afb, type: 3}
+  - {fileID: 21300000, guid: c89f7fd42744adb47a34dac8af3c9bc7, type: 3}
+  - {fileID: 21300000, guid: 95ebd1366e383d242ad0917ae39ac77d, type: 3}
+  - {fileID: 21300000, guid: e631ea478d006554e9c146f11d737086, type: 3}
+  - {fileID: 21300000, guid: c2161c8a3cea951469c6b4bca186f50f, type: 3}
+  - {fileID: 21300000, guid: 7facc2bacc8183d458d6d9bdf9b41d49, type: 3}
+  - {fileID: 21300000, guid: a71abffa039841e42b74559eba9c5a38, type: 3}
+  - {fileID: 21300000, guid: 4fa10c9b3c669b74e807a0c93b7331d5, type: 3}
+  - {fileID: 21300000, guid: 8c3f694e73ce6b04fa435fadc139da5b, type: 3}
+  - {fileID: 21300000, guid: 4009cbaf429d57847adbafd9d40827e3, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 02-07
+  - 01-01
+  - 02-03
+  - 01-02
+  - 02-00
+  - 01-07
+  - 01-04
+  - 00-00
+  - 01-05
+  - 02-04
+  - 01-03
+  - 01-08
+  - 02-08
+  - 01-06
+  - 02-06
+  - 00-05
+  - 02-05
+  - 01-00
+  - 02-01
+  - 02-02
+  m_Tag: FolderAndSprites
+  m_IsVariant: 0

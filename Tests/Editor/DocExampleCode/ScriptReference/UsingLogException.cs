@@ -1,6 +1,6 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+    using System;
     using System.Collections.Generic;
     using System.Runtime.InteropServices.WindowsRuntime;
     using System.Threading.Tasks;
@@ -13,7 +13,7 @@ namespace AddressableAssets.DocExampleCode
 
         #region SAMPLE
         public void LogExceptionDebugLogging(bool isErrored)
-		{            
+        {
             try
             {
                 if (isErrored)
@@ -24,7 +24,7 @@ namespace AddressableAssets.DocExampleCode
             } catch(Exception e)
             {
                 Addressables.LogException(e);
-            }            
+            }
         }
         #endregion
 

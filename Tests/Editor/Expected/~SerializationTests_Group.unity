@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
   m_Name: testGroup
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_GroupName: testGroup
   m_Data:
     m_SerializedData: []

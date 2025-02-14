@@ -1,4 +1,4 @@
-﻿namespace UnityEditor.AddressableAssets.Build
+namespace UnityEditor.AddressableAssets.Build
 {
     /// <summary>
     /// Naming conventions for the monoscript bundle name prefix.

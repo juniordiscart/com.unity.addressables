@@ -1723,7 +1723,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <param name="configName">The name of the settings object.</param>
 		/// <param name="createDefaultGroups">If true, create groups for player data and local packed content.</param>
 		/// <param name="isPersisted">If true, assets are created.</param>
-		/// <returns></returns>
+        /// <returns>The AddressableAssetSettings object.</returns>
 		public static AddressableAssetSettings Create(string configFolder, string configName, bool createDefaultGroups, bool isPersisted)
 		{
 			AddressableAssetSettings aa;
@@ -2280,7 +2280,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <param name="targetParent">The group to add the entry to.</param>
 		/// <param name="readOnly">Is the new entry read only.</param>
 		/// <param name="postEvent">Send modification event.</param>
-		/// <returns></returns>
+        /// <returns>The AddressableAssetEntry that was moved or created.</returns>
 		public AddressableAssetEntry CreateOrMoveEntry(string guid, AddressableAssetGroup targetParent, bool readOnly = false, bool postEvent = true)
 		{
 			if (targetParent == null || string.IsNullOrEmpty(guid))
@@ -2484,7 +2484,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		/// <summary>
 		/// Remove an asset group.
 		/// </summary>
-		/// <param name="g"></param>
+        /// <param name="g">The Addressable Group to remove</param>
 		public void RemoveGroup(AddressableAssetGroup g)
 		{
 			AssetDatabase.StartAssetEditing();

@@ -3,8 +3,14 @@ using NUnit.Framework;
 
 namespace UnityEditor.AddressableAssets.Tests.Editor.OptionalPackages
 {
+    /// <summary>
+    /// PlaceholderTests
+    /// </summary>
     public class PlaceholderTests
     {
+        /// <summary>
+        /// Test_Placeholder
+        /// </summary>
         [Test]
         public void Test_Placeholder()
         {

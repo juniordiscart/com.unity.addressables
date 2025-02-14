@@ -1,6 +1,5 @@
 {
-    "name": "Unity.Addressables.Tests",
-    "rootNamespace": "",
+    "name": "Unity.Addressables.Runtime.Tests",
     "references": [
         "Unity.Addressables",
         "Unity.ResourceManager",

@@ -501,6 +501,10 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             expected = expected.Replace("\r\n", "\n");
             actual = actual.Replace("\r\n", "\n");
+
+            expected = expected.Replace(" \n", "\n");
+            actual = actual.Replace(" \n", "\n");
+
             Assert.AreEqual(expected, actual);
         }
     }

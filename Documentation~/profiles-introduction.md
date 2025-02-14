@@ -19,7 +19,7 @@ While in development, you would have both your local and remote bundles using lo
 
 ![](images/profiles-example-local-paths.png)<br/>*Paths set for local development.*
 
-In this instance, the local and remote paths are in fact local, which makes it unnecessary to set up a remote server just for local development. 
+In this instance, the local and remote paths are in fact local, which makes it unnecessary to set up a remote server just for local development.
 
 Once the content is ready for production, you can move the remote bundles to a server:
 
@@ -29,6 +29,6 @@ In this case, if you use profiles, you can change the remote load path for `Prod
 
 ![](images/profiles-example-remote-paths.png)<br/>*Paths set for hosting remote content*
 
-The Addressables system only copies data from [Addressables.BuildPath](xref:UnityEngine.AddressableAssets.Addressables.BuildPath) to the StreamingAssets folder during a Player build. It doesn't handle arbitrary paths specified through the LocalBuildPath or LocalLoadPath variables. If you build data to a different location or load data from a different location than the default, you must copy the data manually. 
+The Addressables system only copies data from [Addressables.BuildPath](xref:UnityEngine.AddressableAssets.Addressables.BuildPath) to the StreamingAssets folder during a Player build. It doesn't handle arbitrary paths specified through the LocalBuildPath or LocalLoadPath variables. If you build data to a different location or load data from a different location than the default, you must copy the data manually.
 
 Similarly, you must manually upload remote AssetBundles and associated catalog and hash files to your server so that they can be accessed at the URL defined by __RemoteLoadPath__.

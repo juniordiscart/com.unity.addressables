@@ -216,7 +216,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="key">The key.</param>
         /// <param name="defaultValue">The default value to return if the data is not found.</param>
         /// <param name="addDefault">Optional parameter to control whether to add the default value if the data is not found.</param>
-        /// <returns></returns>
+        /// <returns>The data.</returns>
         public T GetData<T>(string key, T defaultValue, bool addDefault = false)
         {
             try

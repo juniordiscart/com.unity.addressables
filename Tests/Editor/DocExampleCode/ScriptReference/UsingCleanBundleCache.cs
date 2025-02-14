@@ -4,10 +4,10 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+    using System;
     using UnityEngine;
 
-	internal class UsingCleanBundleCache
+    internal class UsingCleanBundleCache
     {
         #region DECLARATION
         public static AsyncOperationHandle<bool> CleanBundleCache(IEnumerable<string> catalogsIds = null)
@@ -16,45 +16,45 @@ namespace AddressableAssets.DocExampleCode
             return default;
         }
 
-		#region SAMPLE_ALL
-		public void UsingCleanBundleCacheForAllCatalogs()
-		{
-			// clear for all currently loaded catalogs
-			// if catalogIds are provided, only those catalogs are used from the currently loaded
-			AsyncOperationHandle<bool> cleanBundleCacheHandle = Addressables.CleanBundleCache();
-			cleanBundleCacheHandle.Completed += op =>
-			{
+        #region SAMPLE_ALL
+        public void UsingCleanBundleCacheForAllCatalogs()
+        {
+            // clear for all currently loaded catalogs
+            // if catalogIds are provided, only those catalogs are used from the currently loaded
+            AsyncOperationHandle<bool> cleanBundleCacheHandle = Addressables.CleanBundleCache();
+            cleanBundleCacheHandle.Completed += op =>
+            {
                 // during caching a reference is added to the catalogs.
                 // release is needed to reduce the reference and allow catalog to be uncached for updating
-				op.Release();
-			};
-		}
-		#endregion
+                op.Release();
+            };
+        }
+        #endregion
 
-		#region SAMPLE_SPECIFY
-		public void UsingCleanBundleCacheWithcatalogIds()
-		{
-			HashSet<string> catalogsIds = new HashSet<string>();
-			foreach (var locator in Addressables.ResourceLocators)
-			{
-				if (locator.LocatorId == "AddressablesMainContentCatalog")
-				{
-					catalogsIds.Add(locator.LocatorId);
-					break;
-				}
-			}
+        #region SAMPLE_SPECIFY
+        public void UsingCleanBundleCacheWithcatalogIds()
+        {
+            HashSet<string> catalogsIds = new HashSet<string>();
+            foreach (var locator in Addressables.ResourceLocators)
+            {
+                if (locator.LocatorId == "AddressablesMainContentCatalog")
+                {
+                    catalogsIds.Add(locator.LocatorId);
+                    break;
+                }
+            }
 
-			if (catalogsIds.Count == 0)
-				return;
+            if (catalogsIds.Count == 0)
+                return;
 
-			var cleanBundleCacheHandle = Addressables.CleanBundleCache(catalogsIds);
-			cleanBundleCacheHandle.Completed += op =>
-			{
-				// during caching a reference is added to the catalogs.
-				// release is needed to reduce the reference and allow catalog to be uncached for updating
-				op.Release();
-			};
-		}
-		#endregion
-	}
+            var cleanBundleCacheHandle = Addressables.CleanBundleCache(catalogsIds);
+            cleanBundleCacheHandle.Completed += op =>
+            {
+                // during caching a reference is added to the catalogs.
+                // release is needed to reduce the reference and allow catalog to be uncached for updating
+                op.Release();
+            };
+        }
+        #endregion
+    }
 }

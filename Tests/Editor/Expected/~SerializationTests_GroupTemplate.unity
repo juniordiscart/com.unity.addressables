@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e5d17a21594effb4e9591490b009e7aa, type: 3}
   m_Name: BundledAssetGroupSchema
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_Group: {fileID: 0}
   m_InternalBundleIdMode: 1
   m_Compression: 1
@@ -34,9 +34,9 @@ MonoBehaviour:
   m_RedirectLimit: -1
   m_RetryCount: 0
   m_BuildPath:
-    m_Id: 
+    m_Id:
   m_LoadPath:
-    m_Id: 
+    m_Id:
   m_BundleMode: 0
   m_AssetBundleProviderType:
     m_AssemblyName: Unity.ResourceManager, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -54,7 +54,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5834b5087d578d24c926ce20cd31e6d6, type: 3}
   m_Name: ContentUpdateGroupSchema
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_Group: {fileID: 0}
   m_StaticContent: 0
 --- !u!114 &11400000
@@ -68,7 +68,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1a3c5d64ac83548c09dd1678b9f6f1cd, type: 3}
   m_Name: myTemplate
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_SchemaObjects:
   - {fileID: -6794523166426839361}
   - {fileID: -1107740541918034454}

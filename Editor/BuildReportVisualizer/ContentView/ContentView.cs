@@ -291,6 +291,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         string GetCellContent(string colName);
 
+        /// <summary>
+        /// Get the sortable content
+        /// </summary>
+        /// <param name="colName">The name of the column</param>
+        /// <returns>The display string for the cell</returns>
         string GetSortContent(string colName);
 
     }

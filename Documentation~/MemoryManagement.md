@@ -27,7 +27,7 @@ If an asset is no longer referenced, indicated by the released status and disabl
 * Later, when `tank` loads, the Profiler displays a single ref-count for both `tree` and `tank`, and two ref-counts for the `stuff` AssetBundle.
 * If you release `tree`, its ref-count becomes zero, and the blue bar goes away.
 
-In this example, the `tree` asset isn't unloaded at this point. You can load an AssetBundle, or its partial contents, but you can't unload part of an AssetBundle. No asset in `stuff` unloads until the AssetBundle is unloaded. 
+In this example, the `tree` asset isn't unloaded at this point. You can load an AssetBundle, or its partial contents, but you can't unload part of an AssetBundle. No asset in `stuff` unloads until the AssetBundle is unloaded.
 
 The exception to this rule is the engine interface [`Resources.UnloadUnusedAssets`](xref:UnityEngine.Resources.UnloadUnusedAssets). Executing this method in the earlier example causes `tree` to unload. Because the Addressables system isn't aware of these events, the Profiler graph only reflects the Addressables ref-counts (not exactly what memory holds). If you use [`Resources.UnloadUnusedAssets`](xref:UnityEngine.Resources.UnloadUnusedAssets), it's a slow operation, and should only be called on a screen that won't display any hitches, such as a loading screen.
 

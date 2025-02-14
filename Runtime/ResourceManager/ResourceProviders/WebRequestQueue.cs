@@ -6,7 +6,7 @@ using UnityEngine.ResourceManagement.Util;
 namespace UnityEngine.ResourceManagement
 {
     /// <summary>
-    /// Represents a web request stored in the <seealso cref="WebRequestQueue"/>.
+    /// Represents a web request stored in the <see cref="WebRequestQueue"/>.
     /// </summary>
     public class WebRequestQueueOperation
     {

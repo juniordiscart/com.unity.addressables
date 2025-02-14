@@ -18,7 +18,7 @@ The Build and Load Paths settings determine where the artifacts for your content
 |:---|---|:---|
 | __Build & Load Paths__ || The [Profile path](xref:addressables-profiles) pair that defines where the Addressables build system creates artifacts for this group and where the Addressables system loads those artifacts at runtime. Choose a path pair from the list or select `<custom>` if you want to set the build and load paths separately.|
 | __Build Path__<br/><br/>__Load Path__<br/><br/>Only available if you set __Build & Load Paths__ to `<custom>`.|| A Profile variable that defines where the Addressables build system creates artifacts for this group, or loads the build artifacts of the group. You can also set a custom string. Use one of the following:
-||__LocalBuildPath__| Use for assets that you plan to distribute as part of your application installation. 
+||__LocalBuildPath__| Use for assets that you plan to distribute as part of your application installation.
 ||__RemoteBuildPath__| Use for assets that you plan to distribute using a remote hosting service such Unity Cloud Content Delivery or other Content Delivery Network.
 ||__Custom__| Specify a string as the path for this group.|
 
@@ -70,7 +70,7 @@ To set the compression, use the Advanced settings on each group. Compression doe
 > [!NOTE]
 > LZMA AssetBundle compression isn't available for AssetBundles on WebGL. You can use LZ4 compression instead. For more WebGL AssetBundle information, see [Building and running a WebGL project](xref:webgl-building).
 
-The hardware characteristics of a platform mean that uncompressed bundles aren't always the fastest to load. The maximum speed of loading uncompressed bundles is gated by IO speed, while the speed of loading LZ4-compressed bundles is gated by either IO speed or CPU, depending on hardware. 
+The hardware characteristics of a platform mean that uncompressed bundles aren't always the fastest to load. The maximum speed of loading uncompressed bundles is gated by IO speed, while the speed of loading LZ4-compressed bundles is gated by either IO speed or CPU, depending on hardware.
 
 On most platforms, loading LZ4-compressed bundles is CPU bound, and loading uncompressed bundles is faster. On platforms that have low IO speeds and high CPU speeds, LZ4 loading can be faster. It's best practice to run performance analysis to validate whether your game fits the common patterns, or needs some unique tweaking.
 

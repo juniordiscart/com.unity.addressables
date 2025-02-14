@@ -1,6 +1,6 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+    using System;
     using System.Collections.Generic;
     using Unity.IO.LowLevel.Unsafe;
     using UnityEngine;
@@ -63,7 +63,7 @@ namespace AddressableAssets.DocExampleCode
                 }
                 var unloadHandle = Addressables.UnloadSceneAsync(sceneHandle, UnloadSceneOptions.None);
                 unloadHandle.Completed += (s) =>
-                {                    
+                {
                     if (cleanupCallback != null)
                     {
                         cleanupCallback();
@@ -73,7 +73,7 @@ namespace AddressableAssets.DocExampleCode
 
 
         }
-		
-		#endregion
-	}
+
+        #endregion
+    }
 }

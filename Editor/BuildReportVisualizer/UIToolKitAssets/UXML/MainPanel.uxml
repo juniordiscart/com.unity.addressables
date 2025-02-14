@@ -5,7 +5,7 @@
     <AddressablesGUI:Ribbon name="TabsRibbon" show-help-button="false" alignment="FlexStart" style="background-color: #30302f; min-height: 35px; max-height: 35px; border: 0px">
         <AddressablesGUI:RibbonButton text="Summary" name="SummaryTabButton" />
         <AddressablesGUI:RibbonButton text="Explore" name="ContentTabButton" />
-		<AddressablesGUI:RibbonButton text="Potential Issues" name="PotentialIssuesTabButton" />
+        <AddressablesGUI:RibbonButton text="Potential Issues" name="PotentialIssuesTabButton" />
     </AddressablesGUI:Ribbon>
     <ui:Instance template="SummaryTabTemplate" name="SummaryTab"/>
     <ui:Instance template="ContentTabTemplate" name="ContentTab"/>

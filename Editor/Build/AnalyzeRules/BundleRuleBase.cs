@@ -48,6 +48,9 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 		/// A mapping of resources to a list of guids that correspond to their dependencies
 		/// </summary>
 		protected Dictionary<string, List<GUID>> ResourcesToDependencies => m_ResourcesToDependencies;
+        /// <summary>
+        /// A list of all the Asset Bundle input definitions. Each entry is an Asset Bundle build map
+        /// </summary>
 		protected internal List<AssetBundleBuild> AllBundleInputDefs => m_AllBundleInputDefs;
 
 		internal IList<IBuildTask> RuntimeDataBuildTasks(string builtinShaderBundleName)
@@ -347,7 +350,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 		/// </summary>
 		/// <param name="bid">ID for new AssetBundleBuild</param>
 		/// <param name="bundleToAssetGroup"> Map of bundle names to asset group Guids</param>
-		/// <returns></returns>
+        /// <returns>Asset Bundle build map entry</returns>
 		protected internal static AssetBundleBuild CreateUniqueBundle(AssetBundleBuild bid, Dictionary<string, string> bundleToAssetGroup)
 		{
 			int count = 1;
@@ -544,8 +547,19 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
 		/// </summary>
 		protected internal struct ResultData
 		{
+            /// <summary>
+            /// The path of the resource file
+            /// </summary>
 			public string ResourcePath;
+
+            /// <summary>
+            /// The name of the Asset Bundle
+            /// </summary>
 			public string AssetBundleName;
+
+            /// <summary>
+            /// The path of a Unity asset
+            /// </summary>
 			public string AssetPath;
 		}
 

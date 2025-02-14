@@ -1,15 +1,15 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+    using System;
     using UnityEngine;
-	
-	internal class UsingReleaseInstance
+
+    internal class UsingReleaseInstance
     {
-		#region SAMPLE
-		public void UsingReleaseInstanceSample()
-		{
-			
-		}
-		#endregion
-	}
+        #region SAMPLE
+        public void UsingReleaseInstanceSample()
+        {
+
+        }
+        #endregion
+    }
 }

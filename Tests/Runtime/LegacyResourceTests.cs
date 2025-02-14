@@ -108,8 +108,8 @@ namespace LegacyResourcesTests
             Assert.IsNotNull(op.Result);
             m_Addressables.Release(op);
 #else
-	        UnityEngine.Debug.Log($"Skipping test {nameof(CanLoadFromResources_ByGuid)} due to running outside of Editor.");
-			yield break;
+            UnityEngine.Debug.Log($"Skipping test {nameof(CanLoadFromResources_ByGuid)} due to running outside of Editor.");
+            yield break;
 #endif
         }
 

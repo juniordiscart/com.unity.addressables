@@ -73,7 +73,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
     /// <summary>
     /// Invoked before performing a Player build. Maintains building Addressables step and processing Addressables build data.
     /// </summary>
-    /// <param name="buildPlayerContext"></param>
+    /// <param name="buildPlayerContext">Context for the Scriptable Build Pipeline on how to build AssetBundles</param>
     public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
     {
         var settings = AddressableAssetSettingsDefaultObject.Settings;

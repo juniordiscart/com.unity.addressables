@@ -25,7 +25,7 @@ namespace AddressableTests.AsyncTask
     {
         const int loadCount = 100;
 #if UNITY_EDITOR
- 
+
         internal override void Setup(AddressableAssetSettings settings, string tempAssetFolder)
         {
             for(int i = 0 ; i < loadCount; i++)
@@ -97,7 +97,7 @@ namespace AddressableTests.AsyncTask
                 handles.Add(h);
             }
             var gop = impl.ResourceManager.CreateGenericGroupOperation(handles);
-            
+
             await gop.Task;
         }
 

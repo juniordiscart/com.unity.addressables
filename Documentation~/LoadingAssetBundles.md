@@ -10,7 +10,7 @@ The Addressables system packs assets into AssetBundles and loads these bundles a
 
 Addressables can load AssetBundles via two engine APIs: `UnityWebRequest.GetAssetBundle`, and `AssetBundle.LoadFromFileAsync`. The default behavior is to use `AssetBundle.LoadFromFileAsync` when the AssetBundle is in local storage and use `UnityWebRequest` when the AssetBundle path is a URL.
 
-You can override this behavior to use `UnityWebRequest` for local Asset Bundles by setting `BundledAssetGroupSchema.UseUnityWebRequestForLocalBundles` to true. It can also be set through the BundledAssetGroupSchema GUI. 
+You can override this behavior to use `UnityWebRequest` for local Asset Bundles by setting `BundledAssetGroupSchema.UseUnityWebRequestForLocalBundles` to true. It can also be set through the BundledAssetGroupSchema GUI.
 
 A few of these situations include:
 

@@ -208,7 +208,7 @@ namespace UnityEngine.ResourceManagement.Util
         /// <summary>
         /// Release the linked list node for later use.
         /// </summary>
-        /// <param name="node"></param>
+        /// <param name="node">The node to release</param>
         public void Release(LinkedListNode<T> node)
         {
             if (m_NodeCache == null)

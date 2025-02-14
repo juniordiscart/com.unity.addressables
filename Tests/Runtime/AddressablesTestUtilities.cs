@@ -21,14 +21,14 @@ using UnityEditor.U2D;
 public static class AddressablesTestUtility
 {
     // when we build the package we build a test only package which puts all the files
-    // into com.unity.addressables.tests, we need to detect this and return the correct
+    // into com.Unity.Addressables.Runtime.Tests, we need to detect this and return the correct
     // path
     public static string GetPackagePath()
     {
         var packagePath = "Packages/com.unity.addressables";
-        if (Directory.Exists("Packages/com.unity.addressables.tests"))
+        if (Directory.Exists("Packages/com.Unity.Addressables.Runtime.Tests"))
         {
-            packagePath = "Packages/com.unity.addressables.tests";
+            packagePath = "Packages/com.Unity.Addressables.Runtime.Tests";
         }
 
         return packagePath;

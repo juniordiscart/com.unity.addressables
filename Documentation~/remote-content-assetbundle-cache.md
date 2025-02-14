@@ -1,6 +1,6 @@
 # Remote content AssetBundle caching
 
-By default, AssetBundles produced for an Addressables build are cached on the client device after they are downloaded. Cached bundles are only downloaded again if they are updated or if they are deleted from the cache. 
+By default, AssetBundles produced for an Addressables build are cached on the client device after they are downloaded. Cached bundles are only downloaded again if they are updated or if they are deleted from the cache.
 
 An updated catalog can exclude bundle entries present in an older version of the catalog. When these entries are cached, their data is no longer needed on the device.
 

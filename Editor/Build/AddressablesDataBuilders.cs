@@ -47,7 +47,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="locCount">Number of locations created by this build</param>
         /// <param name="err">Error string if there were problems with the build.  Defaults to empty</param>
         /// <typeparam name="TResult">The actual build result created</typeparam>
-        /// <returns></returns>
+        /// <returns>The result of the data builder</returns>
         public static TResult CreateResult<TResult>(string settingsPath, int locCount, string err = "") where TResult : IDataBuilderResult
         {
             var opResult = Activator.CreateInstance<TResult>();
@@ -63,8 +63,8 @@ namespace UnityEditor.AddressableAssets.Build
         ///  with additional details added as needed.  The Result.Duration should always be set at the end of the build
         ///  script in the non-error scenario.  Other results should be set as available.
         /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="TResult">The type of IDataBuilderResult you want to produce from a build</typeparam>
+        /// <returns>The result of the data builder</returns>
         public static TResult CreateResult<TResult>() where TResult : IDataBuilderResult
         {
             var opResult = Activator.CreateInstance<TResult>();

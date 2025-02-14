@@ -1,15 +1,15 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+    using System;
     using UnityEngine;
-	
-	internal class UsingLoadAssetsAsync
+
+    internal class UsingLoadAssetsAsync
     {
-		#region SAMPLE
-		public void UsingLoadAssetsAsyncSample()
-		{
-			
-		}
-		#endregion
-	}
+        #region SAMPLE
+        public void UsingLoadAssetsAsyncSample()
+        {
+
+        }
+        #endregion
+    }
 }

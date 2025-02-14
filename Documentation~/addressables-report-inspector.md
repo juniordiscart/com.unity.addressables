@@ -1,4 +1,4 @@
-﻿---
+---
 uid: addressables-report-inspector-reference
 ---
 
@@ -8,7 +8,7 @@ You can use the Inspector to view in depth information about any given asset or 
 
 ![](images/addressables-report-inspector.png)
 
-The Inspector panel has the following sections: 
+The Inspector panel has the following sections:
 
 * **Summary panel**: Displays information about an Asset or AssetBundle, such as its file size, its group, and any labels associated with it. Additionally, the summary panel has buttons that you can use to navigate to various places within both the Build Report and the Editor, depending on whether you select an Asset or an AssetBundle.
 * **References panel**: Displays the chain of dependencies surrounding a given asset.

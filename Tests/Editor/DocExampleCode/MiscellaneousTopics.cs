@@ -138,7 +138,7 @@ namespace AddressableAssets.DocExampleCode
                 opList.Add(loadAssetHandle);
             }
 
-            //create a GroupOperation to wait on all the above loads at once. 
+            //create a GroupOperation to wait on all the above loads at once.
             var groupOp = Addressables.ResourceManager.CreateGenericGroupOperation(opList);
 
             if (!groupOp.IsDone)

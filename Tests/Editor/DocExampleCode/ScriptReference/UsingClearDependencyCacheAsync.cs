@@ -1,15 +1,15 @@
 namespace AddressableAssets.DocExampleCode
 {
-	using System;
+    using System;
     using UnityEngine;
-	
-	internal class UsingClearDependencyCacheAsync
+
+    internal class UsingClearDependencyCacheAsync
     {
-		#region SAMPLE
-		public void UsingClearDependencyCacheAsyncSample()
-		{
-			
-		}
-		#endregion
-	}
+        #region SAMPLE
+        public void UsingClearDependencyCacheAsyncSample()
+        {
+
+        }
+        #endregion
+    }
 }

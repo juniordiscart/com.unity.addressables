@@ -67,7 +67,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <summary>
         /// A custom operation should override this method to return the progress of the operation.
         /// </summary>
-        /// <returns>Progress of the operation. Value should be between 0.0f and 1.0f</returns>
+        /// <value>Progress of the operation. Value should be between 0.0f and 1.0f</value>
         protected virtual float Progress
         {
             get { return 0; }

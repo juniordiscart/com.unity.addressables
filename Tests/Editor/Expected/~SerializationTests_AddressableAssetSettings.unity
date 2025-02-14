@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 468a46d0ae32c3544b7d98094e6448a9, type: 3}
   m_Name: AddressableAssetSettings.Tests
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_DefaultGroup: 73831a73d82c83d4183d7e0477f7e745
   m_currentHash:
     serializedVersion: 2
@@ -30,17 +30,17 @@ MonoBehaviour:
   m_StripUnityVersionFromBundleBuild: 0
   m_DisableVisibleSubAssetRepresentations: 0
   m_ShaderBundleNaming: 0
-  m_ShaderBundleCustomNaming: 
+  m_ShaderBundleCustomNaming:
   m_MonoScriptBundleNaming: 0
   m_CheckForContentUpdateRestrictionsOption: 0
-  m_MonoScriptBundleCustomNaming: 
+  m_MonoScriptBundleCustomNaming:
   m_RemoteCatalogBuildPath:
-    m_Id: 
+    m_Id:
   m_RemoteCatalogLoadPath:
-    m_Id: 
-  m_ContentStateBuildPathProfileVariableName: 
-  m_CustomContentStateBuildPath: 
-  m_ContentStateBuildPath: 
+    m_Id:
+  m_ContentStateBuildPathProfileVariableName:
+  m_CustomContentStateBuildPath:
+  m_ContentStateBuildPath:
   m_BuildAddressablesWithPlayerBuild: 0
   m_overridePlayerVersion: '[UnityEditor.PlayerSettings.bundleVersion]'
   m_GroupAssets:
@@ -53,7 +53,7 @@ MonoBehaviour:
     m_BundleBuildPath: Temp/com.unity.addressables/AssetBundles
   m_ProfileSettings:
     m_Profiles:
-    - m_InheritedParent: 
+    - m_InheritedParent:
       m_Id: 5550bbbe2a7ee8c4f9d4600df43218be
       m_ProfileName: Default
       m_Values:
@@ -67,7 +67,7 @@ MonoBehaviour:
         m_Value: '{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]'
       - m_Id: 8f726afcd2923be469c05fdfc9963d44
         m_Value: '[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]'
-    - m_InheritedParent: 
+    - m_InheritedParent:
       m_Id: c901f922cc200454b815a5b33a8427c6
       m_ProfileName: testProfile
       m_Values:
@@ -107,8 +107,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0f703ff181d66cb4b9124c32c9095b86, type: 2}
   - {fileID: 11400000, guid: 71891bb601fa21a47ac0317a4fe38f45, type: 2}
   m_CertificateHandlerType:
-    m_AssemblyName: 
-    m_ClassName: 
+    m_AssemblyName:
+    m_ClassName:
   m_ActivePlayerDataBuilderIndex: 3
   m_DataBuilders:
   - {fileID: 11400000, guid: 271b00b9e756a6d448f4ae7a08b88509, type: 2}

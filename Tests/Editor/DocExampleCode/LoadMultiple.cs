@@ -35,7 +35,7 @@ namespace AddressableAssets.DocExampleCode
                         x = 0;
                         z++;
                     }
-                }, Addressables.MergeMode.Union, // How to combine multiple labels 
+                }, Addressables.MergeMode.Union, // How to combine multiple labels
                 false); // Whether to fail and release if any asset fails to load
 
             yield return loadHandle;

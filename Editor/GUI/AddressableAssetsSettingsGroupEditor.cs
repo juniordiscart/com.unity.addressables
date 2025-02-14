@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Diagnostics;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -72,11 +74,11 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		[FormerlySerializedAs("treeState")]
 		[SerializeField]
-		TreeViewState m_TreeState;
+        internal AddressableAssetEntryTreeViewState m_TreeState;
 
 		[FormerlySerializedAs("mchs")]
 		[SerializeField]
-		MultiColumnHeaderState m_Mchs;
+        internal MultiColumnHeaderState m_Mchs;
 
 		internal AddressableAssetEntryTreeView m_EntryTree;
 
@@ -206,7 +208,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-		void OnSettingsModification(AddressableAssetSettings s, AddressableAssetSettings.ModificationEvent e, object o)
+        internal void OnSettingsModification(AddressableAssetSettings s, AddressableAssetSettings.ModificationEvent e, object o)
 		{
 			if (m_EntryTree == null)
 				return;
@@ -730,16 +732,15 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		void OnSortGroups()
 		{
-			Undo.RecordObject(settings, "AddressableAssetSettings");
 			List<AddressableAssetGroup> sortedGroups = new List<AddressableAssetGroup>(settings.groups);
-
 			sortedGroups.Sort((g0, g1) =>
 			{
 				if (g0 == null)
 				{
 					return -1;
 				}
-				else if (g1 == null)
+
+				if (g1 == null)
 				{
 					return 1;
 				}
@@ -756,11 +757,16 @@ namespace UnityEditor.AddressableAssets.GUI
 
 				return g0.Name.CompareTo(g1.Name);
 			});
-
-			settings.groups.Clear();
-			settings.groups.AddRange(sortedGroups);
-
-			settings.SetDirty(AddressableAssetSettings.ModificationEvent.GroupMoved, settings.groups, true, true);
+			
+			AddressableAssetGroupSortSettings sortSettings = AddressableAssetGroupSortSettings.GetSettings(settings);
+			Undo.RecordObject(sortSettings, nameof(sortSettings));
+			
+			m_TreeState.sortOrder = sortedGroups.Select(g => g.Guid).ToArray();
+			sortSettings.sortOrder = sortedGroups.Select(g => g.Guid).ToArray();
+			
+			AddressableAssetUtility.OpenAssetIfUsingVCIntegration(sortSettings);
+			EditorUtility.SetDirty(sortSettings);
+			
 			Reload();
 		}
 
@@ -859,6 +865,7 @@ namespace UnityEditor.AddressableAssets.GUI
 				AddressableAssetSettingsDefaultObject.Settings.OnModification -= OnSettingsModification;
 				m_ModificationRegistered = false;
 			}
+            m_EntryTree?.SerializeState(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(m_Settings)));
 		}
 
 		public bool OnGUI(Rect pos)
@@ -889,7 +896,7 @@ namespace UnityEditor.AddressableAssets.GUI
 		internal AddressableAssetEntryTreeView InitialiseEntryTree()
 		{
 			if (m_TreeState == null)
-				m_TreeState = new TreeViewState();
+                m_TreeState = new AddressableAssetEntryTreeViewState();
 
 			var headerState = AddressableAssetEntryTreeView.CreateDefaultMultiColumnHeaderState();
 			if (MultiColumnHeaderState.CanOverwriteSerializedFields(m_Mchs, headerState))
@@ -898,9 +905,24 @@ namespace UnityEditor.AddressableAssets.GUI
 
 			m_SearchField = new SearchField();
 			m_EntryTree = new AddressableAssetEntryTreeView(m_TreeState, m_Mchs, this);
+
+            m_EntryTree.DeserializeState(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(m_Settings)));
+            UpdateSavedColumnWidths(m_TreeState, m_Mchs);
+
 			m_EntryTree.Reload();
 			return m_EntryTree;
 		}
+
+        internal void UpdateSavedColumnWidths(AddressableAssetEntryTreeViewState treeState, MultiColumnHeaderState mchs)
+        {
+            if (treeState.columnWidths?.Length == mchs.columns.Length)
+            {
+                for (var i = 0; i < mchs.columns.Length; i++)
+                {
+                    mchs.columns[i].width = treeState.columnWidths[i];
+                }
+            }
+        }
 
 		public void Reload()
 		{

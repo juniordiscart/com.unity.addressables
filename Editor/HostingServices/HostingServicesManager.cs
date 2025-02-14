@@ -103,7 +103,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// <summary>
         /// Static method for use in starting up the HostingServicesManager in batch mode.
         /// </summary>
-        /// <param name="settings"> </param>
+        /// <param name="settings">The settings object to use for the hosting service</param>
         public static void BatchMode(AddressableAssetSettings settings)
         {
             if (settings == null)
@@ -151,7 +151,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// Get an array of all <see cref="IHostingService"/> types that have been used by the manager, or are known
         /// built-in types available for use.
         /// </summary>
-        /// <returns></returns>
+        /// <value>All the types used by this manager</value>
         public Type[] RegisteredServiceTypes
         {
             get
@@ -187,7 +187,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// <summary>
         /// Initialize manager with the given <see cref="AddressableAssetSettings"/> object.
         /// </summary>
-        /// <param name="settings"></param>
+        /// <param name="settings">The settings object to use for this hosting service</param>
         public void Initialize(AddressableAssetSettings settings)
         {
             if (IsInitialized) return;
@@ -241,7 +241,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// </summary>
         /// <param name="serviceType">A <see cref="Type"/> object for the service. Must implement <see cref="IHostingService"/></param>
         /// <param name="name">A descriptive name for the new service instance.</param>
-        /// <returns></returns>
+        /// <returns>The newly created hosting service object</returns>
         public IHostingService AddHostingService(Type serviceType, string name)
         {
             var svc = Activator.CreateInstance(serviceType) as IHostingService;
@@ -275,7 +275,7 @@ namespace UnityEditor.AddressableAssets.HostingServices
         /// Stops the given <see cref="IHostingService"/>, unregisters callbacks, and removes it from management. This
         /// function does nothing if the service is not being managed by this <see cref="HostingServicesManager"/>
         /// </summary>
-        /// <param name="svc"></param>
+        /// <param name="svc">The hosting service to remove</param>
         public void RemoveHostingService(IHostingService svc)
         {
             if (!m_HostingServiceInfoMap.ContainsKey(svc))

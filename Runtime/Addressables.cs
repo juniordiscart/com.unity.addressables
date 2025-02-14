@@ -153,22 +153,35 @@ namespace UnityEngine.AddressableAssets
             m_Addressables = addr;
         }
 
-        ///<inheritdoc cref="InvalidKeyException"/>
+        /// <summary>
+        /// New Invalid Key Exception
+        /// </summary>
         public InvalidKeyException()
         {
         }
 
-        ///<inheritdoc/>
+        /// <summary>
+        /// New Invalid Key Exception
+        /// </summary>
+        /// <param name="message">Exception message</param>
         public InvalidKeyException(string message) : base(message)
         {
         }
 
-        ///<inheritdoc/>
+        /// <summary>
+        /// New Invalid Key Exception
+        /// </summary>
+        /// <param name="message">Exception message</param>
+        /// <param name="innerException">Inner exception that caused the problem</param>
         public InvalidKeyException(string message, Exception innerException) : base(message, innerException)
         {
         }
 
-        ///<inheritdoc/>
+        /// <summary>
+        /// New Invalid Key Exception
+        /// </summary>
+        /// <param name="message">Exception message</param>
+        /// <param name="context">Streaming context being used when exception was thrown</param>
         protected InvalidKeyException(SerializationInfo message, StreamingContext context) : base(message, context)
         {
         }
@@ -514,9 +527,9 @@ namespace UnityEngine.AddressableAssets
         /// <remarks>
         /// Retrieves the interface used by the Addressables Asset System to create instances of Addressable GameObjects.
         /// </remarks>
-        /// <returns>The [IInstanceProvider](xref:UnityEngine.ResourceManagement.ResourceProviders.IInstanceProvider) object used to create instances of GameObjects.</returns>
+        /// <value>The [IInstanceProvider](xref:UnityEngine.ResourceManagement.ResourceProviders.IInstanceProvider) object used to create instances of GameObjects.</value>
         /// <example>
-        /// The example below instantiates a GameObject using ProvideInstance.
+        /// <para>The example below instantiates a GameObject using ProvideInstance.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInstanceProvider.cs" region="SAMPLE"/>
         /// </example>
         public static IInstanceProvider InstanceProvider
@@ -603,8 +616,8 @@ namespace UnityEngine.AddressableAssets
         /// streaming data at runtime. The Editor build location is <see cref="BuildPath"/> and player is <see cref="PlayerBuildDataPath"/>.
         /// </remarks>
         /// <example>
-        /// The example demonstrates a utility function that looks inside the Streaming Assets subfolder and gets a list of
-        /// all the subfolders. This is returned as a list of all platforms that have been built on the current machine.
+        /// <para>The example demonstrates a utility function that looks inside the Streaming Assets subfolder and gets a list of
+        /// all the subfolders. This is returned as a list of all platforms that have been built on the current machine.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingStreamingAssetsSubFolder.cs" region="SAMPLE"/>
         /// </example>
         public static string StreamingAssetsSubFolder
@@ -631,12 +644,10 @@ namespace UnityEngine.AddressableAssets
         /// contains the settings, local catalog and addressables managed local asset bundles.
         /// </remarks>
         /// <example>
-        /// Gets the runtime settings from the buildPath and returns the Addressables package version that the content was built using.
+        /// <para>Gets the runtime settings from the buildPath and returns the Addressables package version that the content was built using.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingBuildPath.cs" region="GET_SETTINGS_FROM_BUILDPATH"/>
-        /// </example>
-        /// <example>
-        /// In this example we add a build pre-process hook. When building a player this throws an exception if the content has not been built.
-        /// This could be useful when 'Build Addressables on Player Build' is not set in Addressables Settings. 
+        /// <para>In this example we add a build pre-process hook. When building a player this throws an exception if the content has not been built.
+        /// This could be useful when 'Build Addressables on Player Build' is not set in Addressables Settings.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/ContentBuiltcheck.cs" region="CONTENT_BUILT_CHECK"/>
         /// </example>
         public static string BuildPath
@@ -653,9 +664,9 @@ namespace UnityEngine.AddressableAssets
         /// them from being included in the default player build.
         /// </remarks>
         /// <example>
-        /// This example is a custom build script that extends the default packed build script. Files are built
+        /// <para>This example is a custom build script that extends the default packed build script. Files are built
         /// in a custom build folder, and then copied into PlayerBuildDataPath so they are included with
-        /// the player build.
+        /// the player build.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingPlayerBuildDataPath.cs" region="SAMPLE"/>
         /// </example>
         public static string PlayerBuildDataPath
@@ -666,7 +677,7 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// The path used by the Addressables system to load initialization data.
         /// </summary>
-        /// /// <remarks>
+        /// <remarks>
         /// When running in the Editor Addressables.RuntimePath returns the path to the locally built data in the <see cref="Addressables.LibraryPath"/>.
         /// When running in a player this returns the path to the same content found in <see cref="Application.streamingAssetsPath"/>. 
         /// This folder contains the settings, local catalog and Addressables managed local asset bundles.
@@ -797,7 +808,9 @@ namespace UnityEngine.AddressableAssets
         /// LogError can be used to write an Error message. LogError works the same way as <see cref="Debug.LogError(object)" />. Addressables logs warnings and errors so by default this function will log.
         /// </remarks>
         /// <param name="msg">The msg to log</param>
+        /// <example>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLogError.cs" region="SAMPLE"/>
+        /// </example>
         /// <seealso href="xref:addressables-asset-settings">Enable all logging</seealso>
         public static void LogError(string msg)
         {
@@ -900,7 +913,7 @@ namespace UnityEngine.AddressableAssets
         /// </remarks>
         /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is an [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator)  object.</returns>
         /// <example>
-        /// The following script loads all Addressable assets referenced in the catalog.
+        /// <para>The following script loads all Addressable assets referenced in the catalog.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInitializeAsync.cs" region="SAMPLE_LOADALL"/>
         /// </example>
         /// <seealso href="xref:addressables-api-load-content-catalog-async">Managing catalogs at runtime</seealso>
@@ -1027,13 +1040,11 @@ namespace UnityEngine.AddressableAssets
         /// <seealso href="xref:addressables-api-load-asset-async">Loading Addressable Assets</seealso>
         /// <seealso href="xref:addressables-async-operation-handling">Operations</seealso>
         /// <example>
-        /// The example below loads a material using an <see cref="IResourceLocation"/>. The loaded material is assigned to a GameObject.
-        /// A reference to the operation handle is stored and can be released via <see cref="Addressables.Release(AsyncOperationHandle)"/>.
+        /// <para>The example below loads a material using an <see cref="IResourceLocation"/>. The loaded material is assigned to a GameObject.
+        /// A reference to the operation handle is stored and can be released via <see cref="Addressables.Release(AsyncOperationHandle)"/>.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLoadAssetAsync.cs" region="SAMPLE_LOCATION"/>
-        /// </example>
-        /// <example>
-        /// The example below loads a material using a `key`, specifically an <see cref="AssetReference"/>. The loaded material is assigned to a GameObject. A reference to the
-        /// operation handle is stored and can be released via <see cref="Addressables.Release(AsyncOperationHandle)"/>.
+        /// <para>The example below loads a material using a `key`, specifically an <see cref="AssetReference"/>. The loaded material is assigned to a GameObject. A reference to the
+        /// operation handle is stored and can be released via <see cref="Addressables.Release(AsyncOperationHandle)"/>.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingLoadAssetAsync.cs" region="SAMPLE_KEY"/>
         /// </example>
         public static AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(IResourceLocation location)
@@ -1386,9 +1397,24 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// Load mutliple assets
-        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
+        /// Loads multiple assets, identified by a key.
         /// </summary>
+        /// <remarks>
+        /// The key in <paramref name="key"/> is translated into lists of locations, which are merged into a single list based on
+        ///
+        /// When you load Addressable assets, the system:
+        /// * Gathers the dependencies of the assets
+        /// * Downloads any remote AssetBundles needed to load the assets or their dependencies
+        /// * Loads the AssetBundles into memory
+        /// * Populates the `Result` object of the <see cref="AsyncOperationHandle{TObject}"/> instance returned by this function
+        ///
+        /// Use the `Result` object to access the loaded assets.
+        ///
+        /// If any assets cannot be loaded, the entire operation fails. The operation releases any assets and dependencies it had already loaded.
+        /// The `Status` of the operation handle is set to <see cref="AsyncOperationStatus.Failed"/> and the `Result` is set to null.
+        ///
+        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
+        /// </remarks>
         /// <typeparam name="TObject">The type of the assets.</typeparam>
         /// <param name="key">Key for the locations.</param>
         /// <param name="callback">Callback Action that is called per load operation.</param>
@@ -1859,7 +1885,7 @@ namespace UnityEngine.AddressableAssets
         /// <param name="locatorId">The identifier of an [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator) used to retrieve content catalog data.</param>
         /// <returns>Container for content catalog data pertaining to the [IResourceLocator](xref:UnityEngine.AddressableAssets.ResourceLocators.IResourceLocator) object.</returns>
         /// <example>
-        /// The example below uses the identifiers of the resource locators loaded during Addressables initialization process to retrieve catalog data.
+        /// <para>The example below uses the identifiers of the resource locators loaded during Addressables initialization process to retrieve catalog data.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingGetLocatorInfo.cs" region="SAMPLE_1"/>
         /// </example>
         public static ResourceLocatorInfo GetLocatorInfo(string locatorId)
@@ -1992,18 +2018,14 @@ namespace UnityEngine.AddressableAssets
         /// <param name="trackHandle">If true, Addressables will track this request to allow it to be released via the result object.</param>
         /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is a GameObject.</returns>
         /// <example>
-        /// The example below instantiates a GameObject using by a `key`, specifically an <see cref="AssetReference"/>. By default `trackHandle` is set to `true`.
+        /// <para>The example below instantiates a GameObject using by a `key`, specifically an <see cref="AssetReference"/>. By default `trackHandle` is set to `true`.
         /// Since the instance is tracked, a reference from the instance to the handle is stored and released via <see cref="Addressables.ReleaseInstance(GameObject)"/>.
-        /// Alternatively a reference to the operation handle can be stored and released via <see cref="Release(AsyncOperationHandle)"/>, similar to the second example below.
+        /// Alternatively a reference to the operation handle can be stored and released via <see cref="Release(AsyncOperationHandle)"/>, similar to the second example below.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInstantiateAsync.cs" region="SAMPLE_OBJECT_TRACKED"/>
-        /// </example>
-        /// <example>
-        /// The example below shows how to release a GameObject when `trackHandle` is set to `false`. The instance is not tracked and cannot be used to
-        /// release the object, instead a reference to the operation handle is stored and released via <see cref="Release(AsyncOperationHandle)"/>.
+        /// <para>The example below shows how to release a GameObject when `trackHandle` is set to `false`. The instance is not tracked and cannot be used to
+        /// release the object, instead a reference to the operation handle is stored and released via <see cref="Release(AsyncOperationHandle)"/>.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInstantiateAsync.cs" region="SAMPLE_OBJECT_UNTRACKED"/>
-        /// </example>
-        /// <example>
-        /// The example below instantiates a GameObject using an <see cref="IResourceLocation"/>.
+        /// <para>The example below instantiates a GameObject using an <see cref="IResourceLocation"/>.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingInstantiateAsync.cs" region="SAMPLE_LOCATION"/>
         /// </example>
         public static AsyncOperationHandle<GameObject> InstantiateAsync(IResourceLocation location, Transform parent = null, bool instantiateInWorldSpace = false, bool trackHandle = true)
@@ -2344,12 +2366,10 @@ namespace UnityEngine.AddressableAssets
         /// <param name="autoReleaseHandle">If true, the handle will automatically be released when the operation completes.</param>
         /// <returns>The operation with the list of updated content catalog data.</returns>
         /// <example>
-        /// In this example all catalogs are checked for updates:
+        /// <para>In this example all catalogs are checked for updates:</para>
         /// <code source="../Tests/Editor/DocExampleCode/MiscellaneousTopics.cs" region="doc_CheckCatalog"/>
-        /// </example>
         ///
-        /// <example>
-        /// Alternatively you can directly get a list of catalogs and perform the updates:
+        /// <para>Alternatively you can directly get a list of catalogs and perform the updates:</para>
         /// <code source="../Tests/Editor/DocExampleCode/MiscellaneousTopics.cs" region="doc_CheckCatalog"/>
         /// </example>
         /// <seealso href="xref:addressables-api-load-content-catalog-async">Updating catalogs</seealso>
@@ -2389,11 +2409,10 @@ namespace UnityEngine.AddressableAssets
         /// <param name="localCatalogHash">The hash of the local catalog. This can be null if the catalog cannot be updated.</param>
         /// <param name="remoteCatalogLocation">The location of the remote catalog. This can be null if the catalog cannot be updated.</param>
         /// <example>
-        /// This example code creates ResourceLocationBase and adds it to the locator for each file.
+        /// <para>This example code creates ResourceLocationBase and adds it to the locator for each file.</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingAddResourceLocator.cs" region="SAMPLE_ADDLOCATOR"/>
-        /// </example>
-        /// <example>
-        /// Using Addressables API to load "dataFiles/settings.json" after adding the locator:
+        ///
+        /// <para>Using Addressables API to load "dataFiles/settings.json" after adding the locator:</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingAddResourceLocator.cs" region="SAMPLE_LOADING"/>
         /// </example>
         public static void AddResourceLocator(IResourceLocator locator, string localCatalogHash = null, IResourceLocation remoteCatalogLocation = null)
@@ -2433,13 +2452,12 @@ namespace UnityEngine.AddressableAssets
         /// <param name="catalogsIds">The ids of catalogs whose bundle cache entries we want to preserve. If null, entries for all currently loaded catalogs will be preserved.</param>
         /// <returns>The operation handle for the request. Note, that it is user's responsibility to release the returned operation; this can be done before or after the operation completes.</returns>
         /// <example>
-        /// Using CleanBundleCache to remove unused bundles from cache:
+        /// <para>Using CleanBundleCache to remove unused bundles from cache:</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingCleanBundleCache.cs" region="SAMPLE_ALL" />
-        /// </example>
-        /// <example>
-        /// The catalogIds parameter is used to set which cached bundles are preserved.Any bundles that are used in other catalogs or old bundles from the specified catalogs are removed.If null, all currently loaded catalogs will be preserved.
+        ///
+        /// <para>The catalogIds parameter is used to set which cached bundles are preserved.Any bundles that are used in other catalogs or old bundles from the specified catalogs are removed.If null, all currently loaded catalogs will be preserved.
         /// Note, Catalogs other than the main catalog must be loaded to be used for preserving bundles, see[LoadContentCatalogAsync] for more information.
-        /// Using CleanBundleCache to remove all unused bundles from cache that are not used in the current main catalog:
+        /// Using CleanBundleCache to remove all unused bundles from cache that are not used in the current main catalog:</para>
         /// <code source="../Tests/Editor/DocExampleCode/ScriptReference/UsingCleanBundleCache.cs" region="SAMPLE_SPECIFY" />
         /// </example>
         public static AsyncOperationHandle<bool> CleanBundleCache(IEnumerable<string> catalogsIds = null)

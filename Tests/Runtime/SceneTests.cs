@@ -69,7 +69,7 @@ namespace SceneTests
 
             {
                 string scenePath = CreateAssetPath(tempAssetFolder, kEmbeddedSceneName, ".unity");
-                var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Additive);
+                var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
                 new GameObject("EmbededMeshGameObject").AddComponent<MeshFilter>().mesh = new Mesh();
                 EditorSceneManager.SaveScene(scene, scenePath);
                 string sceneGuid = AssetDatabase.AssetPathToGUID(scene.path);

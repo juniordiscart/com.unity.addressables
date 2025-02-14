@@ -12,9 +12,9 @@ You can modify the URLs that Addressables uses to load assets at runtime in the 
 
 ## Static Profile variables
 
-When you define the [RemoteLoadPath Profile variable](xref:addressables-profiles) you can use a static property to specify all or part of the URL that your application loads remote content from, including catalogs, catalog hash files, and AssetBundles. Refer to [Profile variable syntax](xref:addressables-profile-variables) for information about specifying a property name in a Profile variable. 
+When you define the [RemoteLoadPath Profile variable](xref:addressables-profiles) you can use a static property to specify all or part of the URL that your application loads remote content from, including catalogs, catalog hash files, and AssetBundles. Refer to [Profile variable syntax](xref:addressables-profile-variables) for information about specifying a property name in a Profile variable.
 
-The value of the static property must be set before Addressables initializes. Changing the value after initialization has no effect. 
+The value of the static property must be set before Addressables initializes. Changing the value after initialization has no effect.
 
 ## ID transform method
 

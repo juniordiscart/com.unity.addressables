@@ -202,7 +202,7 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             m_Settings = null;
             EditorBuildSettings.RemoveConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName);
-            EditorBuildSettings.TryGetConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, out m_Settings);            
+            EditorBuildSettings.TryGetConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, out m_Settings);
         }
     }
 }

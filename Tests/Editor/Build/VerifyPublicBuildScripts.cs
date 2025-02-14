@@ -8,19 +8,20 @@ using UnityEngine.TestTools;
 using File = System.IO.File;
 using Path = System.IO.Path;
 
-/**
- * This test exists because we frequently suggest that our users extend or copy and paste the builder script
- * files to customize or make their own. We didn't check this on every release and so internal API usage
- * had crept in and made it impossible to do this without copying the entire package. This test verifies
- * that you can copy the script into your own namespace and it will compile.
- */
+/// <summary>
+/// This test exists because we frequently suggest that our users extend or copy and paste the builder script files to customize or make their own.
+/// We didn't check this on every release and so internal API usage had crept in and made it impossible to do this without copying the entire package.
+/// This test verifies that you can copy the script into your own namespace and it will compile.
+/// </summary>
 public class VerifyPublicBuildScripts
 {
     private string m_PackagePath;
     private string m_SamplePath;
     private string m_FolderPath = $"Assets{Path.DirectorySeparatorChar}ScriptFolder";
 
-
+    /// <summary>
+    /// Setup
+    /// </summary>
     [SetUp]
     public void SetUp()
     {
@@ -44,6 +45,10 @@ public class VerifyPublicBuildScripts
         var testFilePath = String.Join($"{Path.DirectorySeparatorChar}", new[] { m_FolderPath, Path.GetFileName(loadScenePath) });
         File.Copy(fullPath, testFilePath);
     }
+
+    /// <summary>
+    /// TearDown
+    /// </summary>
     [TearDown]
     public void TearDown()
     {
@@ -63,6 +68,11 @@ public class VerifyPublicBuildScripts
         "Samples/CustomBuildAndPlaymodeScripts/Editor/CustomPlayModeScript.cs",
     };
 
+    /// <summary>
+    /// Verify_BuildScript_HasNoInternalApis
+    /// </summary>
+    /// <param name="buildScriptPath">Path to the build script</param>
+    /// <returns>IEnumerator for async test</returns>
     [UnityTest]
     public IEnumerator Verify_BuildScript_HasNoInternalApis([ValueSource(nameof(BuildScripts))] string buildScriptPath)
     {

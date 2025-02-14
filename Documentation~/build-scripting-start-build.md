@@ -4,7 +4,7 @@ To start a build from another script, call the [`AddressableAssetSettings.BuildP
 
 Before starting the build, set the active [Profile](AddressableAssetsProfiles.md) and the active build script. You can also set a different [`AddressableAssetSettings`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings) object than the default.
 
-`BuildPlayerContent` takes into consideration the following information when performing the build: 
+`BuildPlayerContent` takes into consideration the following information when performing the build:
 
 * [`AddressableAssetSettingsDefaultObject`](xref:UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject)
 * [`ActivePlayerDataBuilder`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.ActivePlayerDataBuilder)
