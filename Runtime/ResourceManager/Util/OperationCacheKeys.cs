@@ -15,10 +15,12 @@ namespace UnityEngine.ResourceManagement.Util
     internal sealed class IdCacheKey : IOperationCacheKey
     {
         public string ID;
+        public Type locationType;
 
-        public IdCacheKey(string id)
+        public IdCacheKey(Type locType, string id)
         {
             ID = id;
+            locationType = locType;
         }
 
         bool Equals(IdCacheKey other)
@@ -26,12 +28,12 @@ namespace UnityEngine.ResourceManagement.Util
             if (ReferenceEquals(this, other)) return true;
             if (ReferenceEquals(other, null)) return false;
 
-            return other.ID == ID;
+            return other.ID == ID && locationType == other.locationType;
         }
 
         public override int GetHashCode()
         {
-            return ID.GetHashCode();
+            return (17 * 31 + ID.GetHashCode()) * 31 + locationType.GetHashCode();
         }
 
         public override bool Equals(object obj) => Equals(obj as IdCacheKey);

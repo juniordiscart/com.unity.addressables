@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.22.3] - 2024-10-18
+- Fixed issue where the content of the list with Addressable Assets Groups is improperly indented when displayed in Group Hierarchy with Dashes Group View.
+- Fixed issue where “Profile rename failed because default profile cannot be renamed“ error is thrown when renaming a new profile in Addressables Profiles.
+- Fixed loading error when the loading from an assetbundle that is currently being preloaded.
+
 ## [1.22.2] - 2024-05-13
 - Fixed memory leak when loading Sprite objects from a SpriteAtlas asset.
 - Added support for directly calling Release() on AsyncOperationHandles that didn't have the option to.

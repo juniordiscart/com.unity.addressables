@@ -195,7 +195,6 @@ namespace UnityEngine.ResourceManagement
 		HashSet<InstanceOperation> m_TrackedInstanceOperations = new HashSet<InstanceOperation>();
 		internal DelegateList<float> m_UpdateCallbacks = DelegateList<float>.CreateWithGlobalCache();
 		List<IAsyncOperation> m_DeferredCompleteCallbacks = new List<IAsyncOperation>();
-        HashSet<IResourceProvider> m_AssetBundleProviders = new HashSet<IResourceProvider>();
 
 		bool m_InsideExecuteDeferredCallbacksMethod = false;
 		List<DeferredCallbackRegisterRequest> m_DeferredCallbacksToRegister = null;
@@ -507,29 +506,14 @@ namespace UnityEngine.ResourceManagement
 		/// <returns>An IOperationCacheKey for use with the async operation cache.</returns>
 		internal IOperationCacheKey CreateCacheKeyForLocation(IResourceProvider provider, IResourceLocation location, Type desiredType = null)
 		{
-			IOperationCacheKey key = null;
-			bool isAssetBundleProvider = false;
-			if (provider != null)
-			{
-                if (m_AssetBundleProviders.Contains(provider))
-					isAssetBundleProvider = true;
-				else if (typeof(AssetBundleProvider).IsAssignableFrom(provider.GetType()))
-				{
-					isAssetBundleProvider = true;
-                    m_AssetBundleProviders.Add(provider);
-				}
-			}
-
             //Actual key generation has been moved to AssetBundleProvider virtual method to allow provider derived from AssetBundleProvider
             //skip calling TransformInternalId method, as it may return different values before and after asset bundle is loaded,
             //for example when using Play Asset Delivery for Android.
             //For major package release consider this method to be made a part of IResourceProvider to simplify this whole logic.
-			if (isAssetBundleProvider)
-                key = (provider as AssetBundleProvider).CreateCacheKeyForLocation(this, location, desiredType);
+            if(provider is AssetBundleProvider abProvider)
+                return abProvider.CreateCacheKeyForLocation(this, location, desiredType);
 			else
-				key = new LocationCacheKey(location, desiredType);
-
-			return key;
+                return new LocationCacheKey(location, desiredType);
 		}
 
 		Dictionary<Type, Type> m_ProviderOperationTypeCache = new Dictionary<Type, Type>();
