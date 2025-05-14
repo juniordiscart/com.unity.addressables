@@ -42,9 +42,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [SetUp]
         protected void Setup()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
             using (new IgnoreFailingLogMessage())
             {
                 m_BuilderInput = new AddressablesDataBuilderInput(Settings);
@@ -92,7 +89,7 @@ namespace UnityEditor.AddressableAssets.Tests
             }
 
             //Test
-            string bundleName = BuildScriptPackedMode.GetBuiltInShaderBundleNamePrefix(m_BuildContext);
+            string bundleName = BuildScriptPackedMode.GetShaderBundleNamePrefix(m_BuildContext);
 
             //Assert
             Assert.AreEqual(expectedValue, bundleName);
@@ -237,9 +234,9 @@ namespace UnityEditor.AddressableAssets.Tests
                 else
                     Assert.IsTrue(string.IsNullOrEmpty(monoBundle), "MonoScript Bundle is disabled but name recieved");
 
-                string shaderBundle = BuildScriptPackedMode.GetBuiltInShaderBundleNamePrefix(assetGroup.Settings) + "_unitybuiltinshaders.bundle";
-                shaderBundle = Path.Combine(schema.BuildPath.GetValue(assetGroup.Settings), shaderBundle);
-                Assert.IsTrue(File.Exists(shaderBundle), "Built in Shaders bundle not found at " + shaderBundle);
+                string builtInBundle = BuildScriptPackedMode.GetShaderBundleNamePrefix(assetGroup.Settings) + "_unitybuiltinshaders.bundle";
+                builtInBundle = Path.Combine(schema.BuildPath.GetValue(assetGroup.Settings), builtInBundle);
+                Assert.IsTrue(File.Exists(builtInBundle), "Built in Shaders bundle not found at " + builtInBundle);
             }
             finally
             {

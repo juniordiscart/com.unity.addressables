@@ -28,6 +28,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     public class BuildScriptBase : ScriptableObject, IDataBuilder
     {
         /// <summary>
+        /// The constant suffix name for the built in shader bundle
+        /// </summary>
+        public const string ShaderBundleBaseName = "_unitybuiltinshaders";
+
+        /// <summary>
         /// The type of instance provider to create for the Addressables system.
         /// </summary>
         [FormerlySerializedAs("m_InstanceProviderType")]

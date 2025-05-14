@@ -46,9 +46,6 @@ public class BuildLayoutGenerationTaskTests
     [OneTimeSetUp]
     public void OneTimeSetup()
     {
-        if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-            Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
         ExecCount = 0;
     }
 

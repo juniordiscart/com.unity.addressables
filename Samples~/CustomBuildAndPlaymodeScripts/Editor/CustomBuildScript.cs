@@ -144,12 +144,12 @@ public class CustomBuildScript : BuildScriptBase
         }
     }
 
-    internal static string GetBuiltInShaderBundleNamePrefix(AddressableAssetsBuildContext aaContext)
+    internal static string GetShaderBundleNamePrefix(AddressableAssetsBuildContext aaContext)
     {
-        return GetBuiltInShaderBundleNamePrefix(aaContext.Settings);
+        return GetShaderBundleNamePrefix(aaContext.Settings);
     }
 
-    internal static string GetBuiltInShaderBundleNamePrefix(AddressableAssetSettings settings)
+    internal static string GetShaderBundleNamePrefix(AddressableAssetSettings settings)
     {
         string value = "";
         switch (settings.ShaderBundleNaming)
@@ -234,7 +234,7 @@ public class CustomBuildScript : BuildScriptBase
                 buildTargetGroup,
                 aaContext.Settings.buildSettings.bundleBuildPath);
 
-            var builtinShaderBundleName = GetBuiltInShaderBundleNamePrefix(aaContext) + "_unitybuiltinshaders.bundle";
+            var builtinBundleName = GetShaderBundleNamePrefix(aaContext) + $"{ShaderBundleBaseName}.bundle";
 
             var schema = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>();
             AddBundleProvider(schema);
@@ -242,7 +242,7 @@ public class CustomBuildScript : BuildScriptBase
             string monoScriptBundleName = GetMonoScriptBundleNamePrefix(aaContext);
             if (!string.IsNullOrEmpty(monoScriptBundleName))
                 monoScriptBundleName += "_monoscripts.bundle";
-            var buildTasks = RuntimeDataBuildTasks(builtinShaderBundleName, monoScriptBundleName);
+            var buildTasks = RuntimeDataBuildTasks(builtinBundleName, monoScriptBundleName);
             buildTasks.Add(extractData);
 
             IBundleBuildResults results;
@@ -1014,7 +1014,7 @@ public class CustomBuildScript : BuildScriptBase
     // and isn't needed for most tests.
     internal static bool s_SkipCompilePlayerScripts = false;
 
-    static IList<IBuildTask> RuntimeDataBuildTasks(string builtinShaderBundleName, string monoScriptBundleName)
+    static IList<IBuildTask> RuntimeDataBuildTasks(string buildInBundleName, string monoScriptBundleName)
     {
         var buildTasks = new List<IBuildTask>();
 
@@ -1032,7 +1032,7 @@ public class CustomBuildScript : BuildScriptBase
         buildTasks.Add(new CalculateAssetDependencyData());
         buildTasks.Add(new AddHashToBundleNameTask());
         buildTasks.Add(new StripUnusedSpriteSources());
-        buildTasks.Add(new CreateBuiltInShadersBundle(builtinShaderBundleName));
+        buildTasks.Add(new CreateBuiltInShadersBundle(buildInBundleName));
         if (!string.IsNullOrEmpty(monoScriptBundleName))
             buildTasks.Add(new CreateMonoScriptBundle(monoScriptBundleName));
         buildTasks.Add(new PostDependencyCallback());
@@ -1111,7 +1111,7 @@ public class CustomBuildScript : BuildScriptBase
                 dataEntry.Data = requestOptions;
 
                 if (assetGroup == assetGroup.Settings.DefaultGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) &&
-                    (info.FileName.EndsWith("_unitybuiltinshaders.bundle", StringComparison.Ordinal) || info.FileName.EndsWith("_monoscripts.bundle", StringComparison.Ordinal)))
+                    (info.FileName.EndsWith($"{ShaderBundleBaseName}.bundle", StringComparison.Ordinal) || info.FileName.EndsWith("_monoscripts.bundle", StringComparison.Ordinal)))
                 {
                     outputBundles[i] = ConstructAssetBundleName(null, schema, info, outputBundles[i]);
                 }

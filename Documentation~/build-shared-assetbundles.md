@@ -1,12 +1,12 @@
 # Shared AssetBundles
 
-In addition to the bundles created from your `AddressableAssetGroups`, a build can produce specialized bundles called shared AssetBundles. These are the `unitybuiltinshaders` AssetBundle and the `MonoScript` AssetBundle.
+In addition to the bundles created from your `AddressableAssetGroups`, a build can produce specialized bundles called shared AssetBundles. These are the `unitybuiltinassets` AssetBundle and the `MonoScript` AssetBundle.
 
-## Built in shaders AssetBundle
+## Built in AssetBundle
 
-Unity generates `unitybuiltinshaders` if any built-in shaders are used by assets included in the build. All Addressable assets that reference a built-in shader, such as the Standard Shader, do so by referencing this specialized shader AssetBundle.
+Unity generates `unitybuiltinassets` with assets required by the player and any built-in shaders used by assets included in the build. All Addressable assets that reference a built-in shader, such as the Standard Shader, do so by referencing this specialized shader AssetBundle.
 
-You can change the naming method of the built-in shader bundle with the __Shader Bundle Naming Prefix__ option in [Addressables Build settings](xref:addressables-asset-settings).
+You can change the naming method of the built-in shader bundle with the __Built In Bundle Naming Prefix__ option in [Addressables Build settings](xref:addressables-asset-settings).
 
 ## MonoScript AssetBundle
 

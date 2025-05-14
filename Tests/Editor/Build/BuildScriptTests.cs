@@ -18,22 +18,12 @@ namespace UnityEditor.AddressableAssets.Tests
 {
     public class BuildScriptTests : AddressableAssetTestBase
     {
-        [OneTimeSetUp]
-        public void OneTimeSetup()
-        {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-        }
-
         [TestFixture]
         class StreamingAssetTests : AddressableAssetTestBase
         {
             [SetUp]
             public void Setup()
             {
-                if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                    Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
                 DirectoryUtility.DeleteDirectory(Application.streamingAssetsPath, recursiveDelete: true);
             }
 

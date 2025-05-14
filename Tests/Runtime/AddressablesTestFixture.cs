@@ -86,9 +86,6 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     void IPrebuildSetup.Setup()
     {
 #if UNITY_EDITOR
-        if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-            Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
         bool currentIgnoreState = LogAssert.ignoreFailingMessages;
         LogAssert.ignoreFailingMessages = true;
 

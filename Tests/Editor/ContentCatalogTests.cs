@@ -214,7 +214,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 "startup-shared_assets_assets/fx_data/materials.bundle",
                 "shared_assets_assets/textures/ui/valleyoftreasures.bundle",
                 "startup-shared_assets_assets/fx_data/meshes.bundle",
-                "startup_UnityBuiltInShaders.bundle"
+                "startup_UnityBuiltInAssets.bundle"
             };
 
             dummyValues[0] = "maps_assets_ref/valley1.bundle";
@@ -236,7 +236,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 "startup-shared_assets_assets/fx_data/materials.bundle",
                 "shared_assets_assets/textures/ui/valleyoftreasures.bundle",
                 "startup-shared_assets_assets/fx_data/meshes.bundle",
-                "startup_UnityBuiltInShaders.bundle"
+                "startup_UnityBuiltInAssets.bundle"
             };
 
             var hashSum1DifferentList = catalog.CalculateCollectedHash(dummyValues2, hashSources);
@@ -268,7 +268,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 "startup-shared_assets_assets/fx_data/materials.bundle",
                 "shared_assets_assets/textures/ui/valleyoftreasures.bundle",
                 "startup-shared_assets_assets/fx_data/meshes.bundle",
-                "startup_UnityBuiltInShaders.bundle"
+                "startup_UnityBuiltInAssets.bundle"
             };
 
             var dummyValues2 = new List<object>()
@@ -286,7 +286,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 "startup-shared_assets_assets/fx_data/materials.bundle",
                 "shared_assets_assets/textures/ui/valleyoftreasures.bundle",
                 "startup-shared_assets_assets/fx_data/meshes.bundle",
-                "startup_UnityBuiltInShaders.bundle"
+                "startup_UnityBuiltInAssets.bundle"
             };
 
             var hash1 = ContentCatalogData.GetHashCodeForEnumerable(dummyValues);

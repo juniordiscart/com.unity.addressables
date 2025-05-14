@@ -766,7 +766,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			AddressableAssetGroupSortSettings sortSettings = AddressableAssetGroupSortSettings.GetSettings(settings);
 			Undo.RecordObject(sortSettings, nameof(sortSettings));
 			
-			m_TreeState.sortOrder = sortedGroups.Select(g => g.Guid).ToArray();
+			m_TreeState.sortOrderList = sortedGroups.Select(g => g.Guid).ToList();
 			sortSettings.sortOrder = sortedGroups.Select(g => g.Guid).ToArray();
 			
 			AddressableAssetUtility.OpenAssetIfUsingVCIntegration(sortSettings);

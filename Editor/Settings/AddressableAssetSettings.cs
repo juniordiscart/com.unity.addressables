@@ -709,10 +709,10 @@ namespace UnityEditor.AddressableAssets.Settings
 		}
 
 		[SerializeField]
-		ShaderBundleNaming m_ShaderBundleNaming = ShaderBundleNaming.ProjectName;
+        ShaderBundleNaming m_ShaderBundleNaming = Build.ShaderBundleNaming.ProjectName;
 
 		/// <summary>
-		/// Sets the naming convention used for the Unity built in shader bundle at build time.
+        /// Sets the naming convention used for the Unity built in bundle at build time.
 		/// The recommended setting is Project Name.
 		/// </summary>
 		public ShaderBundleNaming ShaderBundleNaming
@@ -725,7 +725,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		string m_ShaderBundleCustomNaming = "";
 
 		/// <summary>
-		/// Custom Unity built in shader bundle prefix that is used if AddressableAssetSettings.ShaderBundleNaming is set to ShaderBundleNaming.Custom.
+        /// Custom Unity built in bundle prefix that is used if AddressableAssetSettings.BuiltInBundleNaming is set to BuiltInBundleNaming.Custom.
 		/// </summary>
 		public string ShaderBundleCustomNaming
 		{

@@ -191,12 +191,12 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_ContentStateFileBuildPath =
             new GUIContent("Content State Build Path", "The path used for the addressables_content_state.bin file, which is used to detect modified assets during a Content Update.");
 
-        GUIContent m_ShaderBundleNaming =
-            new GUIContent("Shader Bundle Naming Prefix",
-                "This setting determines how the Unity built in shader bundle will be named during the build.  The recommended setting is Project Name Hash.");
+        GUIContent m_BuiltInBundleNaming =
+            new GUIContent("Built In Bundle Naming Prefix",
+                "This setting determines how the Unity built in bundle will be named during the build.  The recommended setting is Project Name Hash.");
 
-        GUIContent m_ShaderBundleCustomNaming =
-            new GUIContent("Shader Bundle Custom Prefix", "Custom prefix for Unity built in shader bundle.");
+        GUIContent m_BuiltInBundleCustomNaming =
+            new GUIContent("Built In Bundle Custom Prefix", "Custom prefix for Unity built in bundle.");
 
         GUIContent m_MonoBundleNaming =
             new GUIContent("MonoScript Bundle Naming Prefix",
@@ -535,13 +535,13 @@ namespace UnityEditor.AddressableAssets.GUI
                 EditorGUI.EndDisabledGroup();
 #endif
 
-                ShaderBundleNaming shaderBundleNaming = (ShaderBundleNaming)EditorGUILayout.Popup(m_ShaderBundleNaming,
+                ShaderBundleNaming builtInBundleNaming = (ShaderBundleNaming)EditorGUILayout.Popup(m_BuiltInBundleNaming,
                     (int)m_AasTarget.ShaderBundleNaming, new[] {"Project Name Hash", "Default Group GUID", "Custom"});
-                if (shaderBundleNaming != m_AasTarget.ShaderBundleNaming)
-                    m_QueuedChanges.Add(() => m_AasTarget.ShaderBundleNaming = shaderBundleNaming);
-                if (shaderBundleNaming == ShaderBundleNaming.Custom)
+                if (builtInBundleNaming != m_AasTarget.ShaderBundleNaming)
+                    m_QueuedChanges.Add(() => m_AasTarget.ShaderBundleNaming = builtInBundleNaming);
+                if (builtInBundleNaming == ShaderBundleNaming.Custom)
                 {
-                    string customShaderBundleName = EditorGUILayout.TextField(m_ShaderBundleCustomNaming, m_AasTarget.ShaderBundleCustomNaming);
+                    string customShaderBundleName = EditorGUILayout.TextField(m_BuiltInBundleCustomNaming, m_AasTarget.ShaderBundleCustomNaming);
                     if (customShaderBundleName != m_AasTarget.ShaderBundleCustomNaming)
                         m_QueuedChanges.Add(() => m_AasTarget.ShaderBundleCustomNaming = customShaderBundleName);
                 }

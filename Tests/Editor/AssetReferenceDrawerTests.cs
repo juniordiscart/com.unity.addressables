@@ -473,9 +473,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CanRestrictLabel()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             TestObjectWithRestrictedRef obj = ScriptableObject.CreateInstance<TestObjectWithRestrictedRef>();
             var so = new SerializedObject(obj);
@@ -490,9 +487,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CanRestrictMultipleLabels()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             TestObjectWithRestrictedRefByMultipleLabels obj = ScriptableObject.CreateInstance<TestObjectWithRestrictedRefByMultipleLabels>();
             var so = new SerializedObject(obj);
@@ -510,9 +504,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AssetReferenceDrawer_GatherFilters_CanRestrictInSingleNestedClass()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             TestObjectWithRestrictedRefInNestedClass obj = ScriptableObject.CreateInstance<TestObjectWithRestrictedRefInNestedClass>();
             var so = new SerializedObject(obj);
@@ -526,12 +517,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AssetReferenceDrawer_GatherFilters_CanRestrictInDoubleNestedClass()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             TestObjectWithRestrictedRefInNestedClass obj = ScriptableObject.CreateInstance<TestObjectWithRestrictedRefInNestedClass>();
             var so = new SerializedObject(obj);
@@ -545,9 +530,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AssetReferenceDrawer_ValidateAsset_CanValidateAssetWithRestrictionsFromPath()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
-
             // Setup AssetReference
             string assetPath = "";
             var testObject = SetupAssetReference(out assetPath);

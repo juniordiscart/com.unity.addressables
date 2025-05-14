@@ -1,5 +1,6 @@
 {
     "name": "Unity.Addressables.Runtime.Tests",
+    "rootNamespace": "",
     "references": [
         "Unity.Addressables",
         "Unity.ResourceManager",
@@ -7,7 +8,8 @@
         "Unity.ScriptableBuildPipeline.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.Services.Ccd.Management"
+        "Unity.Services.Ccd.Management",
+        "Unity.ScriptableBuildPipeline.Runtime.Tests"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
