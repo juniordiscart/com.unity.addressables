@@ -6,6 +6,7 @@ using NUnit.Framework;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Pipeline;
 using UnityEngine;
 using static UnityEditor.AddressableAssets.Settings.AddressablesFileEnumeration;
 
@@ -101,6 +102,9 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void Build_WithAddrParentFolderAndAddrSubfolders_InSeparateGroups_Succeeds()
         {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+
             var context = new AddressablesDataBuilderInput(Settings);
             foreach (IDataBuilder db in Settings.DataBuilders.Cast<IDataBuilder>())
             {

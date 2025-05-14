@@ -10,12 +10,16 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.TestTools;
 using UnityEngine.U2D;
+using NUnit.Framework;
+
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.U2D;
+using UnityEditor.Build.Pipeline;
 #endif
 
 public static class AddressablesTestUtility
@@ -26,9 +30,9 @@ public static class AddressablesTestUtility
     public static string GetPackagePath()
     {
         var packagePath = "Packages/com.unity.addressables";
-        if (Directory.Exists("Packages/com.Unity.Addressables.Runtime.Tests"))
+        if (Directory.Exists("Packages/com.unity.addressables.tests"))
         {
-            packagePath = "Packages/com.Unity.Addressables.Runtime.Tests";
+            packagePath = "Packages/com.unity.addressables.tests";
         }
 
         return packagePath;
@@ -71,6 +75,9 @@ public static class AddressablesTestUtility
     public static void Setup(string testType, string pathFormat, string suffix, bool useUnityWebRequestForLocalBundles)
     {
 #if UNITY_EDITOR
+        if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+            Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+
         bool currentIgnoreState = LogAssert.ignoreFailingMessages;
         LogAssert.ignoreFailingMessages = true;
 

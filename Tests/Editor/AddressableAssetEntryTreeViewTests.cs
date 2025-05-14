@@ -5,6 +5,7 @@ using NUnit.Framework;
 using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Pipeline;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
@@ -122,6 +123,9 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void BuildTree_Assets_SpriteAtlas_CreatesEntriesForAtlasAndAllSprites()
         {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+
             var guid1 = CreateSpriteTexture(k_TreeViewTestFolderPath + "/testTexture1.png");
             var guid2 = CreateSpriteTexture(k_TreeViewTestFolderPath + "/testTexture2.png");
             var atlasPath = k_TreeViewTestFolderPath + "/testAtlas.spriteatlas";

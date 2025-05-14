@@ -152,7 +152,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 group1 = Settings.CreateGroup("Group 1", false, false, true, new List<AddressableAssetGroupSchema>());
                 group2 = Settings.CreateGroup("Group 2", false, false, true, new List<AddressableAssetGroupSchema>());
                 Assert.AreEqual(4, Settings.groups.Count);
-                Assert.AreEqual(4, treeState.sortOrder.Length);
+                Assert.AreEqual(4, treeState.sortOrderList.Count);
             }
             finally
             {
@@ -187,10 +187,13 @@ namespace UnityEditor.AddressableAssets.Tests
                 var defaultGroup = Settings.DefaultGroup;
                 group1 = Settings.CreateGroup("Group 1", false, false, true, new List<AddressableAssetGroupSchema>());
                 Assert.AreEqual(3, Settings.groups.Count);
-                Assert.AreEqual(3, treeState.sortOrder.Length);
-                Settings.RemoveGroup(Settings.groups[1]);
+                Assert.AreEqual(3, treeState.sortOrderList.Count);
+                Settings.RemoveGroup(defaultGroup);
                 Assert.AreEqual(2, Settings.groups.Count);
-                Assert.AreEqual(2, treeState.sortOrder.Length);
+                Assert.AreEqual(2, treeState.sortOrderList.Count);
+                Settings.RemoveGroup(group1);
+                Assert.AreEqual(1, Settings.groups.Count);
+                Assert.AreEqual(1, treeState.sortOrderList.Count);
             }
             finally
             {

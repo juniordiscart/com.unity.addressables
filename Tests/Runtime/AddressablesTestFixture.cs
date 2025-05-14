@@ -7,6 +7,7 @@ using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.SceneManagement;
+using UnityEditor.Build.Pipeline;
 #endif
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -85,6 +86,9 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     void IPrebuildSetup.Setup()
     {
 #if UNITY_EDITOR
+        if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+            Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+
         bool currentIgnoreState = LogAssert.ignoreFailingMessages;
         LogAssert.ignoreFailingMessages = true;
 
@@ -267,11 +271,14 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
 
 #endif
 
-    internal static IEnumerator UnloadSceneFromHandler(AsyncOperationHandle<SceneInstance> op, AddressablesImpl addressables)
+    internal static IEnumerator UnloadSceneFromHandler(AsyncOperationHandle<SceneInstance> op, AddressablesImpl addressables, bool sceneExpectedToBeLoaded = true)
     {
         string sceneName = op.Result.Scene.name;
-        Assert.IsNotNull(sceneName);
-        Assert.IsTrue(SceneManager.GetSceneByName(sceneName).isLoaded);
+        if (sceneExpectedToBeLoaded)
+        {
+            Assert.IsNotNull(sceneName);
+            Assert.IsTrue(SceneManager.GetSceneByName(sceneName).isLoaded);
+        }
         var unloadOp = addressables.UnloadSceneAsync(op, UnloadSceneOptions.None, false);
         yield return unloadOp;
         Assert.IsTrue(unloadOp.IsValid());

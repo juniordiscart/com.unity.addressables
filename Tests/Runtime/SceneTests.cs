@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Unity.Profiling;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -16,6 +17,9 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
+using UnityEngine.ResourceManagement.Profiling;
+#endif
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
@@ -106,6 +110,140 @@ namespace SceneTests
 
             yield return UnloadSceneFromHandler(op, m_Addressables);
             yield return UnloadSceneFromHandler(op1, m_Addressables);
+        }
+
+        [UnityTest]
+        public IEnumerator SceneReleaseMode_SceneReleaseOnSceneUnloaded_SceneHandleIsInvalid()
+        {
+            AsyncOperationHandle<SceneInstance> op = default;
+            AsyncOperationHandle<SceneInstance> op1 = default;
+
+            try
+            {
+                // get the scenes active, so can be recreated later
+                Dictionary<string, GameObject[]> initialScenes = MoveAllSceneRootsToDDOL();
+
+                op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
+                yield return op;
+                Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
+                Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
+
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
+                Assert.AreEqual(1, ProfilerRuntime.GetSceneLoadCounterValue(), "Just the additive scene is counted as " +
+                                                                               "the initial scene was not loaded by Addressables.");
+#endif
+
+
+                op1 = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Single));
+                yield return op1;
+                Assert.AreEqual(AsyncOperationStatus.Succeeded, op1.Status);
+                Assert.AreEqual(sceneKeys[1], SceneManager.GetSceneByName(sceneKeys[1]).name);
+                Assert.IsFalse(op.IsValid(), "Scene handle expected to not be valid as second the scene is loaded with single mode, and this handle should be released OnSceneUnloaded");
+                Assert.IsTrue(op1.IsValid(), "New single scene handle should be succeeded and valid");
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
+                Assert.AreEqual(1, ProfilerRuntime.GetSceneLoadCounterValue(), "Additive scene has been released.");
+#endif
+
+                RecreateScenes(initialScenes);
+
+                yield return UnloadSceneFromHandler(op1, m_Addressables);
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
+                Assert.AreEqual(ProfilerRuntime.GetSceneLoadCounterValue(), 0);
+#endif
+            }
+            finally
+            {
+                if (op.IsValid())
+                    m_Addressables.UnloadSceneAsync(op);
+                if (op1.IsValid())
+                    m_Addressables.UnloadSceneAsync(op1);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SceneReleaseMode_SceneReleaseOnSceneUnloaded_SceneHandleIsValid()
+        {
+            AsyncOperationHandle<SceneInstance> op = default;
+            AsyncOperationHandle<SceneInstance> op1 = default;
+
+            try
+            {
+                // get the scenes active, so can be recreated later
+                Dictionary<string, GameObject[]> initialScenes = MoveAllSceneRootsToDDOL();
+
+                op = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive), true, 100, false);
+                yield return op;
+                Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);
+                Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
+
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
+                Assert.AreEqual(1, ProfilerRuntime.GetSceneLoadCounterValue(), "Just the additive scene is counted as " +
+                                                                               "the initial scene was not loaded by Addressables.");
+#endif
+
+                op1 = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Single));
+                yield return op1;
+                Assert.AreEqual(AsyncOperationStatus.Succeeded, op1.Status);
+                Assert.AreEqual(sceneKeys[1], SceneManager.GetSceneByName(sceneKeys[1]).name);
+                Assert.IsTrue(op.IsValid(), "Scene handle expected to be valid. Where the second the scene is loaded with single mode, and unloads first scene. This handle should not be released OnSceneUnloaded");
+                Assert.IsTrue(op1.IsValid(), "New single scene handle should be succeeded and valid");
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
+                Assert.AreEqual(2, ProfilerRuntime.GetSceneLoadCounterValue(), "Additive scene is not in use, but is not released.");
+#endif
+
+                RecreateScenes(initialScenes);
+                yield return UnloadSceneFromHandler(op, m_Addressables, false);
+                yield return UnloadSceneFromHandler(op1, m_Addressables);
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2021_2_OR_NEWER
+                Assert.AreEqual(0, ProfilerRuntime.GetSceneLoadCounterValue(), "Everything is released.");
+#endif
+            }
+            finally
+            {
+                if (op.IsValid())
+                    m_Addressables.UnloadSceneAsync(op);
+                if (op1.IsValid())
+                    m_Addressables.UnloadSceneAsync(op1);
+            }
+        }
+
+        private static void LogActiceSceneNames()
+        {
+            Debug.Log("Loaded scenes are:");
+            for (int i = 0; i < SceneManager.sceneCount; ++i)
+            {
+                var s = SceneManager.GetSceneAt(i);
+                Debug.Log("Currently loaded scene = " + s.name);
+            }
+        }
+
+        private static void RecreateScenes(Dictionary<string, GameObject[]> initialScenes)
+        {
+            foreach (KeyValuePair<string, GameObject[]> scene in initialScenes)
+            {
+                Scene s = SceneManager.CreateScene(scene.Key);
+                foreach (GameObject g in scene.Value)
+                {
+                    SceneManager.MoveGameObjectToScene(g, s);
+                }
+            }
+        }
+
+        private static Dictionary<string, GameObject[]> MoveAllSceneRootsToDDOL()
+        {
+            Dictionary<string, GameObject[]> initialScenes = new Dictionary<string, GameObject[]>();
+            for (int i = 0; i < SceneManager.sceneCount; ++i)
+            {
+                var s = SceneManager.GetSceneAt(i);
+                initialScenes.Add(s.name, s.GetRootGameObjects());
+                GameObject[] roots = s.GetRootGameObjects();
+                foreach (var root in roots)
+                {
+                    GameObject.DontDestroyOnLoad(root);
+                }
+            }
+
+            return initialScenes;
         }
 
         [UnityTest]

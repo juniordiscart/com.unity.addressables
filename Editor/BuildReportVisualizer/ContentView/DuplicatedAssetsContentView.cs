@@ -95,7 +95,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             Bundles = helperAsset.Bundles;
             AssetDepsOf = helperAsset.GUIDToReferencingAssets.Values.ToList();
             DepsOfCount = AssetDepsOf.Count;
-            DuplicationCount = Bundles.Count;
+            DuplicationCount = helperAsset.GUIDToReferencingAssets.Count;
             if (DuplicationCount > 1)
             {
                 SpaceSavedIfDeduplicated = (ulong) (DuplicationCount - 1) * Size;

@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.24.0] - 2025-04-02
+- Fixed sorting scrambling the order when adding and removing groups.
+- Added performance fixes when searching large numbers of groups.
+
 ## [1.23.1] - 2025-01-08
 - Moved AddressableAssetEntryTreeViewState into the UnityEditor.AddressableAssets namespace to fix compile errors in user code.
 

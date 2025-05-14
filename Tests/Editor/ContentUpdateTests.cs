@@ -19,8 +19,18 @@ namespace UnityEditor.AddressableAssets.Tests
 {
 	public class ContentUpdateTests : AddressableAssetTestBase
 	{
-		protected override bool PersistSettings { get { return true; } }
-		[Ignore("Editor crash https://jira.unity3d.com/browse/BPSBP-142")]
+        protected override bool PersistSettings
+        {
+            get { return true; }
+        }
+
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+        }
+
 		[Test]
 		public void CanCreateContentStateData()
 		{

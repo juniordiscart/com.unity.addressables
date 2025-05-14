@@ -42,6 +42,9 @@ namespace UnityEditor.AddressableAssets.Tests
         [SetUp]
         protected void Setup()
         {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+
             using (new IgnoreFailingLogMessage())
             {
                 m_BuilderInput = new AddressablesDataBuilderInput(Settings);

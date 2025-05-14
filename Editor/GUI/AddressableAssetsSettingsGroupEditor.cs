@@ -221,9 +221,14 @@ namespace UnityEditor.AddressableAssets.GUI
 				case AddressableAssetSettings.ModificationEvent.EntryMoved:
 				case AddressableAssetSettings.ModificationEvent.EntryRemoved:
 				case AddressableAssetSettings.ModificationEvent.GroupRenamed:
+                case AddressableAssetSettings.ModificationEvent.GroupMoved:
 				case AddressableAssetSettings.ModificationEvent.EntryModified:
 				case AddressableAssetSettings.ModificationEvent.BatchModification:
-					m_EntryTree.Reload();
+                    // the reload does a new sort
+                    m_EntryTree?.Reload();
+
+                    // we save it here since moves won't trigger a re-sort, but need to be saved
+                    m_EntryTree?.SerializeState();
 					if (window != null)
 						window.Repaint();
 					break;
@@ -865,7 +870,6 @@ namespace UnityEditor.AddressableAssets.GUI
 				AddressableAssetSettingsDefaultObject.Settings.OnModification -= OnSettingsModification;
 				m_ModificationRegistered = false;
 			}
-            m_EntryTree?.SerializeState(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(m_Settings)));
 		}
 
 		public bool OnGUI(Rect pos)
@@ -906,7 +910,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			m_SearchField = new SearchField();
 			m_EntryTree = new AddressableAssetEntryTreeView(m_TreeState, m_Mchs, this);
 
-            m_EntryTree.DeserializeState(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(m_Settings)));
+            m_EntryTree.DeserializeState();
             UpdateSavedColumnWidths(m_TreeState, m_Mchs);
 
 			m_EntryTree.Reload();

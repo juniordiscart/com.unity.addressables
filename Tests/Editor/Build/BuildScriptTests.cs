@@ -8,6 +8,7 @@ using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -17,19 +18,30 @@ namespace UnityEditor.AddressableAssets.Tests
 {
     public class BuildScriptTests : AddressableAssetTestBase
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+        }
+
         [TestFixture]
         class StreamingAssetTests : AddressableAssetTestBase
         {
             [SetUp]
             public void Setup()
             {
+                if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+                    Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+
                 DirectoryUtility.DeleteDirectory(Application.streamingAssetsPath, recursiveDelete: true);
             }
 
             [TearDown]
             public void TearDown()
             {
-                DirectoryUtility.DeleteDirectory(Application.streamingAssetsPath, recursiveDelete: true);
+                if(Directory.Exists(Application.streamingAssetsPath))
+                    DirectoryUtility.DeleteDirectory(Application.streamingAssetsPath, recursiveDelete: true);
             }
 
             [Test]
@@ -560,13 +572,13 @@ namespace UnityEditor.AddressableAssets.Tests
                 {
                     var res = db.BuildData<AddressablesPlayerBuildResult>(context);
                     Assert.IsTrue(db.IsDataBuilt());
-                    Assert.IsTrue(string.IsNullOrEmpty(res.Error));
+                    Assert.IsTrue(string.IsNullOrEmpty(res.Error), $"Player build returned error {res.Error}");
                 }
                 else if (db.CanBuildData<AddressablesPlayModeBuildResult>())
                 {
                     var res = db.BuildData<AddressablesPlayModeBuildResult>(context);
                     Assert.IsTrue(db.IsDataBuilt());
-                    Assert.IsTrue(string.IsNullOrEmpty(res.Error));
+                    Assert.IsTrue(string.IsNullOrEmpty(res.Error), $"PlayMode build returned error {res.Error}");
                 }
 
                 LogAssert.Expect(LogType.Warning, new Regex($".*{path}.*ignored"));

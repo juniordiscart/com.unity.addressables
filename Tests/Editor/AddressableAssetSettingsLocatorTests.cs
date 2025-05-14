@@ -9,6 +9,7 @@ using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -519,6 +520,9 @@ namespace UnityEditor.AddressableAssets.Tests
         [UnityTest]
         public IEnumerator Locator_KeysProperty_Contains_Expected_Keys_ForAllBuildScripts()
         {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+
             using (new HideResourceFoldersScope())
             {
                 SetupLocatorAssets();

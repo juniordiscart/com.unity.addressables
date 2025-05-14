@@ -22,6 +22,13 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
         string k_CheckDupePrefabB => GetAssetPath("checkDupe_prefabB.prefab");
         string k_CheckDupeMyMaterial => GetAssetPath("checkDupe_myMaterial.mat");
 
+        [OneTimeSetUp]
+        public void Setup()
+        {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+                Assert.Ignore("Platform support is not installed and is required for AssetBundles tests");
+        }
+
         protected override void OnInit()
         {
             base.OnInit();

@@ -99,7 +99,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 ulong duplicatedSize = 0;
                 foreach (var dupeAsset in  m_HelperConsumer.GUIDToDuplicateAssets.Values)
                 {
-                    int duplicationCount = dupeAsset.Bundles.Count;
+                    int duplicationCount = dupeAsset.GUIDToReferencingAssets.Count;
                     if (duplicationCount > 1)
                         duplicatedSize += (ulong) (duplicationCount - 1) * (dupeAsset.Asset.SerializedSize + dupeAsset.Asset.StreamedSize);
                 }

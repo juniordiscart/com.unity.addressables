@@ -236,6 +236,19 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     BundleData bundleData = (BundleData)Parent;
                     return HashCode.Combine(bundleData.BundleCode, AssetGuid.GetHashCode());
                 }
+
+                if (ReportExplicitData != null && Parent != null)
+                {
+                    if (Parent is BundleData bundleData)
+                    {
+                        if (bundleData.ReportBundle != null &&
+                            bundleData.ReportBundle.InternalName != ReportExplicitData.Bundle.InternalName)
+                        {
+                            return HashCode.Combine(bundleData.BundleCode, AssetGuid.GetHashCode(), AssetPath?.GetHashCode());
+                        }
+                    }
+                }
+
                 return HashCode.Combine(AssetGuid.GetHashCode(), AssetPath?.GetHashCode());
             }
         }
