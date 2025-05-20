@@ -153,6 +153,9 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         [SerializeField]
         bool m_IncludeLabelsInCatalog = true;
 
+        [SerializeField]
+        bool m_IncludeInEditorFastMode = true;
+
         /// <summary>
         /// If enabled, addresses are included in the content catalog.  This is required if assets are to be loaded via their main address.
         /// </summary>
@@ -196,6 +199,22 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 if (m_IncludeLabelsInCatalog != value)
                 {
                     m_IncludeLabelsInCatalog = value;
+                    SetDirty(true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// If enabled, the group's assets will be included while using Fast Mode during play.
+        /// </summary>
+        public bool IncludeInEditorFastMode
+        {
+            get => m_IncludeInEditorFastMode;
+            set
+            {
+                if (m_IncludeInEditorFastMode != value)
+                {
+                    m_IncludeInEditorFastMode = value;
                     SetDirty(true);
                 }
             }
@@ -927,6 +946,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 
         GUIContent m_CompressionContent = new GUIContent("Asset Bundle Compression", "Compression method to use for asset bundles.");
         GUIContent m_IncludeInBuildContent = new GUIContent("Include in Build", "If disabled, these bundles will not be included in the build.");
+        GUIContent m_IncludeInEditorFastModeContent = new GUIContent("Include in Fastest Editor Playmode",
+            "If disabled, the assets in this group will not be included during Editor play mode when using the 'Use Asset Database (fastest)' playmode option. This is useful for quickly testing the exclusion of content in the Editor.");
         GUIContent m_ForceUniqueProviderContent = new GUIContent("Force Unique Provider", "If enabled, this option forces bundles loaded from this group to use a unique provider.");
         GUIContent m_UseAssetBundleCacheContent = new GUIContent("Use Asset Bundle Cache", "If enabled and supported, the device will cache  asset bundles.");
         GUIContent m_AssetBundleCrcContent = new GUIContent("Asset Bundle CRC", "Defines which Asset Bundles will have their CRC checked when loading to ensure correct content.");
@@ -977,6 +998,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         {
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_Compression)), m_CompressionContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeInBuild)), m_IncludeInBuildContent, true);
+            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeInEditorFastMode)), m_IncludeInEditorFastModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_ForceUniqueProvider)), m_ForceUniqueProviderContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_UseAssetBundleCache)), m_UseAssetBundleCacheContent, true);
             CRCPropertyPopupField(so);
@@ -1026,6 +1048,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             ShowSelectedPropertyMulti(so, nameof(m_Compression), m_CompressionContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.Compression = src.Compression, ref m_Compression);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeInBuild), m_IncludeInBuildContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.IncludeInBuild = src.IncludeInBuild,
                 ref m_IncludeInBuild);
+            ShowSelectedPropertyMulti(so, nameof(m_IncludeInEditorFastMode), m_IncludeInEditorFastModeContent, otherBundledSchemas, ref queuedChanges,
+                (src, dst) => dst.IncludeInEditorFastMode = src.IncludeInEditorFastMode, ref m_IncludeInEditorFastMode);
             ShowSelectedPropertyMulti(so, nameof(m_ForceUniqueProvider), m_ForceUniqueProviderContent, otherBundledSchemas, ref queuedChanges,
                 (src, dst) => dst.ForceUniqueProvider = src.ForceUniqueProvider, ref m_ForceUniqueProvider);
             ShowSelectedPropertyMulti(so, nameof(m_UseAssetBundleCache), m_UseAssetBundleCacheContent, otherBundledSchemas, ref queuedChanges,
