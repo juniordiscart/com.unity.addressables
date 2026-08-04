@@ -1714,7 +1714,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             if (state is AddressableAssetEntryTreeViewState s)
             {
-                var settings = AddressableAssetGroupSortSettings.GetSettings();
+                var settings = AddressableAssetGroupSortSettings.GetSettings(m_Editor.settings);
                 settings.sortOrder = new string[s.sortOrderList.Count];
                 for (var i = 0; i < s.sortOrderList.Count; i++)
                 {
@@ -1742,7 +1742,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             if (state is AddressableAssetEntryTreeViewState s)
             {
-                var settings = AddressableAssetGroupSortSettings.GetSettings();
+                var settings = AddressableAssetGroupSortSettings.GetSettings(m_Editor.settings);
                 s.sortOrderList = new List<string>();
                 s.sortOrderList.AddRange(settings.sortOrder);
             }
