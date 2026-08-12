@@ -3,6 +3,9 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [1.25.1] - 2025-06-02
+- Fixed issue where pink material was duplicated in every Asset Bundle. Note: this could force a rebuild of all asset bundles.
+- Fixed an issue where when an Addressable scene was unloaded because a new scene was loaded using LoadSceneMode.Single it was not decremented in the number of scenes loaded in the profiler.
 
 ## [1.25.0] - 2025-04-02
 - Fixed sorting scrambling the order when adding and removing groups.

@@ -1514,7 +1514,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     }
 
                     dataEntry.InternalId = dataEntry.InternalId.Remove(dataEntry.InternalId.Length - builtBundleNames[i].Length) + outputBundleNames[i];
-                    SetPrimaryKey(dataEntry, outputBundleNames[i], aaContext);
+                    var primaryKey = schema.BundleNaming == BundledAssetGroupSchema.BundleNamingStyle.FileNameHash ? info.Hash.ToString() + "_" + outputBundleNames[i] : outputBundleNames[i];
+                    SetPrimaryKey(dataEntry, primaryKey, aaContext);
 
                     if (!m_BundleToInternalId.ContainsKey(builtBundleNames[i]))
                         m_BundleToInternalId.Add(builtBundleNames[i], dataEntry.InternalId);
