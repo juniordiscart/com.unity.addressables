@@ -33,3 +33,4 @@ You can also use profile variables to automatically set these paths. For more in
 * [Define group settings](GroupSchemas.md)
 * [Labelling assets](Labels.md)
 * [Addressables Groups window reference](GroupsWindow.md)
+* [Introduction to loading Addressable assets](load-addressable-assets.md)

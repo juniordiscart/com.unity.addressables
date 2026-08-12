@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "1.28.1",
+  "version": "1.28.2",
   "unity": "2021.3",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "1.23.2",
+    "com.unity.scriptablebuildpipeline": "1.23.3",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -58,15 +58,15 @@
     }
   ],
   "_upm": {
-    "changelog": "- Fixed Internal Tests."
+    "changelog": "- Setting catalog timeout correctly during the build so remote catalog operations can timeout successfully.\n- Fixed for Error would get logged when trying to use Object.Destroy in the Editor during play mode."
   },
   "upmCi": {
-    "footprint": "91842d4fec7342818e2aa2a95a6828f83c3c4c3e"
+    "footprint": "649144a1daf1dab7819ee2bebba572e89affcbb2"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@1.28/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "3b129fe058e769c2ce223e3408468a6c243d80bd"
+    "revision": "6bc94067d7790cac9acaeb06089e7050239fe5e8"
   }
 }

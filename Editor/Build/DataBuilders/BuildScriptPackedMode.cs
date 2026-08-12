@@ -694,7 +694,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 if (buildInfo != null)
                 {
-                    dependencyHashes = CreateRemoteCatalog(data, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() { IgnoreFailures = true }, catalogHash);
+                    dependencyHashes = CreateRemoteCatalog(data, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() { IgnoreFailures = true, WebRequestTimeout = aaContext.Settings.CatalogRequestsTimeout }, catalogHash);
                 }
                 else
                 {
@@ -872,7 +872,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 if (buildInfo != null)
                 {
-                    dependencyHashes = CreateRemoteCatalog(jsonText, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() { IgnoreFailures = true }, catalogHash);
+                    dependencyHashes = CreateRemoteCatalog(jsonText, aaContext.runtimeData.CatalogLocations, aaContext.Settings, builderInput, new ProviderLoadRequestOptions() { IgnoreFailures = true, WebRequestTimeout = aaContext.Settings.CatalogRequestsTimeout }, catalogHash);
                 }
                 else
                 {

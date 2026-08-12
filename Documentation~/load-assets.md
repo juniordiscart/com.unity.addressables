@@ -53,6 +53,15 @@ You can load sets of assets that have the same label in one operation:
 
 [!code-cs[sample](../Tests/Editor/DocExampleCode/LoadWithLabels.cs#doc_LoadWithLabels)]
 
+## Subasset and GameObject component restrictions
+
+GameObject components and subassets have the following loading restrictions:
+
+* **GameObject components**: You can't load a component of a GameObject directly through Addressables. You must load or instantiate the GameObject, then retrieve the component reference from it. Refer to the [`ComponentReference` sample](SamplesOverview.md) for an example of how to extend Addressables to support component loading.
+* **Subassets**: You must use special syntax to load subassets such as sprites in a sprite sheet, or animation clips in an FBX file:
+    * To load all subassets use syntax like the following: `Addressables.LoadAssetAsync<IList<Sprite>>("MySpriteSheetAddress");`
+    * To load a single subasset in an asset, use syntax like the following: `Addressables.LoadAssetAsync<Sprite>("MySpriteSheetAddress[MySpriteName]");`.
+
 ## Safely edit loaded assets
 
 You can safely edit loaded assets in the following situations:
