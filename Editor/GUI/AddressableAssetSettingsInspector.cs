@@ -214,6 +214,9 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_ContentUpdateAutoCheckForRestrictions =
             new GUIContent("Check for Update Issues", "Inform the system if it should perform a Content Update Restriction check as part of updating a previous build, and how to handle the result.");
 
+        GUIContent m_AllowNestedFolders =
+            new GUIContent("Allow Nested Folders", "If enabled and there is a path separator in an Addressables key, subfolders will be created when the bundle mode is set to Pack Separately.This is legacy behavior.");
+
 #if (ENABLE_CCD)
         GUIContent m_BuildAndReleaseBinFile =
             new GUIContent("For Build & Release", "Determines where the system attempts to pull the previous content state file from for the Content Update.");
@@ -564,6 +567,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 bool disableVisibleSubAssetRepresentations = EditorGUILayout.Toggle(m_DisableVisibleSubAssetRepresentations, m_AasTarget.DisableVisibleSubAssetRepresentations);
                 if (disableVisibleSubAssetRepresentations != m_AasTarget.DisableVisibleSubAssetRepresentations)
                     m_QueuedChanges.Add(() => m_AasTarget.DisableVisibleSubAssetRepresentations = disableVisibleSubAssetRepresentations);
+                GUILayout.Space(postBlockContentSpace);
+
+                bool allowNestedBundleFolders = EditorGUILayout.Toggle(m_AllowNestedFolders, m_AasTarget.AllowNestedBundleFolders);
+                if (allowNestedBundleFolders != m_AasTarget.AllowNestedBundleFolders)
+                    m_QueuedChanges.Add(() => m_AasTarget.AllowNestedBundleFolders = allowNestedBundleFolders);
                 GUILayout.Space(postBlockContentSpace);
             }
 

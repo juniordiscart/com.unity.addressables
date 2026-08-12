@@ -128,7 +128,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 Settings.RemoveAssetEntry(folderEntry);
             }
 
-#if !UNITY_2021_2_OR_NEWER
+#if !UNITY_2022_1_OR_NEWER
             [Test]
             public void CopiedStreamingAssetAreCorrectlyDeleted_DirectoriesWithoutImport()
             {

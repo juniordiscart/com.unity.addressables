@@ -176,7 +176,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <returns>The result of the operation or null.</returns>
         public TObject WaitForCompletion()
         {
-#if !UNITY_2021_1_OR_NEWER
+#if !UNITY_2022_1_OR_NEWER
             AsyncOperationHandle.IsWaitingForCompletion = true;
             try
             {
@@ -317,7 +317,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
     /// </summary>
     public struct AsyncOperationHandle : IEnumerator
     {
-#if !UNITY_2021_1_OR_NEWER
+#if !UNITY_2022_1_OR_NEWER
         private static bool m_IsWaitingForCompletion = false;
         /// <summary>
         /// Indicates that the async operation is in the process of being completed synchronously.

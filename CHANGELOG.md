@@ -3,7 +3,14 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
-## [1.25.1] - 2025-06-02
+## [1.27.0] - 2025-08-05
+- Fix for CCD Upload Issue with Packed Separately Bundles
+- Diagnostic Callbacks no longer fail generating event information.
+- DownloadDependenciesAsync now only checks bundle cached status once, and treats a cached bundle with no CRC checks as a noop. The goal with this fix is to reduce IO usage on startup.
+- Asset dependency validation to log build error when asset contains invalid reference
+- Added unity version check for code that relies on profiler support
+
+## [1.26.1] - 2025-06-27
 - Fixed issue where pink material was duplicated in every Asset Bundle. Note: this could force a rebuild of all asset bundles.
 - Fixed an issue where when an Addressable scene was unloaded because a new scene was loaded using LoadSceneMode.Single it was not decremented in the number of scenes loaded in the profiler.
 

@@ -10,7 +10,7 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-#if UNITY_2021_2_OR_NEWER
+#if UNITY_2022_1_OR_NEWER
 /// <summary>
 /// Maintains Addresssables build data when processing a player build.
 /// </summary>

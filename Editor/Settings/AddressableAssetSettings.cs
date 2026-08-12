@@ -533,6 +533,8 @@ namespace UnityEditor.AddressableAssets.Settings
 #else
 		bool m_NonRecursiveBuilding = false;
 #endif
+        [SerializeField]
+        bool m_AllowNestedBundleFolders = false;
 
 #if UNITY_2019_4_OR_NEWER
 		[SerializeField]
@@ -758,6 +760,15 @@ namespace UnityEditor.AddressableAssets.Settings
 			get { return m_CheckForContentUpdateRestrictionsOption; }
 			set { m_CheckForContentUpdateRestrictionsOption = value; }
 		}
+
+        /// <summary>
+        /// If true, allows nested folders in the bundle output folder. This is useful for organizing bundles into subfolders. This enables legacy behavior.
+        /// </summary>
+        public bool AllowNestedBundleFolders
+        {
+            get { return m_AllowNestedBundleFolders; }
+            set { m_AllowNestedBundleFolders = value; }
+        }
 
 #if ENABLE_CCD
         [SerializeField]

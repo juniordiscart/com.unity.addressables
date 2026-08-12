@@ -12,6 +12,8 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Text;
 using UnityEngine.Networking;
+using UnityEngine.Scripting;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -39,7 +41,7 @@ namespace UnityEngine.AddressableAssets
 
         /// <summary>
         /// The Content Catalog location this Resource Locator was loaded from.  Catalog locations typically contain
-        /// exactly two dependencies.  The first dependency is the remote location of the content catalog hash file, the 
+        /// exactly two dependencies.  The first dependency is the remote location of the content catalog hash file, the
         /// second is the local path of the hash file.
         /// </summary>
         public IResourceLocation CatalogLocation { get; private set; }
@@ -51,7 +53,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         /// <param name="loc">The IResourceLocator to track.</param>
         /// <param name="localHash">The local hash of the content catalog.</param>
-        /// <param name="remoteCatalogLocation">The location for the remote catalog.  Typically this location contains exactly two dependeices, 
+        /// <param name="remoteCatalogLocation">The location for the remote catalog.  Typically this location contains exactly two dependeices,
         /// the first one pointing to the remote hash file.  The second dependency pointing to the local hash file.</param>
         public ResourceLocatorInfo(IResourceLocator loc, string localHash, IResourceLocation remoteCatalogLocation)
         {
@@ -679,9 +681,10 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         /// <remarks>
         /// When running in the Editor Addressables.RuntimePath returns the path to the locally built data in the <see cref="Addressables.LibraryPath"/>.
-        /// When running in a player this returns the path to the same content found in <see cref="Application.streamingAssetsPath"/>. 
+        /// When running in a player this returns the path to the same content found in <see cref="Application.streamingAssetsPath"/>.
         /// This folder contains the settings, local catalog and Addressables managed local asset bundles.
         /// </remarks>
+        [Preserve]
         public static string RuntimePath
         {
             get { return m_Addressables.RuntimePath; }
@@ -818,7 +821,7 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// Write an exception as a log message. 
+        /// Write an exception as a log message.
         /// </summary>
         /// <remarks>
         /// LogException can be used to convert an exception to a log message. The exception is stringified. If the operation is in a failed state, the exception is logged at an Error logging level. If not the exception is logged at a Debug logging level.
@@ -891,7 +894,7 @@ namespace UnityEngine.AddressableAssets
         /// system if not already initialized. However in some cases you may wish to explicitly initalize Addressables,
         /// for example to check if the initialization process completed successfully before proceeding to load Addressables
         /// assets. Initializing explicitly shortens the execution time of the subsequent Addressables API function call
-        /// because the initialization process is already completed. 
+        /// because the initialization process is already completed.
         ///
         /// The initialization process loads configuration data and the local content catalog. Custom initialization
         /// tasks can also be included in this process, for example loading additional remote catalogs.
@@ -1027,7 +1030,7 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         /// <remarks>
         /// Loads an Addressable asset. If a `key` references multiple assets (i.e. a label that is assigned to multiple assets), only the first asset found will be loaded.
-        /// 
+        ///
         /// When you load an Addressable asset, the system:
         /// * Gathers the asset's dependencies
         /// * Downloads any remote AssetBundles needed to load the asset or its dependencies
@@ -2402,7 +2405,7 @@ namespace UnityEngine.AddressableAssets
         /// Adding new resource locators can be used to add locations and manage asset files outside of the Addressables build system.
         ///
         /// In the following example we have a folder in the root folder called "dataFiles" containing some json files.
-        /// 
+        ///
         /// These json files are then loaded using TextDataProvider, which is a ResourceProvider used to load text files.
         /// </remarks>
         /// <param name="locator">The locator object.</param>
@@ -2442,9 +2445,9 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         /// <remarks>
         /// This is used to reduce the disk usage of the app by removing AssetBundles that are not needed.
-        /// 
+        ///
         /// Note, that only AssetBundles loaded through UnityWebRequest are cached. If you want to purge the entire cache, use [Caching.ClearCache](xref:UnityEngine.Cache.ClearCache) instead.
-        /// 
+        ///
         /// In the Editor, calling CleanBundleCache when not using the "Use Existing Build (requires built groups)" will clear all bundles. No bundles are used by "Use Asset Database (fastest)" or "Simulate Groups (advanced)" catalogs.
         ///
         /// See [AssetBundle caching](xref:addressables-remote-content-distribution) for more details.
@@ -2497,9 +2500,9 @@ namespace UnityEngine.AddressableAssets
 
         /// <summary>
         /// Given a location path that points to a remote content catalog and its corresponding remote hash file, create a location with the dependencies
-        /// that point to remote, and local, hash files respectively.  The first dependency, remote, uses the provided remote hash location.  
+        /// that point to remote, and local, hash files respectively.  The first dependency, remote, uses the provided remote hash location.
         /// The second dependency, local, points to a location inside the Addressables local cache data folder.  The Addressables local cache data folder is meant for content catalogs
-        /// and is not the same cache location for AssetBundles. 
+        /// and is not the same cache location for AssetBundles.
         /// </summary>
         /// <typeparam name="T">The type of provider you want to load your given catalog.  By default, Addressables uses the ContentCatalogProvider.</typeparam>
         /// <param name="remoteCatalogPath">The path of the remote content catalog.</param>

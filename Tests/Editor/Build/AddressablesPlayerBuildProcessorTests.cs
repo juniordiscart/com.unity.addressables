@@ -1,4 +1,4 @@
-#if UNITY_2021_2_OR_NEWER
+#if UNITY_2022_1_OR_NEWER
 using NUnit.Framework;
 using System;
 using System.IO;

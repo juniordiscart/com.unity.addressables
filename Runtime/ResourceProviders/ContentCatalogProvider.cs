@@ -432,7 +432,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 Addressables.LogFormat("Addressables - Content catalog load result = {0}.", ccd);
                 if (ccd != null)
                 {
-#if ENABLE_ADDRESSABLE_PROFILER
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
                     ResourceManagement.Profiling.ProfilerRuntime.AddCatalog(Hash128.Parse(ccd.m_BuildResultHash));
 #endif
                     ccd.location = m_ProviderInterface.Location;

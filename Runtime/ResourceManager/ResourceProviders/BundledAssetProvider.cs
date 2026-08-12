@@ -173,7 +173,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                             ActionComplete(m_RequestOperation);
                         else
                         {
-#if ENABLE_ADDRESSABLE_PROFILER
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
                             if (UnityEngine.Profiling.Profiler.enabled && m_ProvideHandle.IsValid)
                                 Profiling.ProfilerRuntime.AddAssetOperation(m_ProvideHandle, Profiling.ContentStatus.Loading);
 #endif
@@ -245,7 +245,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             void CompleteOperation()
             {
-#if ENABLE_ADDRESSABLE_PROFILER
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
                 if (UnityEngine.Profiling.Profiler.enabled && m_Result != null && m_ProvideHandle.IsValid)
                     Profiling.ProfilerRuntime.AddAssetOperation(m_ProvideHandle, Profiling.ContentStatus.Active);
 #endif

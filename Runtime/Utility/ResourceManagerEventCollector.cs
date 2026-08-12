@@ -97,14 +97,19 @@ namespace UnityEngine.AddressableAssets.Utility
                     for (int i = 0; i < resultList.Count && i < k_NumberOfCompletedOpResultEntriesToShow; i++)
                     {
                         var entry = resultList[i];
-                        if (k_MaximumCompletedOpResultEntryLength <= entry.ToString().Length)
+                        var entryString = "null";
+                        if (entry != null)
                         {
-                            completedOpResultStringBuilder.Append(entry.ToString().Substring(0, k_MaximumCompletedOpResultEntryLength));
+                            entryString = entry.ToString();
+                        }
+                        if (k_MaximumCompletedOpResultEntryLength <= entryString.Length)
+                        {
+                            completedOpResultStringBuilder.Append(entryString.Substring(0, k_MaximumCompletedOpResultEntryLength));
                             completedOpResultStringBuilder.Append("..., ");
                         }
                         else
                         {
-                            completedOpResultStringBuilder.Append(entry.ToString().Substring(0, entry.ToString().Length));
+                            completedOpResultStringBuilder.Append(entryString.Substring(0, entryString.Length));
                             completedOpResultStringBuilder.Append(", ");
                         }
                     }

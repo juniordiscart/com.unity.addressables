@@ -127,7 +127,7 @@ namespace UnityEngine.ResourceManagement
 		/// for example downloading a remote AssetBundle from a different URL.
 		///
 		/// Assigning this value through the <see cref="Addressables"/> object will set the value on the <see cref="ResourceManager"/>.
-		/// 
+		///
         /// The example below instantiates a GameObject from a local AssetBundle. The location identifier of the bundle is replaced with a file URI, and so the bundle is loaded via UnityWebRequest.</para>
         /// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingInternalIdTransformFunc.cs" region="SAMPLE"/>
 		/// </remarks>
@@ -156,7 +156,7 @@ namespace UnityEngine.ResourceManagement
 		/// This affects all downloads through Addressables including catalog files and asset bundles.
 		///
 		/// Assigning this value through the <see cref="Addressables"/> object will set the value on the <see cref="ResourceManager"/>.
-		/// 
+		///
         /// For example you could add an Authorization header to authenticate with Cloud Content Delivery's private buckets.</para>
 		/// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingWebRequestOverride.cs" region="SAMPLE" />
 		/// </remarks>
@@ -285,7 +285,7 @@ namespace UnityEngine.ResourceManagement
 			m_ResourceProviders.OnElementAdded += OnObjectAdded;
 			m_ResourceProviders.OnElementRemoved += OnObjectRemoved;
 			m_UpdateReceivers.OnElementAdded += x => RegisterForCallbacks();
-#if ENABLE_ADDRESSABLE_PROFILER
+#if ENABLE_ADDRESSABLE_PROFILER && UNITY_2022_2_OR_NEWER
             Profiling.ProfilerRuntime.Initialise();
 #endif
 		}

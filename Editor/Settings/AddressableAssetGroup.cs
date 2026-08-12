@@ -182,6 +182,23 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
+        /// Determines if this group allows nested folders.
+        /// </summary>
+        public bool AllowNestedFolders
+        {
+            get
+            {
+                if (m_Settings)
+                    return m_Settings.AllowNestedBundleFolders;
+                else
+                {
+                    Debug.LogError("AddressableAssetSettings is null. Cannot determine if nested folders are allowed.");
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
         /// Adds a copy of the provided schema object.
         /// </summary>
         /// <param name="schema">The schema to add. A copy will be made and saved in a folder relative to the main Addressables settings asset. </param>

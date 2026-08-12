@@ -2855,6 +2855,21 @@ namespace AddressableAssetsIntegrationTests
             Assert.NotNull(displayName, "GenerateCompletedOperationDisplayName should not run into issues when a bunch of long strings are passed in.");
         }
 
+        [UnityTest]
+        public IEnumerator ResourceManagerDiagnostics_GenerateCompletedOperationDisplayName_DoesNotErrorOnNullInList()
+        {
+            yield return Init();
+            var rmd = new ResourceManagerDiagnostics(m_Addressables.ResourceManager);
+            var list = new List<string>();
+            list.Add("this is a really long string used for illustrative purposes");
+            list.Add(null);
+            list.Add("this is a really long string used for illustrative purposes");
+            var completedOp = m_Addressables.ResourceManager.CreateCompletedOperation<List<string>>(list, null);
+            string displayName = rmd.GenerateCompletedOperationDisplayName(completedOp);
+            Debug.Log(displayName);
+            Assert.NotNull(displayName, "GenerateCompletedOperationDisplayName should not run into issues when a bunch of long strings are passed in.");
+        }
+
         private class DebugNameTestOperation : AsyncOperationBase<string>
         {
             string m_DebugName;
