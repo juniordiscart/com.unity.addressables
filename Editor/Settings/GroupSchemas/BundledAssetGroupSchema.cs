@@ -157,6 +157,9 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         [SerializeField]
         bool m_IncludeLabelsInCatalog = true;
 
+        [SerializeField]
+        bool m_IncludeInEditorFastMode = true;
+
         /// <summary>
         /// If enabled, addresses are included in the content catalog.  This is required if assets are to be loaded via their main address.
         /// </summary>
@@ -200,6 +203,22 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 if (m_IncludeLabelsInCatalog != value)
                 {
                     m_IncludeLabelsInCatalog = value;
+                    SetDirty(true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// If enabled, the group's assets will be included while using Fast Mode during play.
+        /// </summary>
+        public bool IncludeInEditorFastMode
+        {
+            get => m_IncludeInEditorFastMode;
+            set
+            {
+                if (m_IncludeInEditorFastMode != value)
+                {
+                    m_IncludeInEditorFastMode = value;
                     SetDirty(true);
                 }
             }
@@ -992,6 +1011,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 
         static GUI.FoldoutSessionStateValue AdvancedOptionsFoldout = new GUI.FoldoutSessionStateValue("Addressables.BundledAssetGroup.AdvancedOptions");
 
+        GUIContent m_IncludeInEditorFastModeContent = new GUIContent("Include in Fastest Editor Playmode", "If disabled, the assets in this group will not be included during Editor play mode when using the 'Use Asset Database (fastest)' playmode option. This is useful for quickly testing the exclusion of content in the Editor.");
         GUIContent m_CompressionContent = new GUIContent("Asset Bundle Compression", "Compression method to use for asset bundles.");
         GUIContent m_UseAssetBundleCacheContent = new GUIContent("Use Asset Bundle Cache", "If enabled and supported, the device will cache  asset bundles.");
         GUIContent m_AssetBundleCrcContent = new GUIContent("Asset Bundle CRC", "Defines which Asset Bundles will have their CRC checked when loading to ensure correct content.");
@@ -1076,6 +1096,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             }
             GUILayout.Space(m_PostBlockContentSpace);
 
+            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeInEditorFastMode)), m_IncludeInEditorFastModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeAddressInCatalog)), m_IncludeAddressInCatalogContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeGUIDInCatalog)), m_IncludeGUIDInCatalogContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeLabelsInCatalog)), m_IncludeLabelsInCatalogContent, true);
@@ -1172,6 +1193,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             ShowSelectedPropertyDefaultSettingsMulti(so, otherBundledSchemas, ref queuedChanges);
             GUILayout.Space(m_PostBlockContentSpace);
 
+            ShowSelectedPropertyMulti(so, nameof(m_IncludeInEditorFastMode), m_IncludeInEditorFastModeContent, otherSchemas, ref queuedChanges,
+                (src, dst) => dst.IncludeInEditorFastMode = src.IncludeInEditorFastMode, ref m_IncludeInEditorFastMode);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeAddressInCatalog), m_IncludeAddressInCatalogContent, otherSchemas, ref queuedChanges,
                 (src, dst) => dst.IncludeAddressInCatalog = src.IncludeAddressInCatalog, ref m_IncludeAddressInCatalog);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeGUIDInCatalog), m_IncludeGUIDInCatalogContent, otherSchemas, ref queuedChanges,

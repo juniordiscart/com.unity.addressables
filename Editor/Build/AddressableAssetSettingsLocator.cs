@@ -114,6 +114,10 @@ namespace UnityEditor.AddressableAssets.Settings
                     if (g == null)
                         continue;
 
+                    GroupSchemas.BundledAssetGroupSchema s = g.GetSchema<GroupSchemas.BundledAssetGroupSchema>();
+                    if (s != null && !s.IncludeInEditorFastMode)
+                        continue;
+
                     foreach (AddressableAssetEntry e in g.entries)
                     {
                         AddEntriesToTables(m_keyToEntries, e);
