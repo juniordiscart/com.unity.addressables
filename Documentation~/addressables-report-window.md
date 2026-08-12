@@ -8,7 +8,7 @@ uid: addressables-report-overview
 
 The Addressables Report is a tool that you can use to view information about the content built in an Addressables Build in depth.
 
-To open the Addressables Report window, go to **Window** > **Asset Management** > **Addressables** and select **Addressables Report**.
+To open the Addressables Report window, go to **Window** > **Asset Management** > **Addressables** > **Addressables Report**.
 
 ## Prerequisites
 
@@ -26,13 +26,10 @@ The Addressables Report window has the following views:
 |:---|:---|
 | [Summary tab](#summary-tab) | Displays a high level overview of the Addressables build and its contents.  |
 | [Explore tab](#explore-tab)| Displays a detailed breakdown of all the content built as part of the Addressables build  |
-| [Potential Issues tab](AddressablesReportPotentialIssuesTab.md)| Scans the current build report for issues that might affect build performance or otherwise be undesirable. |
-
-Select the tabs along the top of the Addressables Report window to change views.
+| [Potential Issues tab](#potential-issues-tab)| Displays issues that might affect build performance or otherwise be undesirable. |
+| [Inspector panel](#inspector-panel)|Displays detailed information about a selected asset or AssetBundle.|
 
 The left sidebar panel contains the list of all the build reports currently detected within the project. Select a build report in the side bar to load that report in the Addressables Report window.
-
-The right sidebar is the [Inspector Panel](addressables-report-inspector.md), which you can use to view detailed information on an asset or AssetBundle while viewing information within the Explore or Potential Issues views.
 
 Use the search bar in the Build Report window to search within the Explore and Potential Issues tabs. This filters all assets in the current view by the text written in the search bar.
 
@@ -40,12 +37,11 @@ Use the search bar in the Build Report window to search within the Explore and P
 
 The Summary tab displays information about the selected build report, along with information about any detected potential issues in the build. It includes the following sections:
 
-* **General Information:** Includes the locations of the catalogs created by the build, which profile the current build was built with, how long the build took, and the version of the Addressables package and the Unity Editor that the build was created with.
-* **Potential Issues:** Contains a summary of the issues in the [Potential Issues tab](AddressablesReportPotentialIssuesTab.md)
-* **Aggregate Information:** Displays the number of AssetBundles created as part of the build, the size of the bundles built, and the number of assets in the build. The number of assets includes assets that are referenced by an Addressable asset, but aren't marked as Addressable. These assets must be included in the build to allow for assets that depend on them to be loaded.
-
->[!NOTE]
-> If multiple Addressable assets in different bundles depend on the same non-Addressable asset, then that non-Addressable asset is duplicated in multiple bundles. For more information about duplicated assets, refer to [Duplicated Assets View](AddressablesReportPotentialIssuesTab.md).
+|**Section**|**Description**|
+|---|---|
+|**General Information** |Includes the locations of the catalogs created by the build, which profile the current build was built with, how long the build took, and the version of the Addressables package and the Unity Editor that the build was created with.|
+|**Potential Issues**| Contains a summary of the issues in the [Potential Issues tab](#potential-issues-tab).|
+|**Aggregate Information**| Displays the number of AssetBundles created as part of the build, the size of the AssetBundles built, and the number of assets in the build. The number of assets includes assets that are referenced by an Addressable asset, but aren't marked as Addressable. These assets must be included in the build to allow for assets that depend on them to be loaded.|
 
 ## Explore tab
 
@@ -55,19 +51,59 @@ You can sort the Explore View in the following ways:
 
 |**View**|**Description**|
 |---|---|
-|**AssetBundles**| Displays all AssetBundles built as part of the Addressables build. Expand an AssetBundle to display the assets that bundle contains. This is the default view.|
-|**Assets**| Displays all assets built as part of the Addressables build. Expanding an asset to display all assets and AssetBundles that depend on the expanded asset.|
+|**AssetBundles**| Displays all AssetBundles built as part of the Addressables build. Expand an AssetBundle to display the assets that AssetBundle contains. This is the default view.|
+|**Assets**| Displays all assets built as part of the Addressables build. Expand an asset to display all assets and AssetBundles that depend on the expanded asset.|
 |**Labels**| Displays all the assets built as part of the Addressables build, sorted by the label attached to the Asset. Expand an asset to display the assets and AssetBundles that depend on the expanded asset.|
-|**Groups**| Displays all the AssetBundles built as part of the Addressables build, sorted by which [group](Groups.md) generated the bundle. If you use the **Pack Together By Label** or **Pack Separately** group settings, it's possible for multiple AssetBundles to be generated by a single group.|
+|**Groups**| Displays all the AssetBundles built as part of the Addressables build, sorted by which [group](groups-intro.md) generated the AssetBundle. If you use the **Pack Together By Label** or **Pack Separately** group settings, it's possible for multiple AssetBundles to be generated by a single group.|
 
-When you select an asset in the Explore Tab, its information is displayed in [the Inspector panel](addressables-report-inspector.md).
+When you select an asset in the Explore Tab, its information is displayed in [the Inspector panel](#inspector-panel).
 
 ## Potential Issues tab
 
 The Potential Issues tab scans the selected build report for any potential issues or problems that might have happened as part of your build. You can then view how these issues might have happened. It has the following view:
 
-* **Duplicated Assets View**: Displays a list of all of the non-Addressable assets that are duplicated between multiple bundles in your build. This happens when two addressable assets are in different bundles, but both reference a common asset that is not marked as addressable.
+* **Duplicated Assets View**: Displays a list of all the non-Addressable assets that are duplicated between multiple AssetBundles in your build. This happens when two Addressable assets are in different AssetBundles, but both reference a common asset that's not marked as Addressable.
 
-To fix these issues, either move the Addressable assets into the same bundle, or make the asset Addressable. Either means of fixing it will have implications on your build dependencies. You should usually use whichever method minimizes the impact on having the asset duplicated.
+To fix these issues, either move the Addressable assets into the same AssetBundle, or make the asset Addressable. Either means of fixing it have implications on your build dependencies.
 
-Selecting an asset in the Potential Issues Tab opens its information in [the Inspector panel](addressables-report-inspector.md).
+Selecting an asset in the Potential Issues Tab opens its information in [the Inspector panel](#inspector-panel).
+
+## Inspector panel
+
+When you select an asset or AssetBundle in the **Explore** tab or the **Potential Issues** tab, the Inspector panel displays information about the selected asset or AssetBundle.
+
+The Inspector panel has the following sections:
+
+* [**Summary panel**](#summary-panel): Displays information about an asset or AssetBundle, such as its file size, its group, and any labels associated with it. Additionally, the summary panel has buttons that you can use to navigate to various places within both the Build Report and the Editor, depending on whether you select an Asset or an AssetBundle.
+* [**References panel**](#references-panel): Displays the chain of dependencies surrounding a given asset.
+
+### Summary panel
+
+Use the buttons in this panel to perform the following functions:
+
+|**Function**|**Description**|
+|---|---|
+|**Select in Editor**| Selects the asset in the Unity Editor.|
+|**Select in Group**| Selects the asset in the Groups view in the Explore tab. This navigates to the Groups view if you're not currently in it.|
+|**Select in Bundle**| Selects the asset in the AssetBundles view in the Explore window. This navigates to the AssetBundles view if you're not currently in it.|
+|**Search in this view**| Searches the name of the asset in the search bar.|
+
+### References panel
+
+The References panel has the following tabs:
+
+|**Tab**|**Description**|
+|---|---|
+|**References To**| Contains a list of all the assets and AssetBundles that the selected item depends on. For example, if you have a material that references a shader, then the shader appears in this tab when you select the material in the Explore View.|
+|**Referenced By**| Contains a list of all the assets and AssetBundles that depend on the selected item. For example, if you have a material that references a shader, then the material that the shader references appears in this tab when you select the shader in the Explore View.|
+
+Select the arrow next to an Asset or AssetBundle in the References panel to cycle through the dependencies of the top level asset.
+
+The question mark icon is displayed next to assets that aren't Addressable but are pulled into the AssetBundle by another Addressable asset. Select it to highlight all the assets in the same AssetBundle that reference that asset.
+
+## Additional resources
+
+* [Create a build report](BuildLayoutReport.md)
+* [Build Addressable assets with a player build](build-player-builds.md)
+* [Create a content-only build](builds-full-build.md)
+* [Build Addressable assets from scripts](build-scripting-builds.md)

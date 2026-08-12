@@ -281,7 +281,7 @@ namespace UnityEngine.ResourceManagement
 			m_ReleaseOpNonCached = OnOperationDestroyNonCached;
 			m_ReleaseOpCached = OnOperationDestroyCached;
 			m_ReleaseInstanceOp = OnInstanceOperationDestroy;
-			m_allocator = alloc == null ? new LRUCacheAllocationStrategy(1000, 1000, 100, 10) : alloc;
+            m_allocator = alloc == null ? new DefaultAllocationStrategy() : alloc;
 			m_ResourceProviders.OnElementAdded += OnObjectAdded;
 			m_ResourceProviders.OnElementRemoved += OnObjectRemoved;
 			m_UpdateReceivers.OnElementAdded += x => RegisterForCallbacks();

@@ -2,39 +2,31 @@
 uid: addressables-overview
 ---
 
-# Addressables overview
+# Addressables introduction
 
-Addressables provides a system that can scale with your project. You can start with a simple setup and then reorganize as your project grows in complexity with minimal code changes.
+The Addressables package provides a user interface for organizing assets in your project. You can organize assets into [groups](groups-intro.md), which define how Unity packages assets into AssetBundles and loads them.
 
-For example, you can start with a single group of Addressable assets, which Unity loads as a set. Then, as you add more content, you can split your assets into multiple groups so that you can load only the ones you need at a given time. As your team grows in size, you can make separate Unity projects to develop different types of assets. These auxiliary projects can produce their own Addressables content builds that you load from the main project.
+By default, Addressables uses [AssetBundles](xref:um-asset-bundles-intro) to package your assets. You can also implement your own [`IResourceProvider`](xref:UnityEngine.ResourceManagement.ResourceProviders.IResourceProvider) class to support other ways to access assets.
 
-The Addressables system provides automatic dependency and memory management, efficient AssetBundle packaging and the ability to host assets either remotely or locally. Use this package to control how your applications manages, loads, and unloads assets.
+## Addressables groups and labels
 
-## Concepts
+Use Addressables [groups](groups-intro.md) to organize your content. All Addressable assets belong to a group. If you don't explicitly assign an asset to a group, Unity adds it to the default group.
 
-This overview discusses the following concepts to help you understand how to manage and use your assets with the Addressables system:
+You can set the [group settings](ContentPackingAndLoadingSchema.md) to specify how the Addressables build system packages the assets in a group into bundles. For example, you can choose whether to pack all the assets in a group together in a single AssetBundle file.
 
-|**Concept**|**Description**|
-|---|---|
-|[Addressables tools](#addressables-tools)| The Addressables package has several windows and tools that you can use to organize, build, and optimize your content.|
-|[Asset address](#asset-addresses)| A string ID that identifies an Addressable asset. You can use an address as a key to load the asset.|
-|[Asset loading and unloading](#asset-loading-and-unloading)| The `Addressables` API provides its own functions to load and release assets at runtime.|
-|__Asset location__| A runtime object that describes how to load an asset and its dependencies. You can use a location object as a key to load the asset.|
-|[AssetReferences](#assetreference)| A type you can use to support the assignment of Addressable assets to fields in an Inspector window. You can use an AssetReference instance as a key to load the asset. The [`AssetReference`](xref:addressables-asset-references) class also provides its own loading methods.|
-|[Content builds](#content-builds)| Use a content build to collate and package your assets as a separate step before you make a player build.|
-|[Content catalogs](#content-catalogs)| Addressables uses catalogs to map your assets to the resources that contain them.|
-|[Dependencies](#dependency-and-resource-management)| An asset dependency is one asset used by another, such as a prefab used in a scene asset or a material used in a prefab asset.|
-|[Dependency and resource management](#dependency-and-resource-management)| The Addressables system uses reference counting to track which assets and AssetBundles are in use, including whether the system loads or unloads dependencies (other referenced assets).|
-|[Group](#addressables-groups-and-labels)| You assign assets to groups in the Editor. The group settings configure how Addressables packages the group assets into AssetBundles and how it loads them at runtime.|
-|__Key__| An object that identifies one or more Addressables. Keys include addresses, labels, AssetReference instances and location objects.|
-|[Label](#addressables-groups-and-labels)| A tag that you can assign to multiple assets and use to load related assets together as a group. You can use a label as a key to load the asset.|
-|__Multiple platform support__| The build system separates content built by platform and resolves the correct path at runtime.|
+Use [labels](Labels.md) to tag content that you want to treat together in some way. For example, if you had labels defined for `red`, `hat`, and `feather`, you can load all red hats with feathers in a single operation, whether they're part of the same AssetBundle or not. You can also use labels to decide how assets in a group are packed into AssetBundles.
 
-By default, Addressables uses AssetBundles to package your assets. You can also implement your own [`IResourceProvider`](xref:UnityEngine.ResourceManagement.ResourceProviders.IResourceProvider) class to support other ways to access assets.
+Add an asset to a group and move assets between groups using the [Addressables Groups](xref:addressables-groups-window) window. You can also assign labels to your assets in the Groups window.
+
+### Group schemas
+
+The schemas assigned to a group define the settings used to build the assets in a group. Different schemas can define different groups of settings. For example, one standard schema defines the settings for how to pack and compress your assets into AssetBundles (among other options). You also can define your own schemas to use with custom build scripts.
+
+For more information, refer to [Define group settings](GroupSchemas.md).
 
 ## Asset addresses
 
-A key feature of the Addressables system is that you assign addresses to your assets and use those addresses to load them at runtime. The Addressables resource manager looks up the address in the content catalog to find out where the asset is stored. Assets can be built-in to your application, cached locally, or hosted remotely. The resource manager loads the asset and any dependencies, downloading the content first, if necessary.
+In the Addressables system, assets are assigned addresses that can be used to load the assets at runtime. For example, an asset at `Assets/Boss1/Materials/MainMaterial.material` could be assigned an address like `boss1_material_main`. The Addressables resource manager looks up the address in the content catalog to find out where the asset is stored. Assets can be built-in to your application, cached locally, or hosted remotely. The resource manager loads the asset and any dependencies, downloading the content first, if necessary.
 
 ![](images/addressables-overview-addresses.png)<br/>*Addressables loads Assets by address no matter where they're located*
 
@@ -54,21 +46,21 @@ The `Addressables` API methods that only load a single asset, such as [`LoadAsse
 
 For more information on how to assign addresses to assets, refer to [Making an asset Addressable](xref:addressables-getting-started). For information on how to load assets by keys, including addresses, refer to [Loading assets](xref:addressables-api-load-asset-async).
 
-## AssetReference
+## Asset loading and unloading
+
+To load an Addressable asset, you can use its address or other key such as a label or `AssetReference`. For more information, refer to [Loading Addressable Assets](xref:addressables-api-load-asset-async). You only need to load the main asset and Addressables loads any dependent assets automatically.
+
+When your application no longer needs access to an Addressable asset at runtime, you must release it so that Addressables can free the associated memory. The Addressables system keeps a reference count of loaded assets, and doesn't unload an asset until the reference count returns to zero. As such, you don't need to keep track of whether an asset or its dependencies are still in use. You only need to make sure that any time you explicitly load an asset, you release it when your application no longer needs that instance. Refer to [Releasing Addressable assets](xref:addressables-unloading) for more information.
+
+### Control loading with asset references
 
 An [`AssetReference`](xref:UnityEngine.AddressableAssets.AssetReference) is a type that you can set to any kind of Addressable asset. Unity doesn't automatically load the asset assigned to the reference, so you have more control over when to load and unload it.
 
-Use fields of type `AssetReference` in a `MonoBehaviour` or `ScriptableObject` to specify which Addressable asset to use for that field (instead of using the string that specifies the address). `AssetReferences` support drag-and-drop and object picker assignment, which makes them more convenient to use in an Editor Inspector.
+Use fields of type `AssetReference` in a `MonoBehaviour` or `ScriptableObject` to reference an Addressable asset. You can drag and drop in the Editor Inspector to assign an Asset to an `AssetReference` field.
 
-Addressables also provides a few more specialized types, such as `AssetReferenceGameObject` and `AssetReferenceTexture`. You can use these specialized subclasses to prevent the possibility of assigning the wrong asset type to an `AssetReference` field. You can also use the `AssetReferenceUILabelRestriction` attribute to limit assignment to assets with specific labels.
+Addressables also provide specialized types, such as `AssetReferenceGameObject` and `AssetReferenceTexture`. You can use these specialized subclasses to prevent the possibility of assigning the wrong asset type to an `AssetReference` field. You can also use the `AssetReferenceUILabelRestriction` attribute to limit assignment to assets with specific labels.
 
-Refer to [Using AssetReferences](xref:addressables-asset-references) for more information.
-
-## Asset loading and unloading
-
-To load an Addressable asset, you can use its address or other key such as a label or `AssetReference`. Refer to [Loading Addressable Assets](xref:addressables-api-load-asset-async) for more information. You only need to load the main asset and Addressables loads any dependent assets automatically.
-
-When your application no longer needs access to an Addressable asset at runtime, you must release it so that Addressables can free the associated memory. The Addressables system keeps a reference count of loaded assets, and doesn't unload an asset until the reference count returns to zero. As such, you don't need to keep track of whether an asset or its dependencies are still in use. You only need to make sure that any time you explicitly load an asset, you release it when your application no longer needs that instance. Refer to [Releasing Addressable assets](xref:addressables-unloading) for more information.
+For more information, refer to [Using AssetReferences](xref:addressables-asset-references).
 
 ## Dependency and resource management
 
@@ -78,48 +70,22 @@ As you load and release assets, the Addressables system keeps a reference count 
 
 Refer to [Memory management](xref:addressables-memory-management) for more information.
 
-## Addressables groups and labels
-
-Use Addressables groups to organize your content. All Addressable assets belong to a group. If you don't explicitly assign an asset to a group, Addressables adds it to the default group.
-
-You can set the group settings to specify how the Addressables build system packages the assets in a group into bundles. For example, you can choose whether to pack all the assets in a group together in a single AssetBundle file.
-
-Use labels to tag content that you want to treat together in some way. For example, if you had labels defined for `red`, `hat`, and `feather`, you can load all red hats with feathers in a single operation, whether they're part of the same AssetBundle or not. You can also use labels to decide how assets in a group are packed into bundles.
-
-Add an asset to a group and move assets between groups using the [Addressables Groups](xref:addressables-groups-window) window. You can also assign labels to your assets in the Groups window.
-
-### Group schemas
-
-The schemas assigned to a group define the settings used to build the assets in a group. Different schemas can define different groups of settings. For example, one standard schema defines the settings for how to pack and compress your assets into AssetBundles (among other options). Another standard schema defines which of the categories, **Can Change Post Release** and **Cannot Change Post Release** the assets in the group belong to.
-
-You can define your own schemas to use with custom build scripts.
-
-Refer to [Schemas](xref:addressables-group-schemas) for more information about group schemas.
-
-## Content catalogs
-
-The Addressables system produces a content catalog file that maps the addresses of your assets to their physical locations. It can also create a hash file containing the hash of the catalog. If you're hosting your Addressable assets remotely, the system uses this hash file to decide if the content catalog has changed and needs to download it. Refer to [Content catalogs](xref:addressables-build-artifacts) for more information.
-
-The Profile selected when you perform a content build determines how the addresses in the content catalog map to resource loading paths. Refer to [Profiles](xref:addressables-profiles) for more information.
-
-For information about hosting content remotely, refer to [Distributing content remotely](xref:addressables-remote-content-distribution).
-
 ## Content builds
 
-The Addressables system separates the building of Addressable content from the build of your player. A content build produces the content catalog, catalog hash, and the AssetBundles containing your assets.
+The Addressables system separates the building of Addressable content from the build of your player. A content build produces the content catalog, catalog hash, and the AssetBundles containing your assets. You can build Addressable assets in a separate, [content-only build](builds-full-build.md), or build them at the [same time as the Player](build-player-builds.md).
 
 Because asset formats are platform-specific, you must make a content build for each platform before building a player.
 
 Refer to [Building Addressable content](xref:addressables-builds) for more information.
 
-## Play mode scripts
+## Content catalogs
 
-When you run your game or application in Play mode, it can be inconvenient and slow to always perform a content build before pressing the Play button. At the same time, you want to be able to run your game in a state as close to a built player as possible. Addressables provides three options that decide how the Addressables system locates and loads assets in Play mode:
+The Addressables system produces a content catalog file that maps the addresses of assets to their physical locations. It can also create a hash file containing the hash of the catalog. If you're hosting Addressable assets remotely, the system uses this hash file to decide if the content catalog has changed and needs to download it. Refer to [Content catalogs](xref:addressables-build-artifacts) for more information.
 
-* __Use the Asset Database__: Addressables loads assets directly from the Asset Database. This option typically provides the fastest iteration speed if you're making both code and Asset changes, but also least resembles a production build.
-* __Use existing build__: Addressables loads content from your last content build. This option most resembles a production build and  provides fast iteration turnaround if you aren't changing assets.
+The Profile selected when you perform a content build determines how the addresses in the content catalog map to resource loading paths. Refer to [Profiles](xref:addressables-profiles) for more information.
 
-Refer to [Play mode scripts](xref:addressables-groups-window) for more information.
+For information about hosting content remotely, refer to [Distributing content remotely](xref:addressables-remote-content-distribution).
+
 
 ## Addressables tools
 
@@ -128,3 +94,10 @@ The Addressables system provides the following tools and windows to help you man
 * [Addressable Groups window](xref:addressables-groups-window): The main interface for managing assets, group settings, and making builds.
 * [Profiles window](xref:addressables-profiles): Helps set up paths used by your builds.
 * [Build layout report](xref:addressables-build-layout-report): Describes the AssetBundles produced by a content build.
+* [Analyze tool](xref:addressables-analyze-tool): the Analyze tool runs analysis rules that check whether your Addressables content conforms to the set of rules you have defined. The Addressables system provides some basic rules, such as checking for duplicate assets; you can add your own rules using the [AnalyzeRule] class.
+
+## Additional resources
+
+* [AssetBundles introduction](xref:um-asset-bundles-intro)
+* [Organize Addressable assets](AddressableAssetsDevelopmentCycle.md)
+* [Referencing Addressable assets in code](AssetReferences.md)

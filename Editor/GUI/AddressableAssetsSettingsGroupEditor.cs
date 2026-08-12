@@ -592,7 +592,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private static async void OnBuildCcd(BuildMenuContext context)
         {
-            bool isUpdate = false; 
+            bool isUpdate = false;
             PreEvent preEvent = null;
             PostEvent postEvent = null;
             try {
@@ -611,7 +611,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 await AddressableAssetSettings.BuildAndReleasePlayerContent(isUpdate);
             } finally {
                 UnregisterBuildMenuEvents(isUpdate, preEvent, postEvent);
-                EditorUtility.ClearProgressBar();                               
+                EditorUtility.ClearProgressBar();
             }
         }
 
@@ -762,16 +762,16 @@ namespace UnityEditor.AddressableAssets.GUI
 
 				return g0.Name.CompareTo(g1.Name);
 			});
-			
+
 			AddressableAssetGroupSortSettings sortSettings = AddressableAssetGroupSortSettings.GetSettings(settings);
 			Undo.RecordObject(sortSettings, nameof(sortSettings));
-			
+
 			m_TreeState.sortOrderList = sortedGroups.Select(g => g.Guid).ToList();
 			sortSettings.sortOrder = sortedGroups.Select(g => g.Guid).ToArray();
-			
+
 			AddressableAssetUtility.OpenAssetIfUsingVCIntegration(sortSettings);
 			EditorUtility.SetDirty(sortSettings);
-			
+
 			Reload();
 		}
 
@@ -863,6 +863,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		public void OnDisable()
 		{
+            m_EntryTree?.Cleanup();
 			if (AddressableAssetSettingsDefaultObject.Settings == null)
 				return;
 			if (m_ModificationRegistered)

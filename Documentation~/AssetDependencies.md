@@ -2,50 +2,59 @@
 uid: addressables-asset-dependencies
 ---
 
-# Asset dependencies overview
+# Addressable asset dependencies
 
-When you include a scene in your Project Build Settings and build a player, Unity includes that scene and any assets used in the scene in your application's built-in data. Similarly, Unity includes any assets in your project's Resources folders in a separate, built-in collection of assets. The difference is that assets in a scene are only loaded as part of a scene, whereas assets in Resources can be loaded independently.
+Understanding how assets reference each other can help you optimize the Addressables implementation in your project. Asset dependencies can affect build size, memory usage, and runtime performance.
 
-Addressable assets can either be built into your application as an additional set of local assets, or kept external to the build as remote assets hosted on a server and downloaded when they're needed. You can update remote assets independently from the application itself, although remote assets can't include code, so you can only change assets and serialized data.
+Unity packages assets differently depending on how you configure them:
+
+- **Addressable assets**: Depending on how you configure the Addressables settings in your project you can either:
+    - Build Addressable assets into your application as an additional set of local assets.
+    - Keep Addressable assets external to the build as remote assets hosted on a server and downloaded when they're needed. You can update remote assets independently from the application itself, although remote assets can't include code, so you can only change assets and serialized data.
+- **Scene assets**: Unity includes scenes from your project's [Scene List](xref:um-build-profile-scene-list) and their dependencies in the application's built-in data.
+- **Resources assets**: Unity packages assets in [`Resources` folders](xref:um-loading-resources-at-runtime) as a separate, built-in collection that you can load independently.
 
 ![](images/addressables-assets-overview.png)<br/>*How project assets are exported to a player build*
 
-If you use the same asset both in a scene and the Resources folder, then Unity makes copies of the asset when building rather than sharing a single instance. For example, if you use a material in a built-in scene and also use it in a prefab located in a Resources folder, you end up with two copies of that material in your build, even if the material asset itself isn't in the Resources folder. If you then mark that same material as Addressable, you end up with three copies. Files in the project's StreamingAssets folder can never be referenced by assets outside that folder.
+## Asset organization
 
-> [!NOTE]
-> Before building a player, you must make a content build of your Addressable assets. During the player build, Unity copies your local Addressables to the StreamingAssets folder so that they're included in the build along with any assets you placed in StreamingAssets. Unity removes these assets at the end of the build process. You must upload the remote Addressables files produced by the content build to your hosting service. Refer to [Builds](xref:addressables-builds) for more information.
+To avoid duplication of content between the player build and Addressables you can minimize the amount of data in the Player build by moving data from `Resources` folders, and scenes into [Addressable groups](groups-intro.md). Small amounts of data in `Resources` folders typically don't cause performance issues. You don't need to move third-party package assets unless they cause problems. You can't store Addressable assets in `Resources` folders.
 
-When you use Addressables in a project, it's best practice to move any scenes and data in the Resources folders into [Addressable groups](Groups.md) and manage them as Addressables.
+Keep at least one scene in your project's Scene List and create a minimal initialization scene if needed.
 
-The Build Settings scene list must contain at least one scene. You can create a minimal scene that initializes your application.
+## Sub object references
 
-A small amount of data in Resources folders typically doesn't cause performance issues. If you use third party packages that place assets there, you don't need to move them unless they cause problems. Addressable assets can't be stored in Resources folders.
+Unity determines build content partly based on how your project's assets and scripts reference each other. Sub object references affect the process in the following ways:
 
-## Reference sub-objects
+- **AssetReference to sub object**: If an [`AssetReference`](asset-reference-intro.md) points to a sub object of an Addressable asset, Unity builds the entire object into the AssetBundle.
+- **AssetReference to main object**: If the `AssetReference` points to an Addressable object (GameObject, ScriptableObject, or scene) that references a sub object, Unity builds only the sub object as an implicit dependency.
 
-Unity partially determines what to include in a content build based on how your assets and scripts reference each other. Sub-object references make the process more complicated.
+An explicit asset is one you directly add to an [Addressables group](groups-intro.md). Unity packs these into AssetBundles during a [content build](xref:addressables-builds).
 
-If an `AssetReference` points to a sub-object of an asset that's Addressable, Unity builds the entire object into the `AssetBundle` at build time. If the `AssetReference` points to an Addressable object such as a `GameObject`, `ScriptableObject`, or `Scene`, which directly references a sub-object, Unity only builds the sub-object into the `AssetBundle` as an implicit dependency.
-
-## Asset and AssetBundle dependencies
-
-When you add an asset to an [Addressables group](Groups.md), that asset is packed into an AssetBundle when you make a [content build](xref:addressables-builds). In this case the asset is explicitly included in the bundle, which is called an explicit asset.
-
-If an asset references other assets, then the referenced assets are dependencies of the original asset. This is called an asset dependency. For example, if the asset is packed into AssetBundle A and the referenced assets are packed into AssetBundle B, then bundle B is a dependency of bundle A. This is called an AssetBundle dependency. Refer to the [AssetBundle dependencies manual page](xref:AssetBundles-Dependencies) for more information.
-
-Asset dependencies are treated depending on whether or not they are also Addressable. Dependencies that are Addressable are packed into AssetBundles according to the settings of the group they're in. This might be the same bundle as the referencing asset or a different bundle. A dependency that isn't Addressable is included in the bundle of its referencing asset. The referenced asset is implicitly included in the bundle, which is called an implicit asset.
+An implicit asset is a dependency that Unity automatically includes. If an explicit asset references other assets:
+- **Addressable dependencies**: Unity packs these according to their group settings (same or different AssetBundle).
+- **Non-Addressable dependencies**: Unity includes these in the referencing asset's AssetBundle.
 
 > [!TIP]
-> Use the [Build Layout Report](xref:addressables-build-layout-report) tool to display more detailed information about AssetBundles produced by a content build.
+> Use the [Build Layout Report](xref:addressables-build-layout-report) tool to view detailed information about AssetBundles and their dependencies.
 
-## Reference multiple implicit assets
+## Avoiding asset duplication
 
-If more than one Addressable references the same implicit asset, then copies of the implicit asset are included in each bundle containing a referencing Addressable.
+When multiple Addressables reference the same non-Addressable asset, Unity creates copies in each AssetBundle:
 
 ![](images/addressables-multiple-assets.png)<br/>*Non-Addressable assets are copied to each bundle with a referencing Addressable*
 
-When an implicit asset is included in more than one bundle, multiple instances of that asset can be instantiated at runtime rather than the single instance that your game logic expects. If you change the instance state at runtime, only the object from the same bundle can detect the change because all the other assets now have their own individual instance rather than sharing the common one.
+As a result, at runtime the following happens:
 
-To stop this duplication, you can make the implicit asset an Addressable asset and include it in one of the existing bundles or add it to a different bundle. The bundle the asset is added to is loaded whenever you load one of the Addressables that reference it. If the Addressables are packed into a different AssetBundle than the referenced asset, then the bundle containing the referenced asset is an AssetBundle dependency.
+- Multiple instances of the same asset exist at runtime instead of a single shared instance.
+- Changes to one instance don't affect other instances.
+- Increased memory usage and build size.
 
-The dependent bundle must be loaded when you load any asset in the current bundle, not just the asset containing the reference. Although none of the assets in this other AssetBundle are loaded, loading a bundle has its own runtime cost. Refer to [Memory implications of loading AssetBundle dependencies](memory-assetbundles.md) for more information.
+To avoid this problem, make the shared asset Addressable and place it in its own AssetBundle or group it with one of the referencing assets. This creates an AssetBundle dependency that Unity loads automatically when needed.
+
+When you load any asset from an AssetBundle, Unity must also load all dependent AssetBundles. This loading affects runtime performance even if you don't use the dependent assets directly. For more information, refer to [Memory implications of loading AssetBundle dependencies](memory-assetbundles.md).
+
+## Additional resources
+
+* [Addressables initialization process](InitializeAsync.md)
+* [Memory management](MemoryManagement.md)

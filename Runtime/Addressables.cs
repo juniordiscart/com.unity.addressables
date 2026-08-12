@@ -452,7 +452,7 @@ namespace UnityEngine.AddressableAssets
     public static class Addressables
     {
         internal static bool reinitializeAddressables = true;
-        internal static AddressablesImpl m_AddressablesInstance = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+        internal static AddressablesImpl m_AddressablesInstance = new AddressablesImpl(new DefaultAllocationStrategy());
 
         static AddressablesImpl m_Addressables
         {
@@ -467,7 +467,7 @@ namespace UnityEngine.AddressableAssets
                 {
                     reinitializeAddressables = false;
                     m_AddressablesInstance.ReleaseSceneManagerOperation();
-                    m_AddressablesInstance = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+                    m_AddressablesInstance = new AddressablesImpl(new DefaultAllocationStrategy());
                 }
 #endif
                 return m_AddressablesInstance;

@@ -50,6 +50,39 @@ namespace UnityEngine.ResourceManagement.Tests
 #endif
         }
 
+
+        [Test]
+        public void LocationCacheKey_Equals_ReturnsExpectedValue()
+        {
+            var d1 = new TestResourceLocation("d1", "dd1", "dp", typeof(AssetBundle));
+            var d2 = new TestResourceLocation("d2", "dd2", "dp", typeof(AssetBundle));
+            var d3 = new TestResourceLocation("d3", "dd3", "dp", typeof(AssetBundle));
+            var t = typeof(GameObject);
+            {
+                //everything same, should return true
+                var k1 = new LocationCacheKey(new TestResourceLocation("loc1", "x", "p", t, d1, d2), t);
+                var k2 = new LocationCacheKey(new TestResourceLocation("loc1", "x", "p", t, d1, d2), t);
+                Assert.IsTrue(k1.Equals(k2));
+            }
+
+            {
+                //dependencies different, should return false
+                var k1 = new LocationCacheKey(new TestResourceLocation("loc1", "x", "p", t, d1, d2), t);
+                var k2 = new LocationCacheKey(new TestResourceLocation("loc1", "x", "p", t, d1, d2, d3), t);
+                Assert.IsFalse(k1.Equals(k2));
+            }
+
+
+            {
+                //dependencies same, ids different should return false
+                var k1 = new LocationCacheKey(new TestResourceLocation("loc1", "x", "p", t, d1, d2), t);
+                var k2 = new LocationCacheKey(new TestResourceLocation("loc1", "x2", "p", t, d1, d2), t);
+                Assert.IsFalse(k1.Equals(k2));
+            }
+
+
+        }
+
         class TestOperation : AsyncOperationBase<GameObject>, ICachable
         {
             protected override void Execute()

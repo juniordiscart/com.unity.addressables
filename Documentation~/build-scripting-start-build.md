@@ -12,9 +12,9 @@ Before starting the build, set the active [Profile](AddressableAssetsProfiles.md
 
 ## Set the AddressableAssetSettings
 
-The settings defined by [`AddressableAssetSettings`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings) include the list of [groups](Groups.md) and the [profile](profiles-introduction.md) to use.
+The settings defined by [`AddressableAssetSettings`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings) include the list of [groups](groups-intro.md) and the [profile](profiles-introduction.md) to use.
 
-To access the settings that displayed in the Editor (menu: __Window > Asset Management > Addressables > Settings__), use the static [`AddressableAssetSettingsDefaultObject.Settings`](xref:UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject.Settings) property. However, if desired, you can use a different settings object for a build.
+To access the settings displayed in the Unity Editor (menu: __Window > Asset Management > Addressables > Settings__), use the static [`AddressableAssetSettingsDefaultObject.Settings`](xref:UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject.Settings) property. However, if desired, you can use a different settings object for a build.
 
 To load a custom settings object in a build:
 
@@ -42,37 +42,18 @@ After setting the profile and builder to use, you can launch the build:
 
 [!code-cs[sample](../Tests/Editor/DocExampleCode/BuildLauncher.cs#buildAddressableContent)]
 
-To check for success, use `BuildPlayerContent(out AddressablesPlayerBuildResult result)`. `result.Error` contains any error message returned if the Addressables build failed. If s`tring.IsNullOrEmpty(result.Error)` is true, the build was successful.
+To check for success, use `BuildPlayerContent(out AddressablesPlayerBuildResult result)`. `result.Error` contains any error message returned if the Addressables build failed. If `string.IsNullOrEmpty(result.Error)` is true, the build was successful.
 
 ### Example script to launch build
 
-The following example adds a couple of menu commands to the **Window > Asset Management > Addressables** menu in the Editor. The first command builds the Addressable content using the preset profile and build script. The second command builds the Addressable content, and, if it succeeds, builds the Player.
-
-If your build script makes setting changes that require a domain reload, you should run the build script using Unity command line options, instead of running it interactively in the Editor. Refer to [Domain reloads](#domain-reloads) for more information.
+The following example adds two menu commands to the **Window > Asset Management > Addressables** menu in the Editor. The first command builds the Addressable content using the preset profile and build script. The second command builds the Addressable content, and if it succeeds, builds the Player.
 
 [!code-cs[sample](../Tests/Editor/DocExampleCode/BuildLauncher.cs#doc_BuildLauncher)]
 
-## Domain reloads
+If your build script makes setting changes that require a domain reload, you should run the build script using Unity command line options, instead of running it interactively in the Editor. Refer to [Handle domain reloads](build-scripting-recompiling.md) for more information.
 
-If your scripted build process involves changing settings that trigger a domain reload before it makes an Addressables build, then you should script such builds to use [Unity's command line arguments](xref:CommandLineArguments) rather than running a script in the Editor. These types of settings include:
+## Additional resources
 
-* Changing the defined compiler symbols
-* Changing platform target or target group
-
-When you run a script that triggers a domain reload interactively in the Editor, such as using a menu command, your Editor script finishes executing before the domain reload happens. Therefore, if you immediately start an Addressables build, both your code and imported assets are still in their original state. You must wait for the domain reload to complete before you start the content build.
-
-It's best practice to wait for the domain reload to finish when you run the build from the command line, because it can be difficult or impossible to carry out reliably in an interactive script.
-
-The following example script defines two functions that can be invoked when running Unity on the command line. The `ChangeSettings` example sets the specified define symbols. The `BuildContentAndPlayer` function runs the Addressables build and the Player build.
-
-[!code-cs[sample](../Tests/Editor/DocExampleCode/BatchBuild.cs#doc_BatchBuild)]
-
-To call these functions, use [Unity's command line arguments](xref:CommandLineArguments) in a terminal or command prompt or in a shell script:
-
-```
-D:\Unity\2020.3.0f1\Editor\Unity.exe -quit -batchMode -projectPath . -executeMethod BatchBuild.ChangeSettings -defines=FOO;BAR -buildTarget Android
-D:\Unity\2020.3.0f1\Editor\Unity.exe -quit -batchMode -projectPath . -executeMethod BatchBuild.BuildContentAndPlayer -buildTarget Android
-```
-
-> [!NOTE]
-> If you specify the platform target as a command line parameter, you can perform an Addressables build in the same command. However, if you wanted to change the platform in a script, you should do it in a separate command, such as the `ChangeSettings` function in this example.
+* [`AddressableAssetSettings.BuildPlayerContent` API reference](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.BuildPlayerContent*)
+* [Handle domain reloads](build-scripting-recompiling.md)
+* [`AddressableAssetSettings` API reference](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings)

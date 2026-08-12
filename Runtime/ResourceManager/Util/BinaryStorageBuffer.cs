@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
-using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace UnityEngine.ResourceManagement.Util
@@ -27,18 +25,25 @@ namespace UnityEngine.ResourceManagement.Util
                 public char separator;
             }
 
-            public object Deserialize(Reader reader, Type t, uint offset)
+            unsafe public object Deserialize(Reader reader, Type t, uint offset, out uint size)
             {
+                size = 0;
                 if (offset == uint.MaxValue)
                     return null;
-                if (t == typeof(int)) return reader.ReadValue<int>(offset);
-                if (t == typeof(bool)) return reader.ReadValue<bool>(offset);
-                if (t == typeof(long)) return reader.ReadValue<long>(offset);
-                if (t == typeof(Hash128)) return reader.ReadValue<Hash128>(offset);
+                if (t == typeof(int))
+                    return reader.ReadValue<int>(offset, out size);
+                if (t == typeof(bool))
+                    return reader.ReadValue<bool>(offset, out size);
+                if (t == typeof(long))
+                    return reader.ReadValue<long>(offset, out size);
+                if (t == typeof(Hash128))
+                    return reader.ReadValue<Hash128>(offset, out size);
                 if (t == typeof(string))
                 {
-                    var remap = reader.ReadValue<ObjectToStringRemap>(offset);
-                    return reader.ReadString(remap.stringId, remap.separator, false);
+                    var remap = reader.ReadValue<ObjectToStringRemap>(offset, out size);
+                    var str = reader.ReadString(remap.stringId, out var strSize, remap.separator, false);
+                    size += strSize;
+                    return str;
                 }
                 return null;
             }
@@ -57,16 +62,16 @@ namespace UnityEngine.ResourceManagement.Util
                     }
                 }
 
+                if(bestCount == 0)
+                    return (char)0;
+
                 var parts = str.Split(bestSep);
                 int validParts = 0;
                 foreach (var p in parts)
-                    if (p.Length > 8)
+                    if (p.Length > 4)
                         validParts++;
 
-                if (validParts < 2)
-                    bestSep = (char)0;
-
-                return bestSep;
+                return validParts > 1 ? bestSep : (char)0;
             }
 
             public uint Serialize(Writer writer, object val)
@@ -82,8 +87,10 @@ namespace UnityEngine.ResourceManagement.Util
                 if (t == typeof(string))
                 {
                     var str = val as string;
-                    var bestSep = FindBestSeparator(str, '/', '.', '-', '_', '\\', ',');
-                    return writer.Write(new ObjectToStringRemap { stringId = writer.WriteString((string)val), separator = bestSep });
+                    if(string.IsNullOrEmpty(str))
+                        return uint.MaxValue;
+                    var bestSep = FindBestSeparator(str, '/', '\\', '.', '-', '_', ',');
+                    return writer.Write(new ObjectToStringRemap { stringId = writer.WriteString((string)val, bestSep), separator = bestSep });
                 }
                 return uint.MaxValue;
             }
@@ -99,19 +106,21 @@ namespace UnityEngine.ResourceManagement.Util
             }
             public IEnumerable<BinaryStorageBuffer.ISerializationAdapter> Dependencies => null;
 
-            public object Deserialize(Reader reader, Type type, uint offset)
+            unsafe public object Deserialize(Reader reader, Type type, uint offset, out uint size)
             {
                 try
                 {
-                    var d = reader.ReadValue<Data>(offset);
-                    var assemblyName = reader.ReadString(d.assemblyId, '.');
-                    var className = reader.ReadString(d.classId, '.');
+                    var d = reader.ReadValue<Data>(offset, out var dataSize);
+                    var assemblyName = reader.ReadString(d.assemblyId, out var assemblySize, '.');
+                    var className = reader.ReadString(d.classId, out var strSize, '.');
+                    size = dataSize + assemblySize + strSize;
                     var assembly = Assembly.Load(assemblyName);
                     return assembly == null ? null : assembly.GetType(className);
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(e);
+                    size = 0;
                     return null;
                 }
             }
@@ -153,7 +162,6 @@ namespace UnityEngine.ResourceManagement.Util
                         {
                             var prevAdapter = serializationAdapters[aType];
                             serializationAdapters.Remove(aType);
-//                            serializationAdapters.Add(aType, adapter);
                             serializationAdapters[aType] = adapter;
                             added = true;
                             Debug.Log($"Replacing adapter for type {aType}: {prevAdapter} -> {adapter}");
@@ -210,7 +218,7 @@ namespace UnityEngine.ResourceManagement.Util
         {
             IEnumerable<ISerializationAdapter> Dependencies { get; }
             uint Serialize(Writer writer, object val);
-            object Deserialize(Reader reader, Type t, uint offset);
+            object Deserialize(Reader reader, Type t, uint offset, out uint size);
         }
 
         public interface ISerializationAdapter<T> : ISerializationAdapter
@@ -222,11 +230,24 @@ namespace UnityEngine.ResourceManagement.Util
             byte[] m_Buffer;
             Dictionary<Type, ISerializationAdapter> m_Adapters;
             LRUCache<uint, object> m_Cache;
+            uint m_MinCachedObjectSize = 0;
             StringBuilder stringBuilder;
+            public void GetCacheStats(out int reqCount, out int reqHits)
+            {
+                reqCount = m_Cache.requestCount;
+                reqHits = m_Cache.requestHits;
+            }
 
-            private void Init(byte[] data, int maxCachedObjects, params ISerializationAdapter[] adapters)
+            public void ResetCache(int maxCachedObjects, uint minCachedObjSize)
+            {
+                m_MinCachedObjectSize = minCachedObjSize;
+                m_Cache = new LRUCache<uint, object>(maxCachedObjects);
+            }
+
+            private void Init(byte[] data, int maxCachedObjects, uint minCachedObjSize, params ISerializationAdapter[] adapters)
             {
                 m_Buffer = data;
+                m_MinCachedObjectSize = minCachedObjSize;
                 stringBuilder = new StringBuilder(1024);
                 m_Cache = new LRUCache<uint, object>(maxCachedObjects);
                 m_Adapters = new Dictionary<Type, ISerializationAdapter>();
@@ -241,9 +262,9 @@ namespace UnityEngine.ResourceManagement.Util
                 BinaryStorageBuffer.AddSerializationAdapter(m_Adapters, a);
             }
 
-            public Reader(byte[] data, int maxCachedObjects = 1024, params ISerializationAdapter[] adapters)
+            public Reader(byte[] data, int maxCachedObjects = 1024, uint minCachedObjSize = 64, params ISerializationAdapter[] adapters)
             {
-                Init(data, maxCachedObjects, adapters);
+                Init(data, maxCachedObjects, minCachedObjSize, adapters);
             }
 
             internal byte[] GetBuffer()
@@ -252,98 +273,40 @@ namespace UnityEngine.ResourceManagement.Util
             }
 
 
-            public Reader(Stream inputStream, uint bufferSize, int maxCachedObjects, params ISerializationAdapter[] adapters)
+            public Reader(Stream inputStream, uint bufferSize, int maxCachedObjects, uint minCachedObjSize, params ISerializationAdapter[] adapters)
             {
                 var data = new byte[bufferSize == 0 ? inputStream.Length : bufferSize];
                 inputStream.Read(data, 0, data.Length);
-                Init(data, maxCachedObjects, adapters);
+                Init(data, maxCachedObjects, minCachedObjSize, adapters);
             }
 
-            bool TryGetCachedValue<T>(uint offset, out T val)
+            private bool TryGetCachedValue(Type t, uint offset, out object val)
             {
-                if(m_Cache.TryGet(offset, out var obj))
+                if (m_Cache.TryGet(t, offset, out var obj))
                 {
-                    val = (T)obj;
+                    val = obj;
                     return true;
                 }
+
                 val = default;
                 return false;
             }
 
-            public object[] ReadObjectArray(uint id, bool cacheValues = true)
+            bool TryGetCachedValue<T>(uint offset, out T val)
             {
-                if (id == uint.MaxValue)
-                    return null;
-                var ids = ReadValueArray<uint>(id, cacheValues);
-                var objs = new object[ids.Length];
-                for (int i = 0; i < ids.Length; i++)
-                    objs[i] = ReadObject(ids[i], cacheValues);
-                return objs;
-            }
-
-            public object[] ReadObjectArray(Type t, uint id, bool cacheValues = true)
-            {
-                if (id == uint.MaxValue)
-                    return null;
-                var ids = ReadValueArray<uint>(id, cacheValues);
-                var objs = new object[ids.Length];
-                for (int i = 0; i < ids.Length; i++)
-                    objs[i] = ReadObject(t, ids[i], cacheValues);
-                return objs;
-            }
-
-            public T[] ReadObjectArray<T>(uint id, bool cacheValues = true)
-            {
-                if (id == uint.MaxValue)
-                    return null;
-                var ids = ReadValueArray<uint>(id, cacheValues);
-                var objs = new T[ids.Length];
-                for (int i = 0; i < ids.Length; i++)
-                    objs[i] = ReadObject<T>(ids[i], cacheValues);
-                return objs;
-            }
-
-
-            public object ReadObject(uint id, bool cacheValue = true)
-            {
-                if (id == uint.MaxValue)
-                    return null;
-                var td = ReadValue<ObjectTypeData>(id);
-                var type = ReadObject<Type>(td.typeId);
-                return ReadObject(type, td.objectId, cacheValue);
-            }
-
-            public T ReadObject<T>(uint offset, bool cacheValue = true) => (T)ReadObject(typeof(T), offset, cacheValue);
-
-            public object ReadObject(Type t, uint id, bool cacheValue = true)
-            {
-                if (id == uint.MaxValue)
-                    return null;
-
-                if (TryGetCachedValue<object>(id, out var val))
-                    return val;
-
-                if (!GetSerializationAdapter(m_Adapters, t, out var adapter))
-                    return null;
-                object res = default;
-                try
+                if (m_Cache.TryGet(typeof(T), offset, out var obj))
                 {
-                    res = adapter.Deserialize(this, t, id);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                    return null;
+                    val = (T)obj;
+                    return true;
                 }
 
-                if (cacheValue && res != null)
-                    m_Cache.TryAdd(id, res);
-
-                return res;
+                val = default;
+                return false;
             }
 
-            public T[] ReadValueArray<T>(uint id, bool cacheValue = true) where T : unmanaged
+            public T[] ReadValueArray<T>(uint id, out uint readSize, bool cacheValue = true) where T : unmanaged
             {
+                readSize = 0;
                 if (id == uint.MaxValue)
                     return null;
                 if (id - sizeof(uint) >= m_Buffer.Length)
@@ -355,20 +318,232 @@ namespace UnityEngine.ResourceManagement.Util
                         return vals;
                     uint size = 0;
                     UnsafeUtility.MemCpy(&size, pData, sizeof(uint));
-                    if((id + size) > m_Buffer.Length)
+                    if ((id + size) > m_Buffer.Length)
                         throw new Exception($"Data size {size} is out of bounds of buffer with length of {m_Buffer.Length}.");
                     var elCount = size / sizeof(T);
                     var valsT = new T[elCount];
                     fixed (T* pVals = valsT)
                         UnsafeUtility.MemCpy(pVals, &pData[sizeof(uint)], size);
-                    if(cacheValue)
+                    if (cacheValue && size >= m_MinCachedObjectSize)
                         m_Cache.TryAdd(id, valsT);
+                    readSize = size;
                     return valsT;
                 }
             }
 
-            public T ReadValue<T>(uint id) where T : unmanaged
+
+            public uint ProcessObjectArray<T, C>(uint id, out uint size, C context, Action<T, C, int, int> procFunc, bool cacheValues = true)
             {
+                if (id == uint.MaxValue)
+                {
+                    size = 0;
+                    return 0;
+                }
+
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint totalSize = 0;
+                    uint count = *(uint*)pData / sizeof(uint);
+                    for (int i = 0; i < count; i++)
+                    {
+                        procFunc(ReadObject<T>(*((uint*)&pData[sizeof(uint) * (1 + i)]), out var objSize, cacheValues), context, i, (int)count);
+                        totalSize += objSize;
+                    }
+                    size = totalSize;
+                    return count;
+                }
+            }
+
+
+            public uint ReadObjectArray<T>(ref List<T> results, uint id, out uint size, bool cacheValues = true)
+            {
+                if (id == uint.MaxValue)
+                {
+                    size = 0;
+                    return 0;
+                }
+
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint totalSize = 0;
+                    uint count = *(uint*)pData / sizeof(uint);
+                    for (int i = 0; i < count; i++)
+                    {
+                        results.Add(ReadObject<T>(*((uint*)&pData[sizeof(uint) * (1 + i)]), out var objSize, cacheValues));
+                        totalSize += objSize;
+                    }
+                    size = totalSize;
+                    return count;
+                }
+            }
+
+
+            public object[] ReadObjectArray(uint id, out uint size, bool cacheValues = true, bool cacheFullArray = false)
+            {
+                if (id == uint.MaxValue)
+                {
+                    size = 0;
+                    return null;
+                }
+
+                if (TryGetCachedValue<object[]>(id, out var res))
+                {
+                    size = 0;
+                    return res;
+                }
+
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint totalSize = 0;
+                    uint count = *(uint*)pData / sizeof(uint);
+                    var objs = new object[count];
+                    for (int i = 0; i < count; i++)
+                    {
+                        objs[i] = ReadObject(*((uint*)&pData[sizeof(uint) * (1 + i)]), out var objSize, cacheValues);
+                        totalSize += objSize;
+                    }
+                    size = totalSize;
+                    if (cacheFullArray && size >= m_MinCachedObjectSize)
+                        m_Cache.TryAdd(id, objs);
+                    return objs;
+                }
+            }
+
+            public object[] ReadObjectArray(Type t, uint id, out uint size, bool cacheValues = true, bool cacheFullArray = false)
+            {
+                if (id == uint.MaxValue)
+                {
+                    size = 0;
+                    return null;
+                }
+                if (TryGetCachedValue<object[]>(id, out var res))
+                {
+                    size = 0;
+                    return res;
+                }
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint totalSize = 0;
+                    uint count = *(uint*)pData / sizeof(uint);
+                    var objs = new object[count];
+                    for (int i = 0; i < count; i++)
+                    {
+                        objs[i] = ReadObject(t, *((uint*)&pData[sizeof(uint) * (1 + i)]), out var objSize, cacheValues);
+                        totalSize += objSize;
+                    }
+                    size = totalSize;
+                    if (cacheFullArray && size >= m_MinCachedObjectSize)
+                        m_Cache.TryAdd(id, objs);
+                    return objs;
+                }
+            }
+
+            public T[] ReadObjectArray<T>(uint id, out uint size, bool cacheValues = true, bool cacheFullArray = false)
+            {
+                if (id == uint.MaxValue)
+                {
+                    size = 0;
+                    return null;
+                }
+                if (TryGetCachedValue<T[]>(id, out var res))
+                {
+                    size = 0;
+                    return res;
+                }
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint totalSize = 0;
+                    uint count = *(uint*)pData / sizeof(uint);
+                    var objs = new T[count];
+                    for (int i = 0; i < count; i++)
+                    {
+                        objs[i] = ReadObject<T>(*((uint*)&pData[sizeof(uint) * (1 + i)]), out var objSize, cacheValues);
+                        totalSize += objSize;
+                    }
+                    size = totalSize;
+                    if (cacheFullArray && size >= m_MinCachedObjectSize)
+                        m_Cache.TryAdd(id, objs);
+                    return objs;
+                }
+            }
+
+
+            unsafe public object ReadObject(uint id, out uint size, bool cacheValue = true)
+            {
+                if (id == uint.MaxValue)
+                {
+                    size = 0;
+                    return null;
+                }
+                var td = ReadValue<ObjectTypeData>(id, out var tdSize);
+                var type = ReadObject<Type>(td.typeId, out var typeSize);
+                var obj = ReadObject(type, td.objectId, out var objSize, cacheValue);
+                size = tdSize + typeSize + objSize;
+                return obj;
+            }
+
+            public T ReadObject<T>(uint id, out uint size, bool cacheValue = true)
+            {
+                size = 0;
+                if (id == uint.MaxValue)
+                    return default;
+
+                if (TryGetCachedValue<T>(id, out var val))
+                    return val;
+
+                if (!GetSerializationAdapter(m_Adapters, typeof(T), out var adapter))
+                    return default;
+
+                T res = default;
+                try
+                {
+                    res = (T)adapter.Deserialize(this, typeof(T), id, out size);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    return default;
+                }
+
+                if (cacheValue && res != null && size >= m_MinCachedObjectSize)
+                    m_Cache.TryAdd(id, res);
+
+                return res;
+            }
+
+
+            public object ReadObject(Type t, uint id, out uint size, bool cacheValue = true)
+            {
+                size = 0;
+                if (id == uint.MaxValue)
+                    return null;
+
+                if (TryGetCachedValue(t, id, out var val))
+                    return val;
+
+                if (!GetSerializationAdapter(m_Adapters, t, out var adapter))
+                    return null;
+
+                object res = default;
+                try
+                {
+                    res = adapter.Deserialize(this, t, id, out size);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    return null;
+                }
+
+                if (cacheValue && res != null && size >= m_MinCachedObjectSize)
+                    m_Cache.TryAdd(id, res);
+
+                return res;
+            }
+
+            public T ReadValue<T>(uint id, out uint size) where T : unmanaged
+            {
+                size = (uint)sizeof(T);
                 if (id == uint.MaxValue)
                     return default;
                 if (id >= m_Buffer.Length)
@@ -377,27 +552,40 @@ namespace UnityEngine.ResourceManagement.Util
                 fixed (byte* pData = m_Buffer)
                 {
                     T val;
-                    UnsafeUtility.MemCpy(&val, pData + id, sizeof(T));
+                    UnsafeUtility.MemCpy(&val, pData + id, size);
                     return val;
                 }
             }
 
-            public string ReadString(uint id, char sep = (char)0, bool cacheValue = true)
+            public string ReadString(uint id, out uint size, char sep = (char)0, bool cacheValue = true)
             {
                 if (id == uint.MaxValue)
+                {
+                    size = 0;
                     return null;
+                }
+
+                if (TryGetCachedValue<string>(id, out var str))
+                {
+                    size = 0;
+                    return str;
+                }
+
                 if (sep == (char)0)
-                    return ReadAutoEncodedString(id, cacheValue);
-                return ReadDynamicString(id, sep, cacheValue);
+                    return ReadAutoEncodedString(id, out size, cacheValue);
+                return ReadDynamicString(id, out size, sep, cacheValue);
             }
 
-            string ReadStringInternal(uint offset, Encoding enc, bool cacheValue = true)
+            string ReadStringInternal(uint offset, out uint size, Encoding enc, bool cacheValue = true)
             {
                 if (offset - sizeof(uint) >= m_Buffer.Length)
                     throw new Exception($"Data offset {offset} is out of bounds of buffer with length of {m_Buffer.Length}.");
 
                 if (TryGetCachedValue<string>(offset, out var val))
+                {
+                    size = 0;
                     return val;
+                }
 
                 fixed (byte* pData = m_Buffer)
                 {
@@ -406,43 +594,118 @@ namespace UnityEngine.ResourceManagement.Util
                         throw new Exception($"Data offset {offset}, len {strDataLength} is out of bounds of buffer with length of {m_Buffer.Length}.");
 
                     var valStr = enc.GetString(&pData[offset], (int)strDataLength);
-                    if(cacheValue)
+                    size = strDataLength;
+                    if (cacheValue && size >= m_MinCachedObjectSize)
                         m_Cache.TryAdd(offset, valStr);
                     return valStr;
                 }
             }
 
-            string ReadAutoEncodedString(uint id, bool cacheValue)
+            string ReadAutoEncodedString(uint id, out uint size, bool cacheValue)
             {
                 if ((id & kUnicodeStringFlag) == kUnicodeStringFlag)
-                    return ReadStringInternal((uint)(id & kClearFlagsMask), Encoding.Unicode, cacheValue);
-                return ReadStringInternal(id, Encoding.ASCII, cacheValue);
+                    return ReadStringInternal((uint)(id & kClearFlagsMask), out size, Encoding.Unicode, cacheValue);
+                return ReadStringInternal(id, out size, Encoding.ASCII, cacheValue);
             }
 
-            string ReadDynamicString(uint id, char sep, bool cacheValue)
+            public int ComputeStringLength(uint id, char sep = (char)0)
+            {
+                if (id == uint.MaxValue)
+                    return 0;
+
+                if (sep == (char)0)
+                    return GetAutoEncodedStringLength(id);
+                return GetDynamicStringLength(id, sep);
+            }
+
+            int GetDynamicStringLength(uint id, char sep)
             {
                 if ((id & kDynamicStringFlag) == kDynamicStringFlag)
                 {
-                    if (!TryGetCachedValue<string>(id, out var str))
+                    int len = 0;
+                    var nextID = id;
+                    while (nextID != uint.MaxValue)
                     {
-                        var ds = ReadValue<DynamicString>((uint)(id & kClearFlagsMask));
-                        stringBuilder.Append(ReadAutoEncodedString(ds.stringId, cacheValue));
-                        while (ds.nextId != uint.MaxValue)
-                        {
-                            ds = ReadValue<DynamicString>(ds.nextId);
-                            stringBuilder.Append(sep);
-                            stringBuilder.Append(ReadAutoEncodedString(ds.stringId, cacheValue));
-                        }
-                        str = stringBuilder.ToString();
-                        stringBuilder.Clear();
-                        if (cacheValue)
-                            m_Cache.TryAdd(id, str);
+                        var ds = ReadValue<DynamicString>((uint)(nextID & kClearFlagsMask), out var _);
+                        len += GetAutoEncodedStringLength(ds.stringId);
+                        nextID = ds.nextId;
+                        if (nextID != uint.MaxValue)
+                            len++;
                     }
+                    return len;
+                }
+                else
+                {
+                    return GetAutoEncodedStringLength(id);
+                }
+            }
+
+            private int GetAutoEncodedStringLength(uint id)
+            {
+                if ((id & kUnicodeStringFlag) == kUnicodeStringFlag)
+                    return GetStringLengthInternal((uint)(id & kClearFlagsMask), Encoding.Unicode);
+                return GetStringLengthInternal(id, Encoding.ASCII);
+            }
+
+            private int GetStringLengthInternal(uint offset, Encoding enc)
+            {
+                if (offset - sizeof(uint) >= m_Buffer.Length)
+                    throw new Exception($"Data offset {offset} is out of bounds of buffer with length of {m_Buffer.Length}.");
+
+                fixed (byte* pData = m_Buffer)
+                {
+                    var strDataLength = *(uint*)&pData[offset - sizeof(uint)];
+                    if (offset + strDataLength > m_Buffer.Length)
+                        throw new Exception($"Data offset {offset}, len {strDataLength} is out of bounds of buffer with length of {m_Buffer.Length}.");
+                    return enc.GetCharCount(&pData[offset], (int)strDataLength);
+                }
+            }
+
+            //this is needed to create string with string.Create and helps reduce the amount of allocations when creating strings dynamically
+            class StringCreationState
+            {
+                public uint id;
+                public char sep;
+                public int length;
+                public uint size;
+            }
+            static StringCreationState stringCreationState = new StringCreationState();
+            string ReadDynamicString(uint id, out uint size, char sep, bool cacheValue)
+            {
+                if ((id & kDynamicStringFlag) == kDynamicStringFlag)
+                {
+                    size = 0;
+                    if (TryGetCachedValue<string>(id, out var str))
+                        return str;
+                    var strLength = GetDynamicStringLength(id, sep);
+                    stringCreationState.id = id;
+                    stringCreationState.sep = sep;
+                    stringCreationState.length = strLength;
+                    stringCreationState.size = 0;
+                    str = string.Create(strLength, stringCreationState, (chars, state) =>
+                    {
+                        int position = state.length;
+                        var nextID = state.id;
+                        while (nextID != uint.MaxValue)
+                        {
+                            var ds = ReadValue<DynamicString>((uint)(nextID & kClearFlagsMask), out var dsSize);
+                            var s = ReadAutoEncodedString(ds.stringId, out var strSize, true);
+                            s.AsSpan().CopyTo(chars.Slice(position - s.Length, s.Length));
+                            state.size += dsSize + strSize;
+                            position -= s.Length;
+                            nextID = ds.nextId;
+                            if (nextID != uint.MaxValue)
+                                chars[--position] = state.sep;
+                        }
+                    });
+                    size = stringCreationState.size;
+                    if (cacheValue && size >= m_MinCachedObjectSize)
+                        m_Cache.TryAdd(id, str);
                     return str;
                 }
                 else
                 {
-                    return ReadAutoEncodedString(id, cacheValue);
+                    return ReadAutoEncodedString(id, out size, cacheValue);
                 }
             }
         }
@@ -755,28 +1018,6 @@ namespace UnityEngine.ResourceManagement.Util
                 return (uint)Encoding.ASCII.GetByteCount(str);
             }
 
-            uint RecurseDynamicStringParts(StringParts[] parts, int index, char sep, uint minSize)
-            {
-                while (index < parts.Length - 1)
-                {
-                    var currPartSize = parts[index].dataSize;
-                    var nextPartSize = parts[index + 1].dataSize;
-                    if (currPartSize < minSize || nextPartSize < minSize)
-                    {
-                        parts[index + 1].str = $"{parts[index].str}{sep}{parts[index + 1].str}";
-                        index++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                var strId = parts[index].isUnicode ? WriteUnicodeString(parts[index].str) : WriteStringInternal(parts[index].str, Encoding.ASCII);
-                var nxtId = (index < parts.Length - 1 ? RecurseDynamicStringParts(parts, index + 1, sep, minSize) : uint.MaxValue);
-                var id = Write(new DynamicString { stringId = strId, nextId = nxtId });
-                return id;
-            }
-
             struct StringParts
             {
                 public string str;
@@ -788,8 +1029,8 @@ namespace UnityEngine.ResourceManagement.Util
             {
                 if (str == null)
                     return uint.MaxValue;
-                var minSize = (uint)sizeof(DynamicString);
                 var split = str.Split(sep);
+                var minSize = (uint)sizeof(DynamicString);
                 var parts = new StringParts[split.Length];
                 for (int i = 0; i < parts.Length; i++)
                 {
@@ -803,50 +1044,102 @@ namespace UnityEngine.ResourceManagement.Util
                 }
                 else
                 {
-                    return (kDynamicStringFlag | RecurseDynamicStringParts(parts, 0, sep, minSize));
+                    return (kDynamicStringFlag | RecurseDynamicStringParts(parts, parts.Length-1, sep, minSize));
                 }
+            }
+
+            uint RecurseDynamicStringParts(StringParts[] parts, int index, char sep, uint minSize)
+            {
+                while (index > 0)
+                {
+                    var currPartSize = parts[index].dataSize;
+                    if (currPartSize < minSize)
+                    {
+                        parts[index - 1].str = $"{parts[index-1].str}{sep}{parts[index].str}";
+                        parts[index - 1].dataSize += currPartSize + 1;
+                        parts[index - 1].isUnicode |= parts[index].isUnicode;
+                        if (parts[index - 1].isUnicode)
+                            parts[index - 1].dataSize = (uint)Encoding.Unicode.GetByteCount(parts[index - 1].str);
+
+                        index--;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                var strId = parts[index].isUnicode ? WriteUnicodeString(parts[index].str) : WriteStringInternal(parts[index].str, Encoding.ASCII);
+                var nxtId = (index > 0 ? RecurseDynamicStringParts(parts, index - 1, sep, minSize) : uint.MaxValue);
+                var id = Write(new DynamicString { stringId = strId, nextId = nxtId });
+                return id;
             }
         }
     }
 
     internal struct LRUCache<TKey, TValue> where TKey : IEquatable<TKey>
     {
+        public struct Key : IEquatable<Key>
+        {
+            static Type typeType = typeof(Type);
+            public TKey key;
+            public Type type;
+            public Key(TKey k, Type t)
+            {
+                key = k;
+                type = t;
+                if (typeType.IsAssignableFrom(type))
+                    type = typeType;
+            }
+            bool IEquatable<Key>.Equals(Key other) => key.Equals(other.key) && type == other.type;
+            public override int GetHashCode() => key.GetHashCode() ^ type.GetHashCode();
+        }
+
         public struct Entry : IEquatable<Entry>
         {
-            public LinkedListNode<TKey> lruNode;
+            public LinkedListNode<Key> lruNode;
             public TValue Value;
             public bool Equals(Entry other) => Value.Equals(other);
             public override int GetHashCode() => Value.GetHashCode();
         }
+
+        public int requestHits;
+        public int requestCount;
         int entryLimit;
-        Dictionary<TKey, Entry> cache;
-        LinkedList<TKey> lru;
+        Dictionary<Key, Entry> cache;
+        LinkedList<Key> lru;
         public LRUCache(int limit)
         {
+            requestHits = requestCount = 0;
             entryLimit = limit;
-            cache = new Dictionary<TKey, Entry>();
-            lru = new LinkedList<TKey>();
+            cache = new Dictionary<Key, Entry>(limit);
+            lru = new LinkedList<Key>();
         }
 
         public bool TryAdd(TKey id, TValue obj)
         {
             if (obj == null || entryLimit <= 0)
                 return false;
+            var key = new Key(id, obj.GetType());
+            var node = new LinkedListNode<Key>(key);
+            if (!cache.TryAdd(key, new Entry { Value = obj, lruNode = node }))
+                return false;
 
-            cache.Add(id, new Entry { Value = obj, lruNode = lru.AddFirst(id) });
+            lru.AddFirst(node);
 
             while (lru.Count > entryLimit)
             {
                 cache.Remove(lru.Last.Value);
+                var lastNode = lru.Last;
                 lru.RemoveLast();
             }
             return true;
         }
 
-
-        public bool TryGet(TKey offset, out TValue val)
+        public bool TryGet(Type type, TKey id, out TValue val)
         {
-            if (cache.TryGetValue(offset, out var entry))
+            requestCount++;
+            var key = new Key(id, type);
+            if (cache.TryGetValue(key, out var entry))
             {
                 val = entry.Value;
                 if (entry.lruNode.Previous != null)
@@ -854,6 +1147,7 @@ namespace UnityEngine.ResourceManagement.Util
                     lru.Remove(entry.lruNode);
                     lru.AddFirst(entry.lruNode);
                 }
+                requestHits++;
                 return true;
             }
             val = default;

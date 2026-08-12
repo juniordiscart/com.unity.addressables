@@ -1,68 +1,64 @@
-# Content update build settings
+# Content update build settings reference
 
-To publish content updates, your application must already use a remote catalog and host its remote content on an accessible server. Refer to [Enabling remote distribution](xref:addressables-remote-content-distribution) for information about setting up content hosting and distribution.
+There are several settings that affect how Unity performs content update builds.
 
-You should also consider how to set each group's __Update Restriction__ settings. These settings determine how the __Check for Content Update Restriction__ tool treats changed content in your groups. Choose appropriate settings to help minimize the download size of your content updates.
-
-For more information, refer to [Group Update Restriction settings](#group-update-restriction-settings).
+To publish content updates, your application must already use a remote catalog and host its remote content on an accessible server. Refer to [Distribute remote content](RemoteContentDistribution.md) for information about setting up content hosting and distribution.
 
 ## Update a Previous Build setting
 
-The [Addressable Asset Settings](AddressableAssetSettings.md) also has a section for updating a previous build:
+The [Addressable Asset Settings](AddressableAssetSettings.md#update-a-previous-build) contains a section for updating a previous build.
 
 ![](images/update-a-previous-build.png)
-
-|**Setting**|**Description**|
-|---|---|
-| __Check For Update Issues__| Informs the system on whether to run the __Check For Content Update Restrictions__ check automatically, and how to handle any issues the system detects.|
-|__Content State Build Path__| This location serves two purposes:<br/><br/>- Indicates where new Content Builds put the previous state file.<br/>- This is the location that the __Update a Previous Build__ process attempts to pull the previous state file from automatically.|
 
 The __Content State Build Path__ can be a remote location, if you want to have a shared previous state file on a server. The system handles remote locations for the previous state file differently:
 
 * New content builds place the previous state file to the `ContentUpdateScript.PreviousContentStateFileCachePath`, which is `Library/com.unity.addressables/AddressablesBinFileDownload/` by default.
-* Update a Previous Build downloads the remote previous state file to `ContentUpdateScript.PreviousContentStateFileCachePath` and then reads the file like normal. If the file doesn't exist at the remote location, but one has already been placed in the cache path, the system loads the local file.
+* Update a Previous Build downloads the remote previous state file to `ContentUpdateScript.PreviousContentStateFileCachePath` and then reads the file like normal. If the file doesn't exist at the remote location, but one is already in the cache path, the system loads the local file.
 
 ## Group Update Restriction settings
 
-For each group in your project, the __Update Restriction__ schema determines how a content update handles the group and its assets as follows:
-
-* __Prevent Updates__: When enabled, the system treats assets in that group as static content that you expect to update infrequently, if at all. Use this setting for all local content.
+For each group in your project, the [__Update Restriction__](ContentPackingAndLoadingSchema.md#content-update-restriction) schema determines how Unity handles a group and its assets in a content update as follows. When you enable **Prevent Updates**, Unity treats assets in that group as static content that you expect to update infrequently, if at all. All local content should use this setting.
 
 Choose the setting based on the content type in a group and how often you expect to update that content between full player builds of your application.
 
-You can change content in a group no matter which setting you choose. The difference is how the __Check for Content Update Restrictions__ and __Update Previous Build__ tools treat the assets in the group and  how the installed applications access the updated content.
+You can change content in a group no matter which setting you choose. The difference is how the [__Check for Content Update Restrictions__](builds-update-build.md#check-for-content-update-restrictions) and [__Update Previous Build__](builds-update-build.md) tools treat the assets in the group and how the installed applications access the updated content.
 
 > [!IMPORTANT]
-> Don't change the __Update Restriction__ setting of a group unless you are performing a full build. If you change your group settings before a content update, the Addressables system can't generate the correct changes needed for the update build.
+> Don't change the __Update Restriction__ setting of a group unless you're performing a full build. If you change your group settings before a content update, Addressables can't generate the correct changes needed for the update build.
 
-### Prevent Updates Enabled (static content)
+### Enable Prevent Updates
 
-When you enable __Prevent Updates__, the __Check for Content Update Restrictions__ tool moves any changed assets to a new group, which is set to build and load from your remote paths. This is the same check that can be automatically integrated with Updating a Previous Build. Regardless of if you manually run the tool, or let __Update a Previous Build__ handle the check automatically, the content update sets up the remote catalog so that the changed assets are accessed from the new bundles, but the unchanged assets are still accessed from the original bundles.
+When you enable __Prevent Updates__, the __Check for Content Update Restrictions__ tool moves any changed assets to a new group, which is set to build and load from your remote paths. This is the same check that can be automatically integrated when updating a previous build. The content update sets up the remote catalog so that the changed assets are accessed from the new AssetBundles, but the unchanged assets are still accessed from the original AssetBundles.
 
 > [!NOTE]
-> Although the update build produces versions of the original bundles without the changed assets, installed applications don't download these bundles unless the locally cached version is deleted for some reason.
+> Although the update build produces versions of the original AssetBundles without the changed assets, installed applications don't download these AssetBundles unless the locally cached version is deleted.
 
-Organize content that you don't expect to update often into groups with the __Prevent Updates__ property enabled. You can safely set up these groups to produce fewer, larger bundles because your users usually won't need to download these bundles more than once.
+Organize content that you don't expect to update often in groups set to groups with __Prevent Updates.__ enabled. You can safely set up these groups to produce fewer, larger AssetBundles because your users usually don't need to download these AssetBundles more than once.
 
-Enable the __Prevent Updates__ property for any groups that you intend to load from the local load path and for any groups that produce large, remote bundles. This only requires your users to download changed assets when assets in the group change.
+Set any groups that you intend to load from the local load path, or any groups that produce large, remote AssetBundles to __Prevent Updates__. This means that your users only need to download the changed assets if you end up changing assets in these groups.
 
-### Prevent Updates Disabled (dynamic content)
+### Disable Prevent Updates
 
-When a group doesn't have __Prevent Updates__ enabled, then a content update rebuilds the entire bundle if any assets inside the group have changed. The __Update a Previous Build__ script sets up the catalog so that installed applications load all assets in the group from the new bundles.
+When a group doesn't have __Prevent Updates__, then a content update rebuilds the entire AssetBundle if any assets inside the group have changed. The __Update a Previous Build__ script sets the catalog up so that installed applications load all assets in the group from the new bundles.
 
-Organize content you expect to change often into groups with __Prevent Updates__ disabled. The Addressables system republishes all the assets in these groups when any single asset changes. To minimize the number of assets that need republishing, set up these groups to produce smaller bundles containing fewer assets.
+Organize content you expect to change often into groups with __Prevent Updates__ disabled. Because all the assets in these groups are republished when any single asset changes, you should set up these groups to produce smaller AssetBundles containing fewer assets.
 
 ## Unique Bundle IDs setting
 
-If you want to update content at runtime rather than at application startup, use the __Unique Bundle IDs__ setting. Enabling this setting can make it easier to load updated AssetBundles in the middle of an application session, but can make builds slower and updates larger.
+If you want to update content on the fly rather than at application startup, enable the [__Unique Bundle IDs__](AddressableAssetSettings.md) setting. Enabling this option can make it easier to load updated AssetBundles in the middle of an application session, but typically makes builds slower and updates larger.
 
-With this setting enabled, you can load a changed version of an AssetBundle while the original bundle is still in memory. Building your AssetBundles with unique internal IDs makes it easier to update content at runtime without creating AssetBundle ID conflicts.
+Enabling the __Unique Bundle IDs__ option allows you to load a changed version of an AssetBundle while the original AssetBndle is still in memory. Building AssetBundles with unique internal IDs makes it easier to update content at runtime without running into AssetBundle ID conflicts.
 
-However, when enabled, any AssetBundles containing assets that reference a changed asset must also be rebuilt. More bundles must be updated for a content update and all builds are slower.
+However, when enabled, any AssetBundles containing assets that reference a changed asset must also be rebuilt. More AssetBundles must be updated for a content update and all builds are slower.
 
-You typically only need to use unique bundle IDs when you update content catalogs after the Addressable system has already initialized and you have started loading assets.
+You typically only need to enable __Unique Bundle IDs__ when you update content catalogs after the Addressable system has already initialized and your application starts loading assets.
 
 You can avoid AssetBundle loading conflicts and the need to enable unique IDs using one of the following methods:
 
-* Update the content catalog as part of Addressables initialization. By default, Addressables checks for a new catalog at initialization as long as you don't enable the [Only update catalogs manually](xref:addressables-asset-settings) option in Addressable Asset settings. Choosing this method does preclude updating your application content in mid-session.
-* Unload all remote AssetBundles before updating the content catalog. Unloading all your remote bundles and assets also avoids bundle name conflicts, but could interrupt your user's session while they wait for the new content to load.
+* Update the content catalog as part of Addressables initialization. By default, Addressables checks for a new catalog at initialization as long as you don't enable the [Only update catalogs manually](AddressableAssetSettings.md) option. Choosing this method means updating your application content in mid-session.
+* Unload all remote AssetBundles before updating the content catalog. Unloading all remote AssetBundles and assets avoids AssetBundle name conflicts, but might interrupt your user's session while they wait for the new content to load.
+
+## Additional resources
+
+* [Distribute remote content](RemoteContentDistribution.md)
+* [Addressables Asset Settings reference](AddressableAssetSettings.md)

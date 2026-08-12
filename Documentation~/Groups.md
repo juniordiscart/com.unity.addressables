@@ -1,17 +1,19 @@
----
-uid: addressables-groups
----
+# Organize assets into groups
 
-# Groups overview
-
-A group is the main organizational unit of the Addressables system. Create and manage your groups and the assets they contain with the [Addressables Groups window](xref:addressables-groups-window).
+Use groups to organize and define how Unity builds the assets in your project and packs them into AssetBundles.
 
 |**Topic**|**Description**|
 |---|---|
-|[Groups introduction](groups-intro.md)|Understand groups and how to work with them.|
-|[Manage and create groups](groups-create.md)|Create profiles in the Unity Editor.|
-|[Labels overview](Labels.md)|Understand and work with labels.|
-|[Create a group template](GroupTemplates.md)|Create group templates.|
-|[Pack groups into AssetBundles](PackingGroupsAsBundles.md)|Understand how you can put groups into AssetBundles.|
-| [Addressables Groups window reference](GroupsWindow.md)|Reference information for the Addressables Groups window.|
-|[Group settings and schemas overview](GroupSchemas.md)|Reference information for group settings and their schemas.|
+| **[Introduction to Addressable asset groups](groups-intro.md)** | Understand how to use groups to organize Addressables, control build paths, load paths, and AssetBundle packaging strategies. |
+| **[Add assets to groups](groups-create.md)** | Create groups, add and remove assets from groups, and manage group organization using the Addressables Groups window. |
+| **[Label assets](Labels.md)** | Use labels to tag Addressable assets for runtime loading, AssetBundle packing based on labels, and filtering assets in the Groups window. |
+| **[Define group settings](GroupSchemas.md)** | Configure group settings using schema objects that control how Unity treats assets during content builds, including custom schema creation. |
+| **[Create a group template](GroupTemplates.md)** | Create reusable group templates that define which schema objects Unity creates for new groups. |
+| **[Addressables Groups window reference](GroupsWindow.md)** | Reference for the Addressables Groups window interface. |
+| **[Group Inspector settings reference](ContentPackingAndLoadingSchema.md)** | Reference for Group Inspector settings that control build paths, load paths, bundle modes, and content update restrictions. |
+
+## Additional resources
+
+* [Create and organize Addressable assets](AddressableAssetsDevelopmentCycle.md)
+* [Building Addressable assets](Builds.md)
+* [Define how to pack groups into AssetBundles](PackingGroupsAsBundles.md)

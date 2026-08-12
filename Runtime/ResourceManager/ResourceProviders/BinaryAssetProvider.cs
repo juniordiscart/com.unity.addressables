@@ -18,7 +18,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <returns>Returns the converted object.</returns>
         public override object Convert(Type type, byte[] data)
         {
-            return new BinaryStorageBuffer.Reader(data, 512, new TAdapter()).ReadObject(type, 0, false);
+            return new BinaryStorageBuffer.Reader(data, 1024, 0, new TAdapter()).ReadObject(type, 0, out _, false);
         }
     }
 }
