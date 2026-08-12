@@ -37,7 +37,7 @@ namespace UnityEditor.AddressableAssets.Tests
             //Setup
             BuildScriptPackedPlayMode buildScript = ScriptableObject.CreateInstance<BuildScriptPackedPlayMode>();
             AddressablesDataBuilderInput input = new AddressablesDataBuilderInput(Settings);
-            input.SetAllValues(Settings, BuildTargetGroup.Android, BuildTarget.Android, "");
+            input.SetAllValues(Settings, BuildTargetGroup.Android, BuildTarget.Android, "", false, new string[] {} );
             ScriptableObject.CreateInstance<BuildScriptPackedMode>().BuildData<AddressableAssetBuildResult>(input);
 
             //Test

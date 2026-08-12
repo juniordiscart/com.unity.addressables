@@ -6,7 +6,9 @@ using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine.TestTools;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor.AddressableAssets.Build;
 using UnityEditor.Build.Content;
+using UnityEditor.Build.Player;
 using BuildCompression = UnityEngine.BuildCompression;
 
 namespace UnityEditor.AddressableAssets.Tests
@@ -103,6 +105,110 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(disableVisibleSubAssetRepresentations, testParams.DisableVisibleSubAssetRepresentations);
 
             Settings.DisableVisibleSubAssetRepresentations = oldValue;
+        }
+
+        [Test]
+        public void Constructor_WithBuilderInput_DevelopmentBuild_SetsScriptOptions()
+        {
+            var bundleToAssetGroup = new Dictionary<string, string>();
+            var builderInput = new AddressablesDataBuilderInput(Settings);
+            builderInput.DevelopmentBuild = true;
+            builderInput.ExtraScriptingDefines = new[] { AddressableAssetsBundleBuildParameters.k_AddressablesAddDefines };
+
+            var testParams = new AddressableAssetsBundleBuildParameters(Settings, bundleToAssetGroup, builderInput, "Unused");
+
+            Assert.IsTrue((testParams.ScriptOptions & ScriptCompilationOptions.DevelopmentBuild) != 0,
+                "ScriptOptions should include DevelopmentBuild when builderInput.DevelopmentBuild is true and ADDRESSABLES_ADD_DEFINES is present");
+
+            var scriptSettings = testParams.GetScriptCompilationSettings();
+            Assert.IsTrue((scriptSettings.options & ScriptCompilationOptions.DevelopmentBuild) != 0,
+                "GetScriptCompilationSettings().options should include DevelopmentBuild");
+        }
+
+        [Test]
+        public void Constructor_WithBuilderInput_NonDevelopmentBuild_DoesNotSetScriptOptions()
+        {
+            var bundleToAssetGroup = new Dictionary<string, string>();
+            var builderInput = new AddressablesDataBuilderInput(Settings);
+            builderInput.DevelopmentBuild = false;
+            builderInput.ExtraScriptingDefines = new[] { AddressableAssetsBundleBuildParameters.k_AddressablesAddDefines };
+
+            var testParams = new AddressableAssetsBundleBuildParameters(Settings, bundleToAssetGroup, builderInput, "Unused");
+
+            Assert.IsFalse((testParams.ScriptOptions & ScriptCompilationOptions.DevelopmentBuild) != 0,
+                "ScriptOptions should not include DevelopmentBuild when builderInput.DevelopmentBuild is false");
+
+            var scriptSettings = testParams.GetScriptCompilationSettings();
+            Assert.IsFalse((scriptSettings.options & ScriptCompilationOptions.DevelopmentBuild) != 0,
+                "GetScriptCompilationSettings().options should not include DevelopmentBuild");
+        }
+
+        [Test]
+        public void Constructor_WithBuilderInput_NullExtraScriptingDefines_HandlesNull()
+        {
+            var bundleToAssetGroup = new Dictionary<string, string>();
+            var builderInput = new AddressablesDataBuilderInput(Settings);
+            builderInput.ExtraScriptingDefines = null;
+
+            var testParams = new AddressableAssetsBundleBuildParameters(Settings, bundleToAssetGroup, builderInput, "Unused");
+
+            var scriptSettings = testParams.GetScriptCompilationSettings();
+            Assert.IsNull(scriptSettings.extraScriptingDefines,
+                "extraScriptingDefines should be null when builderInput.ExtraScriptingDefines is null");
+        }
+
+        [Test]
+        public void Constructor_WithBuilderInput_EmptyExtraScriptingDefines_HandlesEmpty()
+        {
+            var bundleToAssetGroup = new Dictionary<string, string>();
+            var builderInput = new AddressablesDataBuilderInput(Settings);
+            builderInput.ExtraScriptingDefines = new string[0];
+
+            var testParams = new AddressableAssetsBundleBuildParameters(Settings, bundleToAssetGroup, builderInput, "Unused");
+
+            var scriptSettings = testParams.GetScriptCompilationSettings();
+            // Without ADDRESSABLES_ADD_DEFINES, the feature returns early and extraScriptingDefines is not set
+            Assert.IsNull(scriptSettings.extraScriptingDefines,
+                "extraScriptingDefines should be null when ADDRESSABLES_ADD_DEFINES is not in ExtraScriptingDefines");
+        }
+
+        [Test]
+        public void GetScriptCompilationSettings_WithExtraDefines_ReturnsCorrectSettings()
+        {
+            var bundleToAssetGroup = new Dictionary<string, string>();
+            var builderInput = new AddressablesDataBuilderInput(Settings);
+            builderInput.DevelopmentBuild = true;
+            builderInput.ExtraScriptingDefines = new[] { AddressableAssetsBundleBuildParameters.k_AddressablesAddDefines, "CUSTOM_DEFINE_1", "CUSTOM_DEFINE_2" };
+
+            var testParams = new AddressableAssetsBundleBuildParameters(Settings, bundleToAssetGroup, builderInput, "Unused");
+
+            var scriptSettings = testParams.GetScriptCompilationSettings();
+
+            Assert.AreEqual(BuildTargetGroup.Standalone, scriptSettings.group);
+            Assert.AreEqual(EditorUserBuildSettings.activeBuildTarget, scriptSettings.target);
+            Assert.IsTrue((scriptSettings.options & ScriptCompilationOptions.DevelopmentBuild) != 0);
+            CollectionAssert.AreEquivalent(
+                new[] { AddressableAssetsBundleBuildParameters.k_AddressablesAddDefines, "CUSTOM_DEFINE_1", "CUSTOM_DEFINE_2" },
+                scriptSettings.extraScriptingDefines);
+        }
+
+        [Test]
+        public void Constructor_WithBuilderInput_WithoutAddressablesAddDefines_DoesNotApplyDevelopmentBuildOrExtraDefines()
+        {
+            var bundleToAssetGroup = new Dictionary<string, string>();
+            var builderInput = new AddressablesDataBuilderInput(Settings);
+            builderInput.DevelopmentBuild = true;
+            builderInput.ExtraScriptingDefines = new[] { "SOME_DEFINE", "OTHER_DEFINE" };
+
+            var testParams = new AddressableAssetsBundleBuildParameters(Settings, bundleToAssetGroup, builderInput, "Unused");
+
+            // Without ADDRESSABLES_ADD_DEFINES in the array, development build and extra scripting defines should not be applied
+            Assert.IsFalse((testParams.ScriptOptions & ScriptCompilationOptions.DevelopmentBuild) != 0,
+                "ScriptOptions should not include DevelopmentBuild when ADDRESSABLES_ADD_DEFINES is not in ExtraScriptingDefines");
+
+            var scriptSettings = testParams.GetScriptCompilationSettings();
+            Assert.IsNull(scriptSettings.extraScriptingDefines,
+                "extraScriptingDefines should be null when ADDRESSABLES_ADD_DEFINES is not in ExtraScriptingDefines");
         }
     }
 }

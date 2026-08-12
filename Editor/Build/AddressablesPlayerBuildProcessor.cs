@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -98,10 +99,12 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
                 }
             }
             else
-                AddressableAssetSettings.BuildPlayerContent(out result);
+                result = DefaultBuild(settings, buildPlayerContext);
 
             if (result != null && !string.IsNullOrEmpty(result.Error))
-                Debug.LogError($"Failed to build Addressables content, content not included in Player Build. \"{result.Error}\"");
+            {
+                throw new BuildFailedException($"Failed to build Addressables content, content not included in Player Build. \"{result.Error}\"");
+            }
         }
 
         if (buildPlayerContext != null)
@@ -120,6 +123,35 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
             string projectPath = GetLinkPath(settings, true);
             File.Copy(buildPath, projectPath, true);
             AssetDatabase.ImportAsset(projectPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.DontDownloadFromCacheServer);
+        }
+    }
+
+    static AddressablesPlayerBuildResult DefaultBuild(AddressableAssetSettings settings, BuildPlayerContext buildPlayerContext)
+    {
+        var types = AddressableAssetUtility.GetTypes<AddressableAssetsSettingsGroupEditor.IAddressablesBuildMenu>();
+        var displayMenus = AddressableAssetsSettingsGroupEditor.CreateBuildMenus(types);
+        AddressableAssetsSettingsGroupEditor.IAddressablesBuildMenu defaultNewBuildMenu = null;
+        foreach (var buildMenu in displayMenus)
+        {
+            if (buildMenu.BuildMenuPath == "New Build")
+            {
+                defaultNewBuildMenu = buildMenu;
+                break;
+            }
+        }
+
+
+        var input = new AddressablesDataBuilderInput(settings, buildPlayerContext.BuildPlayerOptions);
+        if (defaultNewBuildMenu != null)
+        {
+            AddressableAssetsSettingsGroupEditor.BuildMenuContext context = new AddressableAssetsSettingsGroupEditor.BuildMenuContext()
+                { buildScriptIndex = -1, BuildMenu = defaultNewBuildMenu, Settings = settings };
+            return AddressableAssetsSettingsGroupEditor.BuildAddressablesWithResult(context, input);
+        }
+        else
+        {
+            AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult result, input);
+            return result;
         }
     }
 

@@ -8,6 +8,7 @@ using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
@@ -123,5 +124,65 @@ public class BuildScriptPackedIntegrationTests
 
         Assert.AreEqual(1, buildFiles.Length, "There should only be one bundle file in the build output folder");
         CollectionAssert.AreEqual(initialBundleBytes, File.ReadAllBytes(buildFiles[0]));
+    }
+
+    [Test]
+    public void IncrementalBuild_WithDevelopmentBuildAndExtraDefines_CompilesWithCorrectSettings()
+    {
+        var group = Settings.CreateGroup("MyTestGroup", true, false, false, null, typeof(BundledAssetGroupSchema));
+
+        var spriteEntry = Settings.CreateOrMoveEntry(CreateTexture($"{m_SingleTestAssetFolder}/testTexture.png"), group, false, false);
+        Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kLocalBuildPath, m_SingleTestBuildFolder);
+        Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kLocalLoadPath, "Library/LocalLoadPath");
+
+        IDataBuilder b = GetBuilderOfType(Settings, typeof(BuildScriptPackedMode));
+
+        // Create builder input with development build and extra scripting defines
+        var builderInput = new AddressablesDataBuilderInput(Settings);
+        builderInput.DevelopmentBuild = true;
+        builderInput.ExtraScriptingDefines = new[] { "TEST_BUILD_DEFINE" };
+
+        var result = b.BuildData<AddressableAssetBuildResult>(builderInput);
+
+        Assert.IsTrue(string.IsNullOrEmpty(result.Error), $"Build should succeed but got error: {result.Error}");
+        Assert.IsNotNull(result, "Build result should not be null");
+
+        string[] buildFiles = Directory.GetFiles(m_SingleTestBuildFolder);
+        Assert.Greater(buildFiles.Length, 0, "Build should produce at least one output file");
+    }
+
+    [Test]
+    public void IncrementalBuild_WithBuildPlayerOptions_UsesBuildPlayerOptions()
+    {
+        var group = Settings.CreateGroup("MyTestGroup", true, false, false, null, typeof(BundledAssetGroupSchema));
+
+        var spriteEntry = Settings.CreateOrMoveEntry(CreateTexture($"{m_SingleTestAssetFolder}/testTexture.png"), group, false, false);
+        Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kLocalBuildPath, m_SingleTestBuildFolder);
+        Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kLocalLoadPath, "Library/LocalLoadPath");
+
+        IDataBuilder b = GetBuilderOfType(Settings, typeof(BuildScriptPackedMode));
+
+        // Create BuildPlayerOptions with development build and extra defines
+        var buildPlayerOptions = new BuildPlayerOptions
+        {
+            target = EditorUserBuildSettings.activeBuildTarget,
+            options = BuildOptions.Development,
+            extraScriptingDefines = new[] { "INTEGRATION_TEST_DEFINE" }
+        };
+
+        // Create builder input using BuildPlayerOptions constructor
+        var builderInput = new AddressablesDataBuilderInput(Settings, buildPlayerOptions);
+
+        var result = b.BuildData<AddressableAssetBuildResult>(builderInput);
+
+        Assert.IsTrue(string.IsNullOrEmpty(result.Error), $"Build should succeed but got error: {result.Error}");
+        Assert.IsNotNull(result, "Build result should not be null");
+        Assert.IsTrue(builderInput.DevelopmentBuild, "DevelopmentBuild should be true from BuildPlayerOptions");
+        Assert.IsNotNull(builderInput.ExtraScriptingDefines, "ExtraScriptingDefines should not be null");
+        CollectionAssert.Contains(builderInput.ExtraScriptingDefines, "INTEGRATION_TEST_DEFINE",
+            "ExtraScriptingDefines should contain the define from BuildPlayerOptions");
+
+        string[] buildFiles = Directory.GetFiles(m_SingleTestBuildFolder);
+        Assert.Greater(buildFiles.Length, 0, "Build should produce at least one output file");
     }
 }

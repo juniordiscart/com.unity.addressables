@@ -668,6 +668,21 @@ namespace UnityEditor.AddressableAssets.Tests
             File.Delete(registryRemoteHashPath);
         }
 #endif
+
+        [Test]
+        public void BuildData_WithDevelopmentBuildAndExtraDefines_BuildSucceeds()
+        {
+            var builderInput = new AddressablesDataBuilderInput(Settings);
+            builderInput.DevelopmentBuild = true;
+            builderInput.ExtraScriptingDefines = new[] { "TEST_BUILD_DEFINE_1", "TEST_BUILD_DEFINE_2" };
+
+            var buildScript = ScriptableObject.CreateInstance<BuildScriptPackedMode>();
+            var result = buildScript.BuildData<AddressableAssetBuildResult>(builderInput);
+
+            Assert.IsNotNull(result, "Build result should not be null");
+            Assert.IsTrue(string.IsNullOrEmpty(result.Error), $"Build should succeed but got error: {result.Error}");
+            Object.DestroyImmediate(buildScript);
+        }
     }
 
     class ProcessPlayerDataSchemaTests : EditorAddressableAssetsTestFixture

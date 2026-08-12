@@ -11,6 +11,7 @@ using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
+using UnityEditor.Build.Player;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.Initialization;
@@ -334,14 +335,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 if (!BuildUtility.CheckModifiedScenesAndAskToSave())
                     return CreateErrorResult<TResult>("Unsaved scenes", builderInput, aaContext);
 
-                var buildTarget = builderInput.Target;
-                var buildTargetGroup = builderInput.TargetGroup;
-
                 var buildParams = new AddressableAssetsBundleBuildParameters(
                     aaContext.Settings,
                     aaContext.bundleToAssetGroup,
-                    buildTarget,
-                    buildTargetGroup,
+                    builderInput,
                     aaContext.Settings.buildSettings.bundleBuildPath);
 
                 var builtinBundleName = GetShaderBundleNamePrefix(aaContext) + $"{ShaderBundleBaseName}.bundle";

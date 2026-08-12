@@ -3,6 +3,8 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [1.29.0] - 2026-03-23
+- When doing a player build the development flag and scripting defines will be passed through to the Addressables content build when the scripting define ADDRESSABLES_ADD_DEFINES is set. We recommend adding this flag as this is more than likely the correct behavior, but it is not enabled by default to prevent surprise compilation problems
 ## [1.28.2] - 2026-01-22
 - Setting catalog timeout correctly during the build so remote catalog operations can timeout successfully.
 - Fixed for Error would get logged when trying to use Object.Destroy in the Editor during play mode.
