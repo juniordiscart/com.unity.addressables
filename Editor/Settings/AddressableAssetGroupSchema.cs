@@ -66,12 +66,23 @@ namespace UnityEditor.AddressableAssets.Settings
         public virtual void OnGUI()
         {
             var type = GetType();
+            var fieldMap = new Dictionary<string, FieldInfo>();
+            BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+
+            for(var t = type;  t != null; t = t.BaseType)
+            {
+                foreach(var field in t.GetFields(flags))
+                {
+                    if(!fieldMap.ContainsKey(field.Name))
+                        fieldMap.Add(field.Name, field);
+                }
+            }
+
             var p = SchemaSerializedObject.GetIterator();
             p.Next(true);
             while (p.Next(false))
             {
-                var prop = type.GetField(p.name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                if (prop != null)
+                if(fieldMap.ContainsKey(p.name))
                     EditorGUILayout.PropertyField(p, true);
             }
 

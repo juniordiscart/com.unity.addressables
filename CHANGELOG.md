@@ -3,6 +3,9 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [1.28.1] - 2025-11-20
+- Fixed Internal Tests.
+
 ## [1.28.0] - 2025-09-17
 - Timesliced lazy loading of icons have been added to improve first paint times
 - Fixed loading incorrect data when using dynamic internal id naming.

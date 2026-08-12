@@ -1,7 +1,8 @@
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using NUnit.Framework;
+using System.Text.RegularExpressions;
 using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
@@ -38,12 +39,21 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void RenameInvalidCharactersFails()
         {
+#if !UNITY_6000_0_OR_NEWER
             var group = Settings.FindGroup(AddressableAssetSettings.DefaultLocalGroupName);
             var oldName = group.Name;
             string badName = "*#?@>!@*@(#";
             LogAssert.Expect(LogType.Error, "Rename of Group failed. Invalid file name: '" + badName + ".asset'");
             group.Name = badName;
             Assert.AreEqual(oldName, group.Name);
+#else
+            var group = Settings.FindGroup(AddressableAssetSettings.DefaultLocalGroupName);
+            var oldName = group.Name;
+            string badName = "*#?@>!@*@(#";
+            LogAssert.Expect(LogType.Error, new Regex($"Invalid file name: '{Regex.Escape(badName)}\\.asset'"));
+            group.Name = badName;
+            Assert.AreEqual(oldName, group.Name);
+#endif
         }
 
         [Test]
