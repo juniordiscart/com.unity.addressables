@@ -223,6 +223,8 @@ namespace UnityEngine.AddressableAssets
         {
             if (value is SpriteAtlas)
                 return OnSetEditorAsset(value, typeof(SpriteAtlas));
+            if (value is Texture2D)
+                return OnSetEditorAsset(value, typeof(Texture2D));
             return base.SetEditorAssetInternal(value);
         }
 #endif

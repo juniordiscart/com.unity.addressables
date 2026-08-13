@@ -1368,6 +1368,86 @@ namespace UnityEditor.AddressableAssets.Tests
 
 				Settings.RemoveGroup(mainAssetGroup);
 
+                AssetDatabase.DeleteAsset(mainAssetPath);
+                AssetDatabase.DeleteAsset(refAssetPath);
+                AssetDatabase.DeleteAsset(materialAssetPath);
+            }
+        }
+
+        [Test]
+        public void GetEntriesDependentOnModifiedEntries_ReturnsFolderSubAssetsDependentOnModifiedEntry()
+        {
+            // Create assets
+            string folderName = "prefabs";
+            string folderPath = GetAssetPath(folderName);
+            AssetDatabase.CreateFolder(TestFolder, folderName);
+
+            GameObject mainObject = new GameObject("mainObject");
+            Material mat = new Material(Shader.Find("Transparent/Diffuse"));
+            mainObject.AddComponent<MeshRenderer>().material = mat;
+
+            string mainAssetPath = GetAssetPath("mainObject.prefab");
+            string refAssetPath = GetAssetPath($"{folderName}/refObject.prefab");
+            string materialAssetPath = GetAssetPath("testMaterial.mat");
+
+            AssetDatabase.CreateAsset(mat, materialAssetPath);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(mainObject, mainAssetPath);
+            GameObject refObject = new GameObject("refObject");
+            refObject.AddComponent<ObjectReferenceMonoBehaviour>().m_ObjectReference = prefab;
+            PrefabUtility.SaveAsPrefabAsset(refObject, refAssetPath);
+            AssetDatabase.SaveAssets();
+            AddressableAssetGroup mainAssetGroup = null;
+
+            try
+            {
+                // Create addressables
+                mainAssetGroup = Settings.CreateGroup("TestGroup", false, false, false, null);
+
+                var schema = mainAssetGroup.AddSchema<BundledAssetGroupSchema>();
+                schema.BuildPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalBuildPath);
+                schema.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+                schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
+                mainAssetGroup.AddSchema<ContentUpdateGroupSchema>().StaticContent = true;
+
+                AddressableAssetEntry mainEntry =
+                    Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(mainAssetPath), mainAssetGroup);
+                AddressableAssetEntry refEntry =
+                    Settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(folderPath), mainAssetGroup);
+
+                // Build
+                var context = new AddressablesDataBuilderInput(Settings);
+                Settings.ActivePlayerDataBuilder.BuildData<AddressablesPlayerBuildResult>(context);
+
+                // Modify assets
+                var ma = AssetDatabase.LoadAssetAtPath<Material>(materialAssetPath);
+                ma.color = new Color(Random.value, Random.value, Random.value);
+                EditorUtility.SetDirty(ma);
+                AssetDatabase.SaveAssets();
+
+                // Test
+                var tempPath = Path.Combine(Path.GetDirectoryName(Application.dataPath), "Library", "com.unity.addressables",
+                    PlatformMappingService.GetPlatformPathSubFolder(), "addressables_content_state.bin");
+                var modifiedEntries = ContentUpdateScript.GatherModifiedEntries(Settings, tempPath);
+
+                Assert.AreEqual(2, modifiedEntries.Count);
+                foreach (var entry in modifiedEntries)
+                {
+                    if (entry.IsFolder)
+                        Assert.IsTrue(entry.AssetPath == folderPath, "Modified Entries does not include folder");
+                    else
+                        Assert.IsTrue(entry.AssetPath == mainAssetPath, "Modified Entries does not include the prefab with modified material");
+                }
+            }
+            finally
+            {
+                // Cleanup
+                AssetDatabase.DeleteAsset(folderPath);
+
+                GameObject.DestroyImmediate(mainObject);
+                GameObject.DestroyImmediate(refObject);
+
+                Settings.RemoveGroup(mainAssetGroup);
+
 				AssetDatabase.DeleteAsset(mainAssetPath);
 				AssetDatabase.DeleteAsset(refAssetPath);
 				AssetDatabase.DeleteAsset(materialAssetPath);

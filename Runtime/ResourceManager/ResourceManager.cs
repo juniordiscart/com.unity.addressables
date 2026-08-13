@@ -901,6 +901,8 @@ namespace UnityEngine.ResourceManagement
             protected override void Destroy()
             {
                 m_instanceProvider.ReleaseInstance(m_RM, m_instance);
+                // Null this out so, if we are pooled, we don't keep the managed shell alive
+                m_instance = null;
             }
 
             protected override float Progress

@@ -476,6 +476,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.RemoveAssetEntry(m_AssetGUID, false);
         }
 
+#if UNITY_EDITOR_WIN && UNITY_6000_0_OR_NEWER
         [Test]
         public void WhenAddressHasSquareBrackets_AndContentCatalogsAreCreated_BuildFails()
         {
@@ -498,6 +499,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Settings.RemoveAssetEntry(m_AssetGUID, false);
         }
+#endif
 
         [Test]
         public void WhenFileTypeIsInvalid_AndContentCatalogsAreCreated_BuildFails()

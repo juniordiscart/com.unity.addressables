@@ -438,7 +438,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 bool isValid = true;
                 foreach(var targetInfo in targetInfos)
                 {
-                    if (targetInfo.MainAssetEntry?.parentGroup == null)
+                    if (targetInfo.MainAssetEntry?.parentGroup == null || targetInfo.TargetObject == null)
                     {
                         isValid = false;
                         break;

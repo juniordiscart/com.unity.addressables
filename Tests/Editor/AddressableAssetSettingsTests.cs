@@ -290,6 +290,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsFalse(Settings.labelTable.Contains(labelName));
         }
 
+#if UNITY_6000_0_OR_NEWER
         [Test]
         public void WhenLabelNameHasSquareBrackets_AddingNewLabel_ThrowsError()
         {
@@ -297,6 +298,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.AddLabel(name);
             LogAssert.Expect(LogType.Error, $"Label name '{name}' cannot contain '[ ]'.");
         }
+#endif
 
         [Test]
         public void AddRemoveUnusedLabels()

@@ -817,12 +817,14 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(testProviderType, providerType);
         }
 
+#if UNITY_6000_0_OR_NEWER
         [Test]
         public void WhenAddressHasSquareBracketsAndGuidIsNotEmptyString_CreatingNewEntry_ThrowsError()
         {
             AddressableAssetEntry entry = new AddressableAssetEntry("12345698655", "[Entry]", null, false);
             LogAssert.Expect(LogType.Error, $"Address '{entry.address}' cannot contain '[ ]'.");
         }
+#endif
 
         [Test]
         public void WhenAddressHasSquareBracketsAndGuidIsEmptyString_CreatingNewEntry_ThrowsNothing()
@@ -830,6 +832,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.DoesNotThrow(() => new AddressableAssetEntry("", "[Entry]", null, false));
         }
 
+#if UNITY_6000_0_OR_NEWER
         [Test]
         public void WhenAddressHasSquareBracketsAndGuidIsNotEmptyString_SettingTheAddressOnExistingEntry_ThrowsError()
         {
@@ -837,6 +840,7 @@ namespace UnityEditor.AddressableAssets.Tests
             entry.SetAddress("[Entry]");
             LogAssert.Expect(LogType.Error, $"Address '{entry.address}' cannot contain '[ ]'.");
         }
+#endif
 
         [Test]
         public void WhenAddressHasSquareBracketsAndGuidIsEmptyString_SettingTheAddressOnExistingEntry_ThrowsNothing()

@@ -824,6 +824,16 @@ namespace UnityEditor.AddressableAssets.Build
             {
                 foreach (AddressableAssetEntry entry in group.entries)
                 {
+                    if (entry.IsFolder)
+                    {
+                        var folderDependencies = new HashSet<string>();
+                        foreach (AddressableAssetEntry subAsset in entry.SubAssets)
+                        {
+                            folderDependencies.UnionWith(AssetDatabase.GetDependencies(subAsset.AssetPath));
+                        }
+                        entryToDependencies.Add(entry, folderDependencies.ToArray());
+                        continue;
+                    }
                     string[] dependencies = AssetDatabase.GetDependencies(entry.AssetPath);
                     entryToDependencies.Add(entry, dependencies);
                 }

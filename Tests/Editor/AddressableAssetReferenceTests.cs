@@ -168,6 +168,15 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void AssetReferenceSprite_SetEditorAsset_AllowsTexture2DAsMainType()
+        {
+            AssetReferenceSprite spriteAssetReference = new AssetReferenceSprite("badguid");
+            Texture2D texture = AssetDatabase.LoadAssetAtPath(m_TexturePath, typeof(Texture2D)) as Texture2D;
+            spriteAssetReference.SetEditorAsset(texture);
+            Assert.AreEqual(texture, spriteAssetReference.editorAsset, "When using an AssetReferenceSprite, the main asset can be set to a Texture2D");
+        }
+
+        [Test]
         public void AssetReferenceAtlasedSprite_SetEditorAsset_CorrectlySetsAtlas()
         {
             AssetReferenceAtlasedSprite atlasedSpriteAssetReference = new AssetReferenceAtlasedSprite("badguid");

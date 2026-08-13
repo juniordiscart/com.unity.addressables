@@ -3,6 +3,15 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+
+## [2.7.6] - 2025-11-10
+- Fixed an issue where null reference errors were thrown when undoing a graph node deletion that referenced an Addressable Asset.
+- Fixed a leak when releasing an InstanceOperation if it was pooled.
+- Fix InvalidOperationException when renaming labels in Addressables Groups window.
+- Error would get logged when trying to use Object.Destroy in the Editor during play mode.
+- Fixed issue where the sub assets of an addressable folder are not flagged as modified during a content update.
+- Add IBuildWindowExtension method for engine interface.
+
 ## [2.7.4] - 2025-10-06
 - Fixed an issue where having an empty custom load or build path in the inspector would spam the console.
 - Fixed a faulty Inspector refresh mechanism when creating new addressables group from a template.

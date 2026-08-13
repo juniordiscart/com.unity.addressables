@@ -32,7 +32,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         public override void Release(IResourceLocation location, object obj)
         {
             if (obj is Sprite sprite)
+#if UNITY_EDITOR
+                Object.DestroyImmediate(sprite);
+#else
                 Object.Destroy(sprite);
+#endif
         }
     }
 }
