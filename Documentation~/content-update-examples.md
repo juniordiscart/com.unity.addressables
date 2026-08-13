@@ -39,6 +39,8 @@ As such, you end up with the following from a user's perspective:
 * The `Remote_NonStatic` AssetBundle is outdated and replaced with a new `Remote_NonStatic` AssetBundle with a different hash file. The modified version of AssetX is updated with the new AssetBundle.
 You can optionally delete the old `Remote_NonStatic` AssetBundle from the server, and it isn't downloaded from this point forward. If cached, it remains on the user's device indefinitely unless you remove it. For more information, refer to [AssetBundle caching](xref:addressables-remote-content-distribution).
 
+> [!NOTE]
+> If you update a local non-static group then Unity replaces the existing AssetBundles with new ones, but you must build a new Player and deploy it. Unity places all new AssetBundles in the StreamingAssets folder.
 
 ## Content update dependencies
 

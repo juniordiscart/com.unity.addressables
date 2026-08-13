@@ -1,10 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+#if UNITY_6000_0_OR_NEWER
+using System.Runtime.Serialization;
+using System.Xml;
+#else
 using System.Runtime.Serialization.Formatters.Binary;
+#endif
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Serialization;
+using static UnityEngine.AddressableAssets.ResourceLocators.ContentCatalogData.ResourceLocator.ResourceLocation.Serializer;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -14,45 +20,87 @@ namespace UnityEditor.AddressableAssets.Settings
     public class ProjectConfigData
     {
         [Serializable]
+#if UNITY_6000_0_OR_NEWER
+        [DataContract]
+#endif
         class ConfigSaveData
         {
             [FormerlySerializedAs("m_localLoadSpeed")]
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal long localLoadSpeedInternal = 1024 * 1024 * 10;
 
             [FormerlySerializedAs("m_remoteLoadSpeed")]
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal long remoteLoadSpeedInternal = 1024 * 1024 * 1;
 
             [FormerlySerializedAs("m_hierarchicalSearch")]
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal bool hierarchicalSearchInternal = true;
 
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal int activePlayModeIndex = 0;
 
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal bool hideSubObjectsInGroupView = false;
 
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal bool showGroupsAsHierarchy = false;
 
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal bool generateBuildLayout = false;
 
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal ReportFileFormat buildLayoutReportFileFormat = ReportFileFormat.JSON;
 
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal List<string> buildReports = new List<string>();
 
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal bool autoOpenAddressablesReport = true;
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal bool userHasBeenInformedAboutBuildReportSettingPreBuild = false;
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal bool userHasBeenInformedAboutPathPairMigration = false;
             [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
             internal bool userHasBeenInformedAboutNestedFolderStructure = false;
         }
 
@@ -352,6 +400,22 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
+#if UNITY_6000_0_OR_NEWER
+        private static DataContractSerializer s_Serializer;
+
+        private static DataContractSerializer Serializer
+        {
+            get
+            {
+                if (s_Serializer == null)
+                {
+                    s_Serializer = new DataContractSerializer(typeof(ConfigSaveData));
+                }
+                return s_Serializer;
+            }
+        }
+#endif
+
         static void ValidateData()
         {
             if (s_Data == null)
@@ -362,6 +426,45 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 if (File.Exists(dataPath))
                 {
+#if UNITY_6000_0_OR_NEWER
+                    // Check for legacy format and convert if necessary
+                    if (Build.LegacyFormatConverter.IsLegacyFormat(dataPath, Build.LegacyFormatConverter.ConfigDataVersionMarker))
+                    {
+                        var convertedPath = Build.LegacyFormatConverter.ConvertLegacyFile(dataPath, logAsWarning: true);
+                        if (convertedPath == null)
+                        {
+                            // Conversion failed, delete the old file and start fresh
+                            File.Delete(dataPath);
+                        }
+                    }
+
+                    // Try to load with new format
+                    if (File.Exists(dataPath))
+                    {
+                        try
+                        {
+                            using (var file = new FileStream(dataPath, FileMode.Open, FileAccess.Read))
+                            {
+                                // Skip version marker
+                                file.Position = Build.LegacyFormatConverter.ConfigDataVersionMarker.Length;
+
+                                using (var reader = XmlDictionaryReader.CreateBinaryReader(file, XmlDictionaryReaderQuotas.Max))
+                                {
+                                    var data = Serializer.ReadObject(reader) as ConfigSaveData;
+                                    if (data != null)
+                                    {
+                                        s_Data = data;
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            Addressables.LogWarning("Error reading Addressable Asset project config (play mode, etc.). Resetting to default.");
+                            File.Delete(dataPath);
+                        }
+                    }
+#else
                     BinaryFormatter bf = new BinaryFormatter();
                     try
                     {
@@ -380,15 +483,14 @@ namespace UnityEditor.AddressableAssets.Settings
                         Addressables.LogWarning("Error reading Addressable Asset project config (play mode, etc.). Resetting to default.");
                         File.Delete(dataPath);
                     }
+#endif
                 }
-
-                //check if some step failed.
                 if (s_Data == null)
                 {
                     s_Data = new ConfigSaveData();
                 }
 
-                if(s_Data.buildReports == null)
+                if (s_Data.buildReports == null)
                     s_Data.buildReports = new List<string>();
             }
         }
@@ -402,11 +504,26 @@ namespace UnityEditor.AddressableAssets.Settings
             dataPath = dataPath.Replace("\\", "/");
             dataPath += "/Library/AddressablesConfig.dat";
 
+#if UNITY_6000_0_OR_NEWER
+            using (var file = File.Create(dataPath))
+            {
+                // Write version marker
+                var marker = Build.LegacyFormatConverter.ConfigDataVersionMarker;
+                file.Write(marker, 0, marker.Length);
+
+                // Write using Binary XML format
+                using (var writer = XmlDictionaryWriter.CreateBinaryWriter(file, null, null, false))
+                {
+                    Serializer.WriteObject(writer, s_Data);
+                    writer.Flush();
+                }
+            }
+#else
             BinaryFormatter bf = new BinaryFormatter();
             FileStream file = File.Create(dataPath);
-
             bf.Serialize(file, s_Data);
             file.Close();
+#endif
         }
     }
 }

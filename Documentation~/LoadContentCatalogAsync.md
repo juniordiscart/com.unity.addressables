@@ -4,7 +4,7 @@ uid: addressables-api-load-content-catalog-async
 
 # Manage content catalogs
 
-By default, the Addressables system manages the [catalog](build-content-catalogs.md) automatically at runtime. If you built your application with a remote catalog, the Addressables system automatically checks for a new catalog, and downloads the new version and loads it into memory.
+By default, the Addressables system manages the [catalog](build-content-catalogs.md) automatically at runtime. If you built your application with a remote catalog, the Addressables system automatically checks for a new catalog, and downloads the new version and loads it into memory. Unity uses the [__Catalog Download Timeout__](AddressableAssetSettings.md#downloads) property to determine how long to wait for a catalog to download. If the operation times out, then Unity uses a local cached catalog.
 
 You can load additional catalogs at runtime. For example, you can load a catalog produced by a separate, compatible project to load Addressable assets built by that project. Refer to [Loading content from multiple projects](MultiProject.md) for more information.
 

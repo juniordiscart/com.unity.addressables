@@ -6,13 +6,11 @@
         "Unity.Addressables",
         "Unity.ResourceManager",
         "Unity.ScriptableBuildPipeline.Editor",
-        "Unity.Addressables.Tests",
-        "Unity.Addressables.Editor.BuildReportVisualizer",
         "UnityEditor.TestRunner",
         "UnityEngine.TestRunner",
+        "Unity.Addressables.Runtime.Tests",
         "Unity.Services.Ccd.Management",
-        "Unity.Services.Core",
-        "Unity.Addressables.Runtime.Tests"
+        "Unity.Services.Core"
     ],
     "includePlatforms": [
         "Editor"

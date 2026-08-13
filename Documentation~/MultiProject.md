@@ -13,6 +13,9 @@ To create a multi-project setup make sure of the following:
 * Each project uses the same version of the Unity Editor.
 * Each project uses the same version of the Addressables package.
 
+> [!WARNING]
+> The new project must contain the same code as the parent project, or your project might suffer from content duplication.
+
 Projects can contain whatever assets and code you need for your given situation. One of your projects must be your main or source project. This is the project that you build and deploy game binaries from. Typically, this source project contains code and little to no content. The main piece of content in the primary project is a bootstrap scene at minimum. You might want to include any scenes that need to be local for performance purposes before any AssetBundles are downloaded and cached.
 
 Secondary projects are the opposite and contain content and little to no code. These projects need to have remote [Addressable groups](groups-intro.md) and [Build Remote Catalog](AddressableAssetSettings.md#catalog) enabled. Any local data built into these projects can't be loaded in your source project's application. Non-critical scenes can be in these projects and be downloaded by the primary project when requested.

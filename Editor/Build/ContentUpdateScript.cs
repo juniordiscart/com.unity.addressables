@@ -66,16 +66,25 @@ namespace UnityEditor.AddressableAssets.Build
     /// The given state of an Asset.  Represented by its guid and hash.
     /// </summary>
     [Serializable]
+#if UNITY_6000_0_OR_NEWER
+    [DataContract]
+#endif
     public struct AssetState : IEquatable<AssetState>
     {
         /// <summary>
         /// Asset states GUID.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public GUID guid;
 
         /// <summary>
         /// Asset State hash.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public Hash128 hash;
 
         /// <summary>
@@ -93,31 +102,50 @@ namespace UnityEditor.AddressableAssets.Build
     /// The Cached Asset State of an Addressable Asset.
     /// </summary>
     [Serializable]
+#if UNITY_6000_0_OR_NEWER
+    [DataContract]
+#endif
+    [KnownType(typeof(AssetBundleRequestOptions))]
     public class CachedAssetState : IEquatable<CachedAssetState>
     {
         /// <summary>
         /// The Asset State.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public AssetState asset;
 
         /// <summary>
         /// The Asset State of all dependencies.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public AssetState[] dependencies;
 
         /// <summary>
         /// The guid for the group the cached asset state belongs to.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public string groupGuid;
 
         /// <summary>
         /// The name of the cached asset states bundle file.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public string bundleFileId;
 
         /// <summary>
         /// The cached asset state data.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public object data;
 
         /// <summary>
@@ -145,16 +173,26 @@ namespace UnityEditor.AddressableAssets.Build
     /// Cached state of asset bundles.
     /// </summary>
     [Serializable]
+#if UNITY_6000_0_OR_NEWER
+    [DataContract]
+#endif
+    [KnownType(typeof(AssetBundleRequestOptions))]
     public class CachedBundleState
     {
         /// <summary>
         /// The name of the cached asset states bundle file.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public string bundleFileId;
 
         /// <summary>
         /// The cached bundle state data.
         /// </summary>
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public object data;
     }
 
@@ -162,36 +200,54 @@ namespace UnityEditor.AddressableAssets.Build
     /// Data stored with each build that is used to generated content updates. This file should be preserved with each build to ensure that an update can be created.
     /// </summary>
     [Serializable]
+#if UNITY_6000_0_OR_NEWER
+    [DataContract]
+#endif
     public class AddressablesContentState
     {
         /// <summary>
         /// The version that the player was built with.  This is usually set to AddressableAssetSettings.PlayerBuildVersion.
         /// </summary>
         [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public string playerVersion;
 
         /// <summary>
         /// The version of the unity editor used to build the player.
         /// </summary>
         [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public string editorVersion;
 
         /// <summary>
         /// Dependency information for all assets in the build that have been marked StaticContent.
         /// </summary>
         [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public CachedAssetState[] cachedInfos;
 
         /// <summary>
         /// The path of a remote catalog.  This is the only place the player knows to look for an updated catalog.
         /// </summary>
         [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public string remoteCatalogLoadPath;
 
         /// <summary>
         /// Information about asset bundles created for the build.
         /// </summary>
         [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+        [DataMember]
+#endif
         public CachedBundleState[] cachedBundles;
 
 #if UNITY_6000_5_OR_NEWER
@@ -200,6 +256,7 @@ namespace UnityEditor.AddressableAssets.Build
         /// </summary>
         [OptionalField]
         [SerializeField]
+        [DataMember]
         public Hash128[] typeTreeHashes;
 #endif
     }
@@ -433,6 +490,11 @@ namespace UnityEditor.AddressableAssets.Build
                     typeTreeHashes = string.IsNullOrEmpty(typeTreeDataPath) ? new Hash128[0] : ContentBuildInterface.LoadTypeTreeDataHashesFromFile(typeTreeDataPath)
 #endif
                 };
+
+#if UNITY_6000_0_OR_NEWER
+
+                ContentStateSerializer.Serialize(cacheData, path);
+#else
                 var formatter = new BinaryFormatter();
                 if (File.Exists(path))
                     File.Delete(path);
@@ -444,6 +506,7 @@ namespace UnityEditor.AddressableAssets.Build
                 stream.Flush();
                 stream.Close();
                 stream.Dispose();
+#endif
                 return true;
             }
             catch (UnauthorizedAccessException uae)
@@ -613,6 +676,44 @@ namespace UnityEditor.AddressableAssets.Build
                 return null;
             }
 
+#if UNITY_6000_0_OR_NEWER
+            if (!File.Exists(contentStateDataPath))
+            {
+                Debug.LogErrorFormat("Content state file does not exist: {0}.", contentStateDataPath);
+                return null;
+            }
+
+            // Check if this is a legacy BinaryFormatter file
+            if (LegacyFormatConverter.IsLegacyFormat(contentStateDataPath, LegacyFormatConverter.ContentStateVersionMarker))
+            {
+                var convertedPath = LegacyFormatConverter.ConvertLegacyFile(contentStateDataPath, logAsWarning: false);
+                if (string.IsNullOrEmpty(convertedPath))
+                {
+                    Addressables.LogError(
+                        "Failed to convert legacy content state file. The file may be corrupted or the migration tool is unavailable.");
+                    return null;
+                }
+                contentStateDataPath = convertedPath;
+            }
+
+            try
+            {
+                var cacheData = ContentStateSerializer.Deserialize(contentStateDataPath);
+                if (cacheData == null)
+                {
+                    Addressables.LogError(
+                        "Invalid content state file. This file is usually named addressables_content_state.bin and is saved in the same folder as your source AddressableAssetsSettings.asset file.");
+                    return null;
+                }
+                return cacheData;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                Addressables.LogError($"Failed to load content state from {contentStateDataPath}");
+                return null;
+            }
+#else
             var stream = new FileStream(contentStateDataPath, FileMode.Open, FileAccess.Read);
             var formatter = new BinaryFormatter();
             var cacheData = formatter.Deserialize(stream) as AddressablesContentState;
@@ -622,10 +723,11 @@ namespace UnityEditor.AddressableAssets.Build
                     "Invalid hash data file.  This file is usually named addressables_content_state.bin and is saved in the same folder as your source AddressableAssetsSettings.asset file.");
                 return null;
             }
-
             stream.Dispose();
             return cacheData;
+#endif
         }
+
 
         static bool s_StreamingAssetsExists;
         static string kStreamingAssetsPath = "Assets/StreamingAssets";

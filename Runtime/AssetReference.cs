@@ -602,16 +602,16 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// InstantiateAsync the referenced asset as type TObject.
+        /// Instantiates the referenced asset as a GameObject at the specified position and rotation, with an optional parent.
         /// </summary>
         /// <param name="position">Position of the instantiated object.</param>
         /// <param name="rotation">Rotation of the instantiated object.</param>
         /// <param name="parent">The parent of the instantiated object.</param>
         /// <returns>The handle for the operation.</returns>
         /// <remarks>
-        /// This cannot be used a second time until the first load is released. If you wish to call load multiple times
-        /// on an AssetReference, use Addressables.InstantiateAsync() and pass your AssetReference in as the key.
-        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
+        /// You can't use this again until you release the first load. If you want to call load multiple times
+        /// on an AssetReference, use `Addressables.InstantiateAsync` and pass the AssetReference in as the key.
+        /// Refer to the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
         /// </remarks>
         public virtual AsyncOperationHandle<GameObject> InstantiateAsync(Vector3 position, Quaternion rotation, Transform parent = null)
         {
@@ -619,15 +619,15 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// InstantiateAsync the referenced asset as type TObject.
+        /// Instantiates the referenced asset as a GameObject with an optional parent and world space option.
         /// </summary>
         /// <param name="parent">The parent of the instantiated object.</param>
         /// <param name="instantiateInWorldSpace">Option to retain world space when instantiated with a parent.</param>
         /// <returns>The handle for the operation.</returns>
         /// <remarks>
-        /// This cannot be used a second time until the first load is released. If you wish to call load multiple times
-        /// on an AssetReference, use Addressables.InstantiateAsync() and pass your AssetReference in as the key.
-        /// See the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
+        /// You can't use this again until you release the first load. If you want to call load multiple times
+        /// on an AssetReference, use `Addressables.InstantiateAsync` and pass the AssetReference in as the key.
+        /// Refer to the [Loading Addressable Assets](xref:addressables-api-load-asset-async) documentation for more details.
         /// </remarks>
         public virtual AsyncOperationHandle<GameObject> InstantiateAsync(Transform parent = null, bool instantiateInWorldSpace = false)
         {

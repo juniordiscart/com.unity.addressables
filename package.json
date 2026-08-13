@@ -1,8 +1,8 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "2.9.1",
-  "unity": "2023.1",
+  "version": "2.10.0",
+  "unity": "6000.0",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
     "asset",
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "2.6.1",
+    "com.unity.scriptablebuildpipeline": "3.0.0",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -59,15 +59,15 @@
     }
   ],
   "_upm": {
-    "changelog": "- Added support for extracting type tree data from asset bundles.  This requires Unity 6.5+.\n- Fixed performance issue when moving Addressable Assets from one group to another using the context menu option \"Move Addressables to Group...\"\n- When doing a player build if the Addressables build fails, the player build will fail as well. Previously it just logged the error.\n- When doing a player build the development flag and scripting defines will be passed through to the Addressables content build when the scripting define ADDRESSABLES_ADD_DEFINES is set. We recommend adding this flag as this is more than likely the correct behavior, but it is not enabled by default to prevent surprise compilation problems\n- When applying an asset of an inherited type to an AssetReferenceT of the base type, warnings are no longer thrown incorrectly\n- Improved the search bar in the Addressables Report window\n- Fixed an issue where an \"Unable to find registered file for bundle\" error is thrown when building addressables group with Bundle - Naming Mode set to “No Hash” and Bundle Mode set to “Pack Together”.\n- Fix an issue with Addressable keys. If a character is > 127, but less than 255 it was not being encoded properly in the binary catalog.\n- Added support for customizing the load delay added to asset loads in Play Mode when the 'Use Asset Database (fastest)' Play Mode Script is selected. Default value is 0.1f. Accessable via 'AddressableAssetSettings.SimulatedLoadDelay(get; set;)'.\n- Fixed issue where labels weren't sorted until after Editor restart"
+    "changelog": "- Fixed an issue where Errors are thrown and Editor Crashes when downloading an Asset Bundle from LoadAssetAsync and from DownloadDependenciesAsync at the same time.\n- Auto Group Generator tool has been added to Addressables.\n- Replace deprecated BinaryFormatter.\n- Sort Labels on Add.\n- Added Documentation on Auto Group Generator,TypeTree extraction and other fixes."
   },
   "upmCi": {
-    "footprint": "61b35533c44f19e74ea30bd997c9f7193cd0aabe"
+    "footprint": "f34b1288c2f1ae756465755a15c12b44dd6a0204"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@2.9/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@2.10/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "caeacafa84cfc621e0cd6587e0080a4a44acda6c"
+    "revision": "f4f0da20e24c7fc94626fa71fa2796960dafd55b"
   }
 }

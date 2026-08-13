@@ -2673,6 +2673,114 @@ namespace AddressableAssetsIntegrationTests
 #endif
         }
 
+        [UnityTest]
+        public IEnumerator AssetBundleProvider_CanDownloadAndLoadAsset_Simultaneously()
+        {
+            if (string.IsNullOrEmpty(TypeName) || TypeName == "BuildScriptFastMode")
+            {
+                Assert.Ignore($"Skipping test {nameof(AssetBundleProvider_CanDownloadAndLoadAsset_Simultaneously)} for {TypeName}, AssetBundle based test.");
+            }
+
+#if ENABLE_CACHING
+            Caching.ClearCache();
+            yield return Init();
+
+            string label = AddressablesTestUtility.GetPrefabLabel("BASE");
+
+            AsyncOperationHandle downloadOp = m_Addressables.DownloadDependenciesAsync(label);
+            var loadHandle = m_Addressables.LoadAssetAsync<IList<Object>>("test0BASE");
+
+            yield return downloadOp;
+            yield return loadHandle;
+
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, downloadOp.Status, "DownloadDependenciesAsync should succeed");
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, loadHandle.Status, "LoadAssetAsync should succeed");
+
+            downloadOp.Release();
+            loadHandle.Release();
+#else
+            Assert.Ignore();
+            yield break;
+#endif
+        }
+
+        [UnityTest]
+        public IEnumerator AssetBundleProvider_TrackedOperation_CleanedUpAfterCompletion()
+        {
+            if (string.IsNullOrEmpty(TypeName) || TypeName == "BuildScriptFastMode")
+            {
+                Assert.Ignore($"Skipping test {nameof(AssetBundleProvider_TrackedOperation_CleanedUpAfterCompletion)} for {TypeName}");
+                yield break;
+            }
+
+#if ENABLE_CACHING
+            yield return Init();
+            Caching.ClearCache();
+
+            int initialCount = AssetBundleProvider.LoadingRemoteBundles.Count;
+            Assert.AreEqual(0, initialCount, "Should start with no tracked operations");
+
+            string label = AddressablesTestUtility.GetPrefabLabel("BASE");
+            AsyncOperationHandle downloadOp = m_Addressables.DownloadDependenciesAsync(label);
+            yield return downloadOp;
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, downloadOp.Status);
+
+            int countAfterCompletion = AssetBundleProvider.LoadingRemoteBundles.Count;
+            Assert.AreEqual(0, countAfterCompletion, "Tracking dictionary should be cleaned up after operation completes");
+
+            downloadOp.Release();
+#else
+            Assert.Ignore();
+            yield break;
+#endif
+        }
+
+        [UnityTest]
+        public IEnumerator AssetBundleProvider_CanDownloadAndLoadManyAssets_Simultaneously()
+        {
+            yield return Init();
+            if (string.IsNullOrEmpty(TypeName) || TypeName == "BuildScriptFastMode")
+            {
+                Assert.Ignore($"Skipping test {nameof(AssetBundleProvider_CanDownloadAndLoadManyAssets_Simultaneously)} for {TypeName}");
+                yield break;
+            }
+
+#if ENABLE_CACHING
+            yield return Init();
+            Caching.ClearCache();
+
+            string label = AddressablesTestUtility.GetPrefabLabel("BASE");
+
+            var load1 = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKeysList[0]);
+            AsyncOperationHandle downloadOp = m_Addressables.DownloadDependenciesAsync(label);
+            var load2 = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKeysList[1]);
+            var load3 = m_Addressables.LoadAssetAsync<GameObject>(m_PrefabKeysList[2]);
+
+            yield return load1;
+            yield return downloadOp;
+            yield return load2;
+            yield return load3;
+
+            // All should succeed
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, load1.Status, "First load should succeed");
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, downloadOp.Status, "Download should succeed");
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, load2.Status, "Second load should succeed");
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, load3.Status, "Third load should succeed");
+
+            Assert.IsNotNull(load1.Result, "First asset should be loaded");
+            Assert.IsNotNull(load2.Result, "Second asset should be loaded");
+            Assert.IsNotNull(load3.Result, "Third asset should be loaded");
+
+            // Cleanup
+            load1.Release();
+            downloadOp.Release();
+            load2.Release();
+            load3.Release();
+#else
+            Assert.Ignore();
+            yield break;
+#endif
+        }
 
         [Test]
         public void AssetBundleProvider_CanSet_UnloadingBundles()

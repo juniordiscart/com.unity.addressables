@@ -6,7 +6,8 @@ During a player build, the Addressables system copies the following files from t
 |---|---|
 |Local AssetBundles| `.bundle` files according to [group](GroupSchemas.md), [profile](profiles-create.md), and platform settings. By default, these files are located in the [`BuildTarget`](xref:UnityEditor.EditorUserBuildSettings.activeBuildTarget) subfolder. To change the build location of the AssetBundle files produced by a group, modify the [Build & Load Paths](AddressableAssetSettings.md#catalog) setting.|
 |`settings.json`| Contains Addressables configuration data used at runtime.|
-|`catalog.json`| The content catalog used to locate and load assets at runtime if no newer remote catalog is available. For more information about catalogs, refer to [Content catalogs](build-content-catalogs.md).|
+|`catalog.bin`| The content catalog used to locate and load assets at runtime if no new catalog is available. For more information about catalogs, refer to [Content catalogs](build-content-catalogs.md).|
+|`catalog.hash`|Contains a hash of the content catalog used to locate and load assets at runtime if no new remote catalog is available.|
 |`AddressablesLink/link.xml`| Prevents the Unity linker from stripping types used by your assets. For more information about code stripping, refer to [Managed Code Stripping](xref:um-managed-code-stripping). In Unity versions 2021.2 and later, this file temporarily copies the [`AddressableAssetSettings.ConfigFolder`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.ConfigFolder), or the `Assets/Addressables_Temp` folder if no settings file exists.|
 
 For a full list of platform names, refer to [`AddressablesPlatform`](xref:UnityEngine.AddressableAssets.AddressablesPlatform).

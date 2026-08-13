@@ -19,7 +19,7 @@ Unity doesn't load or release the referenced asset automatically. You must load 
 
 [!code-cs[sample](../Tests/Editor/DocExampleCode/LoadWithReference.cs#doc_LoadWithReference)]
 
-Refer to [Loading an AssetReference](xref:addressables-loading-asset-reference) for additional information about loading AssetReferences.
+Refer to [Load asset references](LoadingAssetReferences.md) for additional information about loading AssetReferences.
 
 ## Load a single asset
 
@@ -59,8 +59,8 @@ GameObject components and subassets have the following loading restrictions:
 
 * **GameObject components**: You can't load a component of a GameObject directly through Addressables. You must load or instantiate the GameObject, then retrieve the component reference from it. Refer to the [`ComponentReference` sample](SamplesOverview.md) for an example of how to extend Addressables to support component loading.
 * **Subassets**: You must use special syntax to load subassets such as sprites in a sprite sheet, or animation clips in an FBX file:
-    * To load all subassets use syntax like the following: `Addressables.LoadAssetAsync<IList<Sprite>>("MySpriteSheetAddress");`
-    * To load a single subasset in an asset, use syntax like the following: `Addressables.LoadAssetAsync<Sprite>("MySpriteSheetAddress[MySpriteName]");`.
+* To load all subassets use syntax like the following: `Addressables.LoadAssetAsync<IList<Sprite>>("MySpriteSheetAddress");`
+* To load a single subasset in an asset, use syntax like the following: `Addressables.LoadAssetAsync<Sprite>("MySpriteSheetAddress[MySpriteName]");`.
 
 ## Safely edit loaded assets
 
@@ -81,8 +81,8 @@ var op = Addressables.LoadAssetAsync<GameObject>("myKey");
 yield return op;
 if (op.Result != null)
 {
-    GameObject inst = UnityEngine.Object.Instantiate(op.Result);
-    // can now use and safely make edits to inst, without the source Project Asset being changed.
+GameObject inst = UnityEngine.Object.Instantiate(op.Result);
+// can now use and safely make edits to inst, without the source Project Asset being changed.
 }
 ```
 
