@@ -923,7 +923,7 @@ namespace UnityEditor.AddressableAssets.GUI
 #endif
                     {
                         var slice = property.propertyPath.Split('[', ']');
-                        if (slice.Length >= 2)
+                        if (slice.Length >= 2 && label == property.displayName)
                             label = "Element " + slice[slice.Length - 2];
                     }
 

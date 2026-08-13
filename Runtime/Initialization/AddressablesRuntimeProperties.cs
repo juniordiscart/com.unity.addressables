@@ -118,11 +118,18 @@ namespace UnityEngine.AddressableAssets.Initialization
         /// <summary>
         /// Evaluates all tokens deliminated by '{' and '}' in a string and evaluates them with the EvaluateProperty method.
         /// </summary>
-        /// <param name="input">The input string.</param>
+        /// <param name="inputString">The input string.</param>
         /// <returns>The evaluated string after resolving all tokens.</returns>
-        public static string EvaluateString(string input)
+        public static string EvaluateString(string inputString)
         {
-            return EvaluateString(input, '{', '}', EvaluateProperty);
+            if (string.IsNullOrEmpty(inputString))
+                return string.Empty;
+
+            //only need to check the startDelimiter since the end only makes sense with one
+            if (!inputString.Contains('{', StringComparison.Ordinal))
+                return inputString;
+
+            return EvaluateStringInternal(inputString, '{', '}', EvaluateProperty);
         }
 
         /// <summary>
@@ -138,6 +145,15 @@ namespace UnityEngine.AddressableAssets.Initialization
             if (string.IsNullOrEmpty(inputString))
                 return string.Empty;
 
+            //If there is no start delimiter, there is no reason to check any further since there can be no tokens
+            if (!inputString.Contains(startDelimiter, StringComparison.Ordinal))
+                return inputString;
+
+            return EvaluateStringInternal(inputString, startDelimiter, endDelimiter, varFunc);
+        }
+
+        static string EvaluateStringInternal(string inputString, char startDelimiter, char endDelimiter, Func<string, string> varFunc)
+        {
             string originalString = inputString;
 
             Stack<string> tokenStack;

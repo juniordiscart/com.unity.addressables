@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.ResourceManagement.Util;
 using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.Tests
@@ -91,15 +92,18 @@ namespace UnityEditor.AddressableAssets.Tests
 			Settings.RemoveGroup(group2);
 		}
 
+#if !ENABLE_JSON_CATALOG
 		[Test]
         public void CreateCustomLocator_ReturnsLocatorWithUniqueId()
 		{
 			ContentCatalogData ccd = new ContentCatalogData();
 			ccd.SetData(new List<ContentCatalogDataEntry>());
-            IResourceLocator map = ccd.CreateCustomLocator("test");
+            var data = ccd.SerializeToByteArray();
+            var newCCD = new ContentCatalogData(new BinaryStorageBuffer.Reader(data));
+            IResourceLocator map = newCCD.CreateCustomLocator("test");
 			Assert.AreEqual("test", map.LocatorId);
 		}
-
+#endif
 		[Test]
 		public void DownloadBinFileToTempLocation_DoesNotThrowError_WhenDownloadFails()
 		{

@@ -11,7 +11,6 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.TestTools;
 using UnityEngine.U2D;
 using NUnit.Framework;
-using UnityEditor.Build.Pipeline;
 
 
 #if UNITY_EDITOR

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,11 +7,13 @@ using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.AddressableAssets.Utility;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
+using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
@@ -59,7 +62,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 }
                 else if (r < 80)
                 {
-                    m_Keys.Add(new SerializableKey {index = i, path = GUID.Generate().ToString()});
+                    m_Keys.Add(new SerializableKey { index = i, path = GUID.Generate().ToString() });
                 }
                 else
                 {
@@ -88,7 +91,6 @@ namespace UnityEditor.AddressableAssets.Tests
                 entryKeys.Add(keys[Random.Range(0, keys.Count)]);
             return entryKeys.ToList();
         }
-
         [Serializable]
         public class EvenData
         {
@@ -101,6 +103,132 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             public int index;
             public string path;
+        }
+
+#if !ENABLE_JSON_CATALOG
+
+        [UnityTest]
+        public IEnumerator RunStressContinuously([Values(100)] int locateCallCount, [Values(1000)] int locCount, [Values(128, 256)] int locCacheSize, [Values(128, 256, 512)] int bufferCacheSize)
+        {
+            var locType = typeof(UnityEngine.Object);
+            var catalog = new ContentCatalogData();
+            var entries = new List<ContentCatalogDataEntry>();
+            var allKeys = new List<object>();
+
+            var deps = new List<List<object>>();
+            for (int j = 0; j < 10; j++)
+            {
+                var depKeys = new List<object>();
+                for (int i = 0; i < 5; i++)
+                {
+                    var d = new ContentCatalogDataEntry(
+                        typeof(AssetBundle),
+                        $"https://mysuperlongwebservername.com/internalId/path/blah/subdir with a very long name that should get cached and reused/urlstuffetc/assetbundle2345324d2354f3425g345g345g345g{i}.bundle",
+                        "AssetBundleProvider",
+                        new object[] { $"AssetBundleName_23d234d34f32gf243f23f235g2543g25g123d24{i}.bundle" },
+                        null,
+                        new AssetBundleRequestOptions { BundleName = "derwrgwergwetrhewrtherth" });
+                    entries.Add(d);
+                    depKeys.Add(d.Keys[0]);
+                }
+                deps.Add(depKeys);
+            }
+
+            for (int i = 0; i < locCount; i++)
+            {
+                var entryKeys = new object[] { $"CommonPartOfKey{i%100}/WithALongPath{i%10}/UniquePathOfKey-{i}", $"LabelNameA.{i / 10}", $"LabelNameB.{i / 100}", "CommonLabelA", "CommonLabelB" };
+                entries.Add(new ContentCatalogDataEntry(
+                    locType,
+                    $"InternalAsset/PathInside/AssetBundle/filename{i}.fileExtension",
+                    "BundledAssetProvider",
+                    entryKeys,
+                    deps[Random.Range(0, deps.Count)]));
+                allKeys.Add(entryKeys[0]);
+            }
+            catalog.SetData(entries);
+            var data = catalog.SerializeToByteArray();
+            Debug.Log($"Catalog size {(float)data.Length/(1024*1024)}mb");
+            var loadedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, new ContentCatalogData.Serializer()));
+            var locator = loadedCatalog.CreateCustomLocator("", null, locCacheSize) as ContentCatalogData.ResourceLocator;
+            yield return null;
+            int frameCount = 1000;
+            for (int x = 0; x < frameCount; x++)
+            {
+                for (int i = 0; i < locateCallCount; i++)
+                {
+                    locator.Locate(allKeys[Random.Range(0, allKeys.Count)], locType, out var locs);
+                    foreach(var l in locs)
+                    {
+                        var id = l.InternalId;
+                        var pk = l.PrimaryKey;
+                        var t = l.ResourceType;
+                        var p = l.ProviderId;
+                        var h = l.DependencyHashCode;
+                        if (l.HasDependencies)
+                        {
+                            foreach (var d in l.Dependencies)
+                            {
+                                id = d.InternalId;
+                                pk = d.PrimaryKey;
+                                t = d.ResourceType;
+                                p = d.ProviderId;
+                                h = d.DependencyHashCode;
+                                var o = d.Data as AssetBundleRequestOptions;
+                            }
+                        }
+                    }
+                }
+                yield return null;
+            }
+        }
+
+        [Test]
+        public void BinaryCatalogCacheStress([Values(1000)] int locateCallCount, [Values(1000)] int locCount, [Values(8, 128, 256, 512, 1024)] int locCacheSize, [Values(4, 32, 64, 128)] int bufferCacheSize)
+        {
+            var locType = typeof(UnityEngine.Object);
+            var catalog = new ContentCatalogData();
+            var entries = new List<ContentCatalogDataEntry>();
+            var allKeys = new List<object>();
+            Func<int, string> internalIdFunc = i => $"https://mysuperlongwebservername.com/internalId/path/blah/subdir/urlstuffetc/{i}.fileextension";
+            Func<int, object[]> keysFunc = i => new object[] { $"LongKeyName.{i}", $"LabelNameA.{i / 10}", $"LabelNameB.{i / 100}", "CommonLabelA", "CommonLabelB" };
+            var providerId = "provider Id goes here";
+            for (int i = 0; i < locCount; i++)
+            {
+                var entryKeys = keysFunc(i);
+                entries.Add(new ContentCatalogDataEntry(
+                    locType,
+                    internalIdFunc(i),
+                    providerId,
+                    entryKeys,
+                    null));
+                allKeys.AddRange(entryKeys);
+            }
+            catalog.SetData(entries);
+            var data = catalog.SerializeToByteArray();
+            var loadedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, new ContentCatalogData.Serializer()));
+            var locator = loadedCatalog.CreateCustomLocator("", null, locCacheSize) as ContentCatalogData.ResourceLocator;
+            var sw = new Stopwatch();
+            sw.Start();
+            for (int i = 0; i < locateCallCount; i++)
+            {
+                var index = Random.Range(0, allKeys.Count);
+
+                Assert.IsTrue(locator.Locate(allKeys[index], locType, out var locs));
+                for (int j = 0; j < 10; j++)
+                {
+                    var l = locs[Random.Range(0, locs.Count)];
+                    var locIndex = int.Parse(l.PrimaryKey.Substring(l.PrimaryKey.LastIndexOf('.')+1));
+                    Assert.AreEqual(internalIdFunc(locIndex), l.InternalId);
+                    Assert.AreEqual(keysFunc(locIndex)[0], l.PrimaryKey);
+                    Assert.AreEqual(locType, l.ResourceType);
+                    Assert.AreEqual(providerId, l.ProviderId);
+                    Assert.AreEqual(-1, l.DependencyHashCode);
+                }
+            }
+            sw.Stop();
+            locator.GetCacheStats(out var locReqCount, out var locReqHits, out var readerReqCount, out var readerReqHits);
+            Assert.AreEqual(locateCallCount, locReqCount);
+            Debug.Log($"Location cache: {(int)((float)locReqHits/locReqCount*100)}%,  Reader cache: {(int)((float)readerReqHits/readerReqCount*100)}%, {sw.Elapsed.TotalSeconds} secs");
         }
 
         [Test]
@@ -121,6 +249,8 @@ namespace UnityEditor.AddressableAssets.Tests
             entries.Add(dataEntry);
             var ccData = new ContentCatalogData("TestCatalog");
             ccData.SetData(entries);
+            var data = ccData.SerializeToByteArray();
+            ccData = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, BinaryCatalogInitialization.BinaryStorageBufferCacheSize, new ContentCatalogData.Serializer()));
             var locator = ccData.CreateCustomLocator("");
             IList<IResourceLocation> locations;
             if (!locator.Locate(1, typeof(object), out locations))
@@ -136,6 +266,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(locOptions.Timeout, options.Timeout);
             Assert.AreEqual(locOptions.AssetLoadMode, options.AssetLoadMode);
         }
+#endif
 
 #if ENABLE_JSON_CATALOG
 

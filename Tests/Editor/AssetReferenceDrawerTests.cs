@@ -475,6 +475,26 @@ namespace UnityEditor.AddressableAssets.Tests
     public class AssetReferenceDrawerTests : AssetReferenceDrawerTestsFixture
     {
         [Test]
+        public void AssetReferenceDrawer_DrawsCorrectLabelName()
+        {
+            var testScriptable = TestSubObjectsSpriteAtlasList.CreateInstance<TestSubObjectsSpriteAtlasList>();
+            testScriptable.testSpriteReference = new AssetReferenceSprite[1];
+            var serializedObject = new SerializedObject(testScriptable);
+
+            var arrayProperty = serializedObject.FindProperty("testSpriteReference");
+            var property = arrayProperty.GetArrayElementAtIndex(0);
+            Assert.IsNotNull(property, "Property does not exist");
+
+            var label = new GUIContent("Custom property");
+            var expectedLabel = label.text;
+
+            FieldInfo propertyFieldInfo = typeof(TestSubObjectsSpriteAtlasList).GetField("testSpriteReference", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            property.GetActualObjectForSerializedProperty<AssetReference>(propertyFieldInfo, ref expectedLabel);
+
+            Assert.AreEqual(label.text, expectedLabel, "Default label name is present instead of Custom label name");
+        }
+
+        [Test]
         public void CanRestrictLabel()
         {
             m_AssetReferenceDrawer = new AssetReferenceDrawer();

@@ -1,14 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using UnityEngine.AddressableAssets.Utility;
-using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
-using UnityEngine.Serialization;
 
 namespace UnityEngine.AddressableAssets.ResourceLocators
 {
@@ -203,7 +199,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         public void SetData(IList<ContentCatalogDataEntry> entries)
         {
             m_Entries = entries;
-            m_Reader = new BinaryStorageBuffer.Reader(SerializeToByteArray(), 1024, new Serializer());
         }
 
         internal void SaveToFile(string path)
@@ -212,6 +207,160 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             File.WriteAllBytes(path, bytes);
         }
 
+        [UnityEditor.MenuItem("Window/Asset Management/Addressables/Optimize Binary Catalog", priority = 2051)]
+        private static void OptimizeBinaryCatalogMenuCommand()
+        {
+            var catalogPath = UnityEditor.EditorUtility.OpenFilePanelWithFilters("Select Binary Catalog", Path.GetDirectoryName(Application.dataPath), new string[] { "Binary Catalog", "bin" });
+            if (string.IsNullOrEmpty(catalogPath))
+                return;
+            var resultDir = catalogPath.Replace(".bin", "-optimized");
+            if (Directory.Exists(resultDir))
+            {
+                if (!UnityEditor.EditorUtility.DisplayDialog("Delete Folder Confirmation",
+                    $"{resultDir} exists, do you want to overwrite?  All files in folder will be deleted.", "Yes", "No (Cancel)"))
+                    return;
+                Directory.Delete(resultDir, true);
+            }
+
+            Directory.CreateDirectory(resultDir);
+            var data = File.ReadAllBytes(catalogPath);
+            var reader = new BinaryStorageBuffer.Reader(data, 1024, new ContentCatalogData.Serializer());
+            var catalogData = reader.ReadObject<ContentCatalogData>(0, false);
+            catalogData = CreateOptimizedCopy(catalogData);
+            var optData = catalogData.SerializeToByteArray();
+            var newCatalogPath = catalogPath.Replace(".bin", "_optimized.bin");
+            var reductionPercent = (int)(100 * (1f - ((float)optData.Length / (float)data.Length)));
+            Debug.Log($"{catalogPath} {data.Length / 1024}kb, optimized to {newCatalogPath} {optData.Length / 1024}kb. Reduction: {reductionPercent}%");
+            File.Copy(catalogPath, $"{resultDir}/original.bin");
+            File.WriteAllBytes($"{resultDir}/optimized.bin", optData);
+            ExtractBinaryCatalog($"{resultDir}/original.bin", $"{resultDir}/original.extracted.txt");
+            ExtractBinaryCatalog($"{resultDir}/optimized.bin", $"{resultDir}/optimized.extracted.txt");
+            UnityEditor.EditorUtility.OpenWithDefaultApp(resultDir);
+        }
+
+        [UnityEditor.MenuItem("Window/Asset Management/Addressables/Extract Binary Catalog", priority = 2052)]
+        private static void ExtractBinaryCatalogMenuCommand()
+        {
+            var catalogPath = UnityEditor.EditorUtility.OpenFilePanelWithFilters("Select Binary Catalog", Path.GetDirectoryName(Application.dataPath), new string[] { "Binary Catalog", "bin" });
+            if (string.IsNullOrEmpty(catalogPath))
+                return;
+            var newPath = catalogPath.Replace(".bin", ".extracted.txt");
+            ExtractBinaryCatalog(catalogPath, newPath);
+        }
+
+        /// <summary>
+        /// Converts a binary catalog to a readable text version.  The text version cannot be loaded via the runtime and is intended for debugging purposes only.
+        /// </summary>
+        /// <param name="binaryCatalogPath">The path of the input binary catalog.</param>
+        /// <param name="extractedPath">The path of the catalog output text data.</param>
+        public static void ExtractBinaryCatalog(string binaryCatalogPath, string extractedPath)
+        {
+            var data = File.ReadAllBytes(binaryCatalogPath);
+            var reader = new BinaryStorageBuffer.Reader(data, 1024, new ContentCatalogData.Serializer());
+            var catalogData = reader.ReadObject<ContentCatalogData>(0, false);
+            var locator = catalogData.CreateCustomLocator();
+            var lines = new List<string>();
+            foreach (var key in locator.Keys)
+            {
+                if (locator.Locate(key, typeof(object), out var locs))
+                {
+                    foreach (var l in locs)
+                    {
+                        lines.Add($"{l.PrimaryKey}");
+                        lines.Add($"\tResourceType: {l.ResourceType}");
+                        lines.Add($"\tProviderId: {l.ProviderId}");
+                        lines.Add($"\tInternalId: {l.InternalId}");
+                        lines.Add($"\tData: {l.Data}");
+                        lines.Add($"\tDependencyHash: {l.DependencyHashCode}");
+                        if (l.HasDependencies)
+                        {
+                            lines.Add($"\tDependencies:");
+                            foreach (var d in l.Dependencies)
+                                lines.Add($"\t\t{d.PrimaryKey}");
+                        }
+                    }
+                }
+            }
+            File.WriteAllLines(extractedPath, lines);
+        }
+
+        /// <summary>
+        /// Creates an optimized copy of the catalog data.  This shortens all dependency keys in order to reduce the amount of key strings that get serialized.
+        /// Assetbundles generally have a long path that is used as the id and this will replace them with an integer value.
+        /// </summary>
+        /// <returns>A newly created catalog that can be serialized and loaded via the runtime.</returns>
+        public static ContentCatalogData CreateOptimizedCopy(ContentCatalogData original)
+        {
+            var locator = original.CreateCustomLocator();
+            Dictionary<string, (IResourceLocation, HashSet<object>)> pkToLoc = new Dictionary<string, (IResourceLocation, HashSet<object>)>();
+            Dictionary<object, object> depRemap = new Dictionary<object, object>();
+            foreach (var key in locator.Keys)
+            {
+                if (locator.Locate(key, typeof(object), out var locs))
+                {
+                    foreach (var loc in locs)
+                    {
+                        if (!pkToLoc.TryGetValue(loc.PrimaryKey, out var locKeys))
+                            pkToLoc.Add(loc.PrimaryKey, locKeys = (loc, new HashSet<object>()));
+                        locKeys.Item2.Add(key);
+                        if (loc.HasDependencies)
+                        {
+                            foreach (var d in loc.Dependencies)
+                            {
+                                if (!depRemap.ContainsKey(d.PrimaryKey))
+                                {
+                                    depRemap.Add(d.PrimaryKey, $"{depRemap.Count + 1:X}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            var entries = new List<ContentCatalogDataEntry>();
+            foreach (var l in pkToLoc)
+            {
+                var keys = l.Value.Item2;
+                if (keys.Count == 1 && depRemap.TryGetValue(keys.FirstOrDefault(), out var newKey))
+                {
+                    keys.Clear();
+                    keys.Add(newKey);
+                }
+                List<object> deps = null;
+                if (l.Value.Item1.HasDependencies)
+                {
+                    deps = new List<object>();
+                    foreach (var d in l.Value.Item1.Dependencies)
+                    {
+                        if (depRemap.TryGetValue(d.PrimaryKey, out var nk))
+                        {
+                            deps.Add(nk);
+                        }
+                        else
+                        {
+                            deps.Add(d.PrimaryKey);
+                        }
+                    }
+                }
+
+                var ccde = new ContentCatalogDataEntry(
+                    l.Value.Item1.ResourceType,
+                    l.Value.Item1.InternalId,
+                    l.Value.Item1.ProviderId,
+                    keys,
+                    deps,
+                    l.Value.Item1.Data);
+                entries.Add(ccde);
+            }
+            var ccd = new ContentCatalogData(entries, original.ProviderId);
+            ccd.BuildResultHash = original.BuildResultHash;
+            ccd.InstanceProviderData = original.InstanceProviderData;
+            ccd.LocalHash = original.LocalHash;
+            ccd.location = original.location;
+            ccd.ResourceProviderData = original.ResourceProviderData;
+            ccd.SceneProviderData = original.SceneProviderData;
+            ccd.SetData(entries);
+            return ccd;
+        }
 #endif
 
         BinaryStorageBuffer.Reader m_Reader;
@@ -225,7 +374,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             return m_Reader.GetBuffer();
         }
 
-        internal IResourceLocator CreateCustomLocator(string overrideId = "", string providerSuffix = null, int locatorCacheSize = 100)
+        internal IResourceLocator CreateCustomLocator(string overrideId = "", string providerSuffix = null, int locatorCacheSize = BinaryCatalogInitialization.kCatalogLocationCacheSize)
         {
             m_LocatorId = overrideId;
             return new ResourceLocator(m_LocatorId, m_Reader, locatorCacheSize, providerSuffix);
@@ -249,9 +398,9 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 if (h.version != kVersion)
                     throw new Exception($"Expected catalog data version {kVersion}, but file was written with version {h.version}.");
 
-                cd.InstanceProviderData = reader.ReadObject<ObjectInitializationData>(h.instanceProvider);
-                cd.SceneProviderData = reader.ReadObject<ObjectInitializationData>(h.sceneProvider);
-                cd.ResourceProviderData = reader.ReadObjectArray<ObjectInitializationData>(h.initObjectsArray).ToList();
+                cd.InstanceProviderData = reader.ReadObject<ObjectInitializationData>(h.instanceProvider, false);
+                cd.SceneProviderData = reader.ReadObject<ObjectInitializationData>(h.sceneProvider, false);
+                cd.ResourceProviderData = reader.ReadObjectArray<ObjectInitializationData>(h.initObjectsArray, false, false).ToList();
 
                 cd.BuildResultHash = reader.ReadString(h.buildResultHash);
                 return cd;
@@ -313,11 +462,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             }
         }
 
-        internal static ContentCatalogData LoadFromFile(string path, int cacheSize = 1024)
+        internal static ContentCatalogData LoadFromFile(string path)
         {
-            return new ContentCatalogData(new BinaryStorageBuffer.Reader(File.ReadAllBytes(path), cacheSize, new Serializer()));
+            return new ContentCatalogData(new BinaryStorageBuffer.Reader(File.ReadAllBytes(path), BinaryCatalogInitialization.BinaryStorageBufferCacheSize, new Serializer()));
         }
-
 #else
         /// <summary>
         /// The IDs for the Resource Providers.
@@ -900,32 +1048,35 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     }
                 }
 
-                public ResourceLocation(BinaryStorageBuffer.Reader r, uint id)
+                public ResourceLocation(BinaryStorageBuffer.Reader reader, uint id)
                 {
-                    var d = r.ReadValue<Serializer.Data>(id);
-                    PrimaryKey = r.ReadString(d.primaryKeyOffset, '/', false);
-                    InternalId = Addressables.ResolveInternalId(r.ReadString(d.internalIdOffset, '/', false));
-                    Data = r.ReadObject(d.extraDataOffset, false);
-                    ProviderId = r.ReadString(d.providerOffset, '.', true);
-                    Dependencies = r.ReadObjectArray<ResourceLocation>(d.dependencySetOffset, true);
-                    DependencyHashCode = (int)d.dependencySetOffset;
-                    ResourceType = r.ReadObject<Type>(d.typeId);
+                    var data = reader.ReadValue<Serializer.Data>(id);
+                    ProviderId = reader.ReadString(data.providerOffset, '.', true);
+                    PrimaryKey = reader.ReadString(data.primaryKeyOffset, '/', true);
+                    Data = reader.ReadObject(data.extraDataOffset, true);
+                    InternalId = Addressables.ResolveInternalId(reader.ReadString(data.internalIdOffset, '/', true));
+                    DependencyHashCode = (int)data.dependencySetOffset;
+                    Dependencies = reader.ReadObjectArray<ResourceLocation>(data.dependencySetOffset, true, true);
+                    ResourceType = reader.ReadObject<Type>(data.typeId);
                 }
+                public string InternalId { get; internal set; }
+                public string ProviderId { get; internal set; }
+                public IList<IResourceLocation> Dependencies { get; internal set; }
+                public int DependencyHashCode { get; internal set; }
+                public bool HasDependencies => Dependencies != null;
+                public object Data { get; internal set; }
+                public string PrimaryKey { get; internal set; }
+                public Type ResourceType { get; internal set; }
 
                 public override string ToString()
                 {
                     return InternalId;
                 }
 
-                public string PrimaryKey { private set; get; }
-                public string InternalId { private set; get; }
-                public object Data { private set; get; }
-                public string ProviderId { set; get; }
-                public IList<IResourceLocation> Dependencies { private set; get; }
-                public int DependencyHashCode { private set; get; }
-                public bool HasDependencies => DependencyHashCode >= 0;
-                public Type ResourceType { private set; get; }
-                public int Hash(Type t) => (InternalId.GetHashCode() * 31 + t.GetHashCode()) * 31 + DependencyHashCode;
+                public int Hash(Type resultType)
+                {
+                    return (int)InternalId.GetHashCode() * 31 + ResourceType.GetHashCode();
+                }
             }
 
             struct CacheKey : IEquatable<CacheKey>
@@ -947,7 +1098,13 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             BinaryStorageBuffer.Reader reader;
             public string LocatorId { get; private set; }
             public IEnumerable<object> Keys => keyData.Keys;
-
+            string providerSuffix;
+            public void GetCacheStats(out int locReqCount, out int locReqHits, out int readerReqCount, out int readerReqHits)
+            {
+                locReqHits = m_Cache.requestHits;
+                locReqCount = m_Cache.requestCount;
+                reader.GetCacheStats(out readerReqCount, out readerReqHits);
+            }
             //TODO: this is VERY expensive with this locator since it will expand the entire thing into memory and then throw most of it away.
             public IEnumerable<IResourceLocation> AllLocations
             {
@@ -966,7 +1123,6 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 }
             }
 
-            string providerSuffix;
             internal ResourceLocator(string id, BinaryStorageBuffer.Reader reader, int cacheLimit, string providerSuffix)
             {
                 LocatorId = id;
@@ -985,56 +1141,52 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 }
             }
 
+            class LocateProcContext
+            {
+                public IList<IResourceLocation> locations;
+                public Type type;
+            }
+            LocateProcContext sharedContext = new LocateProcContext();
             public bool Locate(object key, Type type, out IList<IResourceLocation> locations)
             {
                 var cacheKey = new CacheKey(key, type);
                 if (m_Cache.TryGet(cacheKey, out locations))
                     return true;
+
                 if (!keyData.TryGetValue(key, out var locationSetOffset))
                 {
                     locations = null;
                     return false;
                 }
-                var locs = reader.ReadObjectArray<ResourceLocation>(locationSetOffset);
-                if (providerSuffix != null)
+
+                sharedContext.type = type;
+                var count = reader.ProcessObjectArray<ResourceLocation, LocateProcContext>(
+                    locationSetOffset,
+                    sharedContext,
+                    (loc, context) =>
+                    {
+                        if (context.type == null || context.type == typeof(object) || context.type.IsAssignableFrom(loc.ResourceType))
+                        {
+                            if (context.locations == null)
+                                context.locations = new List<IResourceLocation>();
+                            context.locations.Add(loc);
+                        }
+                    });
+                locations = sharedContext.locations;
+                sharedContext.locations = null;
+                sharedContext.type = null;
+
+                if (providerSuffix != null && locations != null)
                 {
-                    foreach (var l in locs)
+                    foreach (var l in locations)
                     {
                         if (!l.ProviderId.EndsWith(providerSuffix))
-                            l.ProviderId = l.ProviderId + providerSuffix;
+                        {
+                            (l as ResourceLocation).ProviderId = l.ProviderId + providerSuffix;
+                        }
                     }
                 }
-                if (type == null || type == typeof(object))
-                {
-                    locations = new List<IResourceLocation>(locs);
-                    m_Cache.TryAdd(cacheKey, locations);
-                    return true;
-                }
-                var validTypeCount = 0;
-                foreach (var l in locs)
-                    if (type.IsAssignableFrom(l.ResourceType))
-                        validTypeCount++;
 
-                if (validTypeCount == 0)
-                {
-                    locations = null;
-                    m_Cache.TryAdd(cacheKey, locations);
-                    return false;
-                }
-
-                if (validTypeCount == locs.Length)
-                {
-                    locations = new List<IResourceLocation>(locs);
-                    m_Cache.TryAdd(cacheKey, locations);
-                    return true;
-                }
-
-                locations = new List<IResourceLocation>();
-                foreach (var l in locs)
-                {
-                    if (type.IsAssignableFrom(l.ResourceType))
-                        locations.Add(l);
-                }
                 m_Cache.TryAdd(cacheKey, locations);
                 return locations != null;
             }

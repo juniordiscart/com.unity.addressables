@@ -529,12 +529,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 m_Linker.AddTypes(sceneProviderData.ObjectType.Value);
                 m_Linker.AddTypes(sceneProviderData.GetRuntimeTypes());
 
-                foreach (var io in aaContext.Settings.InitializationObjects)
+                foreach (var o in aaContext.Settings.InitializationObjects)
                 {
-                    var provider = io as IObjectInitializationDataProvider;
-                    if (provider != null)
+                    if(o is IObjectInitializationDataProvider io)
                     {
-                        var id = provider.CreateObjectInitializationData();
+                        var id = io.CreateObjectInitializationData();
                         aaContext.runtimeData.InitializationObjects.Add(id);
                         m_Linker.AddTypes(id.ObjectType.Value);
                         m_Linker.AddTypes(id.GetRuntimeTypes());

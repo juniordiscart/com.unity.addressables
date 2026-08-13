@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
-using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace UnityEngine.ResourceManagement.Util
@@ -155,7 +153,6 @@ namespace UnityEngine.ResourceManagement.Util
                         {
                             var prevAdapter = serializationAdapters[aType];
                             serializationAdapters.Remove(aType);
-//                            serializationAdapters.Add(aType, adapter);
                             serializationAdapters[aType] = adapter;
                             added = true;
                             Debug.Log($"Replacing adapter for type {aType}: {prevAdapter} -> {adapter}");
@@ -225,6 +222,12 @@ namespace UnityEngine.ResourceManagement.Util
             Dictionary<Type, ISerializationAdapter> m_Adapters;
             LRUCache<uint, object> m_Cache;
             StringBuilder stringBuilder;
+            public void GetCacheStats(out int reqCount, out int reqHits)
+            {
+                reqCount = m_Cache.requestCount;
+                reqHits = m_Cache.requestHits;
+            }
+
 
             private void Init(byte[] data, int maxCachedObjects, params ISerializationAdapter[] adapters)
             {
@@ -273,37 +276,115 @@ namespace UnityEngine.ResourceManagement.Util
                 return false;
             }
 
-            public object[] ReadObjectArray(uint id, bool cacheValues = true)
+            public T[] ReadValueArray<T>(uint id, bool cacheValue = true) where T : unmanaged
             {
                 if (id == uint.MaxValue)
                     return null;
-                var ids = ReadValueArray<uint>(id, cacheValues);
-                var objs = new object[ids.Length];
-                for (int i = 0; i < ids.Length; i++)
-                    objs[i] = ReadObject(ids[i], cacheValues);
-                return objs;
+                if (id - sizeof(uint) >= m_Buffer.Length)
+                    throw new Exception($"Data offset {id} is out of bounds of buffer with length of {m_Buffer.Length}.");
+
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    if (TryGetCachedValue<T[]>(id, out var vals))
+                        return vals;
+                    uint size = 0;
+                    UnsafeUtility.MemCpy(&size, pData, sizeof(uint));
+                    if ((id + size) > m_Buffer.Length)
+                        throw new Exception($"Data size {size} is out of bounds of buffer with length of {m_Buffer.Length}.");
+                    var elCount = size / sizeof(T);
+                    var valsT = new T[elCount];
+                    fixed (T* pVals = valsT)
+                        UnsafeUtility.MemCpy(pVals, &pData[sizeof(uint)], size);
+                    if (cacheValue)
+                        m_Cache.TryAdd(id, valsT);
+                    return valsT;
+                }
             }
 
-            public object[] ReadObjectArray(Type t, uint id, bool cacheValues = true)
+
+            public uint ProcessObjectArray<T, C>(uint id,C context, Action<T, C> procFunc, bool cacheValues = true)
             {
                 if (id == uint.MaxValue)
-                    return null;
-                var ids = ReadValueArray<uint>(id, cacheValues);
-                var objs = new object[ids.Length];
-                for (int i = 0; i < ids.Length; i++)
-                    objs[i] = ReadObject(t, ids[i], cacheValues);
-                return objs;
+                    return 0;
+
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint count = *(uint*)pData / sizeof(uint);
+                    for (int i = 0; i < count; i++)
+                        procFunc(ReadObject<T>(*((uint*)&pData[sizeof(uint) * (1 + i)]), cacheValues), context);
+                    return count;
+                }
             }
 
-            public T[] ReadObjectArray<T>(uint id, bool cacheValues = true)
+
+            public uint ReadObjectArray<T>(ref List<T> results, uint id, bool cacheValues = true)
+            {
+                if (id == uint.MaxValue)
+                    return 0;
+
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint count = *(uint*)pData / sizeof(uint);
+                    for (int i = 0; i < count; i++)
+                        results.Add(ReadObject<T>(*((uint*)&pData[sizeof(uint) * (1 + i)]), cacheValues));
+                    return count;
+                }
+            }
+
+
+            public object[] ReadObjectArray(uint id, bool cacheValues = true, bool cacheFullArray = false)
             {
                 if (id == uint.MaxValue)
                     return null;
-                var ids = ReadValueArray<uint>(id, cacheValues);
-                var objs = new T[ids.Length];
-                for (int i = 0; i < ids.Length; i++)
-                    objs[i] = ReadObject<T>(ids[i], cacheValues);
-                return objs;
+                if (TryGetCachedValue<object[]>(id, out var res))
+                    return res;
+
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint count = *(uint*)pData / sizeof(uint);
+                    var objs = new object[count];
+                    for (int i = 0; i < count; i++)
+                        objs[i] = ReadObject(*((uint*)&pData[sizeof(uint) * (1 + i)]), cacheValues);
+                    if (cacheFullArray)
+                        m_Cache.TryAdd(id, objs);
+                    return objs;
+                }
+            }
+
+            public object[] ReadObjectArray(Type t, uint id, bool cacheValues = true, bool cacheFullArray = false)
+            {
+                if (id == uint.MaxValue)
+                    return null;
+                if (TryGetCachedValue<object[]>(id, out var res))
+                    return res;
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint count = *(uint*)pData / sizeof(uint);
+                    var objs = new object[count];
+                    for (int i = 0; i < count; i++)
+                        objs[i] = ReadObject(t, *((uint*)&pData[sizeof(uint) * (1 + i)]), cacheValues);
+                    if (cacheFullArray)
+                        m_Cache.TryAdd(id, objs);
+                    return objs;
+                }
+            }
+
+            public T[] ReadObjectArray<T>(uint id, bool cacheValues = true, bool cacheFullArray = false)
+            {
+                if (id == uint.MaxValue)
+                    return null;
+                if (TryGetCachedValue<T[]>(id, out var res))
+                    return res;
+                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
+                {
+                    uint count = *(uint*)pData / sizeof(uint);
+                    var objs = new T[count];
+                    for (int i = 0; i < count; i++)
+                        objs[i] = ReadObject<T>(*((uint *)&pData[sizeof(uint) * (1 + i)]), cacheValues);
+                    if (cacheFullArray)
+                        m_Cache.TryAdd(id, objs);
+                    return objs;
+                }
             }
 
 
@@ -345,31 +426,6 @@ namespace UnityEngine.ResourceManagement.Util
                 return res;
             }
 
-            public T[] ReadValueArray<T>(uint id, bool cacheValue = true) where T : unmanaged
-            {
-                if (id == uint.MaxValue)
-                    return null;
-                if (id - sizeof(uint) >= m_Buffer.Length)
-                    throw new Exception($"Data offset {id} is out of bounds of buffer with length of {m_Buffer.Length}.");
-
-                fixed (byte* pData = &m_Buffer[id - sizeof(uint)])
-                {
-                    if (TryGetCachedValue<T[]>(id, out var vals))
-                        return vals;
-                    uint size = 0;
-                    UnsafeUtility.MemCpy(&size, pData, sizeof(uint));
-                    if ((id + size) > m_Buffer.Length)
-                        throw new Exception($"Data size {size} is out of bounds of buffer with length of {m_Buffer.Length}.");
-                    var elCount = size / sizeof(T);
-                    var valsT = new T[elCount];
-                    fixed (T* pVals = valsT)
-                        UnsafeUtility.MemCpy(pVals, &pData[sizeof(uint)], size);
-                    if (cacheValue)
-                        m_Cache.TryAdd(id, valsT);
-                    return valsT;
-                }
-            }
-
             public T ReadValue<T>(uint id) where T : unmanaged
             {
                 if (id == uint.MaxValue)
@@ -389,6 +445,10 @@ namespace UnityEngine.ResourceManagement.Util
             {
                 if (id == uint.MaxValue)
                     return null;
+
+                if (TryGetCachedValue<string>(id, out var str))
+                    return str;
+
                 if (sep == (char)0)
                     return ReadAutoEncodedString(id, cacheValue);
                 return ReadDynamicString(id, sep, cacheValue);
@@ -422,33 +482,94 @@ namespace UnityEngine.ResourceManagement.Util
                 return ReadStringInternal(id, Encoding.ASCII, cacheValue);
             }
 
+            public int ComputeStringLength(uint id, char sep = (char)0)
+            {
+                if (id == uint.MaxValue)
+                    return 0;
+
+                if (sep == (char)0)
+                    return GetAutoEncodedStringLength(id);
+                return GetDynamicStringLength(id, sep);
+            }
+
+            int GetDynamicStringLength(uint id, char sep)
+            {
+                if ((id & kDynamicStringFlag) == kDynamicStringFlag)
+                {
+                    int len = 0;
+                    var nextID = id;
+                    while (nextID != uint.MaxValue)
+                    {
+                        var ds = ReadValue<DynamicString>((uint)(nextID & kClearFlagsMask));
+                        len += GetAutoEncodedStringLength(ds.stringId);
+                        nextID = ds.nextId;
+                        if (nextID != uint.MaxValue)
+                            len++;
+                    }
+                    return len;
+                }
+                else
+                {
+                    return GetAutoEncodedStringLength(id);
+                }
+            }
+
+            private int GetAutoEncodedStringLength(uint id)
+            {
+                if ((id & kUnicodeStringFlag) == kUnicodeStringFlag)
+                    return GetStringLengthInternal((uint)(id & kClearFlagsMask), Encoding.Unicode);
+                return GetStringLengthInternal(id, Encoding.ASCII);
+            }
+
+            private int GetStringLengthInternal(uint offset, Encoding enc)
+            {
+                if (offset - sizeof(uint) >= m_Buffer.Length)
+                    throw new Exception($"Data offset {offset} is out of bounds of buffer with length of {m_Buffer.Length}.");
+
+                fixed (byte* pData = m_Buffer)
+                {
+                    var strDataLength = *(uint*)&pData[offset - sizeof(uint)];
+                    if (offset + strDataLength > m_Buffer.Length)
+                        throw new Exception($"Data offset {offset}, len {strDataLength} is out of bounds of buffer with length of {m_Buffer.Length}.");
+                    return enc.GetCharCount(&pData[offset], (int)strDataLength);
+                }
+            }
+
+            //this is needed to create string with string.Create and helps reduce the amount of allocations when creating strings dynamically
+            struct StringCreationState
+            {
+                public uint id;
+                public char sep;
+                public int length;
+            }
+
             string ReadDynamicString(uint id, char sep, bool cacheValue)
             {
                 if ((id & kDynamicStringFlag) == kDynamicStringFlag)
                 {
                     if (!TryGetCachedValue<string>(id, out var str))
                     {
-                        var partStack = new Stack<DynamicString>();
-                        var nextID = id;
-                        while (nextID != uint.MaxValue)
+                        var strLength = GetDynamicStringLength(id, sep);
+                        str = string.Create(strLength, new StringCreationState { id = id, sep = sep, length = strLength }, (chars, state) =>
                         {
-                            var ds = ReadValue<DynamicString>((uint)(nextID & kClearFlagsMask));
-                            partStack.Push(ds);
-                            nextID = ds.nextId;
-                        }
-
-                        while (partStack.TryPop(out DynamicString ds))
-                        {
-                            stringBuilder.Append(ReadAutoEncodedString(ds.stringId, cacheValue));
-                            if (partStack.Count != 0)
-                                stringBuilder.Append(sep);
-                        }
-
-                        str = stringBuilder.ToString();
-                        stringBuilder.Clear();
+                            int position = state.length;
+                            var nextID = state.id;
+                            while (nextID != uint.MaxValue)
+                            {
+                                var ds = ReadValue<DynamicString>((uint)(nextID & kClearFlagsMask));
+                                var s = ReadAutoEncodedString(ds.stringId, true);
+                                s.AsSpan().CopyTo(chars.Slice(position - s.Length, s.Length));
+                                position -= s.Length;
+                                nextID = ds.nextId;
+                                if (nextID != uint.MaxValue)
+                                    chars[--position] = state.sep;
+                            }
+                        });
                         if (cacheValue)
                             m_Cache.TryAdd(id, str);
                     }
+
+
 
                     return str;
                 }
@@ -831,14 +952,19 @@ namespace UnityEngine.ResourceManagement.Util
             public bool Equals(Entry other) => Value.Equals(other);
             public override int GetHashCode() => Value.GetHashCode();
         }
+        public int requestHits;
+        public int requestCount;
         int entryLimit;
         Dictionary<TKey, Entry> cache;
         LinkedList<TKey> lru;
+        LinkedListNodeCache<TKey> nodeCache;
         public LRUCache(int limit)
         {
+            requestHits = requestCount = 0;
             entryLimit = limit;
-            cache = new Dictionary<TKey, Entry>();
+            cache = new Dictionary<TKey, Entry>(limit);
             lru = new LinkedList<TKey>();
+            nodeCache = new LinkedListNodeCache<TKey>(entryLimit, entryLimit, entryLimit);
         }
 
         public bool TryAdd(TKey id, TValue obj)
@@ -846,15 +972,20 @@ namespace UnityEngine.ResourceManagement.Util
             if (obj == null || entryLimit <= 0)
                 return false;
 
-            if (!cache.TryAdd(id, new Entry { Value = obj, lruNode = lru.AddFirst(id) }))
+            var node = nodeCache.Acquire(id);
+            if (!cache.TryAdd(id, new Entry { Value = obj, lruNode = node }))
             {
+                nodeCache.Release(node);
                 return false;
             };
+            lru.AddFirst(node);
 
             while (lru.Count > entryLimit)
             {
                 cache.Remove(lru.Last.Value);
+                var lastNode = lru.Last;
                 lru.RemoveLast();
+                nodeCache.Release(lastNode);
             }
             return true;
         }
@@ -862,6 +993,7 @@ namespace UnityEngine.ResourceManagement.Util
 
         public bool TryGet(TKey offset, out TValue val)
         {
+            requestCount++;
             if (cache.TryGetValue(offset, out var entry))
             {
                 val = entry.Value;
@@ -870,6 +1002,7 @@ namespace UnityEngine.ResourceManagement.Util
                     lru.Remove(entry.lruNode);
                     lru.AddFirst(entry.lruNode);
                 }
+                requestHits++;
                 return true;
             }
             val = default;

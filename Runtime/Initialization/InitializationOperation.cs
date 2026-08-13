@@ -159,7 +159,7 @@ namespace UnityEngine.AddressableAssets.Initialization
             {
                 Addressables.LogFormat("Addressables - loading content catalogs, {0} found.", catalogs.Count);
                 IResourceLocation remoteHashLocation = null;
-                if (catalogs[0].Dependencies.Count == 2 && rtd.DisableCatalogUpdateOnStartup)
+                if (catalogs[0].Dependencies.Count == (int)ContentCatalogProvider.DependencyHashIndex.Count && rtd.DisableCatalogUpdateOnStartup)
                 {
                     remoteHashLocation = catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote];
                     catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = catalogs[0].Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Cache];
@@ -241,8 +241,11 @@ namespace UnityEngine.AddressableAssets.Initialization
 
                 if (remoteHashLocation != null)
                     data.location.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = remoteHashLocation;
-
+#if ENABLE_JSON_CATALOG
                 IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix);
+#else
+                IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix, BinaryCatalogInitialization.CatalogLocationCacheSize);
+#endif
                 addressables.AddResourceLocator(locMap, data.LocalHash, data.location);
                 addressables.AddResourceLocator(new DynamicResourceLocator(addressables));
                 return addressables.ResourceManager.CreateCompletedOperation<IResourceLocator>(locMap, string.Empty);

@@ -17,7 +17,6 @@ using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
-using UnityEditor.Build.Pipeline;
 
 public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanup
 {

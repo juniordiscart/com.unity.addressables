@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-05-12
+- Added IP ping timeout to the Hosting Services window.
+- Fixed memory leak when loading Sprite objects from a SpriteAtlas asset.
+- Fixed sub-object loading from AssetReferences for types that are not Sprites in a SpriteAtlas.
+- Fixed Exception when using third build and load path variables option.
+- Fixed bug where identical locations were calculated multiple times in the download size
+- Fixed bug where we'd fetch the remote hash at start-up even though catalog updates were disabled
+
 ## [2.4.6] - 2025-03-19
 - Fixed issue where custom asset providers set in Addressable Asset Settings UI aren't being used.
 - Fixed issue where duplicated assets savings in summary tab of the build report is incorrect.

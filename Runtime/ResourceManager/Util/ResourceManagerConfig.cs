@@ -180,8 +180,39 @@ namespace UnityEngine.ResourceManagement.Util
     /// <typeparam name="T">The type of node.</typeparam>
     public class LinkedListNodeCache<T>
     {
+        int m_maxNodesAllowed = int.MaxValue;
         int m_NodesCreated = 0;
-        LinkedList<T> m_NodeCache;
+        Stack<LinkedListNode<T>> m_NodeCache;
+
+        /// <summary>
+        /// Create a LinkedListNode cache.  This is intended to be used to reduce GC allocations for LinkedLists.
+        /// </summary>
+        public LinkedListNodeCache()
+        {
+            InitCache();
+        }
+
+        /// <summary>
+        /// Create a LinkedListNode cache.  This is intended to be used to reduce GC allocations for LinkedLists.
+        /// </summary>
+        /// <param name="maxNodesAllowed">Specify a number greater than zero to limit the number of nodes that can be in the pool.</param>
+        /// <param name="initialCapacity">Specify a number greater than zero to preallocate a certain number of nodes.</param>
+        /// <param name="initialPreallocateCount">The number of nodes to start in the linked list cache.</param>
+        public LinkedListNodeCache(int maxNodesAllowed, int initialCapacity, int initialPreallocateCount)
+        {
+            InitCache(maxNodesAllowed, initialCapacity, initialPreallocateCount);
+        }
+
+        void InitCache(int maxNodesAllowed = int.MaxValue, int initialCapacity = 10, int initialPreallocateCount = 0)
+        {
+            m_maxNodesAllowed = maxNodesAllowed;
+            m_NodeCache = new Stack<LinkedListNode<T>>(initialCapacity);
+            for (int i = 0; i < initialPreallocateCount; i++)
+            {
+                m_NodeCache.Push(new LinkedListNode<T>(default));
+                m_NodesCreated++;
+            }
+        }
 
         /// <summary>
         /// Creates or returns a LinkedListNode of the requested type and set the value.
@@ -190,15 +221,10 @@ namespace UnityEngine.ResourceManagement.Util
         /// <returns>A LinkedListNode with the value set to val.</returns>
         public LinkedListNode<T> Acquire(T val)
         {
-            if (m_NodeCache != null)
+            if (m_NodeCache.TryPop(out var node))
             {
-                var n = m_NodeCache.First;
-                if (n != null)
-                {
-                    m_NodeCache.RemoveFirst();
-                    n.Value = val;
-                    return n;
-                }
+                node.Value = val;
+                return node;
             }
 
             m_NodesCreated++;
@@ -211,11 +237,11 @@ namespace UnityEngine.ResourceManagement.Util
         /// <param name="node">The node to release</param>
         public void Release(LinkedListNode<T> node)
         {
-            if (m_NodeCache == null)
-                m_NodeCache = new LinkedList<T>();
-
-            node.Value = default(T);
-            m_NodeCache.AddLast(node);
+            if (m_NodeCache.Count < m_maxNodesAllowed)
+            {
+                node.Value = default(T);
+                m_NodeCache.Push(node);
+            }
         }
 
         internal int CreatedNodeCount
@@ -228,12 +254,10 @@ namespace UnityEngine.ResourceManagement.Util
             get { return m_NodeCache == null ? 0 : m_NodeCache.Count; }
             set
             {
-                if (m_NodeCache == null)
-                    m_NodeCache = new LinkedList<T>();
                 while (value < m_NodeCache.Count)
-                    m_NodeCache.RemoveLast();
+                    m_NodeCache.TryPop(out var _);
                 while (value > m_NodeCache.Count)
-                    m_NodeCache.AddLast(new LinkedListNode<T>(default));
+                    m_NodeCache.Push(new LinkedListNode<T>(default));
             }
         }
     }

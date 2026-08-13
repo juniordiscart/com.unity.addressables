@@ -559,5 +559,47 @@ namespace UnityEditor.AddressableAssets.Tests
                     Assert.AreEqual($"very long start of string/a middle part that is also somewhat long/almost done.../this part is unique{i}...../this part has unicode characters, see ЁЁЁЁЁЁЁ", r.ReadString(ids[i], '/'));
             }
         }
+
+        [Test]
+        public void ComputeStringLength([Values("", "///", "/sadf", "wdfwef/", "/sdgf/", "///sdgfw", "adqergq///", "asff/sadgf/asdfg/werg/werg/we5rg/werg/werg/werg/werg/werg/werg")]string str)
+        {
+            var wr = new BinaryStorageBuffer.Writer();
+            var id = wr.WriteString(str, '/');
+            var data = wr.SerializeToByteArray();
+            var reader = new BinaryStorageBuffer.Reader(data);
+            var rStr = reader.ReadString(id, '/');
+            Assert.AreEqual(str, rStr);
+            var len = reader.ComputeStringLength(id, '/');
+            Assert.AreEqual(str.Length, len);
+        }
+
+        class TextContextObject
+        {
+            public List<ComplexObject> results = new List<ComplexObject>();
+        }
+
+        [Test]
+        public void TestComplexObjectArrayWithProcFunc([Values(1024, 1024 * 1024)] int chunkSize, [Values(1, 32, 256, 1024)] int count, [Values(0, 10, 1024)] int cacheSize)
+        {
+            var wr = new BinaryStorageBuffer.Writer(chunkSize, new ComplexObject.Serializer());
+            var objs = new ComplexObject[count];
+            for (int i = 0; i < count; i++)
+                objs[i] = new ComplexObject(i);
+            uint objArrayWithoutType = wr.WriteObjects(objs, false);
+            uint objArrayWithType = wr.WriteObjects(objs, true);
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, new ComplexObject.Serializer());
+            var context = new TextContextObject();
+            var resultCount = re.ProcessObjectArray<ComplexObject, TextContextObject>(objArrayWithoutType, context,
+                (obj, context) =>
+                {
+                    Assert.NotNull(obj);
+                    Assert.NotNull(context);
+                    context.results.Add(obj);
+                });
+            Assert.AreEqual(count, resultCount);
+            for (int i = 0; i < count; i++)
+                Assert.AreEqual(objs[i], context.results[i]);
+        }
+
     }
 }

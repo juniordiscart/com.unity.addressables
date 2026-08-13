@@ -1,3 +1,4 @@
+#if !ENABLE_JSON_CATALOG
 using System;
 using System.ComponentModel;
 using UnityEngine.ResourceManagement.Util;
@@ -18,7 +19,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <returns>Returns the converted object.</returns>
         public override object Convert(Type type, byte[] data)
         {
-            return new BinaryStorageBuffer.Reader(data, 512, new TAdapter()).ReadObject(type, 0, false);
+            return new BinaryStorageBuffer.Reader(data, BinaryCatalogInitialization.BinaryStorageBufferCacheSize, new TAdapter()).ReadObject(type, 0, false);
         }
     }
 }
+#endif
