@@ -18,6 +18,9 @@ To create a group:
 
 For groups that contain assets that you plan to distribute with your main application, you can use the default settings.
 
+>[!TIP]
+> You can optionally use the **[Auto Group Generator window](groups-auto-group-generator.md)** to automatically generate optimized groups for assets and their dependencies.
+
 ### Groups for remote distribution
 
 For groups containing assets that you plan to distribute remotely, you must change the build and load paths to use the remote versions of the [profile](xref:addressables-profiles) path variables. To build AssetBundles for remote distribution, you must also enable the __Build Remote Catalog__ option in the [Addressable System Settings](xref:addressables-asset-settings).

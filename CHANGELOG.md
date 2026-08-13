@@ -4,7 +4,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [2.9.0] - 2026-02-16
+## [2.9.1] - 2026-02-16
 - Added support for extracting type tree data from asset bundles.  This requires Unity 6.5+.
 - Fixed performance issue when moving Addressable Assets from one group to another using the context menu option "Move Addressables to Group..."
 - When doing a player build if the Addressables build fails, the player build will fail as well. Previously it just logged the error.

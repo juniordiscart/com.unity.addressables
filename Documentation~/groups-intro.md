@@ -1,10 +1,12 @@
-# Introduction to Addressable asset groups
+# Introduction to addressable asset groups
 
-Understand how to use groups to organize Addressables, control build paths, load paths, and AssetBundle packaging strategies.
+Understand how to use groups to organize addressable assets, control build paths, load paths, and AssetBundle packaging strategies.
 
-A group is the main organizational unit of the Addressables system. Create and manage your groups and the assets they contain with the [Addressables Groups window](GroupsWindow.md).
+A group is the main organizational unit of the Addressables system. Create and manage your groups and the assets they contain with the **[Addressables Groups window](GroupsWindow.md)**.
 
 To control how Unity handles assets during a content build, organize Addressables into groups and assign different settings to each group as required.
+
+You can optionally use the **[Auto Group Generator window](groups-auto-group-generator.md)** to automatically generate optimized groups for assets and their dependencies.
 
 ![The Addressables Groups window showing the toolbar and list of groups and assets.](images/addressables-groups-window.png)<br/><br/>*The Addressables Groups window showing the toolbar and list of groups and assets.*
 

@@ -8,9 +8,11 @@ For information on AssetBundle memory overhead, refer to [Optimizing AssetBundle
 
 ## TypeTree management
 
-You can [remove TypeTrees](xref:um-asset-bundles-optimization) to optimize memory. However it is recommended to only use this approach for content that you can rebuild each time you release a new Player. This is a suitable optimization for Addressable content that you include directly with the player build. In that case you must always rebuild local Addressable groups before building a new Player.
+You can [remove TypeTrees](xref:um-asset-bundles-optimization) to optimize memory. However, this approach is only recommended for content you can rebuild each time you release a new Player. This is a suitable optimization for Addressable content that you include directly with the Player build. In that case you must always rebuild local Addressable groups before building a new Player.
 
-If your project [distributes content remotely](remote-content-intro.md) it becomes more complicated. The ability to add new content after the Player has already shipped means that you exactly match the version of Unity and that there are no serialization changes in your code and in the code of all the packages that contribute content. If you use multiple player versions, updates, and versions of Unity it can become difficult to manage matching the AssetBundles with compatible Player builds because you are giving up Unity's tolerance to load AssetBundles with slightly mismatched Players. You might not find the memory savings from disabling TypeTrees to be worth the trouble.
+[Distributing content remotely](remote-content-intro.md) adds additional considerations. The ability to add new content after the Player has shipped means the content must exactly match the Unity Editor version the Player was built with. There must also be no serialization changes in your code and in the code of all the packages that contribute content. If you use multiple Player versions, updates, and Editor versions, it can become difficult to manage matching the AssetBundles with compatible Player builds. The memory savings from disabling TypeTrees might not be worth this extra trouble.
+
+You can enable the **[Extract TypeTree Data](AddressableAssetSettings.md#build)** setting to place TypeTree data in a separate file, which can reduce the file size of a build. However, this adjusts any existing AssetBundles, so don't use this setting in projects that you have already deployed.
 
 ## Loading AssetBundle dependencies
 

@@ -9,8 +9,10 @@ Use groups to organize and define how Unity builds the assets in your project an
 | **[Label assets](Labels.md)** | Use labels to tag Addressable assets for runtime loading, AssetBundle packing based on labels, and filtering assets in the Groups window. |
 | **[Define group settings](GroupSchemas.md)** | Configure group settings using schema objects that control how Unity treats assets during content builds, including custom schema creation. |
 | **[Create a group template](GroupTemplates.md)** | Create reusable group templates that define which schema objects Unity creates for new groups. |
+| **[Automatically generate groups](groups-auto-group-generator.md)**|Automatically create groups from a list of assets with the Auto Group Generator window.|
 | **[Addressables Groups window reference](GroupsWindow.md)** | Reference for the Addressables Groups window interface. |
 | **[Group Inspector settings reference](ContentPackingAndLoadingSchema.md)** | Reference for Group Inspector settings that control build paths, load paths, bundle modes, and content update restrictions. |
+| **[Auto Group Generator settings reference](groups-auto-group-generator-reference.md)**|Reference for the Auto Group Generator settings.|
 
 ## Additional resources
 
