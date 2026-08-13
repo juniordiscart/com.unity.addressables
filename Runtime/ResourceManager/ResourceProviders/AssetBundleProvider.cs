@@ -223,13 +223,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				return 0;
 			var locHash = Hash128.Parse(Hash);
 #if ENABLE_CACHING
-			if (locHash.isValid) //If we have a hash, ensure that our desired version is cached.
-			{
-				if (Caching.IsVersionCached(new CachedAssetBundle(BundleName, locHash)))
+            //If we have a hash, ensure that our desired version is cached.
+            if (locHash.isValid
+                && Caching.IsVersionCached(new CachedAssetBundle(BundleName, locHash)))
 					return 0;
-				return BundleSize;
-			}
-#endif //ENABLE_CACHING
+#endif
 			return BundleSize;
 		}
 	}
@@ -258,6 +256,22 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			/// Download the AssetBundle from a web server.
 			/// </summary>
 			Web
+        }
+
+        internal enum CacheStatus
+        {
+            /// <summary>
+            /// cache status has not been determined yet
+            /// </summary>
+            Unknown,
+            /// <summary>
+            /// the bundle is cached
+            /// </summary>
+            Cached,
+            /// <summary>
+            /// the bundle is not cached
+            /// </summary>
+            NotCached
 		}
 
 		AssetBundle m_AssetBundle;
@@ -265,6 +279,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         internal WebRequestQueueOperation m_WebRequestQueueOperation;
 		internal ProvideHandle m_ProvideHandle;
 		internal AssetBundleRequestOptions m_Options;
+        internal CacheStatus cacheStatus;
 
 		[NonSerialized]
         bool m_RequestCompletedCallbackCalled = false;
@@ -296,7 +311,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			{
 				if (m_BytesToDownload == -1)
 				{
-					if (m_Options != null)
+                    if (m_Options != null && !IsCached())
 						m_BytesToDownload = m_Options.ComputeSize(m_ProvideHandle.Location, m_ProvideHandle.ResourceManager);
 					else
 						m_BytesToDownload = 0;
@@ -305,6 +320,29 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				return m_BytesToDownload;
 			}
 		}
+
+        internal bool IsCached()
+        {
+#if !ENABLE_CACHING
+            return false;
+#else
+
+            if (cacheStatus != CacheStatus.Unknown)
+                return cacheStatus == CacheStatus.Cached;
+
+            // only do this if the CacheStatus is unknown
+            cacheStatus = CacheStatus.NotCached;
+            var hash = Hash128.Parse(m_Options.Hash);
+            if (hash.isValid)
+            {
+                CachedAssetBundle cachedBundle = new CachedAssetBundle(m_Options.BundleName, hash);
+                bool cached = Caching.IsVersionCached(cachedBundle);
+                if (cached)
+                    cacheStatus = CacheStatus.Cached;
+            }
+            return cacheStatus == CacheStatus.Cached;
+#endif
+        }
 
 		internal UnityWebRequest CreateWebRequest(IResourceLocation loc)
 		{
@@ -334,17 +372,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			UnityWebRequest webRequest;
 			if (!string.IsNullOrEmpty(m_Options.Hash))
 			{
+                bool cached = IsCached();
 				CachedAssetBundle cachedBundle = new CachedAssetBundle(m_Options.BundleName, Hash128.Parse(m_Options.Hash));
-#if ENABLE_CACHING
-                bool cached = Caching.IsVersionCached(cachedBundle);
                 m_Source = cached ? BundleSource.Cache : BundleSource.Download;
                 if (m_Options.UseCrcForCachedBundle || m_Source == BundleSource.Download)
                     webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, cachedBundle, m_Options.Crc);
 				else
                     webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, cachedBundle);
-#else
-                webRequest = UnityWebRequestAssetBundle.GetAssetBundle(uri, cachedBundle, m_Options.Crc);
-#endif
 			}
 			else
 			{
@@ -607,23 +641,38 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			m_DownloadedBytes = 0;
             m_RequestCompletedCallbackCalled = false;
 			GetLoadInfo(m_ProvideHandle, out LoadType loadType, out m_TransformedInternalId);
+            bool isDownloadOnly = m_ProvideHandle.Location is DownloadOnlyLocation;
 
 			if (loadType == LoadType.Local)
 			{
                 //download only bundles loads should not load local bundles
-                if (m_ProvideHandle.Location is DownloadOnlyLocation)
+                if (isDownloadOnly)
                 {
                     m_Source = BundleSource.Local;
                     m_RequestOperation = null;
                     m_ProvideHandle.Complete<AssetBundleResource>(null, true, null);
                     m_Completed = true;
+                    return;
                 }
-                else
-                {
                 LoadLocalBundle();
-                }
                 return;
             }
+
+            bool forceWebRequest = m_Options.UseCrcForCachedBundle;
+            CachedAssetBundle cachedBundle = new CachedAssetBundle(m_Options.BundleName, Hash128.Parse(m_Options.Hash));
+            bool cached = IsCached();
+            // so if this is download only and we do not need to check CRC and we have a cached version,
+            // we should do nothing
+            bool skipWebDownload = loadType == LoadType.Web && isDownloadOnly && cached && !forceWebRequest;
+            if (skipWebDownload)
+            {
+                m_Source = BundleSource.Cache;
+                m_RequestOperation = null;
+                m_ProvideHandle.Complete<AssetBundleResource>(null, true, null);
+                m_Completed = true;
+                return;
+            }
+
 
             if (loadType == LoadType.Web)
             {

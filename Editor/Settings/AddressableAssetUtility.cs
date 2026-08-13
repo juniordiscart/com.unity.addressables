@@ -498,10 +498,8 @@ namespace UnityEditor.AddressableAssets.Settings
             var confirm = EditorUtility.DisplayDialog("Remove CCD Management SDK Package", "Are you sure you want to remove the CCD Management SDK package?", "Yes", "No");
             if (confirm)
             {
-#if (UNITY_2019_4_OR_NEWER)
                 Client.Remove("com.unity.services.ccd.management");
                 AddressableAssetSettingsDefaultObject.Settings.CCDEnabled = false;
-#endif
             }
 
             return AddressableAssetSettingsDefaultObject.Settings.CCDEnabled;

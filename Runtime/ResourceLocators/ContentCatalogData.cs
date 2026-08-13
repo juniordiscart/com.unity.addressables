@@ -977,7 +977,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
         internal static int GetHashCodeForEnumerable(IEnumerable<object> set)
         {
-            int hash = 0;
+            int hash = 17;
             foreach (object o in set)
                 hash = hash * 31 + o.GetHashCode();
             return hash;

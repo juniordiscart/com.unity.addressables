@@ -3,6 +3,10 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [2.7.2] - 2025-08-11
+- Fixed issue where builds were failing in Unity Cloud Build due to hash collisions in Addressables during dependency resolution.
+- Fixed an issue where remote binary catalogs would mistakenly be listed as having the .json file extension in the Build Report summary tab.
+
 ## [2.7.0] - 2025-07-30
 - Fixed issue where strikethrough appears on labels when reordering addressables labels in the labels window.
 - Changed GetDownloadSizeAsync to actually use an AsyncOperation and run the calculation as part of a coroutine.
