@@ -10,7 +10,7 @@ In earlier versions of Unity, or if you configure Unity to build your content se
 
 To start a content build from the Addressables Groups window:
 
-![](images/get-started-build.png)
+![Selecting New Build and Default Build Script from the Build menu of the Addressables Groups window.](images/get-started-build.png)
 
 1. Open the Addressables Groups window (menu: __Windows > Asset Management > Addressables > Groups__).
 2. Choose an option from the __Build__ menu:

@@ -1,12 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using NUnit.Framework;
-using NUnit.Framework.Interfaces;
-using UnityEngine.AddressableAssets;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
@@ -14,19 +10,46 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Utilities;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
-using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
+using UnityEditor.TestTools;
+using UnityEditor;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
-    public class BuildScriptPackedTests : AddressableAssetTestBase
+    public class BuildScriptPackedTestsNoPlatform : AddressableAssetTestBase
+    {
+        private static IEnumerable<List<AssetBundleBuild>> DuplicateBundleNamesCases()
+        {
+            var abb1 = new AssetBundleBuild() { assetBundleName = "name1.bundle" };
+            var abb2 = new AssetBundleBuild() { assetBundleName = "name2.bundle" };
+            yield return new List<AssetBundleBuild>();
+            yield return new List<AssetBundleBuild>() { abb1 };
+            yield return new List<AssetBundleBuild>() { abb1, abb1 };
+            yield return new List<AssetBundleBuild>() { abb1, abb2 };
+            yield return new List<AssetBundleBuild>() { abb1, abb1, abb1 };
+        }
+
+        [Test, TestCaseSource(nameof(DuplicateBundleNamesCases))]
+        public void HandleBundlesNaming_NamesShouldAlwaysBeUnique(List<AssetBundleBuild> bundleBuilds)
+        {
+            var group = Settings.CreateGroup("PackedTest", false, false, false, null, typeof(BundledAssetGroupSchema));
+            var bundleToAssetGroup = new Dictionary<string, string>();
+
+            List<string> uniqueNames = BuildScriptPackedMode.HandleBundleNames(bundleBuilds, bundleToAssetGroup, group.Guid);
+
+            var uniqueNamesInBundleBuilds = bundleBuilds.Select(b => b.assetBundleName).Distinct();
+            Assert.AreEqual(bundleBuilds.Count, uniqueNames.Count());
+            Assert.AreEqual(bundleBuilds.Count, uniqueNamesInBundleBuilds.Count());
+            Assert.AreEqual(bundleBuilds.Count, bundleToAssetGroup.Count);
+        }
+    }
+
+    public abstract class BuildScriptPackedTests : AddressableAssetTestBase
     {
         private AddressablesDataBuilderInput m_BuilderInput;
         private ResourceManagerRuntimeData m_RuntimeData;
@@ -545,30 +568,6 @@ namespace UnityEditor.AddressableAssets.Tests
             LogAssert.Expect(LogType.Warning, $"Bundle compression is set to LZMA, but group {group.Name} uses local content.");
         }
 
-        private static IEnumerable<List<AssetBundleBuild>> DuplicateBundleNamesCases()
-        {
-            var abb1 = new AssetBundleBuild() {assetBundleName = "name1.bundle"};
-            var abb2 = new AssetBundleBuild() {assetBundleName = "name2.bundle"};
-            yield return new List<AssetBundleBuild>();
-            yield return new List<AssetBundleBuild>() {abb1};
-            yield return new List<AssetBundleBuild>() {abb1, abb1};
-            yield return new List<AssetBundleBuild>() {abb1, abb2};
-            yield return new List<AssetBundleBuild>() {abb1, abb1, abb1};
-        }
-
-        [Test, TestCaseSource(nameof(DuplicateBundleNamesCases))]
-        public void HandleBundlesNaming_NamesShouldAlwaysBeUnique(List<AssetBundleBuild> bundleBuilds)
-        {
-            var group = Settings.CreateGroup("PackedTest", false, false, false, null, typeof(BundledAssetGroupSchema));
-            var bundleToAssetGroup = new Dictionary<string, string>();
-
-            List<string> uniqueNames = BuildScriptPackedMode.HandleBundleNames(bundleBuilds, bundleToAssetGroup, group.Guid);
-
-            var uniqueNamesInBundleBuilds = bundleBuilds.Select(b => b.assetBundleName).Distinct();
-            Assert.AreEqual(bundleBuilds.Count, uniqueNames.Count());
-            Assert.AreEqual(bundleBuilds.Count, uniqueNamesInBundleBuilds.Count());
-            Assert.AreEqual(bundleBuilds.Count, bundleToAssetGroup.Count);
-        }
 #if !ENABLE_JSON_CATALOG
         //TODO: add binary versions of these tests....
 #else
@@ -883,4 +882,16 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreNotEqual(buildInputDefs[0].assetBundleName, buildInputDefs2[0].assetBundleName);
         }
     }
+    namespace BuildScriptPackedPerPlatformTests
+    {
+        [RequirePlatformSupport(BuildTarget.StandaloneWindows, BuildTarget.StandaloneWindows64)]
+        public class BuildScriptPackedTestsWindows : BuildScriptPackedTests { }
+
+        [RequirePlatformSupport(BuildTarget.StandaloneOSX)]
+        public class BuildScriptPackedTestsOSX : BuildScriptPackedTests { }
+
+        [RequirePlatformSupport(BuildTarget.StandaloneLinux64)]
+        public class BuildScriptPackedTestsLinux : BuildScriptPackedTests { }
+    }
 }
+

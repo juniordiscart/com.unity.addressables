@@ -10,7 +10,7 @@ To open a group's settings, open the [Addressables Groups window](GroupsWindow.m
 
 A group's settings are declared in Schema objects attached to the group. When you create a group with the [Packed Assets template](xref:group-templates), the Content Packing & Loading and Content Update Restriction schemas define the settings for the group. The default [Build scripts](xref:addressables-builds) expect these settings.
 
-![](images/groups-group-settings.png)<br/>*The Inspector window for the Default Local Group*
+![The Inspector window for the Default Local Group.](images/groups-group-settings.png)<br/>*The Inspector window for the Default Local Group.*
 
 > [!NOTE]
 > If you create a group with the Blank template, then Unity doesn't attach any schemas to the group. The default build script can't process assets in a blank group.

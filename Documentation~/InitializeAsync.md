@@ -42,7 +42,7 @@ To specify the cache initialization settings that the Addressables system uses:
 
 1. Create a CacheInitializationSettings asset (menu: __Assets > Addressables > Initialization > Cache Initialization Settings__).
 2. Select the new asset file in the Project panel to view the settings in the Inspector
-   ![](images/cache-initialization-settings.png)
+   ![The Inspector window displays the configurable properties of a Cache Initialization Settings asset.](images/cache-initialization-settings.png)
 
 3. Adjust the settings as desired.
 4. Open the Addressables Settings Inspector (menu: __Window > Asset Management > Addressables > Settings__).

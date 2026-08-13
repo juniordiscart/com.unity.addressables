@@ -7,23 +7,22 @@ uid: addressables-analyze-tool
 Analyze is a tool that gathers information on your Projects' Addressables layout. In some cases, Analyze may take appropriate actions to clean up the state of your Project. In others, Analyze is purely an informational tool that allows you to make more informed decisions about your Addressables layout.
 
 ## Using Analyze
-In the Editor, open the **Addressables Analyze** window (**Window** > **Asset Management** > **Addressables** > **Analyze**), or open it via the **Addressables Groups** window by clicking  the **Tools** > **Window** > **Analyze** button.
+
+To use the Analyze tool, open it in one of the following ways:
+
+* From the Editor main menu, go to **Window** > **Asset Management** > **Addressables** > **Analyze**.
+* From the [**Addressables Groups**](../../GroupsWindow.md) window, go to **Tools** > **Window** > **Analyze**.
 
 The Analyze window displays a list of Analyze rules, along with the following operations:
 
-![](images/addr_analyze_window.png)
+![The Addressables Analyze window displaying expanded lists of fixable and unfixable rules.](../../images/addr_analyze_window.png)*The Addressables Analyze window*
 
-![](images/A.png)<br/>Starts the analysis for any selected rules or their children.
-
-![](images/B.png)<br/>Performs the fix action for any selected rules or their children (must be a Fixable rule).
-
-![](images/C.png)<br/>Opens the clear options to clear the results for any selected rules or their children.
-
-![](images/D.png)<br/>Opens the options to import a saved analysis result or export results to disk.
-
-![](images/E.png)<br/>Fixable rules are displayed under the "Fixable Rules" item.
-
-![](images/F.png)<br/>unfixable rules are displayed under the "Unfixable Rules" item.
+* **Analyze Selected Rules** (A): Starts the analysis for any selected rules or their children.
+* **Fix Selected Rules** (B): Performs the fix action for any selected rules or their children (must be a Fixable rule).
+* **Clear** (C): Opens the clear options to clear the results for any selected rules or their children.
+* Options (gear icon) (D): Opens the options to import a saved analysis result or export results to disk.
+* **Fixable Rules** (E): Fixable rules are displayed under the "Fixable Rules" item.
+* **Unfixable Rules **(F): Unfixable rules are displayed under the "Unfixable Rules" item.
 
 ### The analyze operation
 The analyze operation gathers the information needed by the rule. Run this action on a rule or set of rules to gather data about the build, dependency maps, and more. Each rule must gather any required data and report it back as a list of [AnalyzeResult] objects.

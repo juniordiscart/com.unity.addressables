@@ -2050,6 +2050,42 @@ namespace AddressableAssetsIntegrationTests
 #endif
         }
 
+        [UnityTest]
+        public IEnumerator GetDownloadSizeAsync_OnlyCalculatesDistinctLocations()
+        {
+            yield return Init();
+
+            long expectedSize = 0;
+            var locMap = new ResourceLocationMap("TestLocator");
+
+            var bundleLoc1 = new ResourceLocationBase("sizeTestBundle1", "http://nonExistingUrlForAddressableTests1337.com/mybundle1.bundle", typeof(AssetBundleProvider).FullName, typeof(object));
+            var sizeData1 = (bundleLoc1.Data = CreateLocationSizeData("sizeTestBundle1", 1000, 123, "hashstring1")) as ILocationSizeData;
+            if (sizeData1 != null)
+                expectedSize += sizeData1.ComputeSize(bundleLoc1, null);
+
+            var bundleLocCopy = new ResourceLocationBase("sizeTestBundle1", "http://nonExistingUrlForAddressableTests1337.com/mybundle1.bundle", typeof(AssetBundleProvider).FullName, typeof(object));
+            bundleLocCopy.Data = CreateLocationSizeData("sizeTestBundle1", 1000, 123, "hashstring1");
+
+            var bundleLoc2 = new ResourceLocationBase("sizeTestBundle2", "http://nonExistingUrlForAddressableTests1337.com/mybundle2.bundle", typeof(AssetBundleProvider).FullName, typeof(object));
+            var sizeData2 = (bundleLoc2.Data = CreateLocationSizeData("sizeTestBundle2", 500, 123, "hashstring2")) as ILocationSizeData;
+            if (sizeData2 != null)
+                expectedSize += sizeData2.ComputeSize(bundleLoc2, null);
+
+            var assetLoc = new ResourceLocationBase("sizeTestAsset", "myASset.asset", typeof(BundledAssetProvider).FullName, typeof(object), bundleLoc1, bundleLocCopy, bundleLoc2);
+
+            locMap.Add("sizeTestBundle1", bundleLoc1);
+            locMap.Add("sizeTestBundle1Copy", bundleLocCopy);
+            locMap.Add("sizeTestBundle2", bundleLoc2);
+            locMap.Add("sizeTestAsset", assetLoc);
+            m_Addressables.AddResourceLocator(locMap);
+
+            var dOp = m_Addressables.GetDownloadSizeAsync((object)"sizeTestAsset");
+            yield return dOp;
+            Assert.AreEqual(expectedSize, dOp.Result);
+            dOp.Release();
+
+        }
+
         public IEnumerator GetDownloadSize_WithList_CalculatesCorrectSize_WhenAssetsReferenceSameBundleInternal()
         {
 #if ENABLE_CACHING

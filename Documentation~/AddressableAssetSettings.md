@@ -8,7 +8,7 @@ To manage how Addressable assets work in your project, use the **Addressable Ass
 
 The Addressables system stores the settings asset in the `AddressableSettingsData` folder in the project's `Assets` folder. If this folder doesn't exist yet, you must initialize the Addressables system from the [Groups window](xref:addressables-groups-window) (menu: **Window** &gt; **Asset Management** &gt; **Addressables** &gt; **Groups**).
 
-![](images/addressable-assets-settings.png)<br/>*The Addressable Asset Settings Inspector*
+![The Addressable Asset Settings Inspector displays the full collapsed list of its different sections.](images/addressable-assets-settings.png)<br/>*The Addressable Asset Settings Inspector*
 
 The Inspector contains the following sections:
 

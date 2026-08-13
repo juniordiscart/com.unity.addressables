@@ -8,7 +8,7 @@ The Addressables build process always creates a .json log file that contains bui
 
 View the log file with the chrome://tracing tool in Google Chrome or another [Chromium](https://www.chromium.org/Home)-based browser.
 
-![](images/build-profile-log.png)<br/>*A sample log file displayed in chrome://tracing*
+![A sample log file displayed in chrome://tracing.](images/build-profile-log.png)<br/>*A sample log file displayed in chrome://tracing.*
 
 ## View the build profile
 

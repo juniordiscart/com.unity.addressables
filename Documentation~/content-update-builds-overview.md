@@ -6,7 +6,7 @@ However, when you rebuild all your content with a new [content catalog](build-co
 
 The following diagram illustrates how you can use the Addressables tools to produce smaller content updates that only require your players to download new or changed content:
 
-![](images/addressables-update-builds.png)<br/>*The workflow for reducing the size of content updates*
+![The workflow of developing, building, and releasing an application. Illustrates how content-only updates can be published to the Content Delivery Network for consumption by Player installs without needing to rebuild the Player.](images/addressables-update-builds.png)<br/>*The workflow for reducing the size of content updates.*
 
 ## Content update build workflow
 

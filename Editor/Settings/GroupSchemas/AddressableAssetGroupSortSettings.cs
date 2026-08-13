@@ -11,7 +11,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
     {
         const string DEFAULT_PATH = "Assets/AddressableAssetsData";
         const string DEFAULT_NAME = "AddressableAssetGroupSortSettings";
-        static string DEFAULT_SETTING_PATH = $"{DEFAULT_PATH}/{DEFAULT_NAME}.asset";
+        internal static string DEFAULT_SETTING_PATH = $"{DEFAULT_PATH}/{DEFAULT_NAME}.asset";
 
         /// <summary>
         /// The sorted order of the Addressables Groups
@@ -79,6 +79,22 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             if (settings == null)
                 return Create(path, settingName);
             return settings;
+        }
+    }
+
+    /// <summary>
+    /// The editor for the Addressable Asset Group settings object that deals with Group sorting in the Groups window
+    /// </summary>
+    [CustomEditor(typeof(AddressableAssetGroupSortSettings))]
+    public class AddressableAssetGroupSortSettingsEditor : Editor
+    {
+        /// <summary>
+        /// Used to make a custom inspector for the AddressableAssetGroupSortSettings
+        /// </summary>
+        public override void OnInspectorGUI()
+        {
+            // Intentionally leave this blank to hide the inspector
+            EditorGUILayout.HelpBox("Sort settings are managed by the Addressables Groups window.", MessageType.Info);
         }
     }
 }

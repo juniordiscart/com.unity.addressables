@@ -10,7 +10,7 @@ Refer to [Group Update Restriction settings](#group-update-restriction-settings)
 
 The [Addressable Asset Settings](AddressableAssetSettings.md) also contains a section for updating a previous build:
 
-![](images/update-a-previous-build.png)
+![The Update a Previous Build section of the Addressable Asset Settings Inspector window.](images/update-a-previous-build.png)*The Update a Previous Build section of the Addressable Asset Settings Inspector window.*
 
 |**Setting**|**Description**|
 |---|---|

@@ -9,16 +9,17 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline.Utilities;
+using UnityEditor.TestTools;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
-    public class BuildScriptTests : AddressableAssetTestBase
+    public abstract class BuildScriptTests : AddressableAssetTestBase
     {
         [TestFixture]
-        class StreamingAssetTests : AddressableAssetTestBase
+        abstract class StreamingAssetTests : AddressableAssetTestBase
         {
             [SetUp]
             public void Setup()
@@ -278,6 +279,17 @@ namespace UnityEditor.AddressableAssets.Tests
 #endif
         }
 
+        [RequirePlatformSupport(BuildTarget.StandaloneWindows, BuildTarget.StandaloneWindows64)]
+        class StreamingAssetTestsWindows : StreamingAssetTests { }
+
+        [RequirePlatformSupport(BuildTarget.StandaloneOSX)]
+        class StreamingAssetTestsOSX : StreamingAssetTests { }
+
+        [RequirePlatformSupport(BuildTarget.StandaloneLinux64)]
+        class StreamingAssetTestsLinux : StreamingAssetTests { }
+
+
+
         [Test]
         public void BuildScriptBase_FailsCanBuildData()
         {
@@ -509,8 +521,9 @@ namespace UnityEditor.AddressableAssets.Tests
                     db.BuildData<AddressablesPlayerBuildResult>(context);
                 else if (db.CanBuildData<AddressablesPlayModeBuildResult>())
                     db.BuildData<AddressablesPlayModeBuildResult>(context);
+
                 LogAssert.Expect(LogType.Error,
-                    "Cannot recognize file type for entry located at 'Assets/UnityEditor.AddressableAssets.Tests.BuildScriptTests_Tests/fake.file'. Asset import failed for using an unsupported file type.");
+                    $"Cannot recognize file type for entry located at 'Assets/{GetType()}_Tests/fake.file'. Asset import failed for using an unsupported file type.");
             }
 
             Settings.RemoveAssetEntry(guid, false);
@@ -667,5 +680,17 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.DeleteAsset(assetPath);
             PlayerSettings.insecureHttpOption = oldHttpOption;
         }
+    }
+
+    namespace BuildScriptPerPlatformTests
+    {
+        [RequirePlatformSupport(BuildTarget.StandaloneWindows, BuildTarget.StandaloneWindows64)]
+        public class BuildScriptTestsWindows : BuildScriptTests { }
+
+        [RequirePlatformSupport(BuildTarget.StandaloneOSX)]
+        public class BuildScriptTestsOSX : BuildScriptTests { }
+
+        [RequirePlatformSupport(BuildTarget.StandaloneLinux64)]
+        public class BuildScriptTestsLinux : BuildScriptTests { }
     }
 }

@@ -310,7 +310,8 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public virtual bool ReadOnly
         {
-            get { return m_ReadOnly; }
+            get => m_ReadOnly;
+            internal set => m_ReadOnly = value;
         }
 
         /// <summary>
@@ -352,7 +353,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public virtual bool Default
         {
-            get { return Guid == Settings.DefaultGroup.Guid; }
+            get { return Guid == Settings.DefaultGroupGuid; }
         }
 
         /// <summary>

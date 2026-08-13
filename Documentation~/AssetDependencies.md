@@ -8,7 +8,7 @@ When you include a scene in your Project Build Settings and build a player, Unit
 
 Addressable assets can either be built into your application as an additional set of local assets, or kept external to the build as remote assets hosted on a server and downloaded when they're needed. You can update remote assets independently from the application itself, although remote assets can't include code, so you can only change assets and serialized data.
 
-![](images/addressables-assets-overview.png)<br/>*How project assets are exported to a player build*
+![How different types of project assets are exported to a Player build.](images/addressables-assets-overview.png)<br/>*How different types of project assets are exported to a Player build.*
 
 If you use the same asset both in a scene and the Resources folder, then Unity makes copies of the asset when building rather than sharing a single instance. For example, if you use a material in a built-in scene and also use it in a prefab located in a Resources folder, you end up with two copies of that material in your build, even if the material asset itself isn't in the Resources folder. If you then mark that same material as Addressable, you end up with three copies. Files in the project's StreamingAssets folder can never be referenced by assets outside that folder.
 
@@ -42,7 +42,7 @@ Asset dependencies are treated depending on whether or not they are also Address
 
 If more than one Addressable references the same implicit asset, then copies of the implicit asset are included in each bundle containing a referencing Addressable.
 
-![](images/addressables-multiple-assets.png)<br/>*Non-Addressable assets are copied to each bundle with a referencing Addressable*
+![Non-Addressable assets are copied to each bundle with a referencing Addressable. This concept is illustrated as Prefab X and Prefab Y both referencing the same non-addressable Material P. The result is Bundle A containing Prefab X plus Bundle A's own copy of Material P, and Bundle B containing Prefab Y and Bundle B's own copy of Material P.](images/addressables-multiple-assets.png)<br/>*Non-Addressable assets are copied to each bundle with a referencing Addressable.*
 
 When an implicit asset is included in more than one bundle, multiple instances of that asset can be instantiated at runtime rather than the single instance that your game logic expects. If you change the instance state at runtime, only the object from the same bundle can detect the change because all the other assets now have their own individual instance rather than sharing the common one.
 

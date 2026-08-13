@@ -20,7 +20,7 @@ When you choose to pack assets in a group based on their assigned labels using t
 
 To create and delete labels, use the Labels window, which is accessible from the [Addressables Groups window](GroupsWindow.md) (**Window &gt; Asset Management &gt; Addressables &gt; Groups &gt; Tools &gt; Windows &gt; Labels**).
 
-![](images/addressables-labels-window.png)<br/>*The Labels window*
+![The Labels window displays a configurable list of labels.](images/addressables-labels-window.png)<br/>*The Labels window.*
 
 To create a new label, select the __+__ button at the bottom of the list. Enter the new name and click __Save__.
 

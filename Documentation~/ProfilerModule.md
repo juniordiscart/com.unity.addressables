@@ -28,7 +28,7 @@ The module view can be used to observe how many AssetBundles, assets, scenes, an
 
 The following screenshot displays three assets and one Scene, from one catalog, and six AssetBundles:
 
-![](images/profiler-module.png)
+![The Profiler module window displaying the three assets, one Scene, one catalog, and six AssetBundles loaded in the current frame.](images/profiler-module.png)
 
 When you select a frame, the detail pane fills with information for that frame and displays a tree view for the loaded content.
 
@@ -42,7 +42,7 @@ To change what content is displayed, select the detail pane toolbar dropdown but
 
 The details pane has two regions. On the left side is the Tree View of the content, which displays loaded content and you can expand to display in depth content. On the right side is the Details Inspector, which displays detailed information for the content selected from the Tree View.
 
-![](images/profiler-details-pane.png)
+![The Profiler details pane with a Prefab asset selected in the Tree view and its details visible in the Details Inspector.](images/profiler-details-pane.png)
 
 ## Content Tree View
 
@@ -88,7 +88,7 @@ You can also use the type filter to filter by inclusion type. Use `explicit` whe
 
 When you select content from the Addressables Profiler module, the Inspector displays detailed information about the content, as follows:
 
-![](images/profiler-inspector.png)<br/>_Selected content in the Inspector_
+![The Inspector window displays the details of selected content from the Addressables Profiler module.](images/profiler-inspector.png)<br/>*Selected content in the Inspector*.
 
 |**Section**|**Description**|
 |---|---|

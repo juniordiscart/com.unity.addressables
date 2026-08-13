@@ -506,36 +506,112 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        [TestCase("Local")]
-        [TestCase("Remote")]
-        public void BundledAssetGroupSchema_UseDefaultSchemaSettings(string pathPairName)
+        [TestCase("Local", false, false)]
+        [TestCase("Remote", true, false)]
+        public void BundledAssetGroupSchema_UseDefaultSchemaSettings_DefaultSetup(string pathPairName, bool isRemote, bool isDefault)
+        {
+            BundledAssetGroupSchema_UseDefaultSchemaSettings(pathPairName, isRemote, isDefault);
+        }
+
+        [Test]
+        [TestCase("Local", false, false)]
+        [TestCase("Remote", true, false)]
+        [TestCase("DLC", false, true)]
+        public void BundledAssetGroupSchema_UseDefaultSchemaSettings_AdditionalPathPairs(string pathPairName, bool isRemote, bool isDefault)
+        {
+            try
+            {
+                AddPathPair("DLC", "DLC/", "http://example.com/DLC/");
+                BundledAssetGroupSchema_UseDefaultSchemaSettings(pathPairName, isRemote, isDefault);
+            }
+            finally
+            {
+                RemovePathPair("DLC");
+            }
+        }
+
+        [Test]
+        public void BundledAssetGroupSchema_UseDefaultSchemaSettings_CustomPathPairs()
+        {
+            AddressableAssetGroup group = null;
+            group = m_Settings.CreateGroup("CanApplyDefaultSettingsTestGroup", false, false, false, null, typeof(BundledAssetGroupSchema));
+            var schema = group.GetSchema<BundledAssetGroupSchema>();
+            InitializeSchemaValues(schema);
+            schema.UseDefaultSchemaSettings = true;
+            schema.BuildPath.Id = group.Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kLocalBuildPath).Id;
+            schema.LoadPath.Id = group.Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteBuildPath).Id;
+            schema.m_UseCustomPaths = true;
+            schema.SelectedPathPairIndex = 100; // should be mostly ignored
+            Assert.AreEqual(default(DefaultSchemaSettings), schema.GetDefaultSchemaSettings());
+        }
+
+        private void BundledAssetGroupSchema_UseDefaultSchemaSettings(string pathPairName, bool isRemote, bool isDefault)
         {
             AddressableAssetGroup group = null;
             try
             {
                 group = m_Settings.CreateGroup("CanApplyDefaultSettingsTestGroup", false, false, false, null, typeof(BundledAssetGroupSchema));
                 var schema = group.GetSchema<BundledAssetGroupSchema>();
+                InitializeSchemaValues(schema);
                 schema.UseDefaultSchemaSettings = true;
                 List<ProfileGroupType> groupTypes = ProfileGroupType.CreateGroupTypes(m_Settings.profileSettings.GetProfile(m_Settings.activeProfileId), m_Settings);
                 List<string> options = groupTypes.Select(group => group.GroupTypePrefix).ToList();
                 schema.SelectedPathPairIndex = options.IndexOf(pathPairName);
+                schema.BuildPath.Id = m_Settings.profileSettings.GetVariableId($"{pathPairName}.{AddressableAssetSettings.kBuildPath}");
+                schema.LoadPath.Id = m_Settings.profileSettings.GetVariableId($"{pathPairName}.{AddressableAssetSettings.kLoadPath}");
+                if (schema.HasDefaultSchemaSettings())
+                {
+                    ValidateSettings(schema);
+                }
 
-                Dictionary<DefaultSchemaSettingsBuildTargetGroup, DefaultSchemaSettings[]> defaultSettings = schema.CreateDefaultSchemaSettings();
+                // this won't be created if GetDefaultSchemaSettings returns default, so we have to do it first
+                schema.m_DefaultSettings = schema.CreateDefaultSchemaSettings();
+
                 DefaultSchemaSettingsBuildTargetGroup targetGroup = schema.GetDefaultSchemaSettingsBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
+                Assert.AreEqual(isRemote, schema.GetDefaultSchemaSettings().Equals(schema.m_DefaultSettings[targetGroup][(int) DefaultSettingsTarget.Remote]));
+                Assert.AreEqual(isDefault, schema.GetDefaultSchemaSettings().Equals(default(DefaultSchemaSettings)));
 
-                DefaultSchemaSettings expectedSettings = defaultSettings[targetGroup][schema.SelectedPathPairIndex];
-                Assert.AreEqual(expectedSettings.compression, schema.Compression);
-                Assert.AreEqual(expectedSettings.useAssetBundleCache, schema.UseAssetBundleCache);
-                Assert.AreEqual(expectedSettings.assetBundledCacheClearBehavior, schema.AssetBundledCacheClearBehavior);
-                Assert.AreEqual(expectedSettings.useAssetBundleCrc, schema.UseAssetBundleCrc);
-                Assert.AreEqual(expectedSettings.useAssetBundleCrcForCachedBundles, schema.UseAssetBundleCrcForCachedBundles);
-                Assert.AreEqual(expectedSettings.bundleNaming, schema.BundleNaming);
             }
             finally
             {
                 if (group != null)
                     m_Settings.RemoveGroupInternal(group, true, false);
             }
+        }
+
+        private void InitializeSchemaValues(BundledAssetGroupSchema schema)
+        {
+            // these are just goofy values set to try to catch if something gets through
+            schema.Compression = BundleCompressionMode.Uncompressed;
+            schema.UseAssetBundleCache = false;
+            schema.AssetBundledCacheClearBehavior = CacheClearBehavior.ClearWhenWhenNewVersionLoaded;
+            schema.UseAssetBundleCrc = true;
+            schema.UseAssetBundleCrcForCachedBundles = true;
+            schema.BundleNaming = BundleNamingStyle.NoHash;
+        }
+
+        private void ValidateSettings(BundledAssetGroupSchema schema)
+        {
+            DefaultSchemaSettings expectedSettings =  schema.GetDefaultSchemaSettings();
+            Assert.AreEqual(expectedSettings.compression, schema.Compression);
+            Assert.AreEqual(expectedSettings.useAssetBundleCache, schema.UseAssetBundleCache);
+            Assert.AreEqual(expectedSettings.assetBundledCacheClearBehavior, schema.AssetBundledCacheClearBehavior);
+            Assert.AreEqual(expectedSettings.useAssetBundleCrc, schema.UseAssetBundleCrc);
+            Assert.AreEqual(expectedSettings.useAssetBundleCrcForCachedBundles, schema.UseAssetBundleCrcForCachedBundles);
+            Assert.AreEqual(expectedSettings.bundleNaming, schema.BundleNaming);
+
+        }
+
+        private void AddPathPair(string key, string buildPath, string loadPath)
+        {
+            m_Settings.profileSettings.CreateValue($"{key}.BuildPath", buildPath);
+            m_Settings.profileSettings.CreateValue($"{key}.LoadPath", loadPath);
+        }
+
+        private void RemovePathPair(string key)
+        {
+            m_Settings.profileSettings.RemoveValue(m_Settings.profileSettings.GetVariableId($"{key}.BuildPath"));
+            m_Settings.profileSettings.RemoveValue(m_Settings.profileSettings.GetVariableId($"{key}.LoadPath"));
         }
     }
 }

@@ -34,7 +34,7 @@ By default, Addressables uses AssetBundles to package your assets. You can also 
 
 A key feature of the Addressables system is that you assign addresses to your assets and use those addresses to load them at runtime. The Addressables resource manager looks up the address in the content catalog to find out where the asset is stored. Assets can be built-in to your application, cached locally, or hosted remotely. The resource manager loads the asset and any dependencies, downloading the content first, if necessary.
 
-![](images/addressables-overview-addresses.png)<br/>*Addressables loads Assets by address no matter where they're located*
+![An overview of the Addressables system retrieving assets from different locations. The locally-installed application includes both non-addressable assets and local addressable assets. It communicates with both a device cache and a remote host, which each have their own addressable assets that the application can retrieve.](images/addressables-overview-addresses.png)<br/>*An overview of the Addressables system retrieving assets from different locations.*
 
 Because an address isn't tied to the physical location of the asset, you have several options to manage and optimize your assets, both in the Unity Editor and at runtime. [Catalogs](#content-catalogs) map addresses to physical locations.
 

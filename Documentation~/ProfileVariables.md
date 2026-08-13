@@ -31,7 +31,7 @@ Path pairs define a matched set of `BuildPath` and `LoadPath` variables. When yo
 
 To create a path pair, go to **Create** and select **Build Load Path Variables**. Assign the path pair a prefix name and assign path strings to the individual fields.
 
-![](images/profiles-pairs.png)<br/>*A new path pair*
+![A new path pair in the Addressables Profiles window.](images/profiles-pairs.png)<br/>*A new path pair in the Addressables Profiles window.*
 
 The new path pair uses the **Custom** setting for the **Bundle Location** property with your initial values. You can change to a different **Bundle Location** if needed.
 

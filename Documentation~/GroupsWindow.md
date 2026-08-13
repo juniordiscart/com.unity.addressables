@@ -10,7 +10,7 @@ The Groups window also serves as a central location for starting content builds 
 
 A group is the main organizational unit of the Addressables system. Use this window to create and manage your groups and the assets they contain.
 
-![](images/addressables-groups-window.png)<br/><br/>*The Addressables Groups window showing the toolbar and list of groups and assets.*
+![The Addressables Groups window showing the toolbar and list of groups and assets.](images/addressables-groups-window.png)<br/><br/>*The Addressables Groups window showing the toolbar and list of groups and assets.*
 
 ## Group list
 
@@ -57,7 +57,7 @@ The Play Mode Scripts include:
 
 To locate an Addressable Asset in the Groups window, type all or part of its address, path, or a label into the filter control on the Groups window toolbar.
 
-![](images/addressables-groups-find.png)<br/>*Filtering the group list by the string "NP" to find all assets labeled NPC*
+![Filtering the group list by the string "NP" to find all assets labeled NPC.](images/addressables-groups-find.png)<br/>*Filtering the group list by the string "NP" to find all assets labeled NPC*
 
 To locate the asset in your project, select it in the Groups window. Unity then selects the asset in the Project window and displays the asset's details in the Inspector window.
 

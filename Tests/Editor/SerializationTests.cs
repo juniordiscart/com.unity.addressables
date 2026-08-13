@@ -27,7 +27,6 @@ namespace UnityEditor.AddressableAssets.Tests
         private System.Random m_Rnd;
         private int m_Seed = 0;
         private List<Type> m_SchemaTypes;
-        private string m_PackagePath;
 
         private void Shuffle<T>(List<T> toShuffle)
         {
@@ -53,19 +52,6 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.groups.Clear();
             // this lazy creates the default group
             var defaultGroup = Settings.DefaultGroup;
-            // the way our package isolation tests work the tests are built into their own package
-            // which means we have to load expected files from a different location
-            m_PackagePath = AddressablesTestUtility.GetPackagePath() + "/Tests/Editor";
-        }
-
-        internal string GetExpectedPath(string filename)
-        {
-            return $"{m_PackagePath}/Expected/{filename}";
-        }
-
-        internal string GetFixturePath(string filename)
-        {
-            return $"{m_PackagePath}/Fixtures/{filename}";
         }
 
         [TestCase]
@@ -90,7 +76,12 @@ namespace UnityEditor.AddressableAssets.Tests
             EditorUtility.SetDirty(group);
             AssetDatabase.SaveAssetIfDirty(group);
 
+#if UNITY_6000_2_OR_NEWER
+            // serializes the entire class name to m_EditorClassIdentifier
+            var expectedSerializedGroup = File.ReadAllText(GetExpectedPath("~SerializationTests_Group_62.unity"));
+#else
             var expectedSerializedGroup = File.ReadAllText(GetExpectedPath("~SerializationTests_Group.unity"));
+#endif
             var serializedGroup = File.ReadAllText(groupPath);
             AssertSerializedAreEqual(expectedSerializedGroup, serializedGroup);
         }
@@ -154,7 +145,12 @@ namespace UnityEditor.AddressableAssets.Tests
             EditorUtility.SetDirty(newAssetGroupTemplate);
             AssetDatabase.SaveAssetIfDirty(newAssetGroupTemplate);
 
+#if UNITY_6000_2_OR_NEWER
+            // serializes the entire class name to m_EditorClassIdentifier
+            var expectedSerializedTemplate = File.ReadAllText(GetExpectedPath("~SerializationTests_GroupTemplate_62.unity"));
+#else
             var expectedSerializedTemplate = File.ReadAllText(GetExpectedPath("~SerializationTests_GroupTemplate.unity"));
+#endif
             var serializedTemplate = File.ReadAllText(AssetDatabase.GetAssetPath(newAssetGroupTemplate));
             AssertSerializedAreEqual(serializedTemplate, expectedSerializedTemplate);
         }
@@ -182,7 +178,12 @@ namespace UnityEditor.AddressableAssets.Tests
             Shuffle(profileDataSourceSettings.environments);
             AssetDatabase.SaveAssetIfDirty(profileDataSourceSettings);
 
+#if UNITY_6000_2_OR_NEWER
+            // serializes the entire class name to m_EditorClassIdentifier
+            var expectedProfileDataSourceSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_ProfileDataSourceSettings_62.unity"));
+#else
             var expectedProfileDataSourceSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_ProfileDataSourceSettings.unity"));
+#endif
             var serializedProfileDataSourceSettings = File.ReadAllText(AssetDatabase.GetAssetPath(profileDataSourceSettings));
             AssertSerializedAreEqual(expectedProfileDataSourceSettings, serializedProfileDataSourceSettings);
         }
@@ -240,10 +241,17 @@ namespace UnityEditor.AddressableAssets.Tests
             EditorUtility.SetDirty(Settings);
             AssetDatabase.SaveAssetIfDirty(Settings);
 
-#if CCD_3_OR_NEWER
+#if (CCD_3_OR_NEWER && UNITY_6000_2_OR_NEWER)
+            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings_62.ccd3.unity"));
+#elif CCD_3_OR_NEWER
             var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings.ccd3.unity"));
+#elif (ENABLE_CCD && UNITY_6000_2_OR_NEWER)
+            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings_62.ccd2.unity"));
 #elif ENABLE_CCD
             var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings.ccd2.unity"));
+#elif UNITY_6000_2_OR_NEWER
+            // serializes the entire class name to m_EditorClassIdentifier
+            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings_62.unity"));
 #else
             var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings.unity"));
 #endif

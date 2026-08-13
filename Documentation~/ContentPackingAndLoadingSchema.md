@@ -12,7 +12,7 @@ To open the Content Packing & Loading schema, open the [Addressables Groups wind
 
 The Build and Load Paths settings determine where the artifacts for your content builds are created and where the Addressables system should look for them at runtime.
 
-![](images/groups-build-load.png)<br/>*Building and loading paths*
+![The Addressable Profiles window displays building and loading paths.](images/groups-build-load.png)<br/>*Building and loading paths.*
 
 | **Property**|| **Description** |
 |:---|---|:---|
@@ -31,7 +31,7 @@ When you choose a Profile variable, a preview of the path is displayed in the __
 
 ## Advanced Options
 
-![](images/groups-advanced.png)<br/>*The Advanced Options section*
+![The Advanced Options section of the Addressables Groups window.](images/groups-advanced.png)<br/>*The Advanced Options section.*
 
 | **Property**| **Description** |
 |:---|---|

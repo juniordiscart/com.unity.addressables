@@ -429,11 +429,12 @@ namespace UnityEngine.ResourceManagement.Util
                     if (!TryGetCachedValue<string>(id, out var str))
                     {
                         var partStack = new Stack<DynamicString>();
-                        while (id != uint.MaxValue)
+                        var nextID = id;
+                        while (nextID != uint.MaxValue)
                         {
-                            var ds = ReadValue<DynamicString>((uint)(id & kClearFlagsMask));
+                            var ds = ReadValue<DynamicString>((uint)(nextID & kClearFlagsMask));
                             partStack.Push(ds);
-                            id = ds.nextId;
+                            nextID = ds.nextId;
                         }
 
                         while (partStack.TryPop(out DynamicString ds))

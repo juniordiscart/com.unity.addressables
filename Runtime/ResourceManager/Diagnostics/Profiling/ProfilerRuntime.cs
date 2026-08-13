@@ -207,6 +207,12 @@ namespace UnityEngine.ResourceManagement.Profiling
             }
         }
 
+        // used for testing
+        internal static int GetSceneLoadCounterValue()
+        {
+            return SceneLoadCounter.Value;
+        }
+
         internal static void PushToProfilerStream()
         {
             if (!m_profilerEmitter.IsEnabled)

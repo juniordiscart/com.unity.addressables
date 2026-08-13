@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Unity.Profiling;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -16,6 +17,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.Profiling;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
@@ -125,6 +127,12 @@ namespace SceneTests
                 Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
                 Assert.AreEqual(1, m_Addressables.ActiveSceneInstances);
 
+#if UNITY_EDITOR
+                Assert.AreEqual(1, ProfilerRuntime.GetSceneLoadCounterValue(), "Just the additive scene is counted as " +
+                                                                               "the initial scene was not loaded by Addressables.");
+#endif
+
+
                 op1 = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Single));
                 yield return op1;
                 Assert.AreEqual(AsyncOperationStatus.Succeeded, op1.Status);
@@ -132,11 +140,17 @@ namespace SceneTests
                 Assert.AreEqual(1, m_Addressables.ActiveSceneInstances);
                 Assert.IsFalse(op.IsValid(), "Scene handle expected to not be valid as second the scene is loaded with single mode, and this handle should be released OnSceneUnloaded");
                 Assert.IsTrue(op1.IsValid(), "New single scene handle should be succeeded and valid");
+#if UNITY_EDITOR
+                Assert.AreEqual(1, ProfilerRuntime.GetSceneLoadCounterValue(), "Additive scene has been released.");
+#endif
 
                 RecreateScenes(initialScenes);
 
                 yield return UnloadSceneFromHandler(op1, m_Addressables);
                 Assert.AreEqual(0, m_Addressables.ActiveSceneInstances);
+#if UNITY_EDITOR
+                Assert.AreEqual(ProfilerRuntime.GetSceneLoadCounterValue(), 0);
+#endif
             }
             finally
             {
@@ -164,6 +178,11 @@ namespace SceneTests
                 Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
                 Assert.AreEqual(1, m_Addressables.ActiveSceneInstances);
 
+#if UNITY_EDITOR
+                Assert.AreEqual(1, ProfilerRuntime.GetSceneLoadCounterValue(), "Just the additive scene is counted as " +
+                                                                               "the initial scene was not loaded by Addressables.");
+#endif
+
                 op1 = m_Addressables.LoadSceneAsync(sceneKeys[1], new LoadSceneParameters(LoadSceneMode.Single));
                 yield return op1;
                 Assert.AreEqual(AsyncOperationStatus.Succeeded, op1.Status);
@@ -171,11 +190,17 @@ namespace SceneTests
                 Assert.AreEqual(1, m_Addressables.ActiveSceneInstances);
                 Assert.IsTrue(op.IsValid(), "Scene handle expected to be valid. Where the second the scene is loaded with single mode, and unloads first scene. This handle should not be released OnSceneUnloaded");
                 Assert.IsTrue(op1.IsValid(), "New single scene handle should be succeeded and valid");
+#if UNITY_EDITOR
+                Assert.AreEqual(2, ProfilerRuntime.GetSceneLoadCounterValue(), "Additive scene is not in use, but is not released.");
+#endif
 
                 RecreateScenes(initialScenes);
                 yield return UnloadSceneFromHandler(op, m_Addressables, false);
                 yield return UnloadSceneFromHandler(op1, m_Addressables);
                 Assert.AreEqual(0, m_Addressables.ActiveSceneInstances);
+#if UNITY_EDITOR
+                Assert.AreEqual(0, ProfilerRuntime.GetSceneLoadCounterValue(), "Everything is released.");
+#endif
             }
             finally
             {

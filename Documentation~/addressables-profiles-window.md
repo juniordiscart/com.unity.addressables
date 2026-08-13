@@ -2,7 +2,7 @@
 
 To manage the profiles in your project, use the [Addressables Profiles window](addressables-profiles-window.md) (menu: __Window > Asset Management > Addressables > Profiles__).
 
-![](images/addressables-profiles-window.png)<br/>*The __Addressables Profiles__ window displaying the default profile.*
+![The Addressables Profiles window displaying the default profile.](images/addressables-profiles-window.png)<br/>*The __Addressables Profiles__ window displaying the default profile.*
 
 Right-click a profile name to set it as the active profile, rename the profile, or delete it.
 

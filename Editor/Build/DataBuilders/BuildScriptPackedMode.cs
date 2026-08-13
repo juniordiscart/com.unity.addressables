@@ -1514,7 +1514,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 var srcPath = Path.Combine(assetGroup.Settings.buildSettings.bundleBuildPath, builtBundleNames[i]);
 
                 if (assetGroup.GetSchema<BundledAssetGroupSchema>()?.BundleNaming == BundledAssetGroupSchema.BundleNamingStyle.NoHash)
+                {
                     outputBundleNames[i] = StripHashFromBundleLocation(outputBundleNames[i]);
+                    bundleResultInfo.FilePath = StripHashFromBundleLocation(bundleResultInfo.FilePath);
+                }
 
                 bundleRenameMap.Add(builtBundleNames[i], outputBundleNames[i]);
                 MoveFileToDestinationWithTimestampIfDifferent(srcPath, targetPath, Log);

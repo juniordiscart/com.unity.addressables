@@ -18,7 +18,7 @@ To open the Addressables Report window, go to **Window** > **Asset Management** 
 
 ## Addressables Report window overview
 
-![](images/addressables-report-window.png)<br/>_Addressables Report window_
+![The Addressables Report window with the Explore tab selected and the view sorted by AssetBundles.](images/addressables-report-window.png)<br/>*Addressables Report window.*
 
 The Addressables Report window has the following views:
 

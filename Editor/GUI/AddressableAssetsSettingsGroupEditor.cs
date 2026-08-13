@@ -219,9 +219,14 @@ namespace UnityEditor.AddressableAssets.GUI
 				case AddressableAssetSettings.ModificationEvent.EntryMoved:
 				case AddressableAssetSettings.ModificationEvent.EntryRemoved:
 				case AddressableAssetSettings.ModificationEvent.GroupRenamed:
+                case AddressableAssetSettings.ModificationEvent.GroupMoved:
 				case AddressableAssetSettings.ModificationEvent.EntryModified:
 				case AddressableAssetSettings.ModificationEvent.BatchModification:
-					m_EntryTree.Reload();
+                    // the reload does a new sort
+                    m_EntryTree?.Reload();
+
+                    // we save it here since moves won't trigger a re-sort, but need to be saved
+                    m_EntryTree?.SerializeState(AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(s)));
 					if (window != null)
 						window.Repaint();
 					break;
@@ -600,7 +605,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private static async void OnBuildCcd(BuildMenuContext context)
         {
-            bool isUpdate = false; 
+            bool isUpdate = false;
             PreEvent preEvent = null;
             PostEvent postEvent = null;
             try {
@@ -624,7 +629,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 Debug.LogException(e);
             } finally {
                 UnregisterBuildMenuEvents(isUpdate, preEvent, postEvent);
-                EditorUtility.ClearProgressBar();                               
+                EditorUtility.ClearProgressBar();
             }
         }
 
@@ -879,7 +884,6 @@ namespace UnityEditor.AddressableAssets.GUI
 				AddressableAssetSettingsDefaultObject.Settings.OnModification -= OnSettingsModification;
 				m_ModificationRegistered = false;
 			}
-            m_EntryTree?.SerializeState(AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_Settings)));
 		}
 
 		public bool OnGUI(Rect pos)

@@ -951,13 +951,13 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Retrieves the group whose settings are used for shared bundles (Built In and MonoScript bundles). 
+        /// Retrieves the group whose settings are used for shared bundles (Built In and MonoScript bundles).
         /// </summary>
         /// <returns>The group whose settings are used.</returns>
         public AddressableAssetGroup GetSharedBundleGroup()
         {
             if (SharedBundleSettings == SharedBundleSettings.CustomGroup &&
-                m_SharedBundleSettingsCustomGroupIndex >= 0 && 
+                m_SharedBundleSettingsCustomGroupIndex >= 0 &&
                 m_SharedBundleSettingsCustomGroupIndex < groups.Count)
                 return groups[m_SharedBundleSettingsCustomGroupIndex];
             return DefaultGroup;
@@ -2093,6 +2093,8 @@ namespace UnityEditor.AddressableAssets.Settings
 			return FindGroup(g => g != null && g.Name == groupName);
 		}
 
+        internal string DefaultGroupGuid => m_DefaultGroup;
+
 		/// <summary>
 		/// The default group.  This group is used when marking assets as addressable via the inspector.
 		/// </summary>
@@ -2594,7 +2596,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="types">The types of schemas to create and add to the created group.</param>
         /// <returns>The newly created Addressable Asset group.</returns>
         /// <remarks>
-        /// Use schemasToCopy to copy schemas with custom values, for example schemas from an existing Addressable Asset group. Pass in schema types to add schemas with default values.
+        /// Use schemasToCopy to copy schemas with custom values, for example schemas from an existing Addressable Asset group. Schema types can be also passed in to add schemas with default values.
         /// </remarks>
         /// <example>
         /// <code source="../../Tests/Editor/DocExampleCode/ScriptReference/UsingCreateGroup.cs" region="SAMPLE"/>
@@ -2695,7 +2697,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
 		internal void RemoveGroupInternal(AddressableAssetGroup g, bool deleteAsset, bool postEvent)
 		{
-			g?.ClearSchemas(deleteAsset);
+            g?.ClearSchemas(true, false);
 			groups.Remove(g);
 			SetDirty(ModificationEvent.GroupRemoved, g, postEvent, true);
 			if (g != null && deleteAsset)

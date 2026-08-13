@@ -189,6 +189,18 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void TestDynamicStringsReturnCachedValue()
+        {
+            var wr = new BinaryStorageBuffer.Writer(1024);
+            var strId1 = wr.WriteString("text/with/lots/of/slahes", '/');
+            var strId2 = wr.WriteString("text/with/lots/of/slahes", '/');
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), 1024);
+            var str1 = re.ReadString(strId1, '/');
+            var str2 = re.ReadString(strId2, '/');
+            Assert.AreSame(str1, str2);
+        }
+
+        [Test]
         public void TestStringAsObject()
         {
             var txt = RandomText(1000, false, '/');

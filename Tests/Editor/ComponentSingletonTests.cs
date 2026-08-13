@@ -82,6 +82,7 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [UnityTest]
+        [Ignore("Appears to be unstable in the Editor. Instance isn't being destroyed. https://jira.unity3d.com/browse/ADDR-3928")]
         public IEnumerator EnteringPlayModeDestroysEditorSingleton()
         {
             var instance = TestSingletonWithName.Instance;

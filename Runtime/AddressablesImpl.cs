@@ -970,7 +970,7 @@ namespace UnityEngine.AddressableAssets
             }
 
             long size = 0;
-            foreach (IResourceLocation location in allLocations.Distinct())
+            foreach (IResourceLocation location in allLocations.Distinct(new ResourceLocationComparer()))
             {
                 var sizeData = location.Data as ILocationSizeData;
                 if (sizeData != null)

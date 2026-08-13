@@ -13,21 +13,21 @@ You can set up different profiles for the different phases or tasks in your deve
 
 Consider the following example, which demonstrates the local development phase of your content:
 
-![](images/profiles-example-local.png)<br/>*Content with local and remote bundles stored locally for development.*
+![Content with local and remote bundles stored locally for development.](images/profiles-example-local.png)<br/>
 
 While in development, you would have both your local and remote bundles using local paths:
 
-![](images/profiles-example-local-paths.png)<br/>*Paths set for local development.*
+![The Addressable Profiles window displays paths set for local development.](images/profiles-example-local-paths.png)<br/>*The Addressable Profiles window displays paths set for local development.*
 
 In this instance, the local and remote paths are in fact local, which makes it unnecessary to set up a remote server just for local development.
 
 Once the content is ready for production, you can move the remote bundles to a server:
 
-![](images/profiles-example-remote.png)<br/>*Content with the remote bundles moved to a server for production.*
+![Content with the remote bundles moved to a server for production.](images/profiles-example-remote.png)<br/>*Content with the remote bundles moved to a server for production.*
 
 In this case, if you use profiles, you can change the remote load path for `Production` to that server. Without having to change your asset groups, you can change all of your remote bundles to remote.
 
-![](images/profiles-example-remote-paths.png)<br/>*Paths set for hosting remote content*
+![The Addressable Profiles window displays paths set for hosting remote content.](images/profiles-example-remote-paths.png)<br/>*The Addressable Profiles window displays paths set for hosting remote content.*
 
 The Addressables system only copies data from [Addressables.BuildPath](xref:UnityEngine.AddressableAssets.Addressables.BuildPath) to the StreamingAssets folder during a Player build. It doesn't handle arbitrary paths specified through the LocalBuildPath or LocalLoadPath variables. If you build data to a different location or load data from a different location than the default, you must copy the data manually.
 

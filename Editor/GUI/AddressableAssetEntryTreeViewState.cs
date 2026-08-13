@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
@@ -11,6 +12,10 @@ namespace UnityEditor.AddressableAssets.GUI
         public float[] columnWidths;
 
         [SerializeField]
-        public string[] sortOrder;
+        [Obsolete("Use sortOrderList instead.")]
+        public String[] sortOrder;
+
+        [SerializeField]
+        public List<string> sortOrderList = new List<string>();
     }
 }

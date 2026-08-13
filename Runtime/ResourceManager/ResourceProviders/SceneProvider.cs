@@ -226,7 +226,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             {
                 if (m_sceneLoadHandle.IsValid() && m_Instance.Scene.isLoaded)
                 {
-                    Profiling.ProfilerRuntime.SceneReleased(m_sceneLoadHandle);
+                    // This code is triggered when a scene is unloaded explicitly. A scene can also be unloaded
+                    // by loading a new scene in Single mode. In that case scenes will be unloaded via
+                    // AddressablesImpl::OnSceneUnloaded. The scene load handle will be valid, but isLoaded will
+                    // be set to false as the engine has already started unloading the scene.
                     var unloadOp = SceneManager.UnloadSceneAsync(m_Instance.Scene, m_UnloadOptions);
                     if (unloadOp == null)
                         UnloadSceneCompleted(null);
@@ -234,8 +237,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         unloadOp.completed += UnloadSceneCompleted;
                 }
                 else
+                {
                     UnloadSceneCompleted(null);
-
+                }
                 HasExecuted = true;
             }
 
@@ -257,6 +261,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 if (m_sceneLoadHandle.IsValid()
                     && m_sceneLoadHandle.ReferenceCount > 0)
                 {
+                    // this has to happen before the final release to be able to decrement the handle
+                    if (m_sceneLoadHandle.ReferenceCount == 1)
+                        Profiling.ProfilerRuntime.SceneReleased(m_sceneLoadHandle);
                     m_sceneLoadHandle.Release();
                 }
             }

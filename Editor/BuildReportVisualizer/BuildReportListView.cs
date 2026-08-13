@@ -187,8 +187,12 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         bool BuildLayoutIsValid(BuildLayout layout)
         {
-            int startOfVersionIndex = layout.PackageVersion.IndexOf(":", StringComparison.Ordinal);
-            string versionString = layout.PackageVersion.Substring(startOfVersionIndex + 1);
+            return BuildLayoutIsValid(layout.PackageVersion);
+        }
+        internal bool BuildLayoutIsValid(string packageVersion)
+        {
+            int startOfVersionIndex = packageVersion.IndexOf(":", StringComparison.Ordinal);
+            string versionString = packageVersion.Substring(startOfVersionIndex + 1);
             var versionNumbers = versionString.Split(".");
 
             int versionNumber = 0;
@@ -201,7 +205,15 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
             if (digitParsingSuccessful)
             {
-                return (versionNumber >= 1 && majorVersionNumber > 21) || (versionNumber == 1 && majorVersionNumber == 21 && minorVersionNumber >= 3);
+                // 2.x.x
+                var isNewerThanVersionOne = versionNumber > 1;
+                // 1.22.x
+                var isNewerThanOneDotTwentyOne = versionNumber == 1 && majorVersionNumber > 21;
+                // 1.21.4
+                var isNewerThanOneDotTwentyOneDotTwo =
+                    versionNumber == 1 && majorVersionNumber == 21 && minorVersionNumber >= 3;
+
+                return isNewerThanVersionOne || isNewerThanOneDotTwentyOne || isNewerThanOneDotTwentyOneDotTwo;
             }
 
             return false;

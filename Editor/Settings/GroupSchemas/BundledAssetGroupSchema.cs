@@ -639,8 +639,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         {
             get
             {
-                if (SelectedPathPairIndex > 2)
-                    return false;
                 return m_UseDefaultSchemaSettings;
             }
             set
@@ -657,6 +655,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         int m_SelectedPathPairIndex;
         /// <summary>
         /// The selected path pair in use.
+        /// Use this with care, as it could change when path pairs are added ore removed. It is generally more
+        /// valid to lookup the path pair by Id for the current profile.
         /// </summary>
         public int SelectedPathPairIndex
         {
@@ -676,7 +676,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         /// <summary>
         /// Used to determine if dropdown should be custom
         /// </summary>
-        private bool m_UseCustomPaths = false;
+        internal bool m_UseCustomPaths = false;
 
         /// <summary>
         /// Internal settings
@@ -877,7 +877,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         {
             get
             {
-                if (m_UseDefaultSchemaSettings)
+                if (UseDefaultSchemaSettings)
                     return GetDefaultSchemaSettings().bundleNaming;
                 return m_BundleNaming;
             }
@@ -932,7 +932,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                 Application.OpenURL(url);
             });
             if (AdvancedOptionsFoldout.IsActive)
-                ShowAdvancedProperties(SchemaSerializedObject, SelectedPathPairIndex);
+                ShowAdvancedProperties(SchemaSerializedObject);
             SchemaSerializedObject.ApplyModifiedProperties();
         }
 
@@ -1036,23 +1036,33 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         GUIContent m_BundleModeContent = new GUIContent("Bundle Mode", "Controls how bundles are created from this group.");
         GUIContent m_BundleNamingContent = new GUIContent("Bundle Naming Mode", "Controls the final file naming mode for bundles in this group.");
 
-        GUIContent m_UseDefaultSettingsContent = new GUIContent("Use Defaults", $"Determines whether to use the default schema settings.");
+        private const string k_UseDefaultsLabel = "Use Defaults";
+        GUIContent m_UseDefaultSettingsContent = new GUIContent(k_UseDefaultsLabel, $"Determines whether to use the default schema settings.");
+        GUIContent m_UseDefaultSettingsContentDisabled = new GUIContent(k_UseDefaultsLabel, "This option is available when \"Build & Load Paths\" is set to \"Local\" or \"Remote\".");
 
         private float m_PostBlockContentSpace = 10;
 
-        void ShowAdvancedProperties(SerializedObject so, int pathPairIndex)
+        void ShowAdvancedProperties(SerializedObject so)
         {
             if (!m_UseCustomPaths)
             {
+                var disableDefaultSchemaSettings = !HasDefaultSchemaSettings();
+                EditorGUI.DisabledScope disableScope = new EditorGUI.DisabledScope(disableDefaultSchemaSettings);
+                GUIContent toggleLabel = m_UseDefaultSettingsContent;
+                if (disableDefaultSchemaSettings)
+                    toggleLabel = m_UseDefaultSettingsContentDisabled;
+
                 EditorGUI.BeginChangeCheck();
-                bool useDefaultSettings = EditorGUILayout.Toggle(m_UseDefaultSettingsContent, UseDefaultSchemaSettings);
+                bool useDefaultSettings = EditorGUILayout.Toggle(toggleLabel, m_UseDefaultSchemaSettings);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(so.targetObject, so.targetObject.name + nameof(UseDefaultSchemaSettings));
                     UseDefaultSchemaSettings = useDefaultSettings;
                 }
+
+                disableScope.Dispose();
             }
-            using (new EditorGUI.DisabledScope(!m_UseCustomPaths && m_UseDefaultSchemaSettings))
+            using (new EditorGUI.DisabledScope(!m_UseCustomPaths && UseDefaultSchemaSettings))
             {
                 EditorGUI.BeginChangeCheck();
                 var compression = (BundleCompressionMode)EditorGUILayout.EnumPopup(m_CompressionContent, Compression);
@@ -1492,11 +1502,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         void ShowSelectedPropertyDefaultSettingsMulti(SerializedObject so, List<BundledAssetGroupSchema> otherBundledSchemas, ref List<Action<BundledAssetGroupSchema, BundledAssetGroupSchema>> queuedChanges)
         {
             bool selectedSchemaIsUsingCustomPaths = m_UseCustomPaths;
-            bool selectedSchemaIsUsingDefaultSettings = m_UseDefaultSchemaSettings && !m_UseCustomPaths;
+            bool selectedSchemaIsUsingDefaultSettings = UseDefaultSchemaSettings && !m_UseCustomPaths;
             foreach (BundledAssetGroupSchema otherSchema in otherBundledSchemas)
             {
                 selectedSchemaIsUsingCustomPaths |= otherSchema.m_UseCustomPaths;
-                selectedSchemaIsUsingDefaultSettings |= otherSchema.m_UseDefaultSchemaSettings && !otherSchema.m_UseCustomPaths;
+                selectedSchemaIsUsingDefaultSettings |= otherSchema.UseDefaultSchemaSettings && !otherSchema.m_UseCustomPaths;
             }
 
             if (!selectedSchemaIsUsingCustomPaths)
@@ -1582,6 +1592,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             WebGL = BuildTargetGroup.WebGL
         };
 
+        private struct SchemaSettingsPair
+        {
+            public DefaultSchemaSettings Local;
+            public DefaultSchemaSettings Remote;
+        }
+
         /// <summary>
         /// A set of recommmended schema settings.
         /// </summary>
@@ -1613,7 +1629,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             public BundleNamingStyle bundleNaming;
         }
 
-        private Dictionary<DefaultSchemaSettingsBuildTargetGroup, DefaultSchemaSettings[]> m_DefaultSettings;
+        internal Dictionary<DefaultSchemaSettingsBuildTargetGroup, DefaultSchemaSettings[]> m_DefaultSettings;
 
         /// <summary>
         /// Create sets of recommended settings based on the build target platform and AssetBundle loading strategy.
@@ -1819,20 +1835,57 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 #endif
         }
 
+        internal enum DefaultSettingsTarget
+        {
+            Local,
+            Remote
+        }
+
         /// <summary>
         /// Get the default settings for an Addressable Group schema
         /// </summary>
         /// <returns>A set of recommended schema settings</returns>
         public DefaultSchemaSettings GetDefaultSchemaSettings()
         {
-            if (SelectedPathPairIndex > 2)
+            if (m_UseCustomPaths)
+                return default;
+
+            if (!HasDefaultSchemaSettings())
                 return default;
 
             if (m_DefaultSettings == null)
                 m_DefaultSettings = CreateDefaultSchemaSettings();
 
             DefaultSchemaSettingsBuildTargetGroup targetGroup = GetDefaultSchemaSettingsBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
-            return m_DefaultSettings[targetGroup][SelectedPathPairIndex];
+            if (Group != null && Group.Settings != null)
+            {
+                var loadPathName = m_LoadPath.GetName(Group.Settings);
+                if (loadPathName.Equals(AddressableAssetSettings.kRemoteLoadPath))
+                {
+                    return m_DefaultSettings[targetGroup][(int) DefaultSettingsTarget.Remote];
+                }
+
+                if (loadPathName.Equals(AddressableAssetSettings.kLocalLoadPath))
+                {
+                    return m_DefaultSettings[targetGroup][(int)DefaultSettingsTarget.Local];
+                }
+            }
+
+            Debug.LogError("Could not determine default settings for schema as it does not have a group attached. " +
+                           "This may be due to the schema being initialized manually without setting its group.");
+            return default;
+        }
+
+        internal bool HasDefaultSchemaSettings()
+        {
+            DefaultSchemaSettingsBuildTargetGroup targetGroup = GetDefaultSchemaSettingsBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
+            if (Group != null && Group.Settings != null)
+            {
+                var loadPathName = m_LoadPath.GetName(Group.Settings);
+                return loadPathName.Equals(AddressableAssetSettings.kRemoteLoadPath) ||
+                       loadPathName.Equals(AddressableAssetSettings.kLocalLoadPath);
+            }
+            return false;
         }
     }
 }
