@@ -75,10 +75,6 @@ public static class AddressablesTestUtility
     public static void Setup(string testType, string pathFormat, string suffix, bool useUnityWebRequestForLocalBundles)
     {
 #if UNITY_EDITOR
-
-        if(!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
-            Assert.Ignore("Standalone support is required to build AssetBundles. Ignoring test suite.");
-
         bool currentIgnoreState = LogAssert.ignoreFailingMessages;
         LogAssert.ignoreFailingMessages = true;
         EditorSettings.spritePackerMode = SpritePackerMode.SpriteAtlasV2;

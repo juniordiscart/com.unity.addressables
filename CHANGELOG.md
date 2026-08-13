@@ -4,7 +4,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [2.4.4] - 2025-03-19
+## [2.4.5] - 2025-03-19
 - Fixed issue where custom asset providers set in Addressable Asset Settings UI aren't being used.
 - Fixed issue where duplicated assets savings in summary tab of the build report is incorrect.
 - Moved AddressableAssetEntryTreeViewState into the UnityEditor.AddressableAssets namespace to fix compile errors in user code.
