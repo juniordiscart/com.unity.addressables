@@ -183,6 +183,32 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void BinaryCatalogSerializerWithInternalIdResolvingDisabled_DoesNotModifyInternalIds()
+        {
+            var internalId = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/file.path";
+            var locType = typeof(UnityEngine.Object);
+            var catalog = new ContentCatalogData();
+            var entries = new List<ContentCatalogDataEntry>();
+            entries.Add(new ContentCatalogDataEntry(locType, internalId, "", new string[] { "a" }));
+            catalog.SetData(entries);
+            var data = catalog.SerializeToByteArray();
+            {
+                var resolvedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, new ContentCatalogData.Serializer()));
+                var resolvedLocator = resolvedCatalog.CreateCustomLocator("", null, 128) as ContentCatalogData.ResourceLocator;
+                resolvedLocator.Locate("a", locType, out var locs);
+                Assert.AreEqual($"{UnityEngine.AddressableAssets.Addressables.RuntimePath}/file.path", locs[0].InternalId);
+            }
+
+            {
+                var nonresolvedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, new ContentCatalogData.Serializer().WithInternalIdResolvingDisabled()));
+                var nonresolvedLocator = nonresolvedCatalog.CreateCustomLocator("", null, 128) as ContentCatalogData.ResourceLocator;
+                nonresolvedLocator.Locate("a", locType, out var locs);
+                Assert.AreEqual(internalId, locs[0].InternalId);
+            }
+
+        }
+
+        [Test]
         public void BinaryCatalogCacheStress([Values(1000)] int locateCallCount, [Values(1000)] int locCount, [Values(8, 128, 256, 512, 1024)] int locCacheSize, [Values(4, 32, 64, 128)] int bufferCacheSize)
         {
             var locType = typeof(UnityEngine.Object);

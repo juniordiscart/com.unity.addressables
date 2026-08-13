@@ -3,6 +3,9 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [2.6.0] - 2025-06-03
+- Fixed issue where call to LoadAssetsAsync was treating single element keys into an array of characters.
+- Fixed binary catalog extraction & optimization tools.  InternalIds of locations were getting resolved with Editor data incorrectly.  They are now copied directly to the output files.
 
 ## [2.5.0] - 2025-05-12
 - Added IP ping timeout to the Hosting Services window.

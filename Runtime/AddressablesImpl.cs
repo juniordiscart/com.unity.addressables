@@ -765,6 +765,12 @@ namespace UnityEngine.AddressableAssets
         {
             QueueEditorUpdateIfNeeded();
 
+            if (keys is string keyAsString)
+            {
+                Addressables.Log($"The keys parameter is a single string {keyAsString}, but it is being treated as an array of characters. To avoid this, the string will be wrapped in a single element array automatically. If this is not intended, please pass an array of individual characters.");
+                keys = new string[] { keyAsString };
+            }
+
             if (ShouldChainRequest)
                 return TrackHandle(LoadAssetsWithChain(ChainOperation, keys, callback, mode, releaseDependenciesOnFailure));
 

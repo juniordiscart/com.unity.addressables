@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine.AddressableAssets.Utility;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
+using UnityEngine.Serialization;
 
 namespace UnityEngine.AddressableAssets.ResourceLocators
 {
@@ -224,7 +226,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
             Directory.CreateDirectory(resultDir);
             var data = File.ReadAllBytes(catalogPath);
-            var reader = new BinaryStorageBuffer.Reader(data, 1024, new ContentCatalogData.Serializer());
+            var reader = new BinaryStorageBuffer.Reader(data, 1024, new ContentCatalogData.Serializer().WithInternalIdResolvingDisabled());
             var catalogData = reader.ReadObject<ContentCatalogData>(0, false);
             catalogData = CreateOptimizedCopy(catalogData);
             var optData = catalogData.SerializeToByteArray();
@@ -256,7 +258,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         public static void ExtractBinaryCatalog(string binaryCatalogPath, string extractedPath)
         {
             var data = File.ReadAllBytes(binaryCatalogPath);
-            var reader = new BinaryStorageBuffer.Reader(data, 1024, new ContentCatalogData.Serializer());
+            var reader = new BinaryStorageBuffer.Reader(data, 1024, new ContentCatalogData.Serializer().WithInternalIdResolvingDisabled());
             var catalogData = reader.ReadObject<ContentCatalogData>(0, false);
             var locator = catalogData.CreateCustomLocator();
             var lines = new List<string>();
@@ -266,17 +268,24 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                 {
                     foreach (var l in locs)
                     {
-                        lines.Add($"{l.PrimaryKey}");
-                        lines.Add($"\tResourceType: {l.ResourceType}");
-                        lines.Add($"\tProviderId: {l.ProviderId}");
-                        lines.Add($"\tInternalId: {l.InternalId}");
-                        lines.Add($"\tData: {l.Data}");
-                        lines.Add($"\tDependencyHash: {l.DependencyHashCode}");
-                        if (l.HasDependencies)
+                        if ((string)key == l.PrimaryKey)
                         {
-                            lines.Add($"\tDependencies:");
-                            foreach (var d in l.Dependencies)
-                                lines.Add($"\t\t{d.PrimaryKey}");
+                            lines.Add($"{l.PrimaryKey}");
+                            lines.Add($"\tResourceType: {l.ResourceType}");
+                            lines.Add($"\tProviderId: {l.ProviderId}");
+                            lines.Add($"\tInternalId: {l.InternalId}");
+                            lines.Add($"\tData: {l.Data}");
+                            lines.Add($"\tDependencyHash: {l.DependencyHashCode}");
+                            if (l.HasDependencies)
+                            {
+                                lines.Add($"\tDependencies:");
+                                foreach (var d in l.Dependencies)
+                                    lines.Add($"\t\t{d.PrimaryKey}");
+                            }
+                        }
+                        else
+                        {
+                            lines.Add($"{key} -> {l.PrimaryKey}");
                         }
                     }
                 }
@@ -386,8 +395,15 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             {
                 new ObjectInitializationData.Serializer(),
                 new AssetBundleRequestOptionsSerializationAdapter(),
-                new ResourceLocator.ResourceLocation.Serializer()
+                new ResourceLocator.ResourceLocation.Serializer(resolveInternalIds)
             };
+
+            bool resolveInternalIds = true;
+            public Serializer WithInternalIdResolvingDisabled()
+            {
+                resolveInternalIds = false;
+                return this;
+            }
 
             public object Deserialize(BinaryStorageBuffer.Reader reader, Type t, uint offset)
             {
@@ -464,7 +480,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
 
         internal static ContentCatalogData LoadFromFile(string path)
         {
-            return new ContentCatalogData(new BinaryStorageBuffer.Reader(File.ReadAllBytes(path), BinaryCatalogInitialization.BinaryStorageBufferCacheSize, new Serializer()));
+            return new ContentCatalogData(new BinaryStorageBuffer.Reader(File.ReadAllBytes(path), BinaryCatalogInitialization.BinaryStorageBufferCacheSize, new Serializer().WithInternalIdResolvingDisabled()));
         }
 #else
         /// <summary>
@@ -1014,11 +1030,15 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     }
 
                     public IEnumerable<BinaryStorageBuffer.ISerializationAdapter> Dependencies => null;
-
+                    bool resolveInternalIds;
+                    public Serializer(bool resolveInternalIds)
+                    {
+                        this.resolveInternalIds = resolveInternalIds;
+                    }
                     //read as location
                     public object Deserialize(BinaryStorageBuffer.Reader reader, Type t, uint offset)
                     {
-                        return new ResourceLocation(reader, offset);
+                        return new ResourceLocation(reader, offset, resolveInternalIds);
                     }
 
                     //write from data entry
@@ -1048,13 +1068,16 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     }
                 }
 
-                public ResourceLocation(BinaryStorageBuffer.Reader reader, uint id)
+                public ResourceLocation(BinaryStorageBuffer.Reader reader, uint id, bool resolveInternalId)
                 {
                     var data = reader.ReadValue<Serializer.Data>(id);
                     ProviderId = reader.ReadString(data.providerOffset, '.', true);
                     PrimaryKey = reader.ReadString(data.primaryKeyOffset, '/', true);
                     Data = reader.ReadObject(data.extraDataOffset, true);
-                    InternalId = Addressables.ResolveInternalId(reader.ReadString(data.internalIdOffset, '/', true));
+                    if(resolveInternalId)
+                        InternalId = Addressables.ResolveInternalId(reader.ReadString(data.internalIdOffset, '/', true));
+                    else
+                        InternalId = reader.ReadString(data.internalIdOffset, '/', true);
                     DependencyHashCode = (int)data.dependencySetOffset;
                     Dependencies = reader.ReadObjectArray<ResourceLocation>(data.dependencySetOffset, true, true);
                     ResourceType = reader.ReadObject<Type>(data.typeId);

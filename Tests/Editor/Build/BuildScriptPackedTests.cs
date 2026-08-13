@@ -18,6 +18,7 @@ using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 using UnityEditor.TestTools;
 using UnityEditor;
+using System.Text.RegularExpressions;
 
 namespace UnityEditor.AddressableAssets.Tests
 {

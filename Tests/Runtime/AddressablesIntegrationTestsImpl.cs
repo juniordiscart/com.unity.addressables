@@ -469,6 +469,44 @@ namespace AddressableAssetsIntegrationTests
         }
 
         [UnityTest]
+        public IEnumerator WhenLoadingAssetsAsync_WithArrayOfCharsAsKey_NothingLoads()
+        {
+            //Setup
+            yield return Init();
+            string[] keysArray = new[] { "t", "e", "s", "t", "0", "B", "A", "S", "E" };
+            AsyncOperationHandle<IList<TextAsset>> handle = default;
+
+            try
+            {
+                //Test
+                using (new IgnoreFailingLogMessage())
+                {
+                    handle = m_Addressables.LoadAssetsAsync<TextAsset>(keysArray, null, Addressables.MergeMode.UseFirst, true);
+                }
+                Debug.Log(handle.OperationException.Message);
+
+                InvalidKeyException expected = new InvalidKeyException(keysArray, typeof(TextAsset), Addressables.MergeMode.UseFirst);
+                StringBuilder stringBuilder = new StringBuilder(expected.FormatMergeModeMessage(InvalidKeyException.Format.MergeModeBase));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "t"));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "e"));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "s"));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "t"));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "0"));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "B"));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "A"));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "S"));
+                stringBuilder.Append(expected.FormatMergeModeMessage(InvalidKeyException.Format.NoLocation, keysUnavailable: "E"));
+                Assert.AreEqual(stringBuilder.ToString(), handle.OperationException.Message, "Incorrect invalidKeyMessage. Expected to inform that all keys have no location");
+                yield return handle;
+            }
+            finally
+            {
+                //Cleanup
+                handle.Release();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator InvalidKeyException_LoadAssets_Union_MultipleTypesAvailable()
         {
             //Setup
