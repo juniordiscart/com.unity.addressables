@@ -746,13 +746,53 @@ namespace UnityEditor.AddressableAssets.Settings
 
         internal static void MoveEntriesToGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
         {
+            if (group == null)
+                return;
+
+            var entriesToMove = new List<AddressableAssetEntry>();
             foreach (AddressableAssetEntry entry in entries)
             {
-                if (entry.parentGroup != group)
-                {
-                    settings.MoveEntry(entry, group, entry.ReadOnly, true);
-                }
+                if (entry == null || entry.parentGroup != null && entry.parentGroup == group)
+                    continue;
+                entriesToMove.Add(entry);
             }
+
+            if (entriesToMove.Count == 0)
+                return;
+
+            var modifiedGroups = new HashSet<AddressableAssetGroup>() { group };
+            foreach (AddressableAssetEntry entry in entriesToMove)
+            {
+                modifiedGroups.Add(entry.parentGroup);
+                settings.MoveEntry(entry, group, entry.ReadOnly, false); // do not postEvent per entry
+            }
+
+            foreach (AddressableAssetGroup modifiedGroup in modifiedGroups)
+                OpenAssetIfUsingVCIntegration(modifiedGroup);
+
+            settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entriesToMove, true, false); // batch postEvent callbacks
         }
+
+#if UNITY_6000_3_OR_NEWER
+        internal static bool TryGetLocalFileIdentifierForInstance(HierarchyIterator obj, out long localId)
+        {
+            return AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj.entityId, out _, out localId);
+        }
+
+        internal static bool TryGetLocalFileIdentifierForInstance(Object obj, out long localId)
+        {
+            return AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj.GetEntityId(), out _, out localId);
+        }
+#else
+        internal static bool TryGetLocalFileIdentifierForInstance(HierarchyProperty obj, out long localId)
+        {
+            return AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj.instanceID, out _, out localId);
+        }
+        internal static bool TryGetLocalFileIdentifierForInstance(Object obj, out long localId)
+        {
+            return AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj.GetInstanceID(), out _, out localId);
+        }
+#endif
+
     }
 }

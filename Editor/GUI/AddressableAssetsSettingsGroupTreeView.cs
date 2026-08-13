@@ -11,15 +11,14 @@ using Debug = UnityEngine.Debug;
 using static UnityEditor.AddressableAssets.Settings.AddressablesFileEnumeration;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEngine.UIElements;
 using Assert = UnityEngine.Assertions.Assert;
-using TreeView = UnityEditor.IMGUI.Controls.TreeView;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
 	using Object = UnityEngine.Object;
 
-	internal class AddressableAssetEntryTreeView : TreeView
+    internal class AddressableAssetEntryTreeView : TreeViewAdapter
 	{
 		AddressableAssetsSettingsGroupEditor m_Editor;
 		internal string customSearchString = string.Empty;
@@ -83,7 +82,7 @@ namespace UnityEditor.AddressableAssets.GUI
 		}
 
 
-		internal TreeViewItem Root => rootItem;
+        internal TreeViewItemAdapter Root => rootItem as TreeViewItemAdapter;
 
 		void OnScenesChanged()
 		{
@@ -126,7 +125,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			{
 				if (obj == null)
 					continue;
-				if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj.GetInstanceID(), out string guid, out long localId))
+                if (!AddressableAssetUtility.TryGetLocalFileIdentifierForInstance(obj, out long localId))
 				{
 					if (obj is GameObject go)
 					{
@@ -187,9 +186,9 @@ namespace UnityEditor.AddressableAssets.GUI
 			Selection.objects = selectedObjects; // change selection
 		}
 
-		protected override TreeViewItem BuildRoot()
+        protected override TreeViewItemAdapter BuildRootAdapter()
 		{
-			var root = new TreeViewItem(-1, -1);
+            var root = new TreeViewItemAdapter(-1, -1);
 			using (new AddressablesFileEnumerationScope(BuildAddressableTree(m_Editor.settings)))
 			{
                 SortGroups();
@@ -204,28 +203,32 @@ namespace UnityEditor.AddressableAssets.GUI
 			return root;
 		}
 
-		protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
+        protected override IList<TreeViewItemAdapter> BuildRowsAdapter(TreeViewItemAdapter root)
 		{
             m_lazyLoader.ClearWorkQueue();
 			if (!string.IsNullOrEmpty(searchString))
 			{
-				var rows = base.BuildRows(root);
-				SortHierarchical(rows);
+                var rows = base.BuildRowsAdapter(root);
+
                 // At the end of a Search, we schedule an icon lazy load only for results
                 // By doing this, we ensure we only load necessary icons, which massively improves search performance
-                Search(rows);
-				return rows;
+                rows = Search(rows);
+
+                var result = new List<TreeViewItemAdapter>();
+                foreach(var node in SortHierarchical(rows))
+                    result.Add(node as TreeViewItemAdapter);
+                return result;
 			}
 
 			if (!string.IsNullOrEmpty(customSearchString))
 			{
 				SortChildren(root);
-				return Search(base.BuildRows(root));
+                return Search(base.BuildRowsAdapter(root));
 			}
 
 			SortChildren(root);
             LazyLoadIcons(root);
-			return base.BuildRows(root);
+            return base.BuildRowsAdapter(root);
 		}
 
         /// <summary>
@@ -233,7 +236,7 @@ namespace UnityEditor.AddressableAssets.GUI
         /// </summary>
         /// <param name="rows">Rows to be lazy loaded</param>
         /// <param name="recurseGroups">Whether to include groups; this will often cause more icons to be loaded than necessary</param>
-        private void LazyLoadIcons(IList<TreeViewItem> rows, bool recurseGroups = false)
+        private void LazyLoadIcons(IList<TreeViewItemAdapter> rows, bool recurseGroups = false)
         {
             foreach (var row in rows)
             {
@@ -246,7 +249,7 @@ namespace UnityEditor.AddressableAssets.GUI
         /// Schedules all icons to be loaded recursively upon root.
         /// Will skip groups which are not expanded.
         /// </summary>
-        private void LazyLoadIcons(TreeViewItem root)
+        private void LazyLoadIcons(TreeViewItemAdapter root)
         {
             if (root is AssetEntryTreeViewItem entryItem)
             {
@@ -267,11 +270,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 return;
             foreach (var child in root.children)
             {
-                LazyLoadIcons(child);
+                LazyLoadIcons(child as TreeViewItemAdapter);
             }
         }
 
-		internal IList<TreeViewItem> Search(string search)
+        internal IList<TreeViewItemAdapter> Search(string search)
 		{
 			if (ProjectConfigData.HierarchicalSearch)
 			{
@@ -283,17 +286,23 @@ namespace UnityEditor.AddressableAssets.GUI
 				searchString = search;
 			}
 
-			return GetRows();
+            var rows = GetRows();
+            var result = new List<TreeViewItemAdapter>();
+            foreach (var node in rows)
+            {
+                result.Add(node as TreeViewItemAdapter);
+            }
+            return result;
 		}
 
-		protected IList<TreeViewItem> Search(IList<TreeViewItem> rows)
+        protected IList<TreeViewItemAdapter> Search(IList<TreeViewItemAdapter> rows)
 		{
 			if (rows == null)
-				return new List<TreeViewItem>();
+                return new List<TreeViewItemAdapter>();
 
 			m_SearchedEntries.Clear();
-			List<TreeViewItem> items = new List<TreeViewItem>(rows.Count);
-			foreach (TreeViewItem item in rows)
+            List<TreeViewItemAdapter> items = new List<TreeViewItemAdapter>(rows.Count);
+            foreach (TreeViewItemAdapter item in rows)
 			{
 				if (ProjectConfigData.HierarchicalSearch)
 				{
@@ -315,7 +324,7 @@ namespace UnityEditor.AddressableAssets.GUI
          * - an ancestor matches
          * - at least one descendant matches
          */
-		bool SearchHierarchical(TreeViewItem item, string search, bool? ancestorMatching = null)
+        bool SearchHierarchical(TreeViewItemAdapter item, string search, bool? ancestorMatching = null)
 		{
 			var aeItem = item as AssetEntryTreeViewItem;
 			if (aeItem == null || search == null)
@@ -336,7 +345,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			{
 				foreach (var child in aeItem.children)
 				{
-					descendantMatching = SearchHierarchical(child, search, false);
+                    descendantMatching = SearchHierarchical(child as TreeViewItemAdapter, search, false);
 					if (descendantMatching)
 						break;
 				}
@@ -347,7 +356,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			return keep;
 		}
 
-		private bool DoesAncestorMatch(TreeViewItem aeItem, string search)
+        private bool DoesAncestorMatch(TreeViewItemAdapter aeItem, string search)
 		{
 			if (aeItem == null)
 				return false;
@@ -436,7 +445,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         }
 
-		void SortChildren(TreeViewItem root)
+        void SortChildren(TreeViewItemAdapter root)
 		{
 			if (!root.hasChildren)
 				return;
@@ -444,29 +453,59 @@ namespace UnityEditor.AddressableAssets.GUI
 			foreach (var child in root.children)
 			{
 				if (child != null && IsExpanded(child.id))
-					SortHierarchical(child.children);
+                {
+                    child.children = SortHierarchical(child.children);
+                }
+            }
+        }
+
+
+#if UNITY_6000_2_OR_NEWER
+
+        List<TreeViewItem<int>> SortHierarchical(IList<TreeViewItemAdapter> children)
+        {
+            var result = new List<TreeViewItem<int>>();
+            foreach (var c in children)
+            {
+                result.Add(c);
+            }
+            return SortHierarchical(result);
+        }
+
+        List<TreeViewItem<int>> SortHierarchical(List<TreeViewItem<int>> children)
+        {
+            var result = new List<TreeViewItem<int>>();
+#else
+        List<TreeViewItem> SortHierarchical(IList<TreeViewItemAdapter> children)
+        {
+            var result = new List<TreeViewItem>();
+            foreach (var c in children)
+            {
+                result.Add(c as TreeViewItem);
 			}
+            return SortHierarchical(result);
 		}
 
-		void SortHierarchical(IList<TreeViewItem> children)
+        List<TreeViewItem> SortHierarchical(List<TreeViewItem> children)
 		{
+            var result = new List<TreeViewItem>();
+#endif
+
 			if (children == null)
-				return;
+                return children;
 
 			var sortedColumns = multiColumnHeader.state.sortedColumns;
 			if (sortedColumns.Length == 0)
-				return;
+                return children;
 
 			List<AssetEntryTreeViewItem> kids = new List<AssetEntryTreeViewItem>();
-			List<TreeViewItem> copy = new List<TreeViewItem>(children);
-			children.Clear();
-			foreach (var c in copy)
+            foreach (var c in children)
 			{
 				var child = c as AssetEntryTreeViewItem;
 				if (child != null && child.entry != null)
 					kids.Add(child);
 				else
-					children.Add(c);
+                    result.Add(c);
 			}
 
 			ColumnId col = m_SortOptions[sortedColumns[0]];
@@ -490,14 +529,14 @@ namespace UnityEditor.AddressableAssets.GUI
 			}
 
 			foreach (var o in orderedKids)
-				children.Add(o);
+                result.Add(o);
 
-
-			foreach (var child in children)
+            foreach (var child in result)
 			{
 				if (child != null && IsExpanded(child.id))
-					SortHierarchical(child.children);
+                    child.children = SortHierarchical(child.children);
 			}
+            return result;
 		}
 
 		IEnumerable<AssetEntryTreeViewItem> OrderByLabels(List<AssetEntryTreeViewItem> kids, bool ascending)
@@ -529,7 +568,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			return result;
 		}
 
-		protected override bool DoesItemMatchSearch(TreeViewItem item, string search)
+        protected override bool DoesItemMatchSearch(TreeViewItemAdapter item, string search)
 		{
 			if (string.IsNullOrEmpty(search))
 				return true;
@@ -555,7 +594,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			return false;
 		}
 
-		void AddGroupChildrenBuild(AddressableAssetGroup group, TreeViewItem root)
+        void AddGroupChildrenBuild(AddressableAssetGroup group, TreeViewItemAdapter root)
 		{
 			int depth = 0;
 
@@ -563,12 +602,12 @@ namespace UnityEditor.AddressableAssets.GUI
 			if (ProjectConfigData.ShowGroupsAsHierarchy && group != null)
 			{
 				//// dash in name imitates hiearchy.
-				TreeViewItem newRoot = root;
+                TreeViewItemAdapter newRoot = root;
 				var parts = group.Name.Split('-');
 				string partialRestore = "";
 				for (int index = 0; index < parts.Length - 1; index++)
 				{
-					TreeViewItem folderItem = null;
+                    TreeViewItemAdapter folderItem = null;
 					partialRestore += parts[index];
 					int hash = partialRestore.GetHashCode();
 					if (!TryGetChild(newRoot, hash, ref folderItem))
@@ -599,7 +638,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			}
 		}
 
-		bool TryGetChild(TreeViewItem root, int childHash, ref TreeViewItem childItem)
+        bool TryGetChild(TreeViewItemAdapter root, int childHash, ref TreeViewItemAdapter childItem)
 		{
 			if (root.children == null)
 				return false;
@@ -607,7 +646,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			{
 				if (child.id == childHash)
 				{
-					childItem = child;
+                    childItem = child as TreeViewItemAdapter;
 					return true;
 				}
 			}
@@ -830,7 +869,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return new MultiColumnHeaderState(AddressableAssetSettingsGroupHeader.GetColumns());
 		}
 
-		protected string CheckForRename(TreeViewItem item, bool isActualRename)
+        protected string CheckForRename(TreeViewItemAdapter item, bool isActualRename)
 		{
 			string result = string.Empty;
 			var assetItem = item as AssetEntryTreeViewItem;
@@ -847,7 +886,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			return result;
 		}
 
-		protected override bool CanRename(TreeViewItem item)
+        protected override bool CanRenameAdapter(TreeViewItemAdapter item)
 		{
 			return !string.IsNullOrEmpty(CheckForRename(item, true));
 		}
@@ -916,7 +955,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return acceptedRename;
 		}
 
-		protected override bool CanMultiSelect(TreeViewItem item)
+        protected override bool CanMultiSelect(TreeViewItemAdapter item)
 		{
 			return true;
 		}
@@ -1342,7 +1381,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			}
 		}
 
-		protected override bool CanBeParent(TreeViewItem item)
+        protected override bool CanBeParentAdapter(TreeViewItemAdapter item)
 		{
 			var aeItem = item as AssetEntryTreeViewItem;
 			if (aeItem != null && aeItem.group != null)
@@ -1444,9 +1483,9 @@ namespace UnityEditor.AddressableAssets.GUI
 		DragAndDropVisualMode HandleDragAndDropItems(AssetEntryTreeViewItem target, DragAndDropArgs args)
 		{
             var draggedNodes = DragAndDrop.GetGenericData("AssetEntryTreeViewItem") as List<AssetEntryTreeViewItem>;
-            return HandleDragAndDropItems(draggedNodes, target, args.parentItem, args.insertAtIndex, args.performDrop);
+            return HandleDragAndDropItems(draggedNodes, target, args.parentItem as TreeViewItemAdapter, args.insertAtIndex, args.performDrop);
         }
-        internal DragAndDropVisualMode HandleDragAndDropItems(List<AssetEntryTreeViewItem> draggedNodes, AssetEntryTreeViewItem target, TreeViewItem parentItem, int insertAtIndex, bool performDrop)
+        internal DragAndDropVisualMode HandleDragAndDropItems(List<AssetEntryTreeViewItem> draggedNodes, AssetEntryTreeViewItem target, TreeViewItemAdapter parentItem, int insertAtIndex, bool performDrop)
         {
 			DragAndDropVisualMode visualMode = DragAndDropVisualMode.None;
 			if (draggedNodes != null && draggedNodes.Count > 0)
@@ -1510,19 +1549,7 @@ namespace UnityEditor.AddressableAssets.GUI
                                 entries.Add(node.entry);
                             }
 
-
-                                var modifiedGroups = new HashSet<AddressableAssetGroup>();
-								modifiedGroups.Add(parent);
-                                foreach (AddressableAssetEntry entry in entries)
-								{
-                                    modifiedGroups.Add(entry.parentGroup);
-                                    m_Editor.settings.MoveEntry(entry, parent, false, false);
-								}
-
-								foreach (AddressableAssetGroup modifiedGroup in modifiedGroups)
-									AddressableAssetUtility.OpenAssetIfUsingVCIntegration(modifiedGroup);
-
-								m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entries, true, false);
+                            AddressableAssetUtility.MoveEntriesToGroup(m_Editor.settings, entries, parent);
 							}
 						}
 					}
@@ -1663,7 +1690,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
 	}
 
-	class AssetEntryTreeViewItem : TreeViewItem
+    class AssetEntryTreeViewItem : TreeViewItemAdapter
 	{
 		public AddressableAssetEntry entry;
 		public AddressableAssetGroup group;

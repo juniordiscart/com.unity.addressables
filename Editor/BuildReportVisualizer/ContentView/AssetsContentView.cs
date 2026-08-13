@@ -347,6 +347,9 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_TreeItems = CreateTreeViewItems(m_Report);
             m_TreeView.SetRootItems(CreateTreeRootsNestedList(m_TreeItems));
             m_TreeView.Rebuild();
+#if UNITY_6000_0_OR_NEWER
+            m_TreeView.sortingMode = ColumnSortingMode.Custom;
+#endif
             m_TreeView.columnSortingChanged += ColumnSortingChanged;
         }
 

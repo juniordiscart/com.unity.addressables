@@ -858,11 +858,6 @@ namespace UnityEngine.AddressableAssets
             m_ResourceManager.Release(handle);
         }
 
-        AsyncOperationHandle<long> GetDownloadSizeWithChain(AsyncOperationHandle dep, object key)
-        {
-            return ResourceManager.CreateChainOperation(dep, op => GetDownloadSizeAsync(key));
-        }
-
         AsyncOperationHandle<long> ComputeCatalogSizeWithChain(IResourceLocation catalogLoc)
         {
             if (!catalogLoc.HasDependencies)

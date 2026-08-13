@@ -65,6 +65,9 @@ namespace UnityEditor.AddressableAssets.Diagnostics
 
         public void SetSortingChangeCallback(System.Action callback)
         {
+#if UNITY_6000_0_OR_NEWER
+            m_TreeView.sortingMode = ColumnSortingMode.Custom;
+#endif
             m_TreeView.columnSortingChanged += callback;
         }
 

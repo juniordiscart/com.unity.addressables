@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
-    internal class ProfileTreeView : TreeView
+    internal class ProfileTreeView : TreeViewAdapter
     {
         private List<string> m_Names;
         private Dictionary<int, AddressableAssetProfileSettings.BuildProfile> m_TreeIndexToBuildProfileMap;
@@ -62,7 +63,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return header;
         }
 
-        internal ProfileTreeView(TreeViewState treeViewState, List<AddressableAssetProfileSettings.BuildProfile> profiles, ProfileWindow window,
+        internal ProfileTreeView(TreeViewStateAdapter treeViewState, List<AddressableAssetProfileSettings.BuildProfile> profiles, ProfileWindow window,
             MultiColumnHeader header) : base(treeViewState, header)
         {
             m_Window = window;
@@ -83,9 +84,9 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        protected override TreeViewItem BuildRoot()
+        protected override TreeViewItemAdapter BuildRootAdapter()
         {
-            var root = new TreeViewItem {id = -1, depth = -1, displayName = "Root"};
+            var root = new TreeViewItemAdapter { id = -1, depth = -1, displayName = "Root"};
             m_Names.Clear();
             m_TreeIndexToBuildProfileMap.Clear();
 
@@ -94,7 +95,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 var profile = m_ProfileList[i];
                 m_Names.Add(profile.profileName);
                 m_TreeIndexToBuildProfileMap.Add(i, profile);
-                root.AddChild(new TreeViewItem {id = i, displayName = profile.profileName});
+                root.AddChild(new TreeViewItemAdapter { id = i, displayName = profile.profileName});
             }
 
             return root;
@@ -131,12 +132,12 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        TreeViewItem FindItemInVisibleRows(int id)
+        TreeViewItemAdapter FindItemInVisibleRows(int id)
         {
             var rows = GetRows();
             foreach (var r in rows)
             {
-                if (r.id == id) return r as TreeViewItem;
+                if (r.id == id) return r as TreeViewItemAdapter;
             }
 
             return null;
@@ -147,9 +148,9 @@ namespace UnityEditor.AddressableAssets.GUI
             return m_TreeIndexToBuildProfileMap.ContainsKey(id) ? m_TreeIndexToBuildProfileMap[id] : default(AddressableAssetProfileSettings.BuildProfile);
         }
 
-        List<TreeViewItem> GetSelectedNodes()
+        List<TreeViewItemAdapter> GetSelectedNodes()
         {
-            List<TreeViewItem> selectedNodes = new List<TreeViewItem>();
+            List<TreeViewItemAdapter> selectedNodes = new List<TreeViewItemAdapter>();
             foreach (var nodeId in GetSelection())
             {
                 var item = FindItemInVisibleRows(nodeId); //TODO - this probably makes off-screen but selected items not get added to list.
@@ -164,7 +165,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         protected override void SingleClickedItem(int id)
         {
-            List<TreeViewItem> selectedNodes = GetSelectedNodes();
+            List<TreeViewItemAdapter> selectedNodes = GetSelectedNodes();
             m_LastClickedProfile = m_Window.ProfileIndex;
             m_Window.ProfileIndex = selectedNodes[0].id;
         }
@@ -173,7 +174,7 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             base.ContextClickedItem(id);
 
-            List<TreeViewItem> selectedNodes = GetSelectedNodes();
+            List<TreeViewItemAdapter> selectedNodes = GetSelectedNodes();
             GenericMenu menu = new GenericMenu();
 
             if (selectedNodes.Count > 1)
@@ -206,14 +207,14 @@ namespace UnityEditor.AddressableAssets.GUI
             menu.ShowAsContext();
         }
 
-        protected override bool CanRename(TreeViewItem item)
+        protected override bool CanRenameAdapter(TreeViewItemAdapter item)
         {
             return item.displayName != "Default";
         }
 
         protected void RenameProfile(object context)
         {
-            List<TreeViewItem> selectedNodes = context as List<TreeViewItem>;
+            List<TreeViewItemAdapter> selectedNodes = context as List<TreeViewItemAdapter>;
             if (selectedNodes != null && selectedNodes.Count >= 1)
             {
                 var item = selectedNodes.First();
@@ -245,7 +246,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void UseProfile(object context)
         {
-            List<TreeViewItem> selectedNodes = context as List<TreeViewItem>;
+            List<TreeViewItemAdapter> selectedNodes = context as List<TreeViewItemAdapter>;
             if (selectedNodes != null && selectedNodes.Count >= 1)
             {
                 Undo.RecordObject(m_Window.settings, "Active Profile Changed");
@@ -258,7 +259,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         void DeleteProfile(object context)
         {
-            List<TreeViewItem> selectedNodes = context as List<TreeViewItem>;
+            List<TreeViewItemAdapter> selectedNodes = context as List<TreeViewItemAdapter>;
             foreach (var item in selectedNodes)
             {
                 var prof = m_TreeIndexToBuildProfileMap[item.id];

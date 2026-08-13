@@ -203,8 +203,10 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
         }
 
         public bool IsRunning { get; }
+#pragma warning disable CS0067 // We don't exercies these in our tests
         public event Action<AsyncOperationHandle> CompletedTypeless;
         public event Action<AsyncOperationHandle> Destroyed;
+#pragma warning restore CS0067
 
         public void InvokeCompletionEvent()
         {

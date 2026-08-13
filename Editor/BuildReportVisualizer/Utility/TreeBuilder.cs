@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
+using UnityEngine;
+using UnityEditor;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {
@@ -13,7 +15,9 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_TreeView = new MultiColumnTreeView();
             m_TreeView.viewDataKey = $"tree-view-{GUID.Generate()}";
             m_TreeView.fixedItemHeight = 30f;
-            m_TreeView.sortingEnabled = true;
+            #if UNITY_6000_0_OR_NEWER
+            m_TreeView.sortingMode = ColumnSortingMode.Custom;
+#endif
             m_TreeView.autoExpand = false;
             m_TreeView.showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly;
             m_TreeView.showBorder = true;

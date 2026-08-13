@@ -7,14 +7,12 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.IMGUI.Controls;
 using UnityEditor.U2D;
-using UnityEditor.VersionControl;
 using UnityEngine.AddressableAssets;
 using UnityEngine.TestTools;
 using UnityEngine.U2D;
 using Object = UnityEngine.Object;
-using UnityEditor.Build.Pipeline;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
@@ -112,7 +110,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 m_AssetRefObject = ar;
             }
 
-            internal void TreeSetup(TreeViewState treeState)
+            internal void TreeSetup(TreeViewStateAdapter treeState)
             {
                 _popup = ScriptableObject.CreateInstance<TestAssetReferencePopup>();
                 _popup.Initialize(this, "testpopup", "", false, Vector2.zero);
@@ -128,7 +126,7 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 TestSelectionTree _testTree;
 
-                internal void TreeSetup(TreeViewState treeState, AssetReferenceDrawer testARD, AssetReferencePopup popup)
+                internal void TreeSetup(TreeViewStateAdapter treeState, AssetReferenceDrawer testARD, AssetReferencePopup popup)
                 {
                     _testTree = new TestSelectionTree(treeState, testARD, popup, "testtree", "");
                     _testTree.Reload();
@@ -141,7 +139,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
                 class TestSelectionTree : AssetReferencePopup.AssetReferenceTreeView
                 {
-                    internal TestSelectionTree(TreeViewState state, AssetReferenceDrawer drawer,
+                    internal TestSelectionTree(TreeViewStateAdapter state, AssetReferenceDrawer drawer,
                                                AssetReferencePopup popup, string guid, string nonAddressedAsset)
                         : base(state, drawer, popup, guid, nonAddressedAsset)
                     {
@@ -687,7 +685,7 @@ namespace UnityEditor.AddressableAssets.Tests
             // Tree setup
             var testId = testEntry.AssetPath.GetHashCode();
             List<int> selectedIds = new List<int>() {testId};
-            var treeState = new TreeViewState();
+            var treeState = new TreeViewStateAdapter();
             treeState.selectedIDs = selectedIds;
             Directory.CreateDirectory("Assets/AddressableAssetsData");
             AddressableAssetSettingsDefaultObject.Settings = Settings;

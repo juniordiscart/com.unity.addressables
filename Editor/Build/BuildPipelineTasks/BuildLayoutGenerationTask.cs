@@ -579,21 +579,29 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         private static Dictionary<long, string> GetObjectsIdForAsset(string assetPath)
         {
             Dictionary<long, string> localIdentifierToObjectName = new Dictionary<long, string>();
+#if UNITY_6000_3_OR_NEWER
+            var prop = new HierarchyIterator(assetPath, false);
+            var emptyArray = Array.Empty<EntityId>();
+#else
             var prop = new HierarchyProperty(assetPath, false);
-            if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(prop.instanceID, out _, out long mainLocalID))
+            var emptyArray = Array.Empty<int>();
+#endif
+
+            if (AddressableAssetUtility.TryGetLocalFileIdentifierForInstance(prop, out long mainLocalID))
             {
                 localIdentifierToObjectName[mainLocalID] = prop.name;
                 if (prop.hasChildren)
                 {
-                    while (prop.Next(Array.Empty<int>()))
+                    while (prop.Next(emptyArray))
                     {
-                        if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(prop.instanceID, out _, out long localID))
+                        if (AddressableAssetUtility.TryGetLocalFileIdentifierForInstance(prop, out long localID))
                             localIdentifierToObjectName[localID] = prop.name;
                     }
                 }
             }
             return localIdentifierToObjectName;
         }
+
 
         private void CollectObjectsForAsset(in AssetBucket bucket, in Dictionary<ObjectIdentifier, Type[]> objectTypes, BuildLayout.ExplicitAsset asset,
             in Dictionary<long, string> localIdentifierToObjectName, FileObjectData fileObjectData, int assetInFileId)

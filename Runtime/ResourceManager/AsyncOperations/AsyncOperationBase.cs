@@ -279,7 +279,11 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             var instId = "";
             var or = Result as Object;
             if (or != null)
+#if UNITY_6000_3_OR_NEWER
+                instId = "(" + or.GetEntityId() + ")";
+#else
                 instId = "(" + or.GetInstanceID() + ")";
+#endif
             return string.Format("{0}, result='{1}', status='{2}'", base.ToString(), (or + instId), m_Status);
         }
 

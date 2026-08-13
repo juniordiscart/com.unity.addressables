@@ -363,6 +363,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
             Uri uri = new Uri(sanitizedUrl.Replace(" ", "%20"));
+#elif UNITY_SWITCH || UNITY_SWITCH2
+            sanitizedUrl = System.Text.RegularExpressions.Regex.Replace(
+                sanitizedUrl,
+                @"^file:////",
+                "file:///");
+            Uri uri = new Uri(Uri.EscapeUriString(sanitizedUrl));
+
 #else
             Uri uri = new Uri(Uri.EscapeUriString(sanitizedUrl));
 #endif

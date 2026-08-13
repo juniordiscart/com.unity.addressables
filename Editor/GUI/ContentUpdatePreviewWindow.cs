@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -33,9 +34,9 @@ namespace UnityEditor.AddressableAssets.GUI
             titleContent = new GUIContent("Assets with update issues");
         }
 
-        class ContentUpdateTreeView : TreeView
+        class ContentUpdateTreeView : TreeViewAdapter
         {
-            class Item : TreeViewItem
+            class Item : TreeViewItemAdapter
             {
                 internal AddressableAssetEntry entry;
                 internal bool enabled;
@@ -49,7 +50,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             ContentUpdatePreviewWindow m_Preview;
 
-            public ContentUpdateTreeView(ContentUpdatePreviewWindow preview, TreeViewState state, MultiColumnHeaderState mchs) : base(state, new MultiColumnHeader(mchs))
+            public ContentUpdateTreeView(ContentUpdatePreviewWindow preview, TreeViewStateAdapter state, MultiColumnHeaderState mchs) : base(state, new MultiColumnHeader(mchs))
             {
                 m_Preview = preview;
             }
@@ -78,12 +79,12 @@ namespace UnityEditor.AddressableAssets.GUI
                 return result.ToList();
             }
 
-            protected override TreeViewItem BuildRoot()
+            protected override TreeViewItemAdapter BuildRootAdapter()
             {
                 columnIndexForTreeFoldouts = 1;
 
-                var root = new TreeViewItem(-1, -1);
-                root.children = new List<TreeViewItem>();
+                var root = new TreeViewItemAdapter(-1, -1);
+                root.children = TreeViewItemAdapter.EmptyList();
                 foreach (var k in m_Preview.m_DepEntriesMap.Keys)
                 {
                     var mainItem = new Item(k, 0);
@@ -210,7 +211,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         [FormerlySerializedAs("treeState")]
         [SerializeField]
-        TreeViewState m_TreeState;
+        TreeViewStateAdapter m_TreeState;
 
         [FormerlySerializedAs("mchs")]
         [SerializeField]
@@ -240,7 +241,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_Tree == null)
             {
                 if (m_TreeState == null)
-                    m_TreeState = new TreeViewState();
+                    m_TreeState = new TreeViewStateAdapter();
 
                 var headerState = ContentUpdateTreeView.CreateDefaultMultiColumnHeaderState();
                 if (MultiColumnHeaderState.CanOverwriteSerializedFields(m_Mchs, headerState))

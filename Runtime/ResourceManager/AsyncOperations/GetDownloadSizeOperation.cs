@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.ResourceManagement.ResourceLocations;
@@ -5,12 +6,14 @@ using UnityEngine.ResourceManagement.ResourceLocations;
 namespace UnityEngine.ResourceManagement.AsyncOperations
 {
     /// <summary>
-    /// The async operation used to calculate the required download size of a key or set of keys. Runs as part of a coroutine
+    /// The synchronous operation used to calculate the required download size of a key or set of keys. Encapsulated in an operation
+    /// to simplify operation chaining.
+    /// Internally this calls Caching.IsVersionCached so it generates more IO than it appears on the surface.
     /// </summary>
     internal class GetDownloadSizeOperation : AsyncOperationBase<long>
     {
         IEnumerable<IResourceLocation> m_Locations;
-        Coroutine m_AsyncCalculation;
+        bool m_Started;
 
         /// <summary>
         /// Initialize the operation with a unique set of Locations to check the download size for.
@@ -21,48 +24,42 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         {
             m_Locations = locations;
             m_RM = resourceManager;
+            m_Started = false;
         }
 
-        IEnumerator Calculate()
+        void Calculate()
         {
+            if (m_Started)
+                return;
+            m_Started = true;
             long size = 0;
-            foreach(var location in m_Locations)
-            {
-                var sizeData = location.Data as ILocationSizeData;
-                if (sizeData != null)
+            try {
+                foreach (var location in m_Locations)
                 {
-                    size += sizeData.ComputeSize(location, m_RM);
-                    yield return null;
+                    var sizeData = location.Data as ILocationSizeData;
+                    if (sizeData != null)
+                        size += sizeData.ComputeSize(location, m_RM);
                 }
             }
-            Complete(size, true, "");
-        }
-
-        void CalculateSync()
-        {
-            long size = 0;
-            foreach (var location in m_Locations)
+            catch(Exception e)
             {
-                var sizeData = location.Data as ILocationSizeData;
-                if (sizeData != null)
-                    size += sizeData.ComputeSize(location, m_RM);
+                Complete(0, false, $"Error calculating download size: {e.ToString()}");
+                return;
             }
-
             Complete(size, true, "");
         }
 
         /// <summary>
-        /// Executes the async op. We run the GetDownloadSize calculations as part of a coroutine
+        /// Executes the synchronous op.
         /// </summary>
         protected override void Execute()
         {
-            m_AsyncCalculation = MonoBehaviourCallbackHooks.Instance.StartCoroutine(Calculate());
+            Calculate();
         }
 
         protected override bool InvokeWaitForCompletion()
         {
-            MonoBehaviourCallbackHooks.Instance.StopCoroutine(m_AsyncCalculation);
-            CalculateSync();
+            Calculate();
             return true;
         }
     }

@@ -46,7 +46,7 @@ namespace UnityEngine.ResourceManagement.Util
 
             return null;
 #else
-            return FindObjectOfType<T>();
+            return FindFirstObjectByType<T>();
 #endif
         }
 

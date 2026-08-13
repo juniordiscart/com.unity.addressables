@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.AnalyzeRules;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
-    class AssetSettingsAnalyzeTreeView : TreeView
+    class AssetSettingsAnalyzeTreeView : TreeViewAdapter
     {
         private int m_CurrentDepth;
 
-        internal AssetSettingsAnalyzeTreeView(TreeViewState state)
+        internal AssetSettingsAnalyzeTreeView(TreeViewStateAdapter state)
             : base(state)
         {
             showAlternatingRowBackgrounds = true;
@@ -24,7 +24,7 @@ namespace UnityEditor.AddressableAssets.GUI
             Reload();
         }
 
-        private List<AnalyzeRuleContainerTreeViewItem> GatherAllInheritRuleContainers(TreeViewItem baseContainer)
+        private List<AnalyzeRuleContainerTreeViewItem> GatherAllInheritRuleContainers(TreeViewItemAdapter baseContainer)
         {
             List<AnalyzeRuleContainerTreeViewItem> retValue = new List<AnalyzeRuleContainerTreeViewItem>();
             if (!baseContainer.hasChildren)
@@ -220,11 +220,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 item.DoubleClicked();
         }
 
-        protected override TreeViewItem BuildRoot()
+        protected override TreeViewItemAdapter BuildRootAdapter()
         {
             m_CurrentDepth = 0;
-            var root = new TreeViewItem(-1, -1);
-            root.children = new List<TreeViewItem>();
+            var root = new TreeViewItemAdapter(-1, -1);
+            root.children = TreeViewItemAdapter.EmptyList();
 
             string baseName = "Analyze Rules";
             string fixableRules = "Fixable Rules";
@@ -233,7 +233,7 @@ namespace UnityEditor.AddressableAssets.GUI
             AnalyzeSystem.TreeView = this;
 
             AnalyzeRuleContainerTreeViewItem baseViewItem = new AnalyzeRuleContainerTreeViewItem(baseName.GetHashCode(), m_CurrentDepth, baseName);
-            baseViewItem.children = new List<TreeViewItem>();
+            baseViewItem.children = TreeViewItemAdapter.EmptyList();
             baseViewItem.analyzeRule.CanFix = true;
 
             root.AddChild(baseViewItem);
@@ -284,7 +284,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private readonly Dictionary<int, AnalyzeResultsTreeViewItem> hashToAnalyzeResults = new Dictionary<int, AnalyzeResultsTreeViewItem>();
 
-        void BuildResults(TreeViewItem root, List<AnalyzeRule.AnalyzeResult> ruleResults)
+        void BuildResults(TreeViewItemAdapter root, List<AnalyzeRule.AnalyzeResult> ruleResults)
         {
             hashToAnalyzeResults.Clear();
             int updateFrequency = Mathf.Max(ruleResults.Count / 10, 1);
@@ -297,7 +297,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 var resPath = result.resultName.Split(AnalyzeRule.kDelimiter);
                 string name = string.Empty;
-                TreeViewItem parent = root;
+                TreeViewItemAdapter parent = root;
 
                 for (int i = 0; i < resPath.Length; i++)
                 {
@@ -322,11 +322,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
             EditorUtility.ClearProgressBar();
 
-            List<TreeViewItem> allTreeViewItems = new List<TreeViewItem>();
-            allTreeViewItems.Add(root);
-            allTreeViewItems.AddRange(root.children);
-
-            foreach (var node in allTreeViewItems)
+            (root as AnalyzeTreeViewItemBase)?.AddIssueCountToName();
+            foreach (var node in root.children)
                 (node as AnalyzeTreeViewItemBase)?.AddIssueCountToName();
 
             AnalyzeSystem.SerializeData();
@@ -392,7 +389,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
     }
 
-    class AnalyzeTreeViewItemBase : TreeViewItem
+    class AnalyzeTreeViewItemBase : TreeViewItemAdapter
     {
         private string baseDisplayName;
         private string currentDisplayName;
@@ -521,13 +518,13 @@ namespace UnityEditor.AddressableAssets.GUI
         public AnalyzeRuleContainerTreeViewItem(int id, int depth, AnalyzeRule rule) : base(id, depth, rule.ruleName)
         {
             analyzeRule = rule;
-            children = new List<TreeViewItem>();
+            children = EmptyList();
         }
 
         public AnalyzeRuleContainerTreeViewItem(int id, int depth, string displayName) : base(id, depth, displayName)
         {
             analyzeRule = new AnalyzeRule();
-            children = new List<TreeViewItem>();
+            children = EmptyList();
         }
     }
 }

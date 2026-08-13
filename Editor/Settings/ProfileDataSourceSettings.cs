@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using System.Text;
@@ -10,6 +9,7 @@ using System.Net.Http;
 using UnityEditor.AddressableAssets.Build;
 
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+using System.Threading.Tasks;
 using Unity.Services.Core;
 using Unity.Services.Ccd.Management;
 using Unity.Services.Ccd.Management.Http;

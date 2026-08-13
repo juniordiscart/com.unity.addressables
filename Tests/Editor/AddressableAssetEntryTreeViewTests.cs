@@ -3,10 +3,9 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets.GUI;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEditor.Build.Pipeline;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.Tests
@@ -43,10 +42,10 @@ namespace UnityEditor.AddressableAssets.Tests
             var tree = CreateExpandedTree();
 
             var parts = nameWithDashes.Split('-');
-            TreeViewItem item = tree.Root;
+            TreeViewItemAdapter item = tree.Root;
             for (int i = 0; i < parts.Length - 1; i++)
             {
-                item = item.children.FirstOrDefault(c => c.displayName == parts[i]);
+                item = item.children.FirstOrDefault(c => c.displayName == parts[i]) as TreeViewItemAdapter;
                 Assert.NotNull(item);
             }
 
@@ -150,7 +149,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var result = tree.Search(searchStr);
 
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(entry.address, result.First().displayName);
+            Assert.AreEqual(entry.address, result.First()?.displayName);
         }
 
         [Test]

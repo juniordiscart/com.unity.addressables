@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
@@ -226,7 +226,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (m_ProfileTreeView == null || m_ProfileTreeView.Names.Count != profiles.Count || m_Reload)
                 {
                     m_Reload = false;
-                    m_ProfileTreeView = new ProfileTreeView(new TreeViewState(), profiles, this, ProfileTreeView.CreateHeader());
+                    m_ProfileTreeView = new ProfileTreeView(new TreeViewStateAdapter(), profiles, this, ProfileTreeView.CreateHeader());
                 }
 
                 m_ProfileTreeView.OnGUI(r);

@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Diagnostics;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.IMGUI.Controls;
@@ -12,6 +11,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 #if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+using System.Threading.Tasks;
 using static UnityEditor.AddressableAssets.Build.CcdBuildEvents;
 #endif
 
@@ -125,7 +125,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			if (m_EntryTree == null || m_EntryTree.Root == null)
 				InitialiseEntryTree();
 
-			foreach (TreeViewItem item in m_EntryTree.Root.children)
+            foreach (TreeViewItemAdapter item in m_EntryTree.Root.children)
 			{
 				if (item is AssetEntryTreeViewItem i)
 					items.Push(i);
@@ -155,7 +155,7 @@ namespace UnityEditor.AddressableAssets.GUI
 				}
 				else if (i.hasChildren)
 				{
-					foreach (TreeViewItem child in i.children)
+                    foreach (TreeViewItemAdapter child in i.children)
 					{
 						if (child is AssetEntryTreeViewItem c)
 							items.Push(c);
@@ -175,7 +175,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_EntryTree == null || m_EntryTree.Root == null)
                 InitialiseEntryTree();
 
-            foreach (TreeViewItem item in m_EntryTree.Root.children)
+            foreach (TreeViewItemAdapter item in m_EntryTree.Root.children)
             {
                 if (item is AssetEntryTreeViewItem i)
                     items.Push(i);
@@ -197,7 +197,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
                 else if (!string.IsNullOrEmpty(item.folderPath) && item.hasChildren)
                 {
-                    foreach (TreeViewItem child in item.children)
+                    foreach (TreeViewItemAdapter child in item.children)
                     {
                         if (child is AssetEntryTreeViewItem c)
                             items.Push(c);

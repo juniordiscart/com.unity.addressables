@@ -16,7 +16,9 @@ apiRules:
   - exclude:
       type: Namespace
       uidRegex: \.DocExampleCode$
-  # hiding samples from api docs
+  - exclude:
+      type: Namespace
+      uidRegex: \.Unity.*\.AddressableAssets\.GUI(\..*)?$
   - exclude:
       uidRegex: .*Global Namespace\.AddressablesUtility.*
   - exclude:
@@ -25,5 +27,7 @@ apiRules:
       uidRegex: .*Global Namespace\.DisableAssetImportOnBuild.*
   - exclude:
       uidRegex: .*Global Namespace\.LoadSceneForCustomBuild.*
+  - exclude:
+      uidRegex: .*Global Namespace\.PrefabSpawnerSample.*
   - exclude:
       uidRegex: .*Global Namespace\.PrefabSpawnerSample.*

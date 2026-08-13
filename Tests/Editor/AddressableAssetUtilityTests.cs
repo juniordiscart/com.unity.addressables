@@ -502,5 +502,42 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.RemoveGroup(oldGroup);
             Settings.RemoveGroup(newGroup);
         }
+
+        [Test]
+        public void MoveEntriesToGroup_NullGroup_DoesNothing()
+        {
+            string guid = "guid1";
+            var sourceGroup = Settings.CreateGroup("MoveEntriesToGroup_Source", false, false, true, new List<AddressableAssetGroupSchema>());
+
+            var entry = Settings.CreateEntry(guid, "addr1", sourceGroup, false);
+            sourceGroup.AddAssetEntry(entry);
+            var entries = new List<AddressableAssetEntry> { entry };
+
+            AddressableAssetUtility.MoveEntriesToGroup(Settings, entries, null);
+            Assert.IsTrue(sourceGroup.GetAssetEntry(guid) != null);
+
+            Settings.RemoveGroup(sourceGroup);
+        }
+
+        [Test]
+        public void MoveEntriesToGroup_FiltersOutNullEntries()
+        {
+            string guid1 = "guid1";
+            var sourceGroup = Settings.CreateGroup("MoveEntriesToGroup_Source", false, false, true, new List<AddressableAssetGroupSchema>());
+            var targetGroup = Settings.CreateGroup("MoveEntriesToGroup_Target", false, false, true, new List<AddressableAssetGroupSchema>());
+
+            var entry1 = Settings.CreateEntry(guid1, "addr1", sourceGroup, false);
+            sourceGroup.AddAssetEntry(entry1);
+            var entries = new List<AddressableAssetEntry> { entry1, null };
+
+            AddressableAssetUtility.MoveEntriesToGroup(Settings, entries, targetGroup);
+
+            Assert.AreEqual(1, targetGroup.entries.Count);
+            Assert.IsTrue(targetGroup.GetAssetEntry(guid1) != null);
+            Assert.IsTrue(sourceGroup.GetAssetEntry(guid1) == null);
+
+            Settings.RemoveGroup(sourceGroup);
+            Settings.RemoveGroup(targetGroup);
+        }
     }
 }

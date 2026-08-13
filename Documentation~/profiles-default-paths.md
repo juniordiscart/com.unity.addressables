@@ -2,25 +2,27 @@
 
 The default values for [the build and load paths](ProfileVariables.md) are:
 
-* Local build path: `[UnityEditor.EditorUserBuildSettings.activeBuildTarget]`
-* Local load path: `[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]`
-* Remote build path: `ServerData/[BuildTarget]`
-* Remote load path: <undefined>
+|**Path type**|**Default location**|
+|---|---|
+|Local build path| `[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]`|
+|Local load path| `[UnityEngine.AddressableAssets.Addressables.RuntimePath]/[BuildTarget]`|
+|Remote build path| `ServerData/[BuildTarget]`|
+|Remote load path| `<undefined>`<br/><br/>If you want to load remote content, you must specify the URL where the content is hosted and run a web server with a command like the following:<br/><br/>`npx http-server -a 0.0.0.0 -p 8080 -c-1`<br/><br/>For more information, refer to [Default remote paths](#default-remote-paths).|
 
-Usually, you shouldn't need to change the local path values. The Unity build system expects the AssetBundles and other files to exist in the default location. If you change the local paths, you must copy the files from the build path to the load path before making a Player build. The load path must always be in the Unity `StreamingAssets` folder.
+The Unity build system expects the AssetBundles and other files to exist in the default location, so you don't need to change the local path values. If you change the local paths, you must copy the files from the build path to the load path before making a Player build. The load path must always be in the Unity [`StreamingAssets`](xref:um-streaming-assets) folder.
 
-If you distribute content remotely, you must change the remote load path to reflect the URL which you host the remote content. You can set the remote build path to any convenient location and the build system doesn't rely on the default value.
+If you distribute content remotely, you must change the remote load path to reflect the URL at which you host the remote content. You can set the remote build path to any convenient location and the build system doesn't rely on the default value.
 
 ## Default local paths
 
-The local build path defaults to the path provided by `Addressables.BuildPath`, which is in the Library folder of your Unity project. Addressables appends a folder to the local build path based on your current platform build target setting. When you build for multiple platforms, the build places the artifacts for each platform in a different subfolder.
+The local build path defaults to the path provided by `Addressables.BuildPath`, which is in the `Library` folder of your Unity project. Addressables appends a folder to the local build path based on your current platform build target setting. When you build for multiple platforms, the build places the artifacts for each platform in a different subfolder.
 
-Likewise, the local load path defaults to that provided by `Addressables.RuntimePath`, which resolves to the StreamingAssets folder. Again Addressables adds the platform build target to the path.
+Likewise, the local load path defaults to that provided by `Addressables.RuntimePath`, which resolves to the `StreamingAssets` folder. Again Addressables adds the platform build target to the path.
 
-When you build your local bundles to the default build path, then the build code temporarily copies the artifacts from the build path to the StreamingAssets folder when you build your player, and removes them after the build.
+When you build local AssetBundles to the default build path, then the build code temporarily copies the artifacts from the build path to the `StreamingAssets` folder when you build a Player, and removes them after the build.
 
 > [!WARNING]
-> If you build to, or load from custom local paths, then you must copy your build artifacts to the correct place in your project before making a player build and to make sure your application can access those artifacts at runtime.
+> If you build to, or load from custom local paths, then you must copy your build artifacts to the correct place in your project before making a Player build and to make sure your application can access those artifacts at runtime.
 
 ## Default remote paths
 

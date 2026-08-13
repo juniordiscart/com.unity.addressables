@@ -59,8 +59,8 @@ The Content Update Restriction schema determines how [Check for Content Update R
 
 The **Prevent Updates** property acts in the following way:
 
-* **Enabled**: The tool doesn't move any assets. When you make the update build, if any assets in the bundle have changed, then the entire bundle is rebuilt.
-* **Disabled**: If any assets in the bundle have changed, then the [Check for Content Update Restrictions](builds-update-build.md#check-for-content-update-restrictions) tool moves them to a new group created for the update. When you make the update build, the assets in the AssetBundles created from this new group override the versions found in the existing bundles.
+* **Enabled**: If any assets in the AssetBundle have changed, then the [Check for Content Update Restrictions](builds-update-build.md#check-for-content-update-restrictions) tool moves them to a new group created for the update. When you make the update build, the assets in the AssetBundles created from this new group override the versions found in the existing AssetBundles.
+* **Disabled**: The tool doesn't move any assets. When you make the update build, if any assets in the AssetBundle have changed, then the entire bundle is rebuilt.
 
 ## Additional resources
 

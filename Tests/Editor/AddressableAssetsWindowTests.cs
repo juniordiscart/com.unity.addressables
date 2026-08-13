@@ -180,7 +180,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AddressableAssetsWindow aaWindow = ScriptableObject.CreateInstance<AddressableAssetsWindow>();
             var treeView = InitGroupEditorWithState(aaWindow, treeState, mchs);
 
-            AddressableAssetGroup group1 = null, group2 = null;
+            AddressableAssetGroup group1 = null;
             try
             {
                 Settings.OnModification += aaWindow.m_GroupEditor.OnSettingsModification;

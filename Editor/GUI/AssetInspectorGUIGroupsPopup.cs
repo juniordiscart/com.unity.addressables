@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -19,7 +20,7 @@ namespace UnityEditor.AddressableAssets.GUI
         private List<AddressableAssetEntry> m_EntriesContext;
 
         private GroupsPopupTreeView m_Tree;
-        private TreeViewState m_TreeState;
+        private AddressableAssetEntryTreeViewState m_TreeState;
         private SearchField m_SearchField;
         private string m_CurrentName = string.Empty;
         private Texture2D m_FolderTexture;
@@ -78,7 +79,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_Tree == null)
             {
                 if (m_TreeState == null)
-                    m_TreeState = new TreeViewState();
+                    m_TreeState = new AddressableAssetEntryTreeViewState();
                 m_Tree = new GroupsPopupTreeView(m_TreeState, this, m_AllowReadOnlyGroups);
                 m_Tree.Reload();
 
@@ -105,7 +106,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        internal class GroupsPopupTreeItem : TreeViewItem
+        internal class GroupsPopupTreeItem : TreeViewItemAdapter
         {
             internal AddressableAssetGroup m_Group;
 
@@ -117,7 +118,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        internal class GroupsPopupTreeView : TreeView
+        internal class GroupsPopupTreeView : TreeViewAdapter
         {
             internal GroupsPopupWindow m_Popup;
 
@@ -125,7 +126,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             internal bool m_ShowReadOnlyGroups;
 
-            public GroupsPopupTreeView(TreeViewState state, GroupsPopupWindow popup, bool showReadOnlyGroups)
+            public GroupsPopupTreeView(TreeViewStateAdapter state, GroupsPopupWindow popup, bool showReadOnlyGroups)
                 : base(state)
             {
                 m_Popup = popup;
@@ -182,30 +183,30 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
             }
 
-            protected override bool CanMultiSelect(TreeViewItem item)
+            protected override bool CanMultiSelect(TreeViewItemAdapter item)
             {
                 return false;
             }
 
-            protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
+            protected override IList<TreeViewItemAdapter> BuildRowsAdapter(TreeViewItemAdapter root)
             {
                 if (string.IsNullOrEmpty(searchString))
                 {
-                    return base.BuildRows(root);
+                    return base.BuildRowsAdapter(root);
                 }
 
-                List<TreeViewItem> rows = new List<TreeViewItem>();
+                List<TreeViewItemAdapter> rows = new List<TreeViewItemAdapter>();
                 foreach (var child in rootItem.children)
                 {
                     if (child.displayName.IndexOf(searchString, StringComparison.OrdinalIgnoreCase) >= 0)
-                        rows.Add(child);
+                        rows.Add(child as TreeViewItemAdapter);
                 }
                 return rows;
             }
 
-            protected override TreeViewItem BuildRoot()
+            protected override TreeViewItemAdapter BuildRootAdapter()
             {
-                var root = new TreeViewItem(-1, -1);
+                var root = new TreeViewItemAdapter(-1, -1);
 
                 var aaSettings = AddressableAssetSettingsDefaultObject.Settings;
                 if (aaSettings == null)

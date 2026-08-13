@@ -4,6 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-01-05
+- Fixed an issue where NullReferenceException error and warnings are thrown when opening Addressables Report window.
+- Upgrade references from UnityEditor.GUID to UnityEngine.GUID on Unity 6.4+.
+- Setting catalog timeout correctly during the build so remote catalog operations can timeout successfully.
+- Revert yielding when calculating size in GetDownloadSizeAsync.
+- Fixed performance issue when moving Addressable Assets from one group to another using the context menu option "Move Addressables to Group..."
+
 ## [2.7.6] - 2025-11-10
 - Fixed an issue where null reference errors were thrown when undoing a graph node deletion that referenced an Addressable Asset.
 - Fixed a leak when releasing an InstanceOperation if it was pooled.

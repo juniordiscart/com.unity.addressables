@@ -34,7 +34,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Simulation
             var instId = "";
             var or = m_Result as Object;
             if (or != null)
+#if UNITY_6000_3_OR_NEWER
+                instId = "(" + or.GetEntityId() + ")";
+#else
                 instId = "(" + or.GetInstanceID() + ")";
+#endif
             return string.Format("{0}, result='{1}', status='{2}', location={3}.", base.ToString(), (m_Result + instId), m_Status, m_Context);
         }
 

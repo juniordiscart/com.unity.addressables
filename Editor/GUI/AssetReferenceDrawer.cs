@@ -1,18 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.IMGUI.Controls;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.Assertions;
-using UnityEngine.U2D;
 using Debug = UnityEngine.Debug;
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -608,7 +603,7 @@ namespace UnityEditor.AddressableAssets.GUI
     class AssetReferencePopup : EditorWindow
     {
         AssetReferenceTreeView m_Tree;
-        TreeViewState m_TreeState;
+        TreeViewStateAdapter m_TreeState;
         bool m_ShouldClose;
 
         void ForceClose()
@@ -664,7 +659,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_Tree == null)
             {
                 if (m_TreeState == null)
-                    m_TreeState = new TreeViewState();
+                    m_TreeState = new TreeViewStateAdapter();
                 m_Tree = new AssetReferenceTreeView(m_TreeState, m_Drawer, this, m_GUID, m_NonAddressedAsset);
                 m_Tree.Reload();
                 m_Tree.SetInitialSelection(m_Drawer.m_AssetName);
@@ -688,7 +683,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        sealed class AssetRefTreeViewItem : TreeViewItem
+        sealed class AssetRefTreeViewItem : TreeViewItemAdapter
         {
             public string AssetPath;
 
@@ -712,7 +707,7 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
-        internal class AssetReferenceTreeView : TreeView
+        internal class AssetReferenceTreeView : TreeViewAdapter
         {
             AssetReferenceDrawer m_Drawer;
             AssetReferencePopup m_Popup;
@@ -722,7 +717,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             internal bool IsEnterKeyPressed { get; set; }
 
-            public AssetReferenceTreeView(TreeViewState state, AssetReferenceDrawer drawer, AssetReferencePopup popup, string guid, string nonAddressedAsset)
+            public AssetReferenceTreeView(TreeViewStateAdapter state, AssetReferenceDrawer drawer, AssetReferencePopup popup, string guid, string nonAddressedAsset)
                 : base(state)
             {
                 m_Drawer = drawer;
@@ -743,7 +738,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
             }
 
-            protected override bool CanMultiSelect(TreeViewItem item)
+            protected override bool CanMultiSelect(TreeViewItemAdapter item)
             {
                 return false;
             }
@@ -790,27 +785,27 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
             }
 
-            protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
+            protected override IList<TreeViewItemAdapter> BuildRowsAdapter(TreeViewItemAdapter root)
             {
                 if (string.IsNullOrEmpty(searchString))
                 {
-                    return base.BuildRows(root);
+                    return base.BuildRowsAdapter(root);
                 }
 
-                List<TreeViewItem> rows = new List<TreeViewItem>();
+                List<TreeViewItemAdapter> rows = new List<TreeViewItemAdapter>();
 
                 foreach (var child in rootItem.children)
                 {
                     if (child.displayName.IndexOf(searchString, StringComparison.OrdinalIgnoreCase) >= 0)
-                        rows.Add(child);
+                        rows.Add(child as TreeViewItemAdapter);
                 }
 
                 return rows;
             }
 
-            protected override TreeViewItem BuildRoot()
+            protected override TreeViewItemAdapter BuildRootAdapter()
             {
-                var root = new TreeViewItem(-1, -1);
+                var root = new TreeViewItemAdapter(-1, -1);
 
                 var aaSettings = AddressableAssetSettingsDefaultObject.Settings;
                 if (aaSettings == null)

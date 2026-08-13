@@ -4,7 +4,6 @@ namespace UnityEditor.AddressableAssets.GUIElements
 {
     internal class LabeledLabel : VisualElement
     {
-        public new class UxmlFactory : UxmlFactory<LabeledLabel, UxmlTraits> { }
         public override VisualElement contentContainer
         {
             get

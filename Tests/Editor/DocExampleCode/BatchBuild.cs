@@ -28,7 +28,8 @@ namespace AddressableAssets.DocExampleCode
                     defines = arg.Substring(("-defines=".Length));
 
             var buildSettings = EditorUserBuildSettings.selectedBuildTargetGroup;
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(buildSettings, defines);
+            var namedBuildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(buildSettings);
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, defines);
         }
 
         public static void BuildContentAndPlayer()

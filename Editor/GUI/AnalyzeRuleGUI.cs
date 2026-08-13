@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Build;
-using UnityEditor.IMGUI.Controls;
+using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
@@ -11,7 +9,7 @@ namespace UnityEditor.AddressableAssets.GUI
     class AnalyzeRuleGUI
     {
         [SerializeField]
-        private TreeViewState m_TreeState;
+        private TreeViewStateAdapter m_TreeState;
 
         private AssetSettingsAnalyzeTreeView m_Tree;
 
@@ -31,7 +29,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_Tree == null)
             {
                 if (m_TreeState == null)
-                    m_TreeState = new TreeViewState();
+                    m_TreeState = new TreeViewStateAdapter();
 
                 m_Tree = new AssetSettingsAnalyzeTreeView(m_TreeState);
                 m_Tree.Reload();
