@@ -1052,7 +1052,12 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                         public uint typeId;
                     }
 
-                    public IEnumerable<BinaryStorageBuffer.ISerializationAdapter> Dependencies => new BinaryStorageBuffer.ISerializationAdapter[] {new ResolvedInternalIdSerializer() };
+                    public IEnumerable<BinaryStorageBuffer.ISerializationAdapter> Dependencies => new BinaryStorageBuffer.ISerializationAdapter[]
+                    {
+                        new ResolvedInternalIdSerializer(),
+                        new ProviderLoadRequestOptions.SerializationAdatapter()
+                    };
+
                     bool resolveInternalIds;
                     public Serializer(bool resolveInternalIds)
                     {

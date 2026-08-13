@@ -40,7 +40,12 @@ namespace UnityEngine.AddressableAssets
         /// Use to indicate that the build platform is Switch.
         /// </summary>
         Switch,
-
+#if UNITY_6000_5_OR_NEWER
+        /// <summary>
+        /// Use to indicate that the build platform is Switch2.
+        /// </summary>
+        Switch2,
+#endif
         /// <summary>
         /// Use to indicate that the build platform is Xbox One.
         /// </summary>
@@ -78,6 +83,9 @@ namespace UnityEngine.AddressableAssets
             {
                 {BuildTarget.XboxOne, AddressablesPlatform.XboxOne},
                 {BuildTarget.Switch, AddressablesPlatform.Switch},
+#if UNITY_6000_5_OR_NEWER
+                {BuildTarget.Switch2, AddressablesPlatform.Switch2},
+#endif
                 {BuildTarget.PS4, AddressablesPlatform.PS4},
                 {BuildTarget.iOS, AddressablesPlatform.iOS},
                 {BuildTarget.Android, AddressablesPlatform.Android},
@@ -94,6 +102,9 @@ namespace UnityEngine.AddressableAssets
             {
                 {RuntimePlatform.XboxOne, AddressablesPlatform.XboxOne},
                 {RuntimePlatform.Switch, AddressablesPlatform.Switch},
+#if UNITY_6000_5_OR_NEWER
+                {RuntimePlatform.Switch2, AddressablesPlatform.Switch2},
+#endif
                 {RuntimePlatform.PS4, AddressablesPlatform.PS4},
                 {RuntimePlatform.IPhonePlayer, AddressablesPlatform.iOS},
                 {RuntimePlatform.Android, AddressablesPlatform.Android},

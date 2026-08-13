@@ -11,6 +11,7 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Utilities;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.AddressableAssets.Utility;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
@@ -219,7 +220,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AreConvertableEditorAssemblyTypesConverted()
         {
-            Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == "UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null");
+            Assembly asm = AssemblyUtility.GetAssemblies().FirstOrDefault(a => a.FullName == "UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null");
             var conversionMapping = new Dictionary<Type, Type>()
             {
                 {asm.GetType("UnityEditor.Audio.AudioMixerGroupController"), typeof(AudioMixerGroup)},

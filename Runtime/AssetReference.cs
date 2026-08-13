@@ -372,8 +372,13 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// Stores the name of the sub object.  Some assets, such as models and sprite atlases, contain mutliple objects.  These objects can be loaded by specifying their name and type.
+        /// Stores the name of the sub object (commonly referred to as a sub-asset).
         /// </summary>
+        /// <remarks>
+        /// Some assets contain multiple sub-asset objects which can be independently loaded without loading the main object.
+        /// For example, the meshes inside a model and the sprites inside a sprite atlas can be referenced from an AssetReference
+        /// by the name of the object.
+        /// </remarks>
         public virtual string SubObjectName
         {
             get { return m_SubObjectName; }
@@ -383,6 +388,7 @@ namespace UnityEngine.AddressableAssets
 #if UNITY_EDITOR
         /// <summary>
         /// Stores the guid of the sub object (if available).
+        /// This is used in the context of SpriteAtlases.
         /// </summary>
         public virtual string SubObjectGUID
         {
@@ -713,15 +719,28 @@ namespace UnityEngine.AddressableAssets
             if (DerivedClassType == null)
                 return CachedAsset = asset;
 
-            if (asset == null)
+            if (asset == null || (asset != null && !DerivedClassType.IsAssignableFrom(asset.GetType())))
+            {
                 Debug.LogWarning("Assigned editorAsset does not match type " + DerivedClassType + ". EditorAsset will be null.");
+                return CachedAsset = null;
+            }
+
             return CachedAsset = asset;
         }
 
         internal Object FetchEditorAsset()
         {
             var assetPath = AssetDatabase.GUIDToAssetPath(m_AssetGUID);
-            var asset = AssetDatabase.LoadAssetAtPath(assetPath, DerivedClassType ?? AssetDatabase.GetMainAssetTypeAtPath(assetPath));
+            Object asset = null;
+
+            if (DerivedClassType != null)
+                asset = AssetDatabase.LoadAssetAtPath(assetPath, DerivedClassType);
+
+            // if we can't retrieve the asset by the DerivedClassType, try the MainAssetType
+            // This is useful for dealing with subclasses
+            if (asset == null)
+                asset = AssetDatabase.LoadAssetAtPath(assetPath, AssetDatabase.GetMainAssetTypeAtPath(assetPath));
+
             return asset;
         }
 
@@ -796,20 +815,21 @@ namespace UnityEngine.AddressableAssets
         internal Object LocateEditorAssetForTypedAssetReference(Object value, string path, Type type)
         {
             Object mainAsset;
-            if (value.GetType() != type)
+            if (!type.IsAssignableFrom(value.GetType()))
             {
                 mainAsset = null;
             }
             else
             {
-                mainAsset = AssetDatabase.LoadAssetAtPath(path, type);
+                var actualType = AssetDatabase.GetMainAssetTypeAtPath(path);
+                mainAsset = AssetDatabase.LoadAssetAtPath(path, actualType);
                 if (mainAsset != value)
                 {
                     mainAsset = null;
                     var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
                     foreach (var asset in subAssets)
                     {
-                        if (asset.GetType() == type && value == asset)
+                        if (type.IsAssignableFrom(asset.GetType()) && value == asset)
                         {
                             mainAsset = asset;
                             break;

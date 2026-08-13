@@ -9,6 +9,7 @@ using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Debug = UnityEngine.Debug;
+using UnityEngine.AddressableAssets.Utility;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
@@ -1153,7 +1154,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 return null;
             }
 
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = AssemblyUtility.GetAssemblies();
             List<Type> typesList = new List<Type>();
             foreach (Assembly assem in assemblies)
             {

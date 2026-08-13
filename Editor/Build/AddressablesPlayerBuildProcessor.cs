@@ -97,10 +97,12 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
                 }
             }
             else
-                result = DefaultBuild(settings);
+                result = DefaultBuild(settings, buildPlayerContext);
 
             if (result != null && !string.IsNullOrEmpty(result.Error))
-                Debug.LogError($"Failed to build Addressables content, content not included in Player Build. \"{result.Error}\"");
+            {
+                throw new BuildFailedException($"Failed to build Addressables content, content not included in Player Build. \"{result.Error}\"");
+            }
         }
 
         if (buildPlayerContext != null)
@@ -122,7 +124,7 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
         }
     }
 
-    static AddressablesPlayerBuildResult DefaultBuild(AddressableAssetSettings settings)
+    static AddressablesPlayerBuildResult DefaultBuild(AddressableAssetSettings settings, BuildPlayerContext buildPlayerContext)
     {
         var types = AddressableAssetUtility.GetTypes<AddressableAssetsSettingsGroupEditor.IAddressablesBuildMenu>();
         var displayMenus = AddressableAssetsSettingsGroupEditor.CreateBuildMenus(types);
@@ -136,15 +138,17 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
             }
         }
 
+
+        var input = new AddressablesDataBuilderInput(settings, buildPlayerContext.BuildPlayerOptions);
         if (defaultNewBuildMenu != null)
         {
             AddressableAssetsSettingsGroupEditor.BuildMenuContext context = new AddressableAssetsSettingsGroupEditor.BuildMenuContext()
                 { buildScriptIndex = -1, BuildMenu = defaultNewBuildMenu, Settings = settings };
-            return AddressableAssetsSettingsGroupEditor.BuildAddressablesWithResult(context);
+            return AddressableAssetsSettingsGroupEditor.BuildAddressablesWithResult(context, input);
         }
         else
         {
-            AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult result);
+            AddressableAssetSettings.BuildPlayerContent(out AddressablesPlayerBuildResult result, input);
             return result;
         }
     }

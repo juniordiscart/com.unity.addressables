@@ -50,7 +50,7 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField]
         List<string> m_SerializedLabels;
 
-        HashSet<string> m_Labels = new HashSet<string>();
+        SortedSet<string> m_Labels = new SortedSet<string>();
 
         /// <summary>
         /// If true, this asset was changed after being built into an Addressable Group marked 'Cannot Change Post Release'.
@@ -177,7 +177,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public HashSet<string> labels
         {
-            get { return m_Labels; }
+            get { return m_Labels.ToHashSet(); }
         }
 
         internal Type m_cachedMainAssetType = null;
@@ -222,7 +222,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
             else
             {
-                if (m_Labels.Remove(label))
+                if (RemoveLabel(label))
                 {
                     SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, this, postEvent);
                     return true;
@@ -230,6 +230,15 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Used to ensure the entry's label list is correctly updated during a removal
+        /// </summary>
+        /// <param name="label">The label to remove</param>
+        internal bool RemoveLabel(string label)
+        {
+            return m_Labels.Remove(label);
         }
 
         /// <summary>
@@ -264,7 +273,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
 
                 foreach (var l in labelsToRemove)
-                    labels.Remove(l);
+                    RemoveLabel(l);
             }
 
             return keys;
@@ -658,7 +667,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         public void OnAfterDeserialize()
         {
-            m_Labels = new HashSet<string>();
+            m_Labels = new SortedSet<string>();
             foreach (var s in m_SerializedLabels)
                 m_Labels.Add(s);
             m_SerializedLabels = null;

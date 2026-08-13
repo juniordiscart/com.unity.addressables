@@ -6,6 +6,9 @@ public class RuntimePlatformMappingServiceTests
 {
     [TestCase(RuntimePlatform.XboxOne, AddressablesPlatform.XboxOne)]
     [TestCase(RuntimePlatform.Switch, AddressablesPlatform.Switch)]
+#if UNITY_6000_5_OR_NEWER
+    [TestCase(RuntimePlatform.Switch2, AddressablesPlatform.Switch2)]
+#endif
     [TestCase(RuntimePlatform.PS4, AddressablesPlatform.PS4)]
     [TestCase(RuntimePlatform.IPhonePlayer, AddressablesPlatform.iOS)]
     [TestCase(RuntimePlatform.Android, AddressablesPlatform.Android)]

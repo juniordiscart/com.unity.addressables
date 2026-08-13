@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -345,12 +347,39 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
             m_Report = buildReport;
             m_TreeItems = CreateTreeViewItems(m_Report);
-            m_TreeView.SetRootItems(CreateTreeRootsNestedList(m_TreeItems));
-            m_TreeView.Rebuild();
+
 #if UNITY_6000_0_OR_NEWER
             m_TreeView.sortingMode = ColumnSortingMode.Custom;
 #endif
             m_TreeView.columnSortingChanged += ColumnSortingChanged;
+
+            BuildTree();
+        }
+
+        private void BuildTree()
+        {
+            LoadTree<AssetsViewBuildReportItem>(builder =>
+            {
+                int id = 0;
+                foreach (AssetsViewBuildReportItem item in m_TreeItems)
+                {
+                    AssetsViewBuildReportAsset asset = item as AssetsViewBuildReportAsset;
+                    if (asset == null)
+                        continue;
+
+                    bool assetIsExplicitAsset = asset.ExplicitAsset != null;
+                    if (assetIsExplicitAsset)
+                    {
+                        var children = CreateChildrenOfAsset(asset, ref id, true);
+                        var treeItem = new TreeViewItemData<AssetsViewBuildReportItem>(++id, item, children);
+                        builder.Add(treeItem);
+                    }
+                    else
+                    {
+                        builder.Add(new TreeViewItemData<AssetsViewBuildReportItem>(++id, item));
+                    }
+                }
+            });
         }
 
         private void ColumnSortingChanged()
@@ -376,20 +405,17 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 .With((items) => ItemsSelected.Invoke(items));
 
             m_TreeView = tb.Build();
-            view.Add(m_TreeView);
             SetCallbacksForColumns(m_TreeView.columns, ColumnDataForView);
             m_SearchField = rootVisualElement.Q<ToolbarSearchField>(BuildReportUtility.SearchField);
-            m_SearchField.RegisterValueChangedCallback(OnSearchValueChanged);
-            m_SearchValue = m_SearchField.value;
+            RegisterSearchCallback();
+
+            // Create loading indicator
+            CreateLoadingIndicator(rootVisualElement);
         }
 
-        private void OnSearchValueChanged(ChangeEvent<string> evt)
+        protected override async Task PerformSearchAsync(string searchValue, CancellationToken cancellationToken)
         {
-            if (m_TreeItems == null)
-                return;
-            m_SearchValue = evt.newValue.ToLower();
-            m_TreeView.SetRootItems(CreateTreeRootsNestedList(m_TreeItems));
-            m_TreeView.Rebuild();
+            await PerformSearchAsyncImpl<AssetsViewBuildReportItem>(searchValue, cancellationToken);
         }
 
         public IList<TreeViewItemData<AssetsViewBuildReportItem>> CreateTreeRootsNestedList(IList<IAddressablesBuildReportItem> items)

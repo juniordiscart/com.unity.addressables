@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -253,13 +255,31 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
             m_Report = buildReport;
             m_TreeItems = CreateTreeViewItems(m_Report);
-            IList<TreeViewItemData<DuplicatedAssetsViewBuildReportItem>> treeRoots = CreateTreeRootsNestedList(m_TreeItems);
-            m_TreeView.SetRootItems(treeRoots);
-            m_TreeView.Rebuild();
+
 #if UNITY_6000_0_OR_NEWER
             m_TreeView.sortingMode = ColumnSortingMode.Custom;
 #endif
             m_TreeView.columnSortingChanged += ColumnSortingChanged;
+
+            BuildTree();
+        }
+
+        private void BuildTree()
+        {
+            LoadTree<DuplicatedAssetsViewBuildReportItem>(builder =>
+            {
+                int id = 0;
+                foreach (DuplicatedAssetsViewBuildReportItem item in m_TreeItems)
+                {
+                    DuplicatedAssetsViewBuildReportDuplicatedAsset duplicatedAsset = item as DuplicatedAssetsViewBuildReportDuplicatedAsset;
+                    if (duplicatedAsset == null)
+                        continue;
+
+                    var bundles = CreateBundleEntries(duplicatedAsset, ref id, true);
+                    var treeItem = new TreeViewItemData<DuplicatedAssetsViewBuildReportItem>(id++, item, bundles);
+                    builder.Add(treeItem);
+                }
+            });
         }
 
         private void ColumnSortingChanged()
@@ -283,20 +303,18 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 .With((items) => ItemsSelected.Invoke(items));
 
             m_TreeView = tb.Build();
-            view.Add(m_TreeView);
             SetCallbacksForColumns(m_TreeView.columns, ColumnDataForView);
             m_SearchField = rootVisualElement.Q<ToolbarSearchField>(BuildReportUtility.SearchField);
             m_SearchField.RegisterValueChangedCallback(OnSearchValueChanged);
             m_SearchValue = m_SearchField.value;
+
+            // Create loading indicator
+            CreateLoadingIndicator(rootVisualElement);
         }
 
-        private void OnSearchValueChanged(ChangeEvent<string> evt)
+        protected override async Task PerformSearchAsync(string searchValue, CancellationToken cancellationToken)
         {
-            if (m_TreeItems == null)
-                return;
-            m_SearchValue = evt.newValue.ToLower();
-            m_TreeView.SetRootItems(CreateTreeRootsNestedList(m_TreeItems));
-            m_TreeView.Rebuild();
+            await PerformSearchAsyncImpl<DuplicatedAssetsViewBuildReportItem>(searchValue, cancellationToken);
         }
     }
 }

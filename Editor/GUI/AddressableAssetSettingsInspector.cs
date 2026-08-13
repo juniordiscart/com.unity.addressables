@@ -248,6 +248,11 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_AllowNestedFolders =
             new GUIContent("Allow Nested Folders", "If enabled and there is a path separator in an Addressables key, subfolders will be created when the bundle mode is set to Pack Separately.This is legacy behavior.");
 
+#if UNITY_6000_5_OR_NEWER
+        GUIContent m_extractTypeTreeDataContent =
+            new GUIContent("Extract TypeTree Data", "If enabled, type tree data will be extracted from all bundles and put into a combined file that is loaded at runtime during the initialization of Addressables.");
+#endif
+
 #if (ENABLE_CCD)
         GUIContent m_BuildAndReleaseBinFile =
             new GUIContent("For Build & Release", "Determines where the system attempts to pull the previous content state file from for the Content Update.");
@@ -673,6 +678,13 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (allowNestedBundleFolders != m_AasTarget.AllowNestedBundleFolders)
                     m_QueuedChanges.Add(() => m_AasTarget.AllowNestedBundleFolders = allowNestedBundleFolders);
                 GUILayout.Space(postBlockContentSpace);
+
+#if UNITY_6000_5_OR_NEWER
+                bool extractTypeTreeData = EditorGUILayout.Toggle(m_extractTypeTreeDataContent, m_AasTarget.ExtractTypeTreeData);
+                if (extractTypeTreeData != m_AasTarget.ExtractTypeTreeData)
+                    m_QueuedChanges.Add(() => m_AasTarget.ExtractTypeTreeData = extractTypeTreeData);
+                GUILayout.Space(postBlockContentSpace);
+#endif
             }
 
             EditorGUI.EndFoldoutHeaderGroup();

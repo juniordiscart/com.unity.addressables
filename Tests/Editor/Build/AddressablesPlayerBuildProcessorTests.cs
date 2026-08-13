@@ -3,7 +3,9 @@ using System;
 using System.IO;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.Build;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -139,6 +141,100 @@ public class AddressablesPlayerBuildProcessorTests
             if (!preexistingFile)
                 File.Delete(buildPath);
             Assert.IsFalse(File.Exists(projectPath), "Link.xml file remains at the ProjectPath, link.xml expected to be deleted");
+        }
+    }
+
+    [Test]
+    public void PrepareForPlayerbuild_WhenBuildFails_ThrowsBuildFailedException()
+    {
+        // Save original override
+        var originalOverride = AddressablesPlayerBuildProcessor.BuildAddressablesOverride;
+
+        try
+        {
+            // Set up override to return a failed build result
+            string expectedError = "Test build error message";
+            AddressablesPlayerBuildProcessor.BuildAddressablesOverride = (settings) =>
+            {
+                var result = new AddressablesPlayerBuildResult();
+                result.Error = expectedError;
+                return result;
+            };
+
+            // Verify that BuildFailedException is thrown with the correct message
+            var exception = Assert.Throws<BuildFailedException>(() =>
+            {
+                AddressablesPlayerBuildProcessor.PrepareForPlayerbuild(m_Settings, null, true);
+            });
+
+            Assert.IsNotNull(exception);
+            StringAssert.Contains(expectedError, exception.Message,
+                "Exception message should contain the build error");
+            StringAssert.Contains("Failed to build Addressables content", exception.Message,
+                "Exception message should indicate Addressables build failure");
+        }
+        finally
+        {
+            // Restore original override
+            AddressablesPlayerBuildProcessor.BuildAddressablesOverride = originalOverride;
+        }
+    }
+
+    [Test]
+    public void PrepareForPlayerbuild_WhenBuildSucceeds_DoesNotThrow()
+    {
+        // Save original override
+        var originalOverride = AddressablesPlayerBuildProcessor.BuildAddressablesOverride;
+
+        try
+        {
+            // Set up override to return a successful build result
+            AddressablesPlayerBuildProcessor.BuildAddressablesOverride = (settings) =>
+            {
+                var result = new AddressablesPlayerBuildResult();
+                result.Error = null; // No error = success
+                return result;
+            };
+
+            // Verify that no exception is thrown
+            Assert.DoesNotThrow(() =>
+            {
+                AddressablesPlayerBuildProcessor.PrepareForPlayerbuild(m_Settings, null, true);
+            });
+        }
+        finally
+        {
+            // Restore original override
+            AddressablesPlayerBuildProcessor.BuildAddressablesOverride = originalOverride;
+        }
+    }
+
+    [Test]
+    public void PrepareForPlayerbuild_WhenBuildAddressablesIsFalse_DoesNotBuild()
+    {
+        // Save original override
+        var originalOverride = AddressablesPlayerBuildProcessor.BuildAddressablesOverride;
+        bool buildWasCalled = false;
+
+        try
+        {
+            // Set up override to track if it was called
+            AddressablesPlayerBuildProcessor.BuildAddressablesOverride = (settings) =>
+            {
+                buildWasCalled = true;
+                return new AddressablesPlayerBuildResult();
+            };
+
+            // Call with buildAddressables = false
+            AddressablesPlayerBuildProcessor.PrepareForPlayerbuild(m_Settings, null, false);
+
+            // Verify that the build override was not called
+            Assert.IsFalse(buildWasCalled, "Build should not be called when buildAddressables is false");
+        }
+        finally
+        {
+            // Restore original override
+            AddressablesPlayerBuildProcessor.BuildAddressablesOverride = originalOverride;
         }
     }
 }

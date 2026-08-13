@@ -495,6 +495,19 @@ namespace UnityEditor.AddressableAssets.Settings
 			get { return !m_IsTemporary; }
 		}
 
+#if UNITY_6000_5_OR_NEWER
+        [SerializeField]
+        private bool m_ExtractTypeTreeData = false;
+        /// <summary>
+        /// If enabled, type tree data will be stripped from all bundles and combined into a separate file.  This can reduce the file size of asset bundles.
+        /// </summary>
+        public bool ExtractTypeTreeData
+        {
+            get { return m_ExtractTypeTreeData; }
+            set { m_ExtractTypeTreeData = value; }
+        }
+#endif
+
 		[SerializeField]
 		bool m_OptimizeCatalogSize = false;
 
@@ -600,6 +613,39 @@ namespace UnityEditor.AddressableAssets.Settings
 
         [SerializeField]
         int m_SharedBundleSettingsCustomGroupIndex;
+
+        [SerializeField]
+        float m_simulatedLoadDelay = .1f;
+
+        /// <summary>
+        /// The load delay to be added to asset loads when Use Asset Database (fastest) is enabled. Default value is 0.1f.
+        /// </summary>
+        public float SimulatedLoadDelay
+        {
+            get
+            {
+                return m_simulatedLoadDelay;
+            }
+            set
+            {
+                m_simulatedLoadDelay = value; // Update serialized load delay
+
+                if (Application.isPlaying)
+                {
+                    // Update live load delay
+                    AssetDatabaseProvider assetDatabaseProvider = null;
+                    foreach (IResourceProvider provider in Addressables.Instance.ResourceManager.ResourceProviders)
+                    {
+                        if (provider is AssetDatabaseProvider)
+                        {
+                            assetDatabaseProvider = (AssetDatabaseProvider)provider;
+                            assetDatabaseProvider.SetLoadDelay(value);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
 		/// <summary>
 		/// The maximum time to download hash and json catalog files before a timeout error.
@@ -1731,7 +1777,7 @@ namespace UnityEditor.AddressableAssets.Settings
             // Rename collected entries
             foreach (var entry in entriesToUpdate)
             {
-						entry.labels.Remove(oldLabelName);
+                entry.RemoveLabel(oldLabelName);
 						entry.SetLabel(newLabelName, true);
 					}
 

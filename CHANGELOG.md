@@ -4,6 +4,18 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-02-16
+- Added support for extracting type tree data from asset bundles.  This requires Unity 6.5+.
+- Fixed performance issue when moving Addressable Assets from one group to another using the context menu option "Move Addressables to Group..."
+- When doing a player build if the Addressables build fails, the player build will fail as well. Previously it just logged the error.
+- When doing a player build the development flag and scripting defines will be passed through to the Addressables content build when the scripting define ADDRESSABLES_ADD_DEFINES is set. We recommend adding this flag as this is more than likely the correct behavior, but it is not enabled by default to prevent surprise compilation problems
+- When applying an asset of an inherited type to an AssetReferenceT of the base type, warnings are no longer thrown incorrectly
+- Improved the search bar in the Addressables Report window
+- Fixed an issue where an "Unable to find registered file for bundle" error is thrown when building addressables group with Bundle - Naming Mode set to “No Hash” and Bundle Mode set to “Pack Together”.
+- Fix an issue with Addressable keys. If a character is > 127, but less than 255 it was not being encoded properly in the binary catalog.
+- Added support for customizing the load delay added to asset loads in Play Mode when the 'Use Asset Database (fastest)' Play Mode Script is selected. Default value is 0.1f. Accessable via 'AddressableAssetSettings.SimulatedLoadDelay(get; set;)'.
+- Fixed issue where labels weren't sorted until after Editor restart
+
 ## [2.8.1] - 2026-01-05
 - Fixed an issue where NullReferenceException error and warnings are thrown when opening Addressables Report window.
 - Upgrade references from UnityEditor.GUID to UnityEngine.GUID on Unity 6.4+.

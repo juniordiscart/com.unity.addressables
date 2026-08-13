@@ -15,6 +15,7 @@ using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using UnityEditor.VersionControl;
 using UnityEngine;
+using UnityEngine.AddressableAssets.Utility;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -268,7 +269,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 var types = new List<Type>();
                 try
                 {
-                    foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
+                    foreach (var a in AssemblyUtility.GetAssemblies())
                     {
                         if (a.IsDynamic)
                             continue;

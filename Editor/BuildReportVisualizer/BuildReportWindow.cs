@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.GUIElements;
@@ -215,9 +216,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         void OnViewDropDownChanged(int newIndex)
         {
-            var treeView = m_ActiveContentView.ContentTreeView;
-            if (treeView != null)
-                treeView.RemoveFromHierarchy();
+            if (m_ActiveContentView != null)
+                m_ActiveContentView.ClearGUI();
 
             if (m_CurrentTab == (int)RibbonTabType.ContentTab)
             {
@@ -225,7 +225,9 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 m_PreviousContentDropDownValue = newIndex;
                 m_ActiveContentViewType = (ContentViewType)newIndex;
                 m_ActiveContentView = GetContentView(m_ActiveContentViewType);
-                m_ActiveContentView.m_SearchField.Q<TextField>().value = prevSearchValue;
+                m_ActiveContentView.m_SearchField.Q<TextField>().SetValueWithoutNotify(prevSearchValue);
+                m_ActiveContentView.ScheduleDebouncedSearch(prevSearchValue);
+
                 switch (newIndex)
                 {
                     case (int) ContentViewType.BundleView:

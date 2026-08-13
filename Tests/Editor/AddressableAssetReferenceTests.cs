@@ -15,9 +15,11 @@ namespace UnityEditor.AddressableAssets.Tests
         private string m_ScriptableObjectPath;
         private string m_SpriteAtlasPath;
         private string m_TexturePath;
+        private string m_InheritedObjectPath;
         TestObject mainSO;
         TestSubObject subSO;
         TestSubObject subSO2;
+        InheritedTestObject inheritedSO;
 
         protected override void OnInit()
         {
@@ -31,6 +33,11 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.AddObjectToAsset(subSO, m_ScriptableObjectPath);
             AssetDatabase.AddObjectToAsset(subSO2, m_ScriptableObjectPath);
             AssetDatabase.ImportAsset(m_ScriptableObjectPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+
+            m_InheritedObjectPath = GetAssetPath("testInheritedObject.asset");
+            inheritedSO = ScriptableObject.CreateInstance<InheritedTestObject>();
+            AssetDatabase.CreateAsset(inheritedSO, m_InheritedObjectPath);
+            AssetDatabase.ImportAsset(m_InheritedObjectPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
 
             // create a Sprite atlas, + sprite
             m_SpriteAtlasPath = GetAssetPath("testAtlas.spriteatlas");
@@ -48,8 +55,8 @@ namespace UnityEditor.AddressableAssets.Tests
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.SaveAndReimport();
 
-            SpriteAtlasExtensions.Add(spriteAtlas, new[] {AssetDatabase.LoadAssetAtPath<Texture>(m_TexturePath)});
-            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] {spriteAtlas}, EditorUserBuildSettings.activeBuildTarget, false);
+            SpriteAtlasExtensions.Add(spriteAtlas, new[] { AssetDatabase.LoadAssetAtPath<Texture>(m_TexturePath) });
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { spriteAtlas }, EditorUserBuildSettings.activeBuildTarget, false);
         }
 
         [Test]
@@ -246,6 +253,15 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void AssetReference_SetEditorAsset_AcceptsDerivedType()
+        {
+            AssetReferenceT<TestObject> baseTypeReference = new AssetReferenceT<TestObject>("badguid");
+            baseTypeReference.SetEditorAsset(inheritedSO);
+            Assert.NotNull(baseTypeReference.editorAsset, "AssetReferenceT should accept assets of derived types.");
+            Assert.AreEqual(inheritedSO, baseTypeReference.editorAsset, "AssetReferenceT should correctly store a derived type asset.");
+        }
+
+        [Test]
         public void AssetReferenceNoAsset_CreatesCorrectLabelForType()
         {
             // Base Types
@@ -275,7 +291,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(expected, val, "Type restricted is expected in display string shown");
         }
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         [Test]
         public void AssetPostProcessor_GetTypesForAssetPath_DoesNotErrorOnNullValue()
         {
@@ -311,6 +327,6 @@ namespace UnityEditor.AddressableAssets.Tests
                 AssetPathToTypes.s_PathToTypes = prevPathToTypes;
             }
         }
-        #endif
+#endif
     }
 }

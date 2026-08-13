@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine.AddressableAssets.Utility;
 
 namespace UnityEngine.AddressableAssets.Initialization
 {
@@ -22,9 +23,9 @@ namespace UnityEngine.AddressableAssets.Initialization
         }
 
 #else
-        static Assembly[] GetAssemblies()
+        static IEnumerable<Assembly> GetAssemblies()
         {
-            return AppDomain.CurrentDomain.GetAssemblies();
+            return AssemblyUtility.GetAssemblies();
         }
 
 #endif

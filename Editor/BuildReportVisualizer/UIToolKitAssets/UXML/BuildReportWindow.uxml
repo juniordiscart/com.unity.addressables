@@ -10,9 +10,9 @@
                 <ui:Instance template="ReportsListPanelTemplate" name="ReportsListPanel" />
             </ui:VisualElement>
             <ui:VisualElement name="MiddleRightPanesContainer" style="min-width: 400px;">
-                <ui:TwoPaneSplitView name="MiddleRightPaneSplitter" fixed-pane-index="1" fixed-pane-initial-size="400" orientation="Horizontal" fixed-pane-initial-dimension="300" style="min-height: auto;">
-                    <ui:VisualElement name="MiddlePane" style="min-width: 500px;">
-                        <ui:Instance template="MainPanelTemplate" name="MainPanel" />
+                <ui:TwoPaneSplitView name="MiddleRightPaneSplitter" fixed-pane-index="1" fixed-pane-initial-size="400" orientation="Horizontal" fixed-pane-initial-dimension="300" style="min-height: auto; height: 100%;">
+                    <ui:VisualElement name="MiddlePane" style="min-width: 500px; flex-grow: 1; height: 100%;">
+                        <ui:Instance template="MainPanelTemplate" name="MainPanel" style="flex-grow: 1; flex-direction: column; height: 100%;" />
                     </ui:VisualElement>
                     <ui:VisualElement name="RightPane" style="min-width: 354px; height: 100%; min-height: 100%; max-height: 100%;">
                         <ui:Instance template="DetailsPanelTemplate" name="DetailsPanel" style="height: 100%; max-height: 100%; min-height: 100%; max-width: 100%;" />

@@ -1,14 +1,17 @@
+using AddressableAssetsIntegrationTests;
+using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using AddressableAssetsIntegrationTests;
-using NUnit.Framework;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
+using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.TestTools;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -26,28 +29,105 @@ namespace UnityEditor.AddressableAssets.Tests
             get { return true; }
         }
 
-		[Test]
-		public void CanCreateContentStateData()
+        class ScopedContentState : IDisposable
 		{
-			var group = Settings.CreateGroup("LocalStuff", false, false, false, null);
-			var schema = group.AddSchema<BundledAssetGroupSchema>();
-			schema.BuildPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalBuildPath);
-			schema.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+            AddressableAssetSettings m_Settings;
+            AddressableAssetGroup m_AddedGroup;
+            public string ContentStatePath {get;private set;}
+            public string TypeTreeDataPath {get;private set;}
+            public ScopedContentState(AddressableAssetSettings settings, string assetGUIDToAdd)
+            {
+                m_Settings = settings;
+                m_AddedGroup = m_Settings.CreateGroup("LocalStuff", false, false, false, null);
+                var schema = m_AddedGroup.AddSchema<BundledAssetGroupSchema>();
+                schema.BuildPath.SetVariableByName(m_Settings, AddressableAssetSettings.kLocalBuildPath);
+                schema.LoadPath.SetVariableByName(m_Settings, AddressableAssetSettings.kLocalLoadPath);
 			schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
-			group.AddSchema<ContentUpdateGroupSchema>().StaticContent = true;
+                m_AddedGroup.AddSchema<ContentUpdateGroupSchema>().StaticContent = true;
 
-			Settings.CreateOrMoveEntry(m_AssetGUID, group);
-			var context = new AddressablesDataBuilderInput(Settings);
+                m_Settings.CreateOrMoveEntry(assetGUIDToAdd, m_AddedGroup);
+                var context = new AddressablesDataBuilderInput(m_Settings);
 
-			var op = Settings.ActivePlayerDataBuilder.BuildData<AddressablesPlayerBuildResult>(context);
+                var op = m_Settings.ActivePlayerDataBuilder.BuildData<AddressablesPlayerBuildResult>(context);
 
 			Assert.IsTrue(string.IsNullOrEmpty(op.Error), op.Error);
-			var tempPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
-			var cacheData = ContentUpdateScript.LoadContentState(tempPath);
+                ContentStatePath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
+                TypeTreeDataPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + "/aa/" + PlatformMappingService.GetPlatformPathSubFolder() + "/" + BuildScriptPackedMode.kTypeTreeDataFileName;
+            }
+
+            public void Dispose()
+            {
+                m_Settings.RemoveGroup(m_AddedGroup);
+            }
+        }
+
+        [Test]
+        public void CanCreateContentStateData()
+        {
+            using (var contentState = new ScopedContentState(Settings, m_AssetGUID))
+            {
+                var cacheData = ContentUpdateScript.LoadContentState(contentState.ContentStatePath);
 			Assert.NotNull(cacheData);
-			Settings.RemoveGroup(group);
+            }
+        }
+#if UNITY_6000_5_OR_NEWER
+
+        [Test]
+        public void ContentUpdateState_WithTTExtractionEnabled_ContainsExpectedTypeTreeHashes()
+        {
+            var prevTTSetting = Settings.ExtractTypeTreeData;
+            Settings.ExtractTypeTreeData = true;
+            using (var contentState = new ScopedContentState(Settings, m_AssetGUID))
+            {
+                var cacheData = ContentUpdateScript.LoadContentState(contentState.ContentStatePath);
+                Assert.NotNull(cacheData);
+                Assert.NotNull(cacheData.typeTreeHashes);
+                Assert.Greater(cacheData.typeTreeHashes.Length, 0);
+                Assert.IsTrue(File.Exists(contentState.TypeTreeDataPath));
+                var hashes = ContentBuildInterface.LoadTypeTreeDataHashesFromFile(contentState.TypeTreeDataPath);
+                Assert.AreEqual(hashes.Length, cacheData.typeTreeHashes.Length);
+                for(int i = 0;  i < hashes.Length; i++)
+                    Assert.AreEqual(hashes[i], cacheData.typeTreeHashes[i]);
+            }
+            Settings.ExtractTypeTreeData = prevTTSetting;
+        }
+
+        [Test]
+        public void ContentUpdateState_WithTTExtractionDisabled_DoesntContainTypeTreeHashes()
+        {
+            var prevTTSetting = Settings.ExtractTypeTreeData;
+            Settings.ExtractTypeTreeData = false;
+            using (var contentState = new ScopedContentState(Settings, m_AssetGUID))
+            {
+                var cacheData = ContentUpdateScript.LoadContentState(contentState.ContentStatePath);
+                Assert.NotNull(cacheData);
+                Assert.IsTrue(cacheData.typeTreeHashes == null || cacheData.typeTreeHashes.Length == 0);
+                Assert.IsFalse(File.Exists(contentState.TypeTreeDataPath));
+            }
+            Settings.ExtractTypeTreeData = prevTTSetting;
 		}
 
+        [Test]
+        public void ContentUpdateState_StrippingTypeTreeHashes_ProducesExpectedFile()
+        {
+            var prevTTSetting = Settings.ExtractTypeTreeData;
+            Settings.ExtractTypeTreeData = true;
+            using (var contentState = new ScopedContentState(Settings, m_AssetGUID))
+            {
+                var hashes = ContentBuildInterface.LoadTypeTreeDataHashesFromFile(contentState.TypeTreeDataPath);
+                Assert.NotNull(hashes);
+                Assert.Greater(hashes.Length, 1);
+
+                var hashesToStrip = new Hash128[] { hashes[0] }; //strip the first one
+                var tempPath = Path.GetTempFileName();
+                ContentBuildInterface.StripTypeTreeDataFromFile(hashesToStrip, contentState.TypeTreeDataPath, tempPath);
+                var remainingHashes = ContentBuildInterface.LoadTypeTreeDataHashesFromFile(tempPath);
+                Assert.NotNull(remainingHashes);
+                Assert.AreEqual(remainingHashes.Length, hashes.Length - 1);
+            }
+            Settings.ExtractTypeTreeData = prevTTSetting;
+        }
+#endif
 		[Test]
 		public void ContentState_WithDisabledGroups_DoesNotInclude_EntriesFromGroup()
 		{
@@ -1347,7 +1427,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
 				// Modify assets
 				var ma = AssetDatabase.LoadAssetAtPath<Material>(materialAssetPath);
-				ma.color = new Color(Random.value, Random.value, Random.value);
+                ma.color = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
 				EditorUtility.SetDirty(ma);
 				AssetDatabase.SaveAssets();
 
@@ -1420,7 +1500,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
                 // Modify assets
                 var ma = AssetDatabase.LoadAssetAtPath<Material>(materialAssetPath);
-                ma.color = new Color(Random.value, Random.value, Random.value);
+                ma.color = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
                 EditorUtility.SetDirty(ma);
                 AssetDatabase.SaveAssets();
 

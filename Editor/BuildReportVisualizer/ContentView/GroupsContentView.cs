@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -427,13 +429,38 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_Report = buildReport;
             m_TreeItems = CreateTreeViewItems(m_Report);
             m_DataHashtoReportItem = new Dictionary<Hash128, TreeDataReportItem>();
-            IList<TreeViewItemData<GroupsViewBuildReportItem>> treeRoots = CreateTreeRootsNestedList(m_TreeItems);
-            m_TreeView.SetRootItems(treeRoots);
-            m_TreeView.Rebuild();
+
 #if UNITY_6000_0_OR_NEWER
             m_TreeView.sortingMode = ColumnSortingMode.Custom;
 #endif
             m_TreeView.columnSortingChanged += ColumnSortingChanged;
+
+            BuildTree();
+        }
+
+        private void BuildTree()
+        {
+            var dataHashToReportItem = new Dictionary<Hash128, TreeDataReportItem>();
+
+            LoadTree<GroupsViewBuildReportItem>(builder =>
+            {
+                int id = 0;
+                foreach (var item in m_TreeItems)
+                {
+                    var group = item as GroupsViewBuildReportGroup;
+                    if (group == null)
+                        continue;
+
+                    List<TreeViewItemData<GroupsViewBuildReportItem>> bundlesUnderGroup = CreateGroupBundles(group, ref id, true);
+                    var groupItem = new TreeViewItemData<GroupsViewBuildReportItem>(++id, group, bundlesUnderGroup);
+                    dataHashToReportItem.TryAdd(BuildReportUtility.ComputeDataHash(group.Name), new TreeDataReportItem(id, groupItem.data));
+                    builder.Add(groupItem);
+                }
+            },
+            allResults =>
+            {
+                m_DataHashtoReportItem = dataHashToReportItem;
+            });
         }
 
         private void ColumnSortingChanged()
@@ -459,20 +486,17 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 .With((items) => ItemsSelected.Invoke(items));
 
             m_TreeView = tb.Build();
-            view.Add(m_TreeView);
             SetCallbacksForColumns(m_TreeView.columns, ColumnDataForView);
             m_SearchField = rootVisualElement.Q<ToolbarSearchField>(BuildReportUtility.SearchField);
-            m_SearchField.RegisterValueChangedCallback(OnSearchValueChanged);
-            m_SearchValue = m_SearchField.value;
+            RegisterSearchCallback();
+
+            // Create loading indicator
+            CreateLoadingIndicator(rootVisualElement);
         }
 
-        private void OnSearchValueChanged(ChangeEvent<string> evt)
+        protected override async Task PerformSearchAsync(string searchValue, CancellationToken cancellationToken)
         {
-            if (m_TreeItems == null)
-                return;
-            m_SearchValue = evt.newValue.ToLower();
-            m_TreeView.SetRootItems(CreateTreeRootsNestedList(m_TreeItems));
-            m_TreeView.Rebuild();
+            await PerformSearchAsyncImpl<GroupsViewBuildReportItem>(searchValue, cancellationToken);
         }
     }
 }

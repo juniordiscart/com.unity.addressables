@@ -18,6 +18,11 @@ namespace UnityEngine.AddressableAssets.Initialization
         /// </summary>
         public const string kCatalogAddress = "AddressablesMainContentCatalog";
 
+        /// <summary>
+        /// Address for extracted TypeTree data files.  This is used to load all type tree data files as there may be remote ones from content updates.
+        /// </summary>
+        public const string kTypeTreeDataAddress = "AddressablesTypeTreeData";
+
         [SerializeField]
         string m_buildTarget;
 

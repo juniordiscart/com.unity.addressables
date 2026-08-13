@@ -1,10 +1,15 @@
 using System.IO;
 using NUnit.Framework;
 using UnityEngine.ResourceManagement;
+using UnityEngine.ResourceManagement.ResourceProviders;
 #if UNITY_EDITOR
+using System.Collections;
+using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.TestTools;
 #endif
 
 namespace AddressableTests.FastModeInitTests
@@ -53,6 +58,39 @@ namespace AddressableTests.FastModeInitTests
             db = FastModeInitializationOperation.GetBuilderOfType<BuildScriptFastMode>(settings, false);
             Assert.IsNotNull(db, "Failed to find the FastMode build script");
             Assert.AreEqual(db.GetType(), typeof(BuildScriptFastMode), "Fast mode build script expected to be BuildScriptFastMode type, where requesting exact type and exists in the settings");
+        }
+
+        [UnityTest]
+        public IEnumerator FastModeInitialization_AssetDatabaseProvider_simulatedLoadDelayCorrect()
+        {
+            var settings = base.CreateSettings("AddressableAssetSettings.Tests", Path.Combine(GetGeneratedAssetsPath(), "Settings_LoadDelay"));
+
+            // Check 1 - initialization of provider should correctly set default value to mirror given serialized value in settings
+            AssetDatabaseProvider defaultProvider = new AssetDatabaseProvider(settings.SimulatedLoadDelay);
+            Assert.AreEqual(defaultProvider.GetLoadDelay(), settings.SimulatedLoadDelay);
+
+            // Check 2 - Calling 'settings.SimulatedLoadDelay = x' should update both serialized value, and live value in provider
+            Addressables.Instance.hasStartedInitialization = false;
+            var handle = Addressables.Instance.InitializeAsync(); // Ensure ResourceManager is initialized
+            yield return handle;
+
+            settings.SimulatedLoadDelay = 0.5f;
+
+            AssetDatabaseProvider assetDatabaseProvider = null;
+            foreach (IResourceProvider provider in Addressables.Instance.ResourceManager.ResourceProviders)
+            {
+                if (provider is AssetDatabaseProvider)
+                {
+                    assetDatabaseProvider = (AssetDatabaseProvider)provider;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(settings.SimulatedLoadDelay == 0.5f);
+
+            // Only run this test if there is an AssetDatabaseProvider to test i.e. Use Asset Database (fastest) is enabled.
+            if(assetDatabaseProvider != null)
+                Assert.IsTrue(assetDatabaseProvider.GetLoadDelay() == 0.5f);
         }
     }
 #endif

@@ -82,7 +82,7 @@ namespace UnityEditor.AddressableAssets.Settings
             m_addressables.InstanceProvider =
                 db == null ? new InstanceProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.instanceProviderType.Value).CreateInstance<IInstanceProvider>();
             m_addressables.SceneProvider = db == null ? new SceneProvider() : ObjectInitializationData.CreateSerializedInitializationData(db.sceneProviderType.Value).CreateInstance<ISceneProvider>();
-            m_addressables.ResourceManager.ResourceProviders.Add(new AssetDatabaseProvider());
+            m_addressables.ResourceManager.ResourceProviders.Add(new AssetDatabaseProvider(m_settings.SimulatedLoadDelay));
             m_addressables.ResourceManager.ResourceProviders.Add(new TextDataProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new JsonAssetProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());

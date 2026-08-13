@@ -11,7 +11,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     /// Provides raw text from a local or remote URL.
     /// </summary>
     [DisplayName("Binary Data Provider")]
-    internal class BinaryDataProvider : ResourceProviderBase
+    public class BinaryDataProvider : ResourceProviderBase
     {
         /// <summary>
         /// Controls whether errors are logged - this is disabled when trying to load from the local cache since failures are expected
@@ -81,7 +81,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     }
                     else
                     {
-                        exception = new Exception(string.Format("Invalid path in " + nameof(TextDataProvider) + " : '{0}'.", path));
+                        exception = new Exception(string.Format("Invalid path in " + nameof(BinaryDataProvider) + " : '{0}'.", path));
                         m_PI.Complete<object>(null, false, exception);
                         m_Complete = true;
                     }
@@ -192,7 +192,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         }
 
         /// <summary>
-        /// Provides raw text data from the location.
+        /// Provides raw binary data from the location.
         /// </summary>
         /// <param name="provideHandle">The data needed by the provider to perform the load.</param>
         public override void Provide(ProvideHandle provideHandle)

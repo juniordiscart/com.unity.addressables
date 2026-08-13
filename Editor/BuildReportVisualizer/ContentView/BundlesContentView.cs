@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.Build.Reporting;
 using UnityEditor.UIElements;
@@ -283,13 +285,39 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             m_DataHashtoReportItem = new Dictionary<Hash128, TreeDataReportItem>();
             m_Report = buildReport;
             m_TreeItems = CreateTreeViewItems(m_Report);
-            IList<TreeViewItemData<BundlesViewBuildReportItem>> treeRoots = CreateTreeRootsNestedList(m_TreeItems, m_DataHashtoReportItem);
-            m_TreeView.SetRootItems(treeRoots);
-            m_TreeView.Rebuild();
+
 #if UNITY_6000_0_OR_NEWER
             m_TreeView.sortingMode = ColumnSortingMode.Custom;
 #endif
             m_TreeView.columnSortingChanged += ColumnSortingChanged;
+
+            BuildTree();
+        }
+
+        private void BuildTree()
+        {
+            var dataHashToReportItem = new Dictionary<Hash128, TreeDataReportItem>();
+
+            LoadTree<BundlesViewBuildReportItem>(builder =>
+            {
+                int id = 0;
+                foreach (BundlesViewBuildReportItem item in m_TreeItems)
+                {
+                    BundlesViewBuildReportBundle bundle = item as BundlesViewBuildReportBundle;
+                    if (bundle == null)
+                        continue;
+
+                    var children = CreateChildrenOfBundle(bundle, ref id, true);
+                    var rootItem = new TreeViewItemData<BundlesViewBuildReportItem>(++id, item, children);
+                    dataHashToReportItem.TryAdd(BuildReportUtility.ComputeDataHash(item.Name), new TreeDataReportItem(id, rootItem.data));
+                    builder.Add(rootItem);
+                }
+            },
+            allResults =>
+            {
+                m_DataHashtoReportItem = dataHashToReportItem;
+                m_TreeRoots = allResults;
+            });
         }
 
         private void ColumnSortingChanged()
@@ -314,22 +342,18 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 .With((items) => ItemsSelected.Invoke(items));
 
             m_TreeView = tb.Build();
-            view.Add(m_TreeView);
             SetCallbacksForColumns(m_TreeView.columns, ColumnDataForView);
 
             m_SearchField = rootVisualElement.Q<ToolbarSearchField>(BuildReportUtility.SearchField);
-            m_SearchField.RegisterValueChangedCallback(OnSearchValueChanged);
-            m_SearchValue = m_SearchField.value;
+            RegisterSearchCallback();
+
+            // Create loading indicator
+            CreateLoadingIndicator(rootVisualElement);
         }
 
-        private void OnSearchValueChanged(ChangeEvent<string> evt)
+        protected override async Task PerformSearchAsync(string searchValue, CancellationToken cancellationToken)
         {
-            if (m_TreeItems == null)
-                return;
-            m_SearchValue = evt.newValue.ToLowerInvariant();
-            m_TreeRoots = CreateTreeRootsNestedList(m_TreeItems, m_DataHashtoReportItem);
-            m_TreeView.SetRootItems(m_TreeRoots);
-            m_TreeView.Rebuild();
+            await PerformSearchAsyncImpl<BundlesViewBuildReportItem>(searchValue, cancellationToken);
         }
 
         // Expresses bundle data as a hierarchal list of BuildReportBundleViewItem objects.

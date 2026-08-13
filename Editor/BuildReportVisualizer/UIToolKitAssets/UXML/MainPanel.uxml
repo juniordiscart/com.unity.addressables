@@ -7,7 +7,7 @@
         <AddressablesGUI:RibbonButton text="Explore" name="ContentTabButton" />
           <AddressablesGUI:RibbonButton text="Potential Issues" name="PotentialIssuesTabButton" />
     </AddressablesGUI:Ribbon>
-    <ui:Instance template="SummaryTabTemplate" name="SummaryTab"/>
-    <ui:Instance template="ContentTabTemplate" name="ContentTab"/>
-    <ui:Instance template="PotentialIssuesTabTemplate" name="PotentialIssuesTab"/>
+    <ui:Instance template="SummaryTabTemplate" name="SummaryTab" style="flex-grow: 1;"/>
+    <ui:Instance template="ContentTabTemplate" name="ContentTab" style="flex-grow: 1;"/>
+    <ui:Instance template="PotentialIssuesTabTemplate" name="PotentialIssuesTab" style="flex-grow: 1;"/>
 </ui:UXML>

@@ -6,6 +6,9 @@ public class EditorPlatformMappingServiceTests
 {
     [TestCase(BuildTarget.XboxOne, AddressablesPlatform.XboxOne)]
     [TestCase(BuildTarget.Switch, AddressablesPlatform.Switch)]
+#if UNITY_6000_5_OR_NEWER
+    [TestCase(BuildTarget.Switch2, AddressablesPlatform.Switch2)]
+#endif
     [TestCase(BuildTarget.PS4, AddressablesPlatform.PS4)]
     [TestCase(BuildTarget.iOS, AddressablesPlatform.iOS)]
     [TestCase(BuildTarget.Android, AddressablesPlatform.Android)]

@@ -49,6 +49,7 @@ namespace UnityEngine.AddressableAssets.Initialization
             aa.ResourceManager.ResourceProviders.Add(jp);
             var tdp = new TextDataProvider();
             aa.ResourceManager.ResourceProviders.Add(tdp);
+            aa.ResourceManager.ResourceProviders.Add(new BinaryDataProvider());
             aa.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(aa.ResourceManager));
 
             var runtimeDataLocation = new ResourceLocationBase("RuntimeData", playerSettingsLocation, typeof(JsonAssetProvider).FullName, typeof(ResourceManagerRuntimeData));
@@ -111,7 +112,6 @@ namespace UnityEngine.AddressableAssets.Initialization
                 CcdManager.Badge = rtd.CcdManagedData.Badge;
             }
 #endif
-
             WebRequestQueue.SetMaxConcurrentRequests(rtd.MaxConcurrentWebRequests);
             m_Addressables.CatalogRequestsTimeout = rtd.CatalogRequestsTimeout;
             foreach (var catalogLocation in rtd.CatalogLocations)
@@ -208,9 +208,10 @@ namespace UnityEngine.AddressableAssets.Initialization
             }
         }
 
-        static AsyncOperationHandle<IResourceLocator> OnCatalogDataLoaded(AddressablesImpl addressables, AsyncOperationHandle<ContentCatalogData> op, string providerSuffix,
+        static AsyncOperationHandle<IResourceLocator> OnCatalogDataLoaded(AddressablesImpl addressables, AsyncOperationHandle genOp, string providerSuffix,
             IResourceLocation remoteHashLocation)
         {
+            AsyncOperationHandle<ContentCatalogData> op = genOp.Convert<ContentCatalogData>();
             var data = op.Result;
             if (data == null)
             {
@@ -248,38 +249,51 @@ namespace UnityEngine.AddressableAssets.Initialization
 #endif
                 addressables.AddResourceLocator(locMap, data.LocalHash, data.location);
                 addressables.AddResourceLocator(new DynamicResourceLocator(addressables));
+
+#if UNITY_6000_5_OR_NEWER
+                return addressables.ResourceManager.CreateChainOperation<IResourceLocator>(
+                    LoadTypeTreeData(addressables),
+                    res => addressables.ResourceManager.CreateCompletedOperation<IResourceLocator>(locMap, string.Empty));
+#else
                 return addressables.ResourceManager.CreateCompletedOperation<IResourceLocator>(locMap, string.Empty);
+#endif
             }
-        }
-
-        public static AsyncOperationHandle<IResourceLocator> LoadContentCatalog(AddressablesImpl addressables, IResourceLocation loc, string providerSuffix,
-            IResourceLocation remoteHashLocation = null)
-        {
-            Type provType = typeof(ProviderOperation<ContentCatalogData>);
-            var catalogOp = addressables.ResourceManager.CreateOperation<ProviderOperation<ContentCatalogData>>(provType, provType.GetHashCode(), null, null);
-
-            IResourceProvider catalogProvider = null;
-            foreach (IResourceProvider provider in addressables.ResourceManager.ResourceProviders)
-            {
-                if (provider is ContentCatalogProvider)
-                {
-                    catalogProvider = provider;
-                    break;
-                }
-            }
-
-            var dependencies = addressables.ResourceManager.CreateGroupOperation<string>(loc.Dependencies, true);
-            catalogOp.Init(addressables.ResourceManager, catalogProvider, loc, dependencies, true);
-            var catalogHandle = addressables.ResourceManager.StartOperation(catalogOp, dependencies);
-            dependencies.Release();
-
-            var chainOp = addressables.ResourceManager.CreateChainOperation(catalogHandle, res => OnCatalogDataLoaded(addressables, res, providerSuffix, remoteHashLocation));
-            return chainOp;
         }
 
         public AsyncOperationHandle<IResourceLocator> LoadContentCatalog(IResourceLocation loc, string providerSuffix, IResourceLocation remoteHashLocation)
         {
             return LoadContentCatalog(m_Addressables, loc, providerSuffix, remoteHashLocation);
+        }
+
+#if UNITY_6000_5_OR_NEWER
+        static AsyncOperationHandle<bool> LoadTypeTreeData(AddressablesImpl addressables)
+        {
+            if (addressables.GetResourceLocations(ResourceManagerRuntimeData.kTypeTreeDataAddress, typeof(string), out var ttLocs))
+            {
+                var ttOp = addressables.ResourceManager.ProvideResources<string>(ttLocs);
+                ttOp.Completed += op =>
+                {
+                    foreach (var path in op.Result)
+                    {
+                        TypeTreeStoreManager.AddTypeTreeSourceFromFile(path);
+                        Debug.Log($"Loaded typetree data from file {path}");
+                    }
+                };
+                return addressables.ResourceManager.CreateChainOperation<bool>(ttOp, res => addressables.ResourceManager.CreateCompletedOperation<bool>(true, null));
+            }
+            else
+            {
+                return addressables.ResourceManager.CreateCompletedOperation<bool>(true, null);
+            }
+        }
+#endif
+
+        public static AsyncOperationHandle<IResourceLocator> LoadContentCatalog(AddressablesImpl addressables, IResourceLocation loc, string providerSuffix,
+            IResourceLocation remoteHashLocation = null)
+        {
+            return addressables.ResourceManager.CreateChainOperation<IResourceLocator>(
+                addressables.ResourceManager.ProvideResource<ContentCatalogData>(loc),
+                res => OnCatalogDataLoaded(addressables, res, providerSuffix, remoteHashLocation));
         }
 
         //Attempts to load each catalog in order, stopping at first success.
@@ -288,13 +302,13 @@ namespace UnityEngine.AddressableAssets.Initialization
             Addressables.LogFormat("Addressables - loading content catalog from {0}.", m_Addressables.ResourceManager.TransformInternalId(catalogs[index]));
             var loadOp = LoadContentCatalog(catalogs[index], m_ProviderSuffix, remoteHashLocation);
             if (loadOp.IsDone)
-                LoadOpComplete(loadOp, catalogs, locMap, index, remoteHashLocation);
+                LoadContentCatalogComplete(loadOp, catalogs, locMap, index, remoteHashLocation);
             else
-                loadOp.Completed += op => { LoadOpComplete(op, catalogs, locMap, index, remoteHashLocation); };
+                loadOp.Completed += op => { LoadContentCatalogComplete(op, catalogs, locMap, index, remoteHashLocation); };
             return loadOp;
         }
 
-        void LoadOpComplete(AsyncOperationHandle<IResourceLocator> op, IList<IResourceLocation> catalogs, ResourceLocationMap locMap, int index, IResourceLocation remoteHashLocation)
+        void LoadContentCatalogComplete(AsyncOperationHandle<IResourceLocator> op, IList<IResourceLocation> catalogs, ResourceLocationMap locMap, int index, IResourceLocation remoteHashLocation)
         {
             if (op.Result != null)
             {

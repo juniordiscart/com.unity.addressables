@@ -122,6 +122,33 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void LabelsAreSortedOnAdd()
+        {
+            string label1 = "label1";
+            string label2 = "label2";
+
+            string folderPath = "Assets/Temp/FakeAddressablesFolder/";
+            AddressableAssetEntry entry = new AddressableAssetEntry(AssetDatabase.AssetPathToGUID(folderPath),
+                folderPath, m_testGroup, false);
+            AddressableAssetEntry entry2 = new AddressableAssetEntry(AssetDatabase.AssetPathToGUID(folderPath),
+                folderPath, m_testGroup, false);
+
+            //The labels are added in a different order
+            entry.SetLabel(label2, true, true, true);
+            entry.SetLabel(label1, true, true, true);
+
+            entry2.SetLabel(label1, true, true, true);
+            entry2.SetLabel(label2, true, true, true);
+
+            //Test to make sure the labels are identical for each entry
+            Assert.AreEqual(entry.labels, entry2.labels, "Labels are not in the same order for each entry, they should be sorted on add.");
+
+            //cleanup
+            Settings.RemoveLabel(label1);
+            Settings.RemoveLabel(label2);
+        }
+
+        [Test]
         public void GetAssetLoadPath_Returns_ExpectedPath()
         {
             var schema = Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>();

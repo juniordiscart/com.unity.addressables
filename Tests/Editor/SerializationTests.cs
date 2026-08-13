@@ -240,21 +240,23 @@ namespace UnityEditor.AddressableAssets.Tests
 
             EditorUtility.SetDirty(Settings);
             AssetDatabase.SaveAssetIfDirty(Settings);
-
-#if (CCD_3_OR_NEWER && UNITY_6000_2_OR_NEWER)
-            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings_62.ccd3.unity"));
-#elif CCD_3_OR_NEWER
-            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings.ccd3.unity"));
-#elif (ENABLE_CCD && UNITY_6000_2_OR_NEWER)
-            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings_62.ccd2.unity"));
-#elif ENABLE_CCD
-            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings.ccd2.unity"));
+            var versionStr = "";
+            var ccdStr = "";
+#if UNITY_6000_5_OR_NEWER
+            versionStr = "_65";
 #elif UNITY_6000_2_OR_NEWER
-            // serializes the entire class name to m_EditorClassIdentifier
-            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings_62.unity"));
-#else
-            var expectedSerializedSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_AddressableAssetSettings.unity"));
+            versionStr = "_62";
 #endif
+
+#if CCD_3_OR_NEWER
+            ccdStr = ".ccd3";
+#elif ENABLE_CCD
+            ccdStr = ".ccd2";
+#endif
+            var expectedPath = GetExpectedPath($"~SerializationTests_AddressableAssetSettings{versionStr}{ccdStr}.unity");
+            Debug.Log($"Reading expected data from path {Path.GetFileName(expectedPath)}");
+            var expectedSerializedSettings = File.ReadAllText(expectedPath);
+            Assert.NotNull(expectedSerializedSettings, $"Failed to read expected data from path {expectedPath}");
             var serializedSettings = File.ReadAllText(AssetDatabase.GetAssetPath(Settings));
             AssertSerializedAreEqual(expectedSerializedSettings, serializedSettings);
         }

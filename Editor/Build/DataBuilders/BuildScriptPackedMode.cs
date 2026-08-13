@@ -7,10 +7,12 @@ using System.Text;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
+using UnityEditor.Build.Player;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.Initialization;
@@ -19,21 +21,27 @@ using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.Build.Pipeline;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
-using UnityEditor.AddressableAssets.BuildReportVisualizer;
-
 using static UnityEditor.AddressableAssets.Build.ContentUpdateScript;
 
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
     using Debug = UnityEngine.Debug;
-
     /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
     [CreateAssetMenu(fileName = "BuildScriptPacked.asset", menuName = "Addressables/Content Builders/Default Build Script")]
     public class BuildScriptPackedMode : BuildScriptBase
     {
+        /// <summary>
+        /// The extension to use for type tree data files when type tree data extraction is enabled.
+        /// </summary>
+        public const string kTypeTreeDataExtension = ".typetreedata";
+        /// <summary>
+        /// The file name to use for type tree data when type tree data extraction is enabled.
+        /// This file will be moved to the catalog build path with a hash as the file name during the build.
+        /// </summary>
+        public const string kTypeTreeDataFileName = "AssetBundle" + kTypeTreeDataExtension;
         /// <inheritdoc />
         public override string Name
         {
@@ -324,7 +332,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             AddressablesPlayerBuildResult addrResult = genericResult as AddressablesPlayerBuildResult;
 
             ExtractDataTask extractData = new ExtractDataTask();
-            ContentUpdateContext contentUpdateContext = default;
             List<CachedAssetState> carryOverCachedState = new List<CachedAssetState>();
             var tempPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
 
@@ -335,17 +342,23 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 if (!BuildUtility.CheckModifiedScenesAndAskToSave())
                     return CreateErrorResult<TResult>("Unsaved scenes", builderInput, aaContext);
 
-                var buildTarget = builderInput.Target;
-                var buildTargetGroup = builderInput.TargetGroup;
-
                 var buildParams = new AddressableAssetsBundleBuildParameters(
                     aaContext.Settings,
                     aaContext.bundleToAssetGroup,
-                    buildTarget,
-                    buildTargetGroup,
+                    builderInput,
                     aaContext.Settings.buildSettings.bundleBuildPath);
 
                 var builtinBundleName = GetBuiltInBundleNamePrefix(aaContext) + $"{BuiltInBundleBaseName}.bundle";
+
+                string typeTreeDataBuildPath = null;
+
+#if UNITY_6000_5_OR_NEWER
+                if (aaContext.Settings.ExtractTypeTreeData)
+                {
+                    buildParams.ContentBuildFlags |= UnityEditor.Build.Content.ContentBuildFlags.ExtractTypeTree;
+                    typeTreeDataBuildPath = Path.Combine(aaContext.Settings.buildSettings.bundleBuildPath, kTypeTreeDataFileName);
+                }
+#endif
 
                 var schema = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>();
                 AddBundleProvider(schema);
@@ -353,7 +366,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 string monoScriptBundleName = GetMonoScriptBundleNamePrefix(aaContext);
                 if (!string.IsNullOrEmpty(monoScriptBundleName))
                     monoScriptBundleName += "_monoscripts.bundle";
-                var buildTasks = RuntimeDataBuildTasks(builtinBundleName, monoScriptBundleName);
+                var buildTasks = RuntimeDataBuildTasks(builtinBundleName, monoScriptBundleName, typeTreeDataBuildPath);
                 buildTasks.Add(extractData);
 
                 IBundleBuildResults results;
@@ -366,6 +379,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     if (exitCode < ReturnCode.Success)
                         return CreateErrorResult<TResult>("SBP Error" + exitCode, builderInput, aaContext);
                 }
+
+#if UNITY_6000_5_OR_NEWER
+                if (aaContext.Settings.ExtractTypeTreeData && File.Exists(typeTreeDataBuildPath))
+                    MoveFileToDestinationWithTimestampIfDifferent(typeTreeDataBuildPath, Path.Combine(Addressables.BuildPath, kTypeTreeDataFileName), Log);
+#endif
 
                 var groups = aaContext.Settings.groups.Where(g => g != null);
 
@@ -393,6 +411,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 using (Log.ScopedStep(LogLevel.Info, "Process Catalog Entries"))
                 {
                     Dictionary<string, ContentCatalogDataEntry> locationIdToCatalogEntryMap = BuildLocationIdToCatalogEntryMap(aaContext.locations);
+                    ContentUpdateContext contentUpdateContext = default;
                     if (builderInput.PreviousContentState != null)
                     {
                         contentUpdateContext = new ContentUpdateContext()
@@ -420,6 +439,56 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
+            string builtTypeTreeDataPath = Path.Combine(Addressables.BuildPath, kTypeTreeDataFileName);
+#if UNITY_6000_5_OR_NEWER
+            if (aaContext.Settings.ExtractTypeTreeData)
+            {
+                aaContext.providerTypes.Add(typeof(CachedFileProvider));
+                if (builderInput.PreviousContentState != null)
+                {
+                    var strippedPath = Path.GetTempFileName();
+                    if (builderInput.PreviousContentState.typeTreeHashes != null)
+                        ContentBuildInterface.StripTypeTreeDataFromFile(builderInput.PreviousContentState.typeTreeHashes, builtTypeTreeDataPath, strippedPath);
+                    else
+                        strippedPath = builtTypeTreeDataPath;
+
+                    var hashStr = Hash128.Compute(File.ReadAllBytes(strippedPath)).ToString();
+                    var newPath = $"{aaContext.Settings.RemoteCatalogBuildPath.GetValue(aaContext.Settings)}/{hashStr}{kTypeTreeDataExtension}";
+                    if (!Directory.Exists(Path.GetDirectoryName(newPath)))
+                        Directory.CreateDirectory(Path.GetDirectoryName(newPath));
+                    if(File.Exists(newPath))
+                        File.Delete(newPath);
+                    File.Move(strippedPath, newPath);
+                    builderInput.Registry.AddFile(newPath);
+
+                    string remoteURL = $"{aaContext.Settings.RemoteCatalogLoadPath.GetValue(aaContext.Settings)}/{hashStr}{kTypeTreeDataExtension}";
+                    aaContext.locations.Add(new ContentCatalogDataEntry(typeof(string),
+                        remoteURL,  //for remote content, the url
+                        typeof(CachedFileProvider).FullName,
+                        new string[] { ResourceManagerRuntimeData.kTypeTreeDataAddress },
+                        null,
+                        new ProviderLoadRequestOptions
+                        {
+                            IgnoreFailures = false,
+                            LocalCachePath = $"{hashStr[0]}{hashStr[1]}/{hashStr}"
+                        }));
+                }
+                //only add the local tt data location if this is NOT a content update OR if the baseline build has hashes (tt extraction was enabled)
+                if (builderInput.PreviousContentState == null || (builderInput.PreviousContentState.typeTreeHashes != null && builderInput.PreviousContentState.typeTreeHashes.Length > 0))
+                {
+                    aaContext.locations.Add(new ContentCatalogDataEntry(typeof(string),
+                    "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + kTypeTreeDataFileName,
+                    typeof(CachedFileProvider).FullName,
+                    new string[] { ResourceManagerRuntimeData.kTypeTreeDataAddress }));
+                }
+            }
+            else
+            {
+                if (File.Exists(builtTypeTreeDataPath))
+                    File.Delete(builtTypeTreeDataPath);
+                builtTypeTreeDataPath = string.Empty;
+            }
+#endif
             var resourceProviderData = new List<ObjectInitializationData>(m_ResourceProviderData);
             foreach (var t in aaContext.providerTypes)
             {
@@ -515,7 +584,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 #endif
 
-
             using (Log.ScopedStep(LogLevel.Info, "Generate link"))
             {
                 foreach (var pd in resourceProviderData)
@@ -562,8 +630,15 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     using (Log.ScopedStep(LogLevel.Info, "Get Assets"))
                         aaContext.Settings.GetAllAssets(allEntries, false, ContentUpdateScript.GroupFilterFunc);
 
-                    if (ContentUpdateScript.SaveContentState(aaContext.locations, aaContext.GuidToCatalogLocation, tempPath, allEntries,
-                        extractData.DependencyData, playerBuildVersion, remoteCatalogLoadPath,
+                    if (ContentUpdateScript.SaveContentState(
+                        aaContext.locations,
+                        aaContext.GuidToCatalogLocation,
+                        tempPath,
+                        allEntries,
+                        extractData.DependencyData,
+                        playerBuildVersion,
+                        remoteCatalogLoadPath,
+                        builtTypeTreeDataPath,
                         carryOverCachedState))
                     {
                         string contentStatePath = ContentUpdateScript.GetContentStateDataPath(false, aaContext.Settings);
@@ -801,7 +876,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             var buildParams = new BundleBuildParameters(builderInput.Target, builderInput.TargetGroup, Path.GetDirectoryName(filepath));
             if (builderInput.Target == BuildTarget.WebGL)
-                buildParams.BundleCompression = BuildCompression.LZ4Runtime;
+                buildParams.BundleCompression = UnityEngine.BuildCompression.LZ4Runtime;
             var retCode = ContentPipeline.BuildAssetBundles(buildParams, bundleBuildContent, out IBundleBuildResults result, buildTasks, Log);
 
             if (Directory.Exists(tempFolderPath))
@@ -1350,7 +1425,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         // and isn't needed for most tests.
         internal static bool s_SkipCompilePlayerScripts = false;
 
-        static IList<IBuildTask> RuntimeDataBuildTasks(string builtinBundleName, string monoScriptBundleName)
+        static IList<IBuildTask> RuntimeDataBuildTasks(string builtinBundleName, string monoScriptBundleName, string typeTreeExtractionPath)
         {
             var buildTasks = new List<IBuildTask>();
 
@@ -1385,6 +1460,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             buildTasks.Add(new WriteSerializedFiles());
             buildTasks.Add(new ArchiveAndCompressBundles());
             buildTasks.Add(new GenerateLocationListsTask());
+#if UNITY_6000_5_OR_NEWER
+            if(!string.IsNullOrEmpty(typeTreeExtractionPath))
+                buildTasks.Add(new CombineExtractedTypeTreeData { OutputPath = typeTreeExtractionPath });
+#endif
             buildTasks.Add(new PostWritingCallback());
 
             return buildTasks;
@@ -1438,7 +1517,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     string outputName = null;
                     foreach ((string, string)bundleValue in bundleValues)
                     {
-                        if (schema.BundleMode == BundledAssetGroupSchema.BundlePackingMode.PackSeparately)
+                        if (schema.BundleMode == BundledAssetGroupSchema.BundlePackingMode.PackSeparately ||
+                            assetGroup.Settings.UniqueBundleIds)
                         {
                             if (builtBundleNames[i].StartsWith(bundleValue.Item1, StringComparison.Ordinal))
                                 outputName = bundleValue.Item2;

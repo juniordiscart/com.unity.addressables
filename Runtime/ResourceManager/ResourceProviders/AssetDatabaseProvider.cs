@@ -16,6 +16,23 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     {
         float m_LoadDelay = .1f;
 
+        /// <summary>
+        /// Set the load delay to be added to asset loads when Use Asset Database (fastest) is enabled. Default value is 0.1f.
+        /// </summary>
+        /// <param name="loadDelay">Time in seconds to be added to each asset load.</param>
+        public void SetLoadDelay(float loadDelay)
+        {
+            m_LoadDelay = loadDelay;
+        }
+
+        /// <summary>
+        /// Get the load delay to be added to asset loads when Use Asset Database (fastest) is enabled. Default value is 0.1f.
+        /// </summary>
+        public float GetLoadDelay()
+        {
+            return m_LoadDelay;
+        }
+
         internal static Object LoadAssetSubObject(string assetPath, string subObjectName, Type type)
         {
             var objs = LoadAssetsWithSubAssets(assetPath);
@@ -79,7 +96,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 m_Loaded = false;
                 m_ProvideHandle = provideHandle;
                 m_ProvideHandle.SetWaitForCompletionCallback(WaitForCompletionHandler);
-                if (loadDelay < 0)
+                if (loadDelay < 0.01)
                     LoadImmediate();
                 else
                     DelayedActionManager.AddAction((Action)LoadImmediate, loadDelay);

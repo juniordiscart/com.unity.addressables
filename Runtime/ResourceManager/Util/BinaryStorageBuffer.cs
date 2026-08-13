@@ -990,7 +990,7 @@ namespace UnityEngine.ResourceManagement.Util
             static bool IsUnicode(string str)
             {
                 for (int i = 0; i < str.Length; i++)
-                    if (str[i] > 255)
+                    if (str[i] > 127)
                         return true;
                 return false;
             }

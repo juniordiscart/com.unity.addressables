@@ -277,7 +277,10 @@ namespace UnityEditor.AddressableAssets.Tests
             "rootfolder1/rootfolder2/rootfolder3/long file name",
             "rootfolder1/rootЁfolder2/rootfolder3_withЁ/long file name",
             "a/b/wergwegbwethgrwtherth/c/e/ffdsfsrgwetghwthwrh/e/s/wergwethgwrthrewthwer",
-             "a/b/wergwegbwethgrwtherth/Ёc/e/ffdsfsЁrgwetghwthwrh/e/s/wergwethgwrthrewthweЁr"
+            "a/b/wergwegbwethgrwtherth/Ёc/e/ffdsfsЁrgwetghwthwrh/e/s/wergwethgwrthrewthweЁr",
+            "å",
+            "Åland",
+            "folder/Rådata/file.asset"
             )]string str, [Values(0, 10, 1024)]int cacheSize)
         {
             var wr = new BinaryStorageBuffer.Writer(chunkSize);

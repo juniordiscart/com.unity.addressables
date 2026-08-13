@@ -133,7 +133,47 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         [SerializeField]
         private bool m_IgnoreFailures = false;
 
+        [SerializeField]
         private int m_WebRequestTimeout = 0;
+
+        [SerializeField]
+        private string m_LocalCachePath;
+
+        /// <summary>
+        /// Provides serialization and deserialization support for <see cref="ProviderLoadRequestOptions"/> objects
+        /// using the <see cref="BinaryStorageBuffer"/> format.
+        /// </summary>
+        public class SerializationAdatapter : BinaryStorageBuffer.ISerializationAdapter<ProviderLoadRequestOptions>
+        {
+            IEnumerable<BinaryStorageBuffer.ISerializationAdapter> BinaryStorageBuffer.ISerializationAdapter.Dependencies => null;
+            struct Data
+            {
+                public bool ignoreFailures;
+                public int requestTimeout;
+                public uint localCachePathOffset;
+            }
+
+            object BinaryStorageBuffer.ISerializationAdapter.Deserialize(BinaryStorageBuffer.Reader reader, Type t, uint offset, out uint size)
+            {
+                ProviderLoadRequestOptions opts = new ProviderLoadRequestOptions();
+                var data = reader.ReadValue<Data>(offset, out var dataSize);
+                opts.m_IgnoreFailures = data.ignoreFailures;
+                opts.m_WebRequestTimeout = data.requestTimeout;
+                opts.LocalCachePath = reader.ReadString(data.localCachePathOffset, out var lcpSize, '/', false);
+                size = dataSize + lcpSize;
+                return opts;
+            }
+
+            uint BinaryStorageBuffer.ISerializationAdapter.Serialize(BinaryStorageBuffer.Writer writer, object val)
+            {
+                var opts = val as ProviderLoadRequestOptions;
+                var data = new Data {
+                    ignoreFailures = opts.m_IgnoreFailures,
+                    requestTimeout = opts.m_WebRequestTimeout,
+                    localCachePathOffset = writer.WriteString(opts.m_LocalCachePath, '/') };
+                return writer.Write(data);
+            }
+        }
 
         /// <summary>
         /// Creates a memberwise clone of a given ProviderLoadRequestOption.
@@ -160,6 +200,15 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         {
             get => m_WebRequestTimeout;
             set => m_WebRequestTimeout = value;
+        }
+
+        /// <summary>
+        /// Local cache path, relative to Application.temporaryCachePath
+        /// </summary>
+        public string LocalCachePath
+        {
+            get => m_LocalCachePath;
+            set => m_LocalCachePath = value;
         }
     }
 }

@@ -82,7 +82,7 @@ namespace Tests.Editor.GUI
         public void TestFastIcon_AssetGUID()
         {
             using var disposableTestAsset = new DisposableTestAsset("Assets/SomeAsset.asset");
-            var typeGuid = AddressableAssetEntryIconLazyLoad.GetTypeGuidFromAsset("Assets/SomeAsset.asset");
+            var typeGuid = IconLazyLoad.GetTypeGuidFromAsset("Assets/SomeAsset.asset");
                 Assert.IsTrue(AssetDatabase.GUIDToAssetPath(typeGuid).EndsWith("SomeScriptableObject.cs"));
         }
 
@@ -90,9 +90,9 @@ namespace Tests.Editor.GUI
         public void TestFastIcon_PrefabDetermination()
         {
             using var disposableTestPrefabs = new DisposableTestPrefabPlusVariant("Assets/Prefab.prefab", "Assets/PrefabVariant.prefab");
-            var isVariant = AddressableAssetEntryIconLazyLoad.PrefabIcons.IsPrefabVariant("Assets/Prefab.prefab");
+            var isVariant = IconLazyLoad.PrefabIcons.IsPrefabVariant("Assets/Prefab.prefab");
             Assert.IsFalse(isVariant);
-            isVariant = AddressableAssetEntryIconLazyLoad.PrefabIcons.IsPrefabVariant("Assets/PrefabVariant.prefab");
+            isVariant = IconLazyLoad.PrefabIcons.IsPrefabVariant("Assets/PrefabVariant.prefab");
             Assert.IsTrue(isVariant);
         }
 
@@ -103,9 +103,9 @@ namespace Tests.Editor.GUI
             {
                 m_cachedAssetPath = path
             };
-            var lazyLoader = new AddressableAssetEntryIconLazyLoad();
+            var lazyLoader = new IconLazyLoad();
             // We don't want to expose it internally but we need to test the icon
-            var methodHandle = typeof(AddressableAssetEntryIconLazyLoad).GetMethod("FastIconFromPath",
+            var methodHandle = typeof(IconLazyLoad).GetMethod("FastIconFromPath",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(methodHandle);
             return methodHandle.Invoke(lazyLoader, new object[] { entry, doFileRead }) as Texture;

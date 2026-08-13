@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
@@ -192,9 +193,18 @@ namespace UnityEditor.AddressableAssets.Build
         /// </summary>
         [SerializeField]
         public CachedBundleState[] cachedBundles;
+
+#if UNITY_6000_5_OR_NEWER
+        /// <summary>
+        /// Contains the type tree hashes of everything in the build.  This is used to strip already shipped type tree data from a content update.
+        /// </summary>
+        [OptionalField]
+        [SerializeField]
+        public Hash128[] typeTreeHashes;
+#endif
     }
 
-    internal struct ContentUpdateUsageData
+        internal struct ContentUpdateUsageData
     {
         public string ContentUpdateInterruptMessage;
         public bool UsingCCD;
@@ -339,7 +349,7 @@ namespace UnityEditor.AddressableAssets.Build
         public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
             string remoteCatalogPath)
         {
-            return SaveContentState(locations, path, entries, dependencyData, playerVersion, remoteCatalogPath, null);
+            return SaveContentState(locations, null, path, entries, dependencyData, playerVersion, remoteCatalogPath, null, null);
         }
 
         /// <summary>
@@ -356,7 +366,7 @@ namespace UnityEditor.AddressableAssets.Build
         public static bool SaveContentState(List<ContentCatalogDataEntry> locations, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
             string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
         {
-            return SaveContentState(locations, null, path, entries, dependencyData, playerVersion, remoteCatalogPath, carryOverCacheState);
+            return SaveContentState(locations, null, path, entries, dependencyData, playerVersion, remoteCatalogPath, null, carryOverCacheState);
         }
 
         /// <summary>
@@ -371,8 +381,29 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
         /// <param name="carryOverCacheState">Cached state that needs to carry over from the previous build.  This mainly affects Content Update.</param>
         /// <returns>True if the file is saved, false otherwise.</returns>
-        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path, List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
+        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path,
+            List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
             string remoteCatalogPath, List<CachedAssetState> carryOverCacheState)
+        {
+            return SaveContentState(locations, guidToCatalogLocation, path, entries, dependencyData, playerVersion, remoteCatalogPath, null, carryOverCacheState);
+        }
+
+        /// <summary>
+        /// Save the content update information for a set of AddressableAssetEntry objects.
+        /// </summary>
+        /// <param name="locations">The ContentCatalogDataEntry locations that were built into the Content Catalog.</param>
+        /// <param name="guidToCatalogLocation">Mapping of asset Guid to catalog locations entries for lookup of extra data.</param>
+        /// <param name="path">File to write content stat info to.  If file already exists, it will be deleted before the new file is created.</param>
+        /// <param name="entries">The entries to save.</param>
+        /// <param name="dependencyData">The raw dependency information generated from the build.</param>
+        /// <param name="playerVersion">The player version to save. This is usually set to AddressableAssetSettings.PlayerBuildVersion.</param>
+        /// <param name="remoteCatalogPath">The server path (if any) that contains an updateable content catalog.  If this is empty, updates cannot occur.</param>
+        /// <param name="typeTreeDataPath">The path of the type tree data for the build.  This will be empty if type tree extraction is disabled.</param>
+        /// <param name="carryOverCacheState">Cached state that needs to carry over from the previous build.  This mainly affects Content Update.</param>
+        /// <returns>True if the file is saved, false otherwise.</returns>
+        public static bool SaveContentState(List<ContentCatalogDataEntry> locations, Dictionary<GUID, List<ContentCatalogDataEntry>> guidToCatalogLocation, string path,
+            List<AddressableAssetEntry> entries, IDependencyData dependencyData, string playerVersion,
+            string remoteCatalogPath, string typeTreeDataPath, List<CachedAssetState> carryOverCacheState)
         {
             try
             {
@@ -397,7 +428,10 @@ namespace UnityEditor.AddressableAssets.Build
                     playerVersion = playerVersion,
                     editorVersion = Application.unityVersion,
                     remoteCatalogLoadPath = remoteCatalogPath,
-                    cachedBundles = cachedBundleInfos.ToArray()
+                    cachedBundles = cachedBundleInfos.ToArray(),
+#if UNITY_6000_5_OR_NEWER
+                    typeTreeHashes = string.IsNullOrEmpty(typeTreeDataPath) ? new Hash128[0] : ContentBuildInterface.LoadTypeTreeDataHashesFromFile(typeTreeDataPath)
+#endif
                 };
                 var formatter = new BinaryFormatter();
                 if (File.Exists(path))
