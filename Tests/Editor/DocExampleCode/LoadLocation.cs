@@ -12,6 +12,7 @@ namespace AddressableAssets.DocExampleCode
 
     internal class LoadWithLocation : MonoBehaviour
     {
+        [System.NonSerialized]
         public Dictionary<string, AsyncOperationHandle<GameObject>> operationDictionary;
         public List<string> keys;
         public UnityEvent Ready;

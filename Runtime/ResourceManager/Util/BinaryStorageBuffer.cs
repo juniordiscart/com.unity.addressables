@@ -669,7 +669,22 @@ namespace UnityEngine.ResourceManagement.Util
                 public int length;
                 public uint size;
             }
-            static StringCreationState stringCreationState = new StringCreationState();
+            static StringCreationState s_StringCreationState = new();
+
+#if UNITY_EDITOR
+            /// <summary>
+            /// Making sure states are re-initialized when entering playmode in the Editor.
+            /// </summary>
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            static void ResetStaticsOnLoad()
+            {
+                s_StringCreationState.id = 0;
+                s_StringCreationState.sep = '\0';
+                s_StringCreationState.length = 0;
+                s_StringCreationState.size = 0;
+            }
+#endif
+
             string ReadDynamicString(uint id, out uint size, char sep, bool cacheValue)
             {
                 if ((id & kDynamicStringFlag) == kDynamicStringFlag)
@@ -678,11 +693,11 @@ namespace UnityEngine.ResourceManagement.Util
                     if (TryGetCachedValue<string>(id, out var str))
                         return str;
                     var strLength = GetDynamicStringLength(id, sep);
-                    stringCreationState.id = id;
-                    stringCreationState.sep = sep;
-                    stringCreationState.length = strLength;
-                    stringCreationState.size = 0;
-                    str = string.Create(strLength, stringCreationState, (chars, state) =>
+                    s_StringCreationState.id = id;
+                    s_StringCreationState.sep = sep;
+                    s_StringCreationState.length = strLength;
+                    s_StringCreationState.size = 0;
+                    str = string.Create(strLength, s_StringCreationState, (chars, state) =>
                     {
                         int position = state.length;
                         var nextID = state.id;
@@ -698,7 +713,7 @@ namespace UnityEngine.ResourceManagement.Util
                                 chars[--position] = state.sep;
                         }
                     });
-                    size = stringCreationState.size;
+                    size = s_StringCreationState.size;
                     if (cacheValue && size >= m_MinCachedObjectSize)
                         m_Cache.TryAdd(id, str);
                     return str;
@@ -1077,15 +1092,15 @@ namespace UnityEngine.ResourceManagement.Util
     {
         public struct Key : IEquatable<Key>
         {
-            static Type typeType = typeof(Type);
+            static readonly Type s_TypeType = typeof(Type);
             public TKey key;
             public Type type;
             public Key(TKey k, Type t)
             {
                 key = k;
                 type = t;
-                if (typeType.IsAssignableFrom(type))
-                    type = typeType;
+                if (type != null && s_TypeType.IsAssignableFrom(type))
+                    type = s_TypeType;
             }
             bool IEquatable<Key>.Equals(Key other) => key.Equals(other.key) && type == other.type;
             public override int GetHashCode() => key.GetHashCode() ^ type.GetHashCode();

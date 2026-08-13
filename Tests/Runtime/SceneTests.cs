@@ -430,7 +430,7 @@ namespace SceneTests
         public IEnumerator SceneTests_LoadSceneWithChainHandle_MatchesTrackedHandle()
         {
             AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
-            m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
+            m_RuntimeSettingsPath = AddressablesImpl.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
             var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
             var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return op;
@@ -446,7 +446,7 @@ namespace SceneTests
         public IEnumerator SceneTests_UnloadScene_RemovesTrackedInstanceOp()
         {
             AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
-            m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
+            m_RuntimeSettingsPath = AddressablesImpl.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
             var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
             var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return op;
@@ -462,7 +462,7 @@ namespace SceneTests
         public IEnumerator SceneTests_UnloadSceneAsync_CanUnloadBaseHandle()
         {
             AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
-            m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
+            m_RuntimeSettingsPath = AddressablesImpl.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
             var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
             var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
             yield return op;

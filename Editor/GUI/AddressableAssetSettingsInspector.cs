@@ -50,19 +50,12 @@ namespace UnityEditor.AddressableAssets.GUI
         bool m_ShowPaths = true;
         bool m_ShowContentStatePath = true;
 
-        [FormerlySerializedAs("m_profileEntriesRL")]
-        [SerializeField]
         ReorderableList m_ProfileEntriesRl;
 
-        [FormerlySerializedAs("m_dataBuildersRL")]
-        [SerializeField]
         ReorderableList m_DataBuildersRl;
 
-        [SerializeField]
         ReorderableList m_GroupTemplateObjectsRl;
 
-        [FormerlySerializedAs("m_initObjectsRL")]
-        [SerializeField]
         ReorderableList m_InitObjectsRl;
 
         [FormerlySerializedAs("m_currentProfileIndex")]

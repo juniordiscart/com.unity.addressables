@@ -39,7 +39,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <summary>
         /// Reset the cache values to their defaults.
         /// </summary>
-        static public void ResetToDefaults()
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+#endif
+        public static void ResetToDefaults()
         {
             s_BinaryStorageBufferCacheSize = kDefaultBinaryStorageBufferCacheSize;
             s_CatalogLocationCacheSize = kCatalogLocationCacheSize;

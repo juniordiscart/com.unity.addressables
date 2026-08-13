@@ -14,6 +14,21 @@ namespace UnityEngine.AddressableAssets.Initialization
         static Stack<string> s_TokenStack = new Stack<string>(32);
         static Stack<int> s_TokenStartStack = new Stack<int>(32);
         static bool s_StaticStacksAreInUse = false;
+        static Dictionary<string, string> s_CachedValues = new Dictionary<string, string>();
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Making sure static states are initialized properly when entering playmode in the Editor.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStaticsOnLoad()
+        {
+            s_TokenStack = new Stack<string>(32);
+            s_TokenStartStack = new Stack<int>(32);
+            s_StaticStacksAreInUse = false;
+            s_CachedValues = new Dictionary<string, string>();
+        }
+#endif
 
 #if !UNITY_EDITOR && UNITY_WSA_10_0 && ENABLE_DOTNET
         static Assembly[] GetAssemblies()
@@ -29,8 +44,6 @@ namespace UnityEngine.AddressableAssets.Initialization
         }
 
 #endif
-
-        static Dictionary<string, string> s_CachedValues = new Dictionary<string, string>();
 
         internal static int GetCachedValueCount()
         {

@@ -426,7 +426,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 // Reset rotation for the spinner
                 var spinner = m_LoadingContainer.Q<VisualElement>("LoadingSpinner");
                 if (spinner != null)
-                    spinner.transform.rotation = Quaternion.identity;
+                    spinner.style.rotate = new Rotate(Angle.Degrees(0));
             }
         }
 
@@ -625,8 +625,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 {
                     if (m_LoadingContainer != null && m_LoadingContainer.parent != null)
                     {
-                        var currentRotation = spinner.transform.rotation.eulerAngles.z;
-                        spinner.transform.rotation = Quaternion.Euler(0, 0, currentRotation + 10);
+                        var spinnerAngle = spinner.resolvedStyle.rotate;
+                        spinner.style.rotate = new Rotate(Angle.Degrees(spinnerAngle.angle.value + 10f));
                     }
                 }).Every(50);
             }

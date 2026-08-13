@@ -150,11 +150,11 @@ namespace UnityEngine.ResourceManagement.Tests
 
         class AsyncComponent : MonoBehaviour
         {
-            public ResourceManager resourceManager;
+            [System.NonSerialized] public ResourceManager resourceManager;
             public IResourceLocation location;
             public GameObject result;
             public bool done = false;
-            public AsyncOperationHandle<GameObject> operation;
+            [System.NonSerialized] public AsyncOperationHandle<GameObject> operation;
 
             async void Start()
             {
@@ -182,11 +182,11 @@ namespace UnityEngine.ResourceManagement.Tests
 
         class AsyncAwaitMultipleComponent : MonoBehaviour
         {
-            public ResourceManager resourceManager;
+            [System.NonSerialized] public ResourceManager resourceManager;
             public IResourceLocation location;
             public GameObject result;
             public bool done = false;
-            public AsyncOperationHandle<GameObject> operation;
+            [System.NonSerialized] public AsyncOperationHandle<GameObject> operation;
             public bool addCompletedCallback;
             public bool callbackDone = false;
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace AutoGroupGenerator
@@ -5,6 +6,7 @@ namespace AutoGroupGenerator
     /// <summary>
     /// Represents a subset of a larger <see cref="DependencyGraph"/> instance.
     /// </summary>
+    [Serializable]
     public class Subgraph
     {
 

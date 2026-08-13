@@ -224,11 +224,11 @@ namespace AddressableAssetsIntegrationTests
 
         class AsyncAwaitLoadContentCatalog : MonoBehaviour
         {
-            public AddressablesImpl addressables;
+            [System.NonSerialized] public AddressablesImpl addressables;
             public IResourceLocation location;
             public bool autoReleaseHandle = false;
             public bool done = false;
-            public AsyncOperationHandle<IResourceLocator> operation;
+            [System.NonSerialized] public AsyncOperationHandle<IResourceLocator> operation;
             public string errorMsg;
 
             async void Start()

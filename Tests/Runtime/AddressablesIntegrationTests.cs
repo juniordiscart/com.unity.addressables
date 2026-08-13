@@ -114,12 +114,12 @@ namespace AddressableAssetsIntegrationTests
         {
             get
             {
-                var runtimeSettingsPath = m_Addressables.RuntimePath + "/settingsBASE.json";
+                var runtimeSettingsPath = AddressablesImpl.RuntimePath + "/settingsBASE.json";
 #if UNITY_EDITOR
 
                 runtimeSettingsPath = GetRuntimePath(currentInitType, "BASE");
 #endif
-                runtimeSettingsPath = m_Addressables.ResolveInternalId(runtimeSettingsPath);
+                runtimeSettingsPath = AddressablesImpl.ResolveInternalId(runtimeSettingsPath);
                 return runtimeSettingsPath;
             }
         }

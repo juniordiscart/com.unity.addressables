@@ -10,6 +10,15 @@ namespace UnityEngine.ResourceManagement.Util
         struct DelegateInfo
         {
             static int s_Id;
+
+#if UNITY_EDITOR
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            static void ResetStaticsOnLoad()
+            {
+                s_Id = 0;
+            }
+#endif
+
             int m_Id;
             Delegate m_Delegate;
             object[] m_Target;

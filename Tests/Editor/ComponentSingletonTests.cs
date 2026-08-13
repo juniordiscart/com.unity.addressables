@@ -40,7 +40,11 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.NotNull(TestSingletonWithName.Instance);
             TestSingletonWithName.DestroySingleton();
             Assert.False(TestSingletonWithName.Exists);
+#if UNITY_6000_5_OR_NEWER
+            Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(), "Expected no singleton objects to exists after destroy was called");
+#else
             Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(FindObjectsSortMode.None), "Expected no singleton objects to exists after destroy was called");
+#endif
         }
 
         [Test]
@@ -78,7 +82,11 @@ namespace UnityEditor.AddressableAssets.Tests
             // We cant use Assert.Null as we need the override that compares against null when using ==
             Assert.True(instance == null, "Expected singleton instance to be destroyed when leaving play mode.");
             Assert.False(TestSingletonWithName.Exists);
+#if UNITY_6000_5_OR_NEWER
+            Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(), "Expected no singleton objects to exists after leaving play mode.");
+#else
             Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(FindObjectsSortMode.None), "Expected no singleton objects to exists after leaving play mode.");
+#endif
         }
 
         [UnityTest]
@@ -93,7 +101,11 @@ namespace UnityEditor.AddressableAssets.Tests
             // We cant use Assert.Null as we need the override that compares against null when using ==
             Assert.True(instance == null, "Expected editor singleton instance to be destroyed when entering play mode.");
             Assert.False(TestSingletonWithName.Exists);
+#if UNITY_6000_5_OR_NEWER
+            Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(), "Expected no singleton objects to exists after leaving play mode.");
+#else
             Assert.IsEmpty(Object.FindObjectsByType<TestSingletonWithName>(FindObjectsSortMode.None), "Expected no singleton objects to exists after leaving play mode.");
+#endif
         }
 
         [UnityTest]

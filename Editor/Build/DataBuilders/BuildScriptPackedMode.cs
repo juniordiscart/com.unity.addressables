@@ -443,8 +443,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 }
             }
 
-            string builtTypeTreeDataPath = Path.Combine(Addressables.BuildPath, kTypeTreeDataFileName);
+            string builtTypeTreeDataPath = string.Empty;
 #if UNITY_6000_5_OR_NEWER
+            builtTypeTreeDataPath = Path.Combine(Addressables.BuildPath, kTypeTreeDataFileName);
             if (aaContext.Settings.ExtractTypeTreeData)
             {
                 aaContext.providerTypes.Add(typeof(CachedFileProvider));
@@ -1013,7 +1014,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             var buildParams = new BundleBuildParameters(builderInput.Target, builderInput.TargetGroup, Path.GetDirectoryName(filepath));
             if (builderInput.Target == BuildTarget.WebGL)
-                buildParams.BundleCompression = BuildCompression.LZ4Runtime;
+                buildParams.BundleCompression = UnityEngine.BuildCompression.LZ4Runtime;
             var retCode = ContentPipeline.BuildAssetBundles(buildParams, bundleBuildContent, out IBundleBuildResults result, buildTasks, Log);
 
             if (Directory.Exists(tempFolderPath))

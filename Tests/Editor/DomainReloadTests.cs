@@ -53,7 +53,7 @@ namespace UnityEditor.AddressableAssets.Tests
         public void DomainReloadTests_ReInitAddressablesFlagIsSetCorrectly_WhenExitingPlaymode()
         {
             Assert.True(Application.isPlaying);
-            Addressables.ResolveInternalId("DummyString"); //just need this so m_Addressables property gets called
+            _ = Addressables.Instance; //just need this so m_Addressables property gets called
             Assert.IsFalse(Addressables.reinitializeAddressables);
         }
     }

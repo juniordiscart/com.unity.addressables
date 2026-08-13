@@ -658,7 +658,7 @@ namespace UnityEngine.AddressableAssets
         /// <returns>Returns the string that the internal id represents.</returns>
         public static string ResolveInternalId(string id)
         {
-            return m_Addressables.ResolveInternalId(id);
+            return AddressablesImpl.ResolveInternalId(id);
         }
 
         /// <inheritdoc cref="ResourceManager.InternalIdTransformFunc"/>
@@ -737,7 +737,7 @@ namespace UnityEngine.AddressableAssets
         /// </example>
         public static string StreamingAssetsSubFolder
         {
-            get { return m_Addressables.StreamingAssetsSubFolder; }
+            get { return AddressablesImpl.StreamingAssetsSubFolder; }
         }
 
         /// <summary>
@@ -769,7 +769,7 @@ namespace UnityEngine.AddressableAssets
         /// </example>
         public static string BuildPath
         {
-            get { return m_Addressables.BuildPath; }
+            get { return AddressablesImpl.BuildPath; }
         }
 
         /// <summary>
@@ -788,7 +788,7 @@ namespace UnityEngine.AddressableAssets
         /// </example>
         public static string PlayerBuildDataPath
         {
-            get { return m_Addressables.PlayerBuildDataPath; }
+            get { return AddressablesImpl.PlayerBuildDataPath; }
         }
 
         /// <summary>
@@ -802,7 +802,7 @@ namespace UnityEngine.AddressableAssets
         [Preserve]
         public static string RuntimePath
         {
-            get { return m_Addressables.RuntimePath; }
+            get { return AddressablesImpl.RuntimePath; }
         }
 
 
@@ -818,18 +818,16 @@ namespace UnityEngine.AddressableAssets
         [Conditional(k_AddressablesLogConditional)]
         internal static void InternalSafeSerializationLog(string msg, LogType logType = LogType.Log)
         {
-            if (m_AddressablesInstance == null)
-                return;
             switch (logType)
             {
                 case LogType.Warning:
-                    m_AddressablesInstance.LogWarning(msg);
+                    AddressablesImpl.LogWarning(msg);
                     break;
                 case LogType.Error:
-                    m_AddressablesInstance.LogError(msg);
+                    AddressablesImpl.LogError(msg);
                     break;
                 case LogType.Log:
-                    m_AddressablesInstance.Log(msg);
+                    AddressablesImpl.Log(msg);
                     break;
             }
         }
@@ -837,18 +835,16 @@ namespace UnityEngine.AddressableAssets
         [Conditional(k_AddressablesLogConditional)]
         internal static void InternalSafeSerializationLogFormat(string format, LogType logType = LogType.Log, params object[] args)
         {
-            if (m_AddressablesInstance == null)
-                return;
             switch (logType)
             {
                 case LogType.Warning:
-                    m_AddressablesInstance.LogWarningFormat(format, args);
+                    AddressablesImpl.LogWarningFormat(format, args);
                     break;
                 case LogType.Error:
-                    m_AddressablesInstance.LogErrorFormat(format, args);
+                    AddressablesImpl.LogErrorFormat(format, args);
                     break;
                 case LogType.Log:
-                    m_AddressablesInstance.LogFormat(format, args);
+                    AddressablesImpl.LogFormat(format, args);
                     break;
             }
         }
@@ -867,7 +863,7 @@ namespace UnityEngine.AddressableAssets
         [Conditional(k_AddressablesLogConditional)]
         public static void Log(string msg)
         {
-            m_Addressables.Log(msg);
+            AddressablesImpl.Log(msg);
         }
 
         /// <summary>
@@ -885,7 +881,7 @@ namespace UnityEngine.AddressableAssets
         [Conditional(k_AddressablesLogConditional)]
         public static void LogFormat(string format, params object[] args)
         {
-            m_Addressables.LogFormat(format, args);
+            AddressablesImpl.LogFormat(format, args);
         }
 
         /// <summary>
@@ -900,7 +896,7 @@ namespace UnityEngine.AddressableAssets
         /// </example>
         public static void LogWarning(string msg)
         {
-            m_Addressables.LogWarning(msg);
+            AddressablesImpl.LogWarning(msg);
         }
 
         /// <summary>
@@ -916,7 +912,7 @@ namespace UnityEngine.AddressableAssets
         /// </example>
         public static void LogWarningFormat(string format, params object[] args)
         {
-            m_Addressables.LogWarningFormat(format, args);
+            AddressablesImpl.LogWarningFormat(format, args);
         }
 
         /// <summary>
@@ -932,7 +928,7 @@ namespace UnityEngine.AddressableAssets
         /// <seealso href="xref:addressables-asset-settings">Enable all logging</seealso>
         public static void LogError(string msg)
         {
-            m_Addressables.LogError(msg);
+            AddressablesImpl.LogError(msg);
         }
 
         /// <summary>
@@ -950,7 +946,7 @@ namespace UnityEngine.AddressableAssets
         /// <seealso href="xref:addressables-asset-settings">Enable all logging</seealso>
         public static void LogException(AsyncOperationHandle op, Exception ex)
         {
-            m_Addressables.LogException(op, ex);
+            AddressablesImpl.LogException(op, ex);
         }
 
         /// <summary>
@@ -965,7 +961,7 @@ namespace UnityEngine.AddressableAssets
         /// </example>
         public static void LogException(Exception ex)
         {
-            m_Addressables.LogException(ex);
+            AddressablesImpl.LogException(ex);
         }
 
         /// <summary>
@@ -981,7 +977,7 @@ namespace UnityEngine.AddressableAssets
         /// </example>
         public static void LogErrorFormat(string format, params object[] args)
         {
-            m_Addressables.LogErrorFormat(format, args);
+            AddressablesImpl.LogErrorFormat(format, args);
         }
 
         /// <summary>

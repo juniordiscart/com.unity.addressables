@@ -1082,7 +1082,7 @@ namespace AddressableAssetsIntegrationTests
 
             Assert.AreEqual(catalogHashPath, remoteLocation.ToString());
             Assert.AreEqual(cacheLocation, localLocation);
-            Assert.AreEqual(m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + catalogHashPath.GetHashCode() + catalogHashPath.Substring(catalogHashPath.LastIndexOf("."))),
+            Assert.AreEqual(AddressablesImpl.ResolveInternalId(AddressablesImpl.kCacheDataFolder + catalogHashPath.GetHashCode() + catalogHashPath.Substring(catalogHashPath.LastIndexOf("."))),
                 cacheLocation.ToString());
         }
 #endif
@@ -1372,7 +1372,7 @@ namespace AddressableAssetsIntegrationTests
             yield return op1;
 
             string fullRemoteHashPath = fullRemotePath.Replace(kCatalogExt, ".hash");
-            string cachedDataPath = m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPath.GetHashCode() + fullRemotePath.Substring(fullRemotePath.LastIndexOf(".")));
+            string cachedDataPath = AddressablesImpl.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPath.GetHashCode() + fullRemotePath.Substring(fullRemotePath.LastIndexOf(".")));
             string cachedHashPath = cachedDataPath.Replace(kCatalogExt, ".hash");
             Assert.IsTrue(File.Exists(cachedDataPath));
             Assert.IsTrue(File.Exists(cachedHashPath));
@@ -1558,9 +1558,9 @@ namespace AddressableAssetsIntegrationTests
 
             string fullRemoteHashPath = fullRemotePath.Replace(kCatalogExt, ".hash");
             string fullRemoteHashPathTwo = fullRemotePathTwo.Replace(kCatalogExt, ".hash");
-            string cachedDataPath = m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPath.GetHashCode() + fullRemotePath.Substring(fullRemotePath.LastIndexOf(".")));
+            string cachedDataPath = AddressablesImpl.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPath.GetHashCode() + fullRemotePath.Substring(fullRemotePath.LastIndexOf(".")));
             string cachedDataPathTwo =
-                m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPathTwo.GetHashCode() + fullRemotePathTwo.Substring(fullRemotePathTwo.LastIndexOf(".")));
+                AddressablesImpl.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPathTwo.GetHashCode() + fullRemotePathTwo.Substring(fullRemotePathTwo.LastIndexOf(".")));
             string cachedHashPath = cachedDataPath.Replace(kCatalogExt, ".hash");
             string cachedHashPathTwo = cachedDataPathTwo.Replace(kCatalogExt, ".hash");
             Assert.IsTrue(File.Exists(cachedDataPath));
@@ -1610,7 +1610,7 @@ namespace AddressableAssetsIntegrationTests
 
             string hashPath = WriteHashFileForCatalog(fullRemotePath, "123");
 
-            string cachedDataPath = m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + hashPath.GetHashCode() + kCatalogExt);
+            string cachedDataPath = AddressablesImpl.ResolveInternalId(AddressablesImpl.kCacheDataFolder + hashPath.GetHashCode() + kCatalogExt);
             string cachedHashPath = cachedDataPath.Replace(kCatalogExt, ".hash");
             if (File.Exists(cachedDataPath))
                 File.Delete(cachedDataPath);
@@ -1655,7 +1655,7 @@ namespace AddressableAssetsIntegrationTests
             }
 
 
-            string cachedDataPath = m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + Path.GetFileName(kCatalogRemotePath));
+            string cachedDataPath = AddressablesImpl.ResolveInternalId(AddressablesImpl.kCacheDataFolder + Path.GetFileName(kCatalogRemotePath));
             string cachedHashPath = cachedDataPath.Replace(kCatalogExt, ".hash");
             if (File.Exists(cachedDataPath))
                 File.Delete(cachedDataPath);
@@ -1713,7 +1713,7 @@ namespace AddressableAssetsIntegrationTests
             Directory.CreateDirectory(kCatalogFolderPath);
             string fullRemotePath = Path.Combine(kCatalogFolderPath, kCatalogRemotePath);
             string fullRemoteHashPath = fullRemotePath.Replace(kCatalogExt, ".hash");
-            string cachedDataPath = m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPath.GetHashCode() + fullRemotePath.Substring(fullRemotePath.LastIndexOf(".")));
+            string cachedDataPath = AddressablesImpl.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPath.GetHashCode() + fullRemotePath.Substring(fullRemotePath.LastIndexOf(".")));
             string cachedHashPath = cachedDataPath.Replace(kCatalogExt, ".hash");
             string remoteHashPath = WriteHashFileForCatalog(fullRemotePath, "123");
 
@@ -1797,7 +1797,7 @@ namespace AddressableAssetsIntegrationTests
 
             Directory.CreateDirectory(kCatalogFolderPath);
             string fullRemotePath = Path.Combine(kCatalogFolderPath, kCatalogRemotePath);
-            string cachedDataPath = m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + Path.GetFileName(kCatalogRemotePath));
+            string cachedDataPath = AddressablesImpl.ResolveInternalId(AddressablesImpl.kCacheDataFolder + Path.GetFileName(kCatalogRemotePath));
             string cachedHashPath = cachedDataPath.Replace(kCatalogExt, ".hash");
 
             string baseCatalogPath = m_Addressables.m_ResourceLocators[0].CatalogLocation.InternalId;
@@ -1947,7 +1947,7 @@ namespace AddressableAssetsIntegrationTests
         public IEnumerator VerifyProfileVariableEvaluation()
         {
             yield return Init();
-            Assert.AreEqual(string.Format("{0}", m_Addressables.RuntimePath), AddressablesRuntimeProperties.EvaluateString("{UnityEngine.AddressableAssets.Addressables.RuntimePath}"));
+            Assert.AreEqual(string.Format("{0}", AddressablesImpl.RuntimePath), AddressablesRuntimeProperties.EvaluateString("{UnityEngine.AddressableAssets.Addressables.RuntimePath}"));
         }
 
         [UnityTest]
@@ -3763,9 +3763,9 @@ __data");
             public string key1;
             public string key2;
             public bool done = false;
-            public AsyncOperationHandle<IList<IResourceLocation>> op;
-            public AsyncOperationHandle<GameObject> op2;
-            public AddressablesImpl addressables;
+            [System.NonSerialized] public AsyncOperationHandle<IList<IResourceLocation>> op;
+            [System.NonSerialized] public AsyncOperationHandle<GameObject> op2;
+            [System.NonSerialized] public AddressablesImpl addressables;
             public string errorMsg;
 
             async void Start()

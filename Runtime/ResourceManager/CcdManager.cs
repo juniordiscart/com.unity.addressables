@@ -1,5 +1,7 @@
 using System;
-
+#if UNITY_EDITOR
+using UnityEngine;
+#endif
 
 #if ENABLE_CCD
 /// <summary>
@@ -19,6 +21,16 @@ public static class CcdManager
     /// Name of the badge the project should use.
     /// </summary>
     public static string Badge { get; set; }
+
+#if UNITY_EDITOR
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStaticsOnLoad()
+    {
+        EnvironmentName = string.Empty;
+        BucketId = string.Empty;
+        Badge = string.Empty;
+    }
+#endif
 
     /// <summary>
     /// Determines if the CcdManager has been configured

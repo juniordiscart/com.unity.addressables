@@ -154,8 +154,8 @@ namespace UnityEngine.ResourceManagement
         Action<IAsyncOperation> m_ReleaseOpNonCached;
         Action<IAsyncOperation> m_ReleaseOpCached;
         Action<IAsyncOperation> m_ReleaseInstanceOp;
-        static int s_GroupOperationTypeHash = typeof(GroupOperation).GetHashCode();
-        static int s_InstanceOperationTypeHash = typeof(InstanceOperation).GetHashCode();
+        static readonly int s_GroupOperationTypeHash = typeof(GroupOperation).GetHashCode();
+        static readonly int s_InstanceOperationTypeHash = typeof(InstanceOperation).GetHashCode();
 
         /// <summary>
         /// Add an update reveiver.
@@ -211,6 +211,14 @@ namespace UnityEngine.ResourceManagement
         /// The CertificateHandler instance object.
         /// </summary>
         public CertificateHandler CertificateHandlerInstance { get; set; }
+
+#if UNITY_EDITOR
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStaticsOnLoad()
+        {
+            ExceptionHandler = null;
+        }
+#endif
 
         /// <summary>
         /// Constructor for the resource manager.

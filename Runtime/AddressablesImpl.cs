@@ -181,22 +181,22 @@ namespace UnityEngine.AddressableAssets
 			}
         }
 
-        public string StreamingAssetsSubFolder
+        public static string StreamingAssetsSubFolder
         {
             get { return "aa"; }
         }
 
-        public string BuildPath
+        public static string BuildPath
         {
             get { return Addressables.LibraryPath + StreamingAssetsSubFolder + "/" + PlatformMappingService.GetPlatformPathSubFolder(); }
         }
 
-        public string PlayerBuildDataPath
+        public static string PlayerBuildDataPath
         {
             get { return Application.streamingAssetsPath + "/" + StreamingAssetsSubFolder; }
         }
 
-        public string RuntimePath
+        public static string RuntimePath
         {
             get
             {
@@ -208,32 +208,32 @@ namespace UnityEngine.AddressableAssets
             }
         }
 
-        public void Log(string msg)
+        public static void Log(string msg)
         {
             Debug.Log(msg);
         }
 
-        public void LogFormat(string format, params object[] args)
+        public static void LogFormat(string format, params object[] args)
         {
             Debug.LogFormat(format, args);
         }
 
-        public void LogWarning(string msg)
+        public static void LogWarning(string msg)
         {
             Debug.LogWarning(msg);
         }
 
-        public void LogWarningFormat(string format, params object[] args)
+        public static void LogWarningFormat(string format, params object[] args)
         {
             Debug.LogWarningFormat(format, args);
         }
 
-        public void LogError(string msg)
+        public static void LogError(string msg)
         {
             Debug.LogError(msg);
         }
 
-        public void LogException(AsyncOperationHandle op, Exception ex)
+        public static void LogException(AsyncOperationHandle op, Exception ex)
         {
             if (op.Status == AsyncOperationStatus.Failed)
             {
@@ -244,17 +244,17 @@ namespace UnityEngine.AddressableAssets
                 Addressables.Log(ex.ToString());
         }
 
-        public void LogException(Exception ex)
+        public static void LogException(Exception ex)
         {
             Addressables.Log(ex.ToString());
         }
 
-        public void LogErrorFormat(string format, params object[] args)
+        public static void LogErrorFormat(string format, params object[] args)
         {
             Debug.LogErrorFormat(format, args);
         }
 
-        public string ResolveInternalId(string id)
+        public static string ResolveInternalId(string id)
         {
             var path = AddressablesRuntimeProperties.EvaluateString(id);
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_WSA || UNITY_XBOXONE || UNITY_GAMECORE || UNITY_PS5 || UNITY_PS4

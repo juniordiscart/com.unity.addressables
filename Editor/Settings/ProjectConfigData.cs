@@ -10,7 +10,6 @@ using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Serialization;
-using static UnityEngine.AddressableAssets.ResourceLocators.ContentCatalogData.ResourceLocator.ResourceLocation.Serializer;
 
 namespace UnityEditor.AddressableAssets.Settings
 {

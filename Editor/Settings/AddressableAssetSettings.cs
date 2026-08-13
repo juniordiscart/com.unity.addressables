@@ -95,7 +95,7 @@ namespace UnityEditor.AddressableAssets.Settings
 			if (AddressableAssetSettingsDefaultObject.Settings != null)
 				AddressablesAssetPostProcessor.OnPostProcess.Register(AddressableAssetSettingsDefaultObject.Settings.OnPostprocessAllAssets, 0);
 			else
-				EditorApplication.update += TryAddAssetPostprocessorOnNextUpdate;
+                EditorApplication.delayCall += TryAddAssetPostprocessorOnNextUpdate;
 		}
 
 		[InitializeOnLoadMethod]
@@ -115,7 +115,6 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			if (AddressableAssetSettingsDefaultObject.Settings != null)
 				AddressablesAssetPostProcessor.OnPostProcess.Register(AddressableAssetSettingsDefaultObject.Settings.OnPostprocessAllAssets, 0);
-			EditorApplication.update -= TryAddAssetPostprocessorOnNextUpdate;
 		}
 
 		/// <summary>

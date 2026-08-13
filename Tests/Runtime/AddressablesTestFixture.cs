@@ -56,7 +56,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
 #endif
         Assert.IsNull(m_Addressables);
         m_Addressables = new AddressablesImpl(new DefaultAllocationStrategy());
-        m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
+        m_RuntimeSettingsPath = AddressablesImpl.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
         yield return InitAddressables();
     }
 

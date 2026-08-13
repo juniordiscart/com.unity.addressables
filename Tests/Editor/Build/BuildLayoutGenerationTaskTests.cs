@@ -639,7 +639,11 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
                     // Test
                     BuildLayout.DataFromOtherAsset otherAssets = layout.Groups[0].Bundles[0].Files[0].Assets[0].InternalReferencedOtherAssets[0];
+#if UNITY_6000_6_OR_NEWER //In 6000.6 the sprite atlas changed how it handled dependencies
+                    Assert.AreEqual(1, layout.Groups[0].Bundles[0].Files[0].Assets[0].InternalReferencedOtherAssets.Count);
+#else
                     Assert.AreEqual(2, layout.Groups[0].Bundles[0].Files[0].Assets[0].InternalReferencedOtherAssets.Count);
+#endif
                     CollectionAssert.Contains(otherAssets.ReferencingAssets, layout.Groups[0].Bundles[0].Files[0].Assets[0]);
                 }
                 finally // cleanup

@@ -1,11 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.Serialization;
+
+#if UNITY_6000_6_OR_NEWER
+using Unity.Scripting.LifecycleManagement;
+#endif
 
 namespace UnityEngine.ResourceManagement.Util
 {
@@ -262,31 +265,34 @@ namespace UnityEngine.ResourceManagement.Util
         }
     }
 
-    internal static class GlobalLinkedListNodeCache<T>
+#if UNITY_6000_6_OR_NEWER
+    [AutoStaticsCleanup]
+#endif
+    internal static partial class GlobalLinkedListNodeCache<T>
     {
-        static LinkedListNodeCache<T> m_globalCache;
+        static LinkedListNodeCache<T> s_GlobalCache;
 
-        public static bool CacheExists => m_globalCache != null;
+        public static bool CacheExists => s_GlobalCache != null;
 
         public static void SetCacheSize(int length)
         {
-            if (m_globalCache == null)
-                m_globalCache = new LinkedListNodeCache<T>();
-            m_globalCache.CachedNodeCount = length;
+            if (s_GlobalCache == null)
+                s_GlobalCache = new LinkedListNodeCache<T>();
+            s_GlobalCache.CachedNodeCount = length;
         }
 
         public static LinkedListNode<T> Acquire(T val)
         {
-            if (m_globalCache == null)
-                m_globalCache = new LinkedListNodeCache<T>();
-            return m_globalCache.Acquire(val);
+            if (s_GlobalCache == null)
+                s_GlobalCache = new LinkedListNodeCache<T>();
+            return s_GlobalCache.Acquire(val);
         }
 
         public static void Release(LinkedListNode<T> node)
         {
-            if (m_globalCache == null)
-                m_globalCache = new LinkedListNodeCache<T>();
-            m_globalCache.Release(node);
+            if (s_GlobalCache == null)
+                s_GlobalCache = new LinkedListNodeCache<T>();
+            s_GlobalCache.Release(node);
         }
     }
 
