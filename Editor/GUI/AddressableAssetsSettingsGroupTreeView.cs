@@ -26,6 +26,7 @@ namespace UnityEditor.AddressableAssets.GUI
 		string m_FirstSelectedGroup;
 		private readonly Dictionary<AssetEntryTreeViewItem, bool> m_SearchedEntries = new Dictionary<AssetEntryTreeViewItem, bool>();
 		private bool m_ForceSelectionClear = false;
+        private AddressableAssetEntryIconLazyLoad m_lazyLoader = new();
 
 		enum ColumnId
 		{
@@ -63,6 +64,11 @@ namespace UnityEditor.AddressableAssets.GUI
 			BuiltinSceneCache.sceneListChanged += OnScenesChanged;
 			AddressablesAssetPostProcessor.OnPostProcess.Register(OnPostProcessAllAssets, 1);
 		}
+
+        internal void Cleanup()
+        {
+            m_lazyLoader.RemoveLazyIconLoadCallback();
+        }
 
 		GUIContent m_WarningIcon;
 
@@ -114,6 +120,8 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		void OnPostProcessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 		{
+            // Clear any icon cache...
+            m_lazyLoader.ClearIconCache();
 			foreach (Object obj in Selection.objects)
 			{
 				if (obj == null)
@@ -198,10 +206,14 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
 		{
+            m_lazyLoader.ClearWorkQueue();
 			if (!string.IsNullOrEmpty(searchString))
 			{
 				var rows = base.BuildRows(root);
 				SortHierarchical(rows);
+                // At the end of a Search, we schedule an icon lazy load only for results
+                // By doing this, we ensure we only load necessary icons, which massively improves search performance
+                Search(rows);
 				return rows;
 			}
 
@@ -212,8 +224,52 @@ namespace UnityEditor.AddressableAssets.GUI
 			}
 
 			SortChildren(root);
+            LazyLoadIcons(root);
 			return base.BuildRows(root);
 		}
+
+        /// <summary>
+        /// Schedules all icons to be lazy loaded for rows, and will recurse children
+        /// </summary>
+        /// <param name="rows">Rows to be lazy loaded</param>
+        /// <param name="recurseGroups">Whether to include groups; this will often cause more icons to be loaded than necessary</param>
+        private void LazyLoadIcons(IList<TreeViewItem> rows, bool recurseGroups = false)
+        {
+            foreach (var row in rows)
+            {
+                if (recurseGroups || row is AssetEntryTreeViewItem { entry: not null })
+                    LazyLoadIcons(row);
+            }
+        }
+
+        /// <summary>
+        /// Schedules all icons to be loaded recursively upon root.
+        /// Will skip groups which are not expanded.
+        /// </summary>
+        private void LazyLoadIcons(TreeViewItem root)
+        {
+            if (root is AssetEntryTreeViewItem entryItem)
+            {
+                if (entryItem.entry == null)
+                {
+                    if (!IsExpanded(entryItem.id))
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    m_lazyLoader.LoadIconLazy(entryItem);
+                }
+            }
+
+            if (root.children == null)
+                return;
+            foreach (var child in root.children)
+            {
+                LazyLoadIcons(child);
+            }
+        }
 
 		internal IList<TreeViewItem> Search(string search)
 		{
@@ -247,6 +303,7 @@ namespace UnityEditor.AddressableAssets.GUI
 				else if (DoesItemMatchSearch(item, searchString))
 					items.Add(item);
 			}
+            LazyLoadIcons(items);
 
 			return items;
 		}
@@ -882,6 +939,20 @@ namespace UnityEditor.AddressableAssets.GUI
 				}
 			}
 		}
+
+        protected override void SingleClickedItem(int id)
+        {
+            var nodes = GetSelection();
+            // If a user clicks on an asset, prioritise it's icon loading
+            foreach (var node in nodes)
+            {
+                var item = FindItemInVisibleRows(id);
+                if (item is { entry: not null })
+                {
+                    m_lazyLoader.LoadIconLazyPriority(item);
+                }
+            }
+        }
 
 		bool m_ContextOnItem;
 
@@ -1607,7 +1678,8 @@ namespace UnityEditor.AddressableAssets.GUI
 			entry = e;
 			group = null;
 			folderPath = string.Empty;
-			assetIcon = entry == null ? null : AssetDatabase.GetCachedIcon(e.AssetPath) as Texture2D;
+            // LoadIconLazy will populate the icon for us.
+            assetIcon = null;
 			isRenaming = false;
 		}
 
@@ -1666,4 +1738,323 @@ namespace UnityEditor.AddressableAssets.GUI
 			return ascending ? items.OrderBy(selector) : items.OrderByDescending(selector);
 		}
 	}
+
+    /// <summary>
+    /// Helper object that hooks into EditorApplication update to lazy load icon assets
+    /// </summary>
+    internal class AddressableAssetEntryIconLazyLoad
+    {
+        internal static class PrefabIcons
+        {
+            private static Texture s_prefabIcon;
+            private static Texture s_prefabVariantIcon;
+
+            /// <summary>
+            /// Determine if a prefab is a Prefab Variant, without loading it as a full object
+            /// Useful for cases where a user may have a large prefab, which shouldn't be loaded just to determine icons
+            /// </summary>
+            /// <param name="path">Path to the prefab</param>
+            /// <returns>
+            /// True if the prefab is a Prefab Variant.
+            /// False if the path is not a prefab or a variant
+            /// </returns>
+            internal static bool IsPrefabVariant(string path)
+            {
+                if (path == null)
+                    return false;
+                if (!path.EndsWith(".prefab"))
+                    return false;
+                // See comment below about this being the best way to do this without incurring a full deserialization (expensive)
+                using var reader = new StreamReader(path);
+                // Skip to line 3
+                for (var i = 0; i < 3; i++)
+                {
+                    if (reader.ReadLine() == null)
+                        return false;
+                }
+                var prefabType = reader.ReadLine();
+                return prefabType != null && prefabType.StartsWith("PrefabInstance");
+            }
+
+            public static Texture2D PrefabIcon(string prefabPath)
+            {
+                Assert.IsTrue(prefabPath.EndsWith(".prefab"));
+                if (s_prefabIcon)
+                    return s_prefabIcon as Texture2D;
+
+                // Unfortunately we need to perform a file read, to ensure we don't pollute this field
+                if (IsPrefabVariant(prefabPath))
+                {
+                    return PrefabVariantIcon(prefabPath);
+                }
+
+                s_prefabIcon = AssetDatabase.GetCachedIcon(prefabPath);
+                return s_prefabIcon as Texture2D;
+            }
+
+            public static Texture2D PrefabVariantIcon(string prefabPath)
+            {
+                Assert.IsTrue(prefabPath.EndsWith(".prefab"));
+                if (s_prefabVariantIcon)
+                    return s_prefabVariantIcon as Texture2D;
+                // Unfortunately we need to perform a file read, to ensure we don't pollute this field
+                if (!IsPrefabVariant(prefabPath))
+                {
+                    return PrefabIcon(prefabPath);
+                }
+                s_prefabVariantIcon = AssetDatabase.GetCachedIcon(prefabPath);
+                return s_prefabVariantIcon as Texture2D;
+            }
+        }
+        // Ensure we don't tank Editor performance when loading icons lazily
+        private const double k_timeBudget = 0.008f;
+        private const int k_maxFileReadsBeforePushingAsync = 64;
+
+        private readonly Queue<AssetEntryTreeViewItem> m_needsIconRefresh = new();
+        private readonly Queue<AssetEntryTreeViewItem> m_needsIconRefreshPriority = new();
+        private readonly List<AssetEntryTreeViewItem> m_reloadWhenCacheInvalidated = new();
+        private bool m_editorHooked;
+        private int m_editorProgressId = -1;
+        private int m_progressLength = -1;
+        private int m_lastTempRequestFrame;
+        private int m_currentFileReads;
+
+        // Texture Caches
+        private static Texture s_prefabIcon;
+        private readonly Dictionary<string, Texture> m_scriptGuidToIconCache = new();
+
+        /// <summary>
+        /// Assigns a temporary interim texture for <paramref name="item"/>
+        /// This will also register <paramref name="item"/> internally, such that it's true icon will be loaded later
+        /// Does nothing if <paramref name="item"/> does not represent an asset.
+        /// </summary>
+        /// <param name="item">Tree item that needs to be registered</param>
+        internal void LoadIconLazy(AssetEntryTreeViewItem item)
+        {
+            if (item.entry == null)
+                return;
+            if (Time.frameCount != m_lastTempRequestFrame)
+            {
+                m_lastTempRequestFrame = Time.frameCount;
+                m_currentFileReads = 0;
+            }
+
+            if (m_currentFileReads < k_maxFileReadsBeforePushingAsync)
+            {
+                item.assetIcon = GetBestTempIcon(item.entry, true);
+                m_currentFileReads++;
+            }
+            else
+            {
+                item.assetIcon = GetBestTempIcon(item.entry);
+            }
+            AddLazyIconLoadCallback();
+            m_needsIconRefresh.Enqueue(item);
+        }
+
+        /// <summary>
+        /// Ensure a registered item is loaded first. Intended for UX where the real icon must be shown
+        /// (e.g. when a user clicks on a row, it should load it's real icon first)
+        /// <seealso cref="LoadIconLazy"/>
+        /// </summary>
+        internal void LoadIconLazyPriority(AssetEntryTreeViewItem item)
+        {
+            if (item.entry == null)
+                return;
+            // No attempt is made to GetBestTempIcon, as this is only for prioritisation
+            AddLazyIconLoadCallback();
+            m_needsIconRefreshPriority.Enqueue(item);
+        }
+
+        /// <summary>
+        /// Fast retrieval of a MonoBehaviour (e.g. ScriptableObject's) GUID from the beginning of it's asset
+        /// Removes need to fully deserialize to deduce type information
+        /// </summary>
+        internal static string GetTypeGuidFromAsset(string assetPath)
+        {
+            if (assetPath == null)
+                return null;
+            if (!assetPath.EndsWith(".asset"))
+                return null;
+
+            // We need to do this to prevent the performance cost of deserializing the entire asset
+            // Unfortunately this is the best way to do it
+            using var reader = new StreamReader(assetPath);
+            while (!reader.EndOfStream)
+            {
+                var line = reader.ReadLine()!.Trim();
+                // Parse the line and attempt to extract a valid GUID
+                if (!line.StartsWith("m_Script")) continue;
+                var guidMatch = Regex.Match(line, "guid: .+,", RegexOptions.Compiled);
+                // If we did not extract a valid GUID, we should get out now and let AssetDatabase do this properly...
+                if (!guidMatch.Success) return null;
+                var guidStr = guidMatch.Value.Replace("guid: ", "").Replace(",", "");
+                return guidStr;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get a useful icon for <paramref name="entry"/> without causing a full deserialization of the asset
+        /// This is unlike <seealso cref="AssetDatabase.GetCachedIcon"/> which will deserialize an asset if the icon is not cached
+        /// </summary>
+        /// <param name="entry">Entry to get an icon for</param>
+        /// <param name="performFileReads">
+        /// Whether we should perform disk reads in order to determine the icon.
+        /// Slightly slower, but is required to determine ScriptableObject icons and if a Prefab is a Variant
+        /// </param>
+        /// <returns></returns>
+        private Texture2D FastIconFromPath(AddressableAssetEntry entry, bool performFileReads = false)
+        {
+            if (entry.AssetPath == null)
+                return null;
+            if (!File.Exists(entry.AssetPath))
+                return null;
+            var isPrefab = entry.AssetPath.EndsWith(".prefab");
+            var isAsset = entry.AssetPath.EndsWith(".asset");
+
+            if (!performFileReads)
+            {
+                if (isPrefab)
+                {
+                    return PrefabIcons.PrefabIcon(entry.AssetPath);
+                }
+
+                return null;
+            }
+
+            if (isAsset)
+            {
+                var guid = GetTypeGuidFromAsset(entry.AssetPath);
+                if (guid == null) return null;
+                if (!m_scriptGuidToIconCache.ContainsKey(guid))
+                {
+                    m_scriptGuidToIconCache[guid] = AssetDatabase.GetCachedIcon(entry.AssetPath);
+                }
+                return m_scriptGuidToIconCache[guid] as Texture2D;
+            }
+            if (isPrefab)
+            {
+                if (PrefabIcons.IsPrefabVariant(entry.AssetPath))
+                {
+                    return PrefabIcons.PrefabVariantIcon(entry.AssetPath);
+                }
+                return PrefabIcons.PrefabIcon(entry.AssetPath);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Returns the best case icon that can be retrieved quickly
+        /// </summary>
+        private Texture2D GetBestTempIcon(AddressableAssetEntry entry, bool performFileRead = false)
+        {
+            var icon = FastIconFromPath(entry, performFileRead);
+            return icon == null ? AssetPreview.GetMiniTypeThumbnail(entry.MainAssetType) : icon;
+        }
+
+        /// <summary>
+        /// Hook into the Editor's update, if we are not already hooked in
+        /// </summary>
+        private void AddLazyIconLoadCallback()
+        {
+            if (!m_editorHooked)
+            {
+                EditorApplication.update += WorkOnIconQueue;
+                m_editorHooked = true;
+            }
+        }
+
+        /// <summary>
+        /// Unhook from the Editor and clean up our resources
+        /// </summary>
+        internal void RemoveLazyIconLoadCallback()
+        {
+            EditorApplication.update -= WorkOnIconQueue;
+            m_editorHooked = false;
+            if (m_editorProgressId > 0)
+                Progress.Finish(m_editorProgressId);
+            m_editorProgressId = -1;
+            m_progressLength = -1;
+            m_reloadWhenCacheInvalidated.Clear();
+            ClearWorkQueue();
+        }
+
+        /// <summary>
+        /// Clear out the work queue, without unhooking.
+        /// Use this when rebuilding the tree state, to remove any pending loads
+        /// </summary>
+        internal void ClearWorkQueue()
+        {
+            m_needsIconRefresh.Clear();
+            m_needsIconRefreshPriority.Clear();
+            m_reloadWhenCacheInvalidated.Clear();
+            // this will cause the progress to be recomputed
+            m_progressLength = 0;
+        }
+
+        /// <summary>
+        /// Worker method that is hooked into EditorApplication
+        /// </summary>
+        private void WorkOnIconQueue()
+        {
+            double startTime = EditorApplication.timeSinceStartup;
+            while (EditorApplication.timeSinceStartup - startTime < k_timeBudget)
+            {
+                // Always try and pull from priority queue first
+                if (!m_needsIconRefreshPriority.TryDequeue(out var item))
+                {
+                    if (!m_needsIconRefresh.TryDequeue(out item))
+                    {
+                        RemoveLazyIconLoadCallback();
+                        return;
+                    }
+                }
+                if (item.entry == null)
+                {
+                    item.assetIcon = null;
+                    continue;
+                }
+                if (m_needsIconRefreshPriority.Count + m_needsIconRefresh.Count > m_progressLength)
+                {
+                    m_progressLength = m_needsIconRefresh.Count;
+                }
+
+                if (m_editorProgressId == -1)
+                {
+                    m_editorProgressId = Progress.Start("Loading icons for Addressable Groups...");
+                }
+
+                // no need to revalidate scene files, the icon won't change
+                if (!item.entry.AssetPath.EndsWith(".unity"))
+                    m_reloadWhenCacheInvalidated.Add(item);
+
+                // Prefabs will already have the Blue Cube they always have *but* we should check if this is a variant...
+                if (item.entry.AssetPath.EndsWith(".prefab") || item.entry.AssetPath.EndsWith(".asset"))
+                {
+                    // Always allow file reads in this path...
+                    item.assetIcon = FastIconFromPath(item.entry, true);
+                }
+                else
+                    item.assetIcon = AssetDatabase.GetCachedIcon(item.entry.AssetPath) as Texture2D;
+            }
+            Progress.Report(m_editorProgressId, m_progressLength - m_needsIconRefresh.Count, m_progressLength);
+        }
+
+        /// <summary>
+        /// Clear the icon cache, and force any currently loaded rows to be reloaded
+        /// </summary>
+        internal void ClearIconCache()
+        {
+            // If we don't re-load icons, we have the potential for an icon to be representing an old state
+            // As such, we should reload every icon to ensure it is valid
+            foreach (var item in m_reloadWhenCacheInvalidated)
+            {
+                LoadIconLazy(item);
+            }
+            m_scriptGuidToIconCache.Clear();
+            m_reloadWhenCacheInvalidated.Clear();
+        }
+    }
 }

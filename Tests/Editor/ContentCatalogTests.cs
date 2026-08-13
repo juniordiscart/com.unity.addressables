@@ -108,7 +108,7 @@ namespace UnityEditor.AddressableAssets.Tests
 #if !ENABLE_JSON_CATALOG
 
         [UnityTest]
-        public IEnumerator RunStressContinuously([Values(100)] int locateCallCount, [Values(1000)] int locCount, [Values(128, 256)] int locCacheSize, [Values(128, 256, 512)] int bufferCacheSize)
+        public IEnumerator RunStressContinuously([Values(100)] int locateCallCount, [Values(1000)] int locCount, [Values(128, 256, 512)] int bufferCacheSize)
         {
             var locType = typeof(UnityEngine.Object);
             var catalog = new ContentCatalogData();
@@ -147,9 +147,8 @@ namespace UnityEditor.AddressableAssets.Tests
             }
             catalog.SetData(entries);
             var data = catalog.SerializeToByteArray();
-            Debug.Log($"Catalog size {(float)data.Length/(1024*1024)}mb");
-            var loadedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, new ContentCatalogData.Serializer()));
-            var locator = loadedCatalog.CreateCustomLocator("", null, locCacheSize) as ContentCatalogData.ResourceLocator;
+            var loadedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, 0, new ContentCatalogData.Serializer()));
+            var locator = loadedCatalog.CreateCustomLocator("", null) as ContentCatalogData.ResourceLocator;
             yield return null;
             int frameCount = 1000;
             for (int x = 0; x < frameCount; x++)
@@ -193,15 +192,15 @@ namespace UnityEditor.AddressableAssets.Tests
             catalog.SetData(entries);
             var data = catalog.SerializeToByteArray();
             {
-                var resolvedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, new ContentCatalogData.Serializer()));
-                var resolvedLocator = resolvedCatalog.CreateCustomLocator("", null, 128) as ContentCatalogData.ResourceLocator;
+                var resolvedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, 0, new ContentCatalogData.Serializer()));
+                var resolvedLocator = resolvedCatalog.CreateCustomLocator("", null) as ContentCatalogData.ResourceLocator;
                 resolvedLocator.Locate("a", locType, out var locs);
                 Assert.AreEqual($"{UnityEngine.AddressableAssets.Addressables.RuntimePath}/file.path", locs[0].InternalId);
             }
 
             {
-                var nonresolvedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, new ContentCatalogData.Serializer().WithInternalIdResolvingDisabled()));
-                var nonresolvedLocator = nonresolvedCatalog.CreateCustomLocator("", null, 128) as ContentCatalogData.ResourceLocator;
+                var nonresolvedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, 0, new ContentCatalogData.Serializer().WithInternalIdResolvingDisabled()));
+                var nonresolvedLocator = nonresolvedCatalog.CreateCustomLocator("", null) as ContentCatalogData.ResourceLocator;
                 nonresolvedLocator.Locate("a", locType, out var locs);
                 Assert.AreEqual(internalId, locs[0].InternalId);
             }
@@ -209,7 +208,7 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        public void BinaryCatalogCacheStress([Values(1000)] int locateCallCount, [Values(1000)] int locCount, [Values(8, 128, 256, 512, 1024)] int locCacheSize, [Values(4, 32, 64, 128)] int bufferCacheSize)
+        public void BinaryCatalogCacheStress([Values(1000)] int locateCallCount, [Values(1000)] int locCount, [Values(64, 256, 1024, 4096)] int bufferCacheSize)
         {
             var locType = typeof(UnityEngine.Object);
             var catalog = new ContentCatalogData();
@@ -231,8 +230,8 @@ namespace UnityEditor.AddressableAssets.Tests
             }
             catalog.SetData(entries);
             var data = catalog.SerializeToByteArray();
-            var loadedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, new ContentCatalogData.Serializer()));
-            var locator = loadedCatalog.CreateCustomLocator("", null, locCacheSize) as ContentCatalogData.ResourceLocator;
+            var loadedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, 0, new ContentCatalogData.Serializer()));
+            var locator = loadedCatalog.CreateCustomLocator("", null) as ContentCatalogData.ResourceLocator;
             var sw = new Stopwatch();
             sw.Start();
             for (int i = 0; i < locateCallCount; i++)
@@ -252,9 +251,6 @@ namespace UnityEditor.AddressableAssets.Tests
                 }
             }
             sw.Stop();
-            locator.GetCacheStats(out var locReqCount, out var locReqHits, out var readerReqCount, out var readerReqHits);
-            Assert.AreEqual(locateCallCount, locReqCount);
-            Debug.Log($"Location cache: {(int)((float)locReqHits/locReqCount*100)}%,  Reader cache: {(int)((float)readerReqHits/readerReqCount*100)}%, {sw.Elapsed.TotalSeconds} secs");
         }
 
         [Test]
@@ -276,7 +272,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var ccData = new ContentCatalogData("TestCatalog");
             ccData.SetData(entries);
             var data = ccData.SerializeToByteArray();
-            ccData = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, BinaryCatalogInitialization.BinaryStorageBufferCacheSize, new ContentCatalogData.Serializer()));
+            ccData = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 1024, 0, new ContentCatalogData.Serializer()));
             var locator = ccData.CreateCustomLocator("");
             IList<IResourceLocation> locations;
             if (!locator.Locate(1, typeof(object), out locations))

@@ -176,7 +176,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         static AddressableAssetGroup GetGroupFromBundle(string bundleName, Dictionary<string, string> bundleToAssetGroupGUID, AddressableAssetSettings settings)
         {
             if (!bundleToAssetGroupGUID.TryGetValue(bundleName, out string groupGuid))
-                return settings.DefaultGroup;
+                return settings.GetSharedBundleGroup();
             return settings.FindGroup(g => g != null && g.Guid == groupGuid);
         }
 

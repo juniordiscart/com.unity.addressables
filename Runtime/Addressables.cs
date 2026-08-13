@@ -13,6 +13,8 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Text;
 using UnityEngine.Networking;
+using UnityEngine.Scripting;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -559,7 +561,7 @@ namespace UnityEngine.AddressableAssets
     public static class Addressables
     {
         internal static bool reinitializeAddressables = true;
-        internal static AddressablesImpl m_AddressablesInstance = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+        internal static AddressablesImpl m_AddressablesInstance = new AddressablesImpl(new DefaultAllocationStrategy());
 
         static AddressablesImpl m_Addressables
         {
@@ -574,7 +576,7 @@ namespace UnityEngine.AddressableAssets
                 {
                     reinitializeAddressables = false;
                     m_AddressablesInstance.ReleaseSceneManagerOperation();
-                    m_AddressablesInstance = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+                    m_AddressablesInstance = new AddressablesImpl(new DefaultAllocationStrategy());
                 }
 #endif
                 return m_AddressablesInstance;
@@ -795,6 +797,7 @@ namespace UnityEngine.AddressableAssets
         /// When running in a player this returns the path to the same content found in <see cref="Application.streamingAssetsPath"/>.
         /// This folder contains the settings, local catalog and Addressables managed local asset bundles.
         /// </remarks>
+        [Preserve]
         public static string RuntimePath
         {
             get { return m_Addressables.RuntimePath; }

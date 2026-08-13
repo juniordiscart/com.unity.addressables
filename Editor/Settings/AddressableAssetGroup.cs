@@ -103,12 +103,11 @@ namespace UnityEditor.AddressableAssets.Settings
                             var newPath = $"{folder}/{newName}{extension}".Replace('\\', '/');
                             if (path != newPath)
                             {
-                                // we have to set the new name now as the group gets reserialized as part of OnPostprocessAllAssets during the move
-                                name = m_GroupName = newName;
                                 var setPath = AssetDatabase.MoveAsset(path, newPath);
                                 bool success = false;
                                 if (string.IsNullOrEmpty(setPath))
                                 {
+                                    name = m_GroupName = newName;
                                     success = RenameSchemaAssets();
                                 }
 
@@ -169,6 +168,23 @@ namespace UnityEditor.AddressableAssets.Settings
         string GetSchemaAssetPath(Type type)
         {
             return Settings.IsPersisted ? (Settings.GroupSchemaFolder + "/" + Name + "_" + type.Name + ".asset") : string.Empty;
+        }
+
+        /// <summary>
+        /// Determines if this group allows nested folders.
+        /// </summary>
+        public bool AllowNestedFolders
+        {
+            get
+            {
+                if (m_Settings)
+                    return m_Settings.AllowNestedBundleFolders;
+                else
+                {
+                    Debug.LogError("AddressableAssetSettings is null. Cannot determine if nested folders are allowed.");
+                    return false;
+                }
+            }
         }
 
         /// <summary>

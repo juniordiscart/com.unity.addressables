@@ -26,12 +26,12 @@ namespace UnityEditor.AddressableAssets
 #endif
         private const string packageName = "com.unity.addressables";
 
-        #if UNITY_2023_3_OR_NEWER
-        [AnalyticInfo(vendorKey:VendorKey, eventName:BuildEvent)]
+#if UNITY_2023_3_OR_NEWER
+        [AnalyticInfo(vendorKey: VendorKey, eventName: BuildEvent)]
         public class AddressablesBuildEvent : IAnalytic
         {
-
             AnalyticsBuildData cachedBuildData;
+
             public AddressablesBuildEvent(BuildData bd)
             {
                 cachedBuildData = new AnalyticsBuildData(bd);
@@ -47,7 +47,7 @@ namespace UnityEditor.AddressableAssets
             }
         }
 
-        [AnalyticInfo(vendorKey:VendorKey, eventName:UsageEvent)]
+        [AnalyticInfo(vendorKey: VendorKey, eventName: UsageEvent)]
         public class AddressablesUsageEvent : IAnalytic
         {
             AnalyticsUsageData cachedUsageData;
@@ -169,7 +169,7 @@ namespace UnityEditor.AddressableAssets
                 package_ver = packageInfo.version;
             }
         }
-        #endif
+#endif
 
         [Serializable]
         internal struct BuildData
@@ -284,7 +284,7 @@ namespace UnityEditor.AddressableAssets
             PackedMode = 0,
             PackedPlayMode = 1,
             FastMode = 2,
-            // 3
+            // Formerly: Virtual mode -  3
             CustomBuildScript = 4
         }
 
@@ -587,9 +587,13 @@ namespace UnityEditor.AddressableAssets
             if (!EditorAnalytics.enabled)
                 return;
 
-            BuildData data = GenerateBuildData(builderInput, result, buildType);
+#if UNITY_2023_1_OR_NEWER
+            // Cannot post analytics events from contexts that don't have access to the package version
+            if (packageInfo == null)
+                return;
+#endif
 
-            // This will probably cause problems somewhere, but whatever.
+            BuildData data = GenerateBuildData(builderInput, result, buildType);
 #if UNITY_2023_3_OR_NEWER
             AddressablesBuildEvent evt = new AddressablesBuildEvent(data);
             EditorAnalytics.SendAnalytic(evt);
@@ -626,6 +630,13 @@ namespace UnityEditor.AddressableAssets
             if (!EditorAnalytics.enabled)
                 return;
 
+
+#if UNITY_2023_1_OR_NEWER
+            // Cannot post analytics events from contexts that don't have access to the package version
+            if (packageInfo == null)
+                return;
+#endif
+
             var sessionStateKey = GetSessionStateKeyByUsageEventType(eventType);
 
             if (limitEventOncePerSession && sessionStateKey != null && SessionState.GetBool(sessionStateKey, false))
@@ -634,7 +645,7 @@ namespace UnityEditor.AddressableAssets
             if (!SessionState.GetBool(sessionStateKey, false))
                 SessionState.SetBool(sessionStateKey, true);
 
-            UsageData data = GenerateUsageData(eventType, (AnalyticsContentUpdateRestriction) contentUpdateRestriction);
+            UsageData data = GenerateUsageData(eventType, (AnalyticsContentUpdateRestriction)contentUpdateRestriction);
 #if UNITY_2023_3_OR_NEWER
             AddressablesUsageEvent evt = new AddressablesUsageEvent(data);
             EditorAnalytics.SendAnalytic(evt);
@@ -651,9 +662,9 @@ namespace UnityEditor.AddressableAssets
         private static bool RegisterEvent(string eventName)
         {
             bool eventSuccessfullyRegistered = false;
-            #pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
             AnalyticsResult registerEvent = EditorAnalytics.RegisterEventWithLimit(eventName, 100, 100, VendorKey);
-            #pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning restore CS0618 // Type or member is obsolete
             if (registerEvent == AnalyticsResult.Ok)
             {
                 _registeredEvents.Add(eventName);

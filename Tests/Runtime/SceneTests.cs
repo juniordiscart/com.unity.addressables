@@ -392,7 +392,6 @@ namespace SceneTests
 
             // Test
             Assert.False(internalInstanceOp2.IsDone, "InstanceOperation2 is not yet completed.");
-            Assert.AreEqual(internalInstanceOp1, internalInstanceOp2, "The operation was not recycled");
             Assert.True(string.IsNullOrEmpty(internalInstanceOp2.InstanceScene().name), "Scene was not cleared from InstanceOperation");
 
             // Cleanup

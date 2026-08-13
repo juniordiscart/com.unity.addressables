@@ -44,9 +44,12 @@ namespace UnityEditor.AddressableAssets.Settings
             set
             {
                 var set = GetLabelSet();
-                set.Remove(m_LabelNames[index]);
-                set.Add(value);
+                var oldValue = m_LabelNames[index];
                 m_LabelNames[index] = value;
+
+                if (!m_LabelNames.Contains(oldValue))
+                    set.Remove(oldValue);
+                set.Add(value);
             }
         }
 

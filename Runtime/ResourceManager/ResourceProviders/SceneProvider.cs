@@ -137,12 +137,16 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             AsyncOperation InternalLoad(string path, bool loadingFromBundle, LoadSceneParameters loadSceneParameters)
             {
 #if !UNITY_EDITOR
-                Profiling.ProfilerRuntime.AddSceneOperation(Handle, m_Location, Profiling.ContentStatus.Loading);
+#if ENABLE_PROFILER
+               Profiling.ProfilerRuntime.AddSceneOperation(Handle, m_Location, Profiling.ContentStatus.Loading);
+#endif
                 return SceneManager.LoadSceneAsync(path, loadSceneParameters);
 #else
                 if (loadingFromBundle)
                 {
+#if ENABLE_PROFILER
                     Profiling.ProfilerRuntime.AddSceneOperation(Handle, m_Location, Profiling.ContentStatus.Loading);
+#endif
                     return SceneManager.LoadSceneAsync(path, loadSceneParameters);
                 }
                 else
@@ -198,7 +202,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     if (m_Inst.m_Operation.isDone || (!m_Inst.m_Operation.allowSceneActivation && Mathf.Approximately(m_Inst.m_Operation.progress, .9f)))
                     {
                         m_ResourceManager.RemoveUpdateReciever(this);
+#if ENABLE_PROFILER
                         Profiling.ProfilerRuntime.AddSceneOperation(Handle, m_Location, Profiling.ContentStatus.Active);
+#endif
                         Complete(m_Inst, true, null);
                     }
                 }
@@ -261,9 +267,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 if (m_sceneLoadHandle.IsValid()
                     && m_sceneLoadHandle.ReferenceCount > 0)
                 {
+#if ENABLE_PROFILER
                     // this has to happen before the final release to be able to decrement the handle
                     if (m_sceneLoadHandle.ReferenceCount == 1)
                         Profiling.ProfilerRuntime.SceneReleased(m_sceneLoadHandle);
+#endif
                     m_sceneLoadHandle.Release();
                 }
             }

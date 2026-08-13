@@ -432,7 +432,7 @@ namespace UnityEditor.AddressableAssets.Tests
 			foreach (var p in paths)
             {
                 if(Path.GetFileNameWithoutExtension(p).EndsWith("catalog"))
-                    return ContentCatalogData.LoadFromFile(p).CreateCustomLocator();
+                    return ContentCatalogData.LoadFromFile(p, true).CreateCustomLocator();
             }
 			return null;
 		}

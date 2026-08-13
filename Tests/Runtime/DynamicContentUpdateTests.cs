@@ -546,7 +546,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
             Caching.ClearCache();
 #endif
             Assert.IsNull(m_Addressables);
-            m_Addressables = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+            m_Addressables = new AddressablesImpl(new DefaultAllocationStrategy());
             var op = m_Addressables.InitializeAsync(false);
             yield return op;
             Assert.AreEqual(AsyncOperationStatus.Succeeded, op.Status);

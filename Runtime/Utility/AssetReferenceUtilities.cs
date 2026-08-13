@@ -154,6 +154,10 @@ namespace UnityEngine.AddressableAssets.Utility
         internal static HashSet<(Sprite, string)> GetAtlasSpritesAndPackables(ref SpriteAtlas atlas)
         {
             var guids = new HashSet<(Sprite, string)>();
+
+            if (atlas.isVariant)
+                atlas = atlas.GetMasterAtlas();
+
             Object[] atlasPackables = atlas.GetPackables();
             foreach (var packable in atlasPackables)
             {

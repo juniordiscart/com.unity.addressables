@@ -39,7 +39,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         /// <summary>
         /// The mapping of the old to new bundle names. Instead of using this directly inject
-    /// the value through IBuildLayoutParUse BuildLayoutParameters.BundleNameRemap instead
+        /// the value through IBuildLayoutParUse BuildLayoutParameters.BundleNameRemap instead
         /// </summary>
         public Dictionary<string, string> BundleNameRemap
         {
@@ -96,13 +96,15 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return $"{m_ReportsFilePath}_{stringNow}.json";
         }
 
-        static AssetBucket GetOrCreate(Dictionary<string, AssetBucket> buckets, string asset)
+        static AssetBucket GetOrCreate(Dictionary<BucketIdentifier, AssetBucket> buckets, BuildLayout.File file, string asset)
         {
-            if (!buckets.TryGetValue(asset, out AssetBucket bucket))
+            var bid = new BucketIdentifier(file, asset);
+            if (!buckets.TryGetValue(bid, out AssetBucket bucket))
             {
                 bucket = new AssetBucket();
                 bucket.guid = asset;
-                buckets.Add(asset, bucket);
+                bucket.file = file;
+                buckets.Add(bid, bucket);
             }
 
             return bucket;
@@ -114,6 +116,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             public bool isFilePathBucket;
             public List<ObjectSerializedInfo> objs = new List<ObjectSerializedInfo>();
             public BuildLayout.ExplicitAsset ExplictAsset;
+            public BuildLayout.File file;
 
             public ulong CalcObjectSize()
             {
@@ -151,6 +154,54 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             return 0;
         }
 
+        // Each asset bucket is uniquely identified by the guid + the file the guid is in.
+        // We can't just use the guid because duplicated assets will result in the same guid being in multiple files.
+        private struct BucketIdentifier
+        {
+            public BuildLayout.File file;
+            public string refGuid;
+
+            public BucketIdentifier(BuildLayout.File file, string refGuid)
+            {
+                this.file = file;
+                this.refGuid = refGuid;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj is BucketIdentifier other)
+                {
+                    return Equals(other);
+                }
+                return false;
+            }
+
+            public bool Equals(BucketIdentifier other)
+            {
+                return Equals(file, other.file) && string.Equals(refGuid, other.refGuid);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + (file != null ? file.Name.GetHashCode() : 0);
+                    hash = hash * 31 + (refGuid != null ? refGuid.GetHashCode() : 0);
+                    return hash;
+                }
+            }
+
+            public static bool operator ==(BucketIdentifier left, BucketIdentifier right)
+            {
+                return left.Equals(right);
+            }
+
+            public static bool operator !=(BucketIdentifier left, BucketIdentifier right)
+            {
+                return !(left == right);
+            }
+        }
         private BuildLayout CreateBuildLayout()
         {
             AddressableAssetsBuildContext aaContext = (AddressableAssetsBuildContext)m_AaBuildContext;
@@ -242,9 +293,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             Dictionary<string, List<BuildLayout.DataFromOtherAsset>> guidToPulledInBuckets =
                 new Dictionary<string, List<BuildLayout.DataFromOtherAsset>>();
 
+            Dictionary<BucketIdentifier, AssetBucket> buckets = new Dictionary<BucketIdentifier, AssetBucket>();
+            HashSet<string> monoScriptAssets = new HashSet<string>();
+            Dictionary<string, List<BuildLayout.DataFromOtherAsset>> guidToOtherData = new Dictionary<string, List<BuildLayout.DataFromOtherAsset>>();
+            Dictionary<string, Dictionary<long, string>> guidToObjectNames = new Dictionary<string, Dictionary<long, string>>();
+
             foreach (BuildLayout.File file in lookup.Files.Values)
             {
-                Dictionary<string, AssetBucket> buckets = new Dictionary<string, AssetBucket>();
                 WriteResult writeResult = m_Results.WriteResults[file.Name];
                 List<ObjectSerializedInfo> sceneObjects = new List<ObjectSerializedInfo>();
                 FileObjectData fData = new FileObjectData();
@@ -273,39 +328,38 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         }
                         else if (!string.IsNullOrEmpty(info.serializedObject.filePath))
                         {
-                            AssetBucket pathBucket = GetOrCreate(buckets, info.serializedObject.filePath.ToString());
+                            AssetBucket pathBucket = GetOrCreate(buckets, file, info.serializedObject.filePath.ToString());
                             pathBucket.isFilePathBucket = true;
                             pathBucket.objs.Add(info);
                             continue;
                         }
                     }
 
-                    AssetBucket bucket = GetOrCreate(buckets, info.serializedObject.guid.ToString());
+                    AssetBucket bucket = GetOrCreate(buckets, file, info.serializedObject.guid.ToString());
                     bucket.objs.Add(info);
                 }
 
+                // buckets can be shared across different files (i guess that's what a duplicated asset is)
                 if (sceneObjects.Count > 0)
                 {
                     BuildLayout.ExplicitAsset sceneAsset = file.Assets.First(x => x.AssetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase));
-                    AssetBucket bucket = GetOrCreate(buckets, sceneAsset.Guid);
+                    AssetBucket bucket = GetOrCreate(buckets, file, sceneAsset.Guid);
                     bucket.objs.AddRange(sceneObjects);
                 }
 
                 // Update buckets with a reference to their explicit asset
                 file.Assets.ForEach(eAsset =>
                 {
-                    if (!buckets.TryGetValue(eAsset.Guid, out AssetBucket b))
-                        b = GetOrCreate(buckets, eAsset.Guid); // some assets might not pull in any objects
+                    var bid = new BucketIdentifier(file, eAsset.Guid);
+                    if (!buckets.TryGetValue(bid, out AssetBucket b))
+                        b = GetOrCreate(buckets, file, eAsset.Guid); // some assets might not pull in any objects
                     b.ExplictAsset = eAsset;
                 });
 
                 // Create entries for buckets that are implicitly pulled in
-                Dictionary<string, BuildLayout.DataFromOtherAsset> guidToOtherData = new Dictionary<string, BuildLayout.DataFromOtherAsset>();
-                Dictionary<string, Dictionary<long, string>> guidToObjectNames = new Dictionary<string, Dictionary<long, string>>();
                 int assetInFileId = 0;
-                HashSet<string> MonoScriptAssets = new HashSet<string>();
 
-                foreach (AssetBucket bucket in buckets.Values.Where(x => x.ExplictAsset == null))
+                foreach (AssetBucket bucket in buckets.Values.Where(x => x.ExplictAsset == null && x.file == file))
                 {
                     string assetPath = bucket.isFilePathBucket ? bucket.guid : AssetDatabase.GUIDToAssetPath(bucket.guid);
                     if (assetPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
@@ -313,7 +367,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     {
                         file.MonoScriptCount++;
                         file.MonoScriptSize += bucket.CalcObjectSize();
-                        MonoScriptAssets.Add(bucket.guid);
+                        monoScriptAssets.Add(bucket.guid);
                         continue;
                     }
 
@@ -330,9 +384,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     if (lookup.UsedImplicits.TryGetValue(implicitAsset.AssetGuid, out var dataList))
                         dataList.Add(implicitAsset);
                     else
-                        lookup.UsedImplicits.Add(implicitAsset.AssetGuid, new List<BuildLayout.DataFromOtherAsset>(){implicitAsset});
+                        lookup.UsedImplicits.Add(implicitAsset.AssetGuid, new List<BuildLayout.DataFromOtherAsset>() { implicitAsset });
 
-                    guidToOtherData[implicitAsset.AssetGuid] = implicitAsset;
+                    if (guidToOtherData.TryGetValue(implicitAsset.AssetGuid, out var dataFromOtherAssetList))
+                        dataFromOtherAssetList.Add(implicitAsset);
+                    else
+                        guidToOtherData[implicitAsset.AssetGuid] = new List<BuildLayout.DataFromOtherAsset> { implicitAsset };
 
                     if (lookup.AssetPathToTypeMap.ContainsKey(implicitAsset.AssetPath))
                         implicitAsset.MainAssetType = lookup.AssetPathToTypeMap[implicitAsset.AssetPath];
@@ -389,7 +446,14 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 foreach (BuildLayout.ExplicitAsset asset in file.Assets)
                 {
                     assetInFileId++;
-                    AssetBucket bucket = buckets[asset.Guid];
+                    var bid = new BucketIdentifier(file, asset.Guid);
+                    bool bucketFound = buckets.TryGetValue(bid, out AssetBucket bucket);
+                    if (!bucketFound)
+                    {
+                        Debug.LogWarning($"Failed to find AssetBucket for asset with guid: {asset.Guid} in file: {file.Name}. This asset will not be properly represented in the build layout.");
+                        continue;
+                    }
+
                     GUID.TryParse(asset.Guid, out GUID guid);
 
                     // size info
@@ -435,46 +499,54 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         CollectObjectsForAsset(bucket, objectTypes, asset, localIdentifierToObjectName, fData, assetInFileId);
                     }
                 }
-
-                HashSet<BuildLayout.ExplicitAsset> explicitAssetsAddedAsExternal = new HashSet<BuildLayout.ExplicitAsset>();
-                // Add references
-                foreach (BuildLayout.ExplicitAsset asset in file.Assets)
-                {
-                    IEnumerable<ObjectIdentifier> refs = null;
-                    if (m_DependencyData.AssetInfo.TryGetValue(new GUID(asset.Guid), out AssetLoadInfo info))
-                        refs = info.referencedObjects;
-                    else
-                        refs = m_DependencyData.SceneInfo[new GUID(asset.Guid)].referencedObjects;
-
-                    foreach (string refGUID in refs.Select(x => x.guid.Empty() ? x.filePath : x.guid.ToString()).Distinct())
-                    {
-                        if (MonoScriptAssets.Contains(refGUID))
-                            continue;
-                        if (guidToOtherData.TryGetValue(refGUID, out BuildLayout.DataFromOtherAsset dfoa))
-                        {
-                            dfoa.ReferencingAssets.Add(asset);
-                            asset.InternalReferencedOtherAssets.Add(dfoa);
-                        }
-                        else if (buckets.TryGetValue(refGUID, out AssetBucket refBucket) && refBucket.ExplictAsset != null)
-                        {
-                            refBucket.ExplictAsset.ReferencingAssets.Add(asset);
-                            asset.InternalReferencedExplicitAssets.Add(refBucket.ExplictAsset);
-                        }
-                        else if (lookup.GuidToExplicitAsset.TryGetValue(refGUID, out BuildLayout.ExplicitAsset refAsset))
-                        {
-                            refAsset.ReferencingAssets.Add(asset);
-                            asset.ExternallyReferencedAssets.Add(refAsset);
-                            if (explicitAssetsAddedAsExternal.Add(refAsset))
-                                file.ExternalReferences.Add(refAsset);
-                        }
-                    }
-                }
             }
 
             foreach (BuildLayout.File file in lookup.Files.Values)
             {
                 if (lookup.FileToFileObjectData.TryGetValue(file, out FileObjectData fData))
                 {
+                    HashSet<BuildLayout.ExplicitAsset> explicitAssetsAddedAsExternal = new HashSet<BuildLayout.ExplicitAsset>();
+                    foreach (BuildLayout.ExplicitAsset asset in file.Assets)
+                    {
+                        IEnumerable<ObjectIdentifier> refs = null;
+                        if (m_DependencyData.AssetInfo.TryGetValue(new GUID(asset.Guid), out AssetLoadInfo info))
+                            refs = info.referencedObjects;
+                        else
+                            refs = m_DependencyData.SceneInfo[new GUID(asset.Guid)].referencedObjects;
+
+                        foreach (string refGUID in refs.Select(x => x.guid.Empty() ? x.filePath : x.guid.ToString()).Distinct())
+                        {
+                            if (monoScriptAssets.Contains(refGUID))
+                                continue;
+                            if (guidToOtherData.TryGetValue(refGUID, out List<BuildLayout.DataFromOtherAsset> dataFromOtherAssetList))
+                            {
+                                foreach (var dataFromOtherAsset in dataFromOtherAssetList)
+                                {
+                                    // Add the reference to the version of the asset stored in the same bundle as this one. This is important for duplicated assets.
+                                    // If there is only one, add it no matter what, since unity_builtin_extra may not share the same bundle as the scene that references it.
+                                    if (dataFromOtherAssetList.Count == 1 || dataFromOtherAsset.File.Bundle == file.Bundle)
+                                    {
+                                        dataFromOtherAsset.ReferencingAssets.Add(asset);
+                                        asset.InternalReferencedOtherAssets.Add(dataFromOtherAsset);
+                                        break;
+                                    }
+                                }
+                            }
+                            else if (buckets.TryGetValue(new BucketIdentifier(file, refGUID), out AssetBucket refBucket) && refBucket.ExplictAsset != null)
+                            {
+                                refBucket.ExplictAsset.ReferencingAssets.Add(asset);
+                                asset.InternalReferencedExplicitAssets.Add(refBucket.ExplictAsset);
+                            }
+                            else if (lookup.GuidToExplicitAsset.TryGetValue(refGUID, out BuildLayout.ExplicitAsset refAsset))
+                            {
+                                refAsset.ReferencingAssets.Add(asset);
+                                asset.ExternallyReferencedAssets.Add(refAsset);
+                                if (explicitAssetsAddedAsExternal.Add(refAsset))
+                                    file.ExternalReferences.Add(refAsset);
+                            }
+                        }
+                    }
+
                     foreach (BuildLayout.ExplicitAsset asset in file.Assets)
                     {
                         if (asset.IsScene && asset.Objects.Count > 0)
@@ -642,13 +714,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 HashSet<int> indices;
                 foreach (ObjectIdentifier dependency in dependencies)
                 {
-                    if (fileObjectLookup.TryGetObjectReferenceData(dependency, out (int, int)val))
+                    if (fileObjectLookup.TryGetObjectReferenceData(dependency, out (int, int) val))
                     {
                         // object dependency within this file was found
                         if (assetIndices.TryGetValue(val.Item1, out indices))
                             indices.Add(val.Item2);
                         else
-                            assetIndices[val.Item1] = new HashSet<int>(){val.Item2};
+                            assetIndices[val.Item1] = new HashSet<int>() { val.Item2 };
                     }
                     else // if not in fileObjectLookup, not a dependency on this file, need to find in another file
                     {
@@ -672,7 +744,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                                     if (assetIndices.TryGetValue(val.Item1, out indices))
                                         indices.Add(val.Item2);
                                     else
-                                        assetIndices[val.Item1] = new HashSet<int>(){val.Item2};
+                                        assetIndices[val.Item1] = new HashSet<int>() { val.Item2 };
                                 }
                             }
                         } // can be false for built in shared bundles
@@ -681,7 +753,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 foreach (KeyValuePair<int, HashSet<int>> assetRefData in assetIndices)
                 {
-                    objectData.References.Add(new BuildLayout.ObjectReference() {AssetId = assetRefData.Key, ObjectIds = new List<int>(assetRefData.Value)});
+                    objectData.References.Add(new BuildLayout.ObjectReference() { AssetId = assetRefData.Key, ObjectIds = new List<int>(assetRefData.Value) });
                 }
             }
         }
@@ -862,13 +934,16 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
             else
             {
-                // bundleToAssetGroup doesn't contain the builtin bundles. The builtin content is built using values from the default group
-                AddressableAssetGroup defaultGroup = aaContext.Settings.DefaultGroup;
+                AddressableAssetGroup selectedGroup = aaContext.Settings.GetSharedBundleGroup();
                 b.Name = m_BuildLayoutParameters.BundleNameRemap[b.Name];
-                b.Group = lookup.GroupLookup[defaultGroup.Guid]; // should this be set?
+                b.Group = lookup.GroupLookup[selectedGroup.Guid]; // should this be set?
+                if (lookup.GroupLookup.TryGetValue(selectedGroup.Guid, out var resolvedGroup))
+                    b.Group = resolvedGroup;
+                else
+                    Debug.LogWarning($"Group with GUID {selectedGroup.Guid} not found in lookup. Bundle group assignment skipped for {b.Name}.");
                 lookup.FilenameToBundle[b.Name] = b;
 
-                b.FileSize = GetFileSizeFromPath(Path.Combine(lookup.GroupNameToBuildPath[defaultGroup.Name], b.Name), out bool success);
+                b.FileSize = GetFileSizeFromPath(Path.Combine(lookup.GroupNameToBuildPath[selectedGroup.Name], b.Name), out bool success);
                 if (!success)
                     Debug.LogWarning($"Built in assetBundle {b.Name} was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
 
@@ -953,7 +1028,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     totalAssetFileSize = curBd.DependencyBundle.FileSize + totalDependentAssetFilesize,
                 };
 
-                curBd.Efficiency =  newEfficiencyInfo.totalAssetFileSize > 0 ? (float)curBd.referencedAssetsFileSize / curBd.DependencyBundle.FileSize : 1f;
+                curBd.Efficiency = newEfficiencyInfo.totalAssetFileSize > 0 ? (float)curBd.referencedAssetsFileSize / curBd.DependencyBundle.FileSize : 1f;
                 curBd.ExpandedEfficiency = newEfficiencyInfo.totalAssetFileSize > 0 ? (float)newEfficiencyInfo.referencedAssetFileSize / newEfficiencyInfo.totalAssetFileSize : 1f;
                 bundleDependencyCache[curBd] = newEfficiencyInfo;
             }
@@ -1077,7 +1152,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                             assetDuplication.DuplicatedObjects.Add(
                                 new BuildLayout.ObjectDuplicationData()
                                 {
-                                    IncludedInBundleFiles = new List<BuildLayout.File> {implicitData.File},
+                                    IncludedInBundleFiles = new List<BuildLayout.File> { implicitData.File },
                                     LocalIdentifierInFile = objectData.LocalIdentifierInFile
                                 });
                             hasDuplicatedObjects = true;
@@ -1147,7 +1222,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             editorSettings.ActiveProfile.Values = new BuildLayout.StringPair[profile.values.Count];
             for (int i = 0; i < profile.values.Count; ++i)
                 editorSettings.ActiveProfile.Values[i] = (new BuildLayout.StringPair()
-                    {Key = profile.values[i].id, Value = profile.values[i].value});
+                { Key = profile.values[i].id, Value = profile.values[i].value });
 
             return editorSettings;
         }

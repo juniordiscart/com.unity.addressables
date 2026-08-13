@@ -3,9 +3,31 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [2.7.0] - 2025-07-30
+- Fixed issue where strikethrough appears on labels when reordering addressables labels in the labels window.
+- Changed GetDownloadSizeAsync to actually use an AsyncOperation and run the calculation as part of a coroutine.
+- Fix for CCD Upload Issue with Packed Separately Bundles.
+- Fixed an issue where you weren't able to assign Sprites in a AssetReferenceAtlasedSprite if the Atlas was a variant.
+- Fixed an issue when "Use Defaults" was selected for a Group. When building for Android the local settings were used for remote groups. This effectively disabled caching.
+- Fixed an issue where Profiler runtime data was not stripped for non-development builds.
+- Improved memory usage when using binary catalogs.
+- Improved performance of the Addressable Groups editor window for large projects - this should be noticable when first launching the window, and when searching for assets.
+- Fixed an issue where the Addressables Profiler Module would not work properly when using a standalone Profiler process.
+- Fix an issue where Custom group settings were not correctly applied to built-in bundles.
+- Revert name change to prevent gameobject warning on group Rename
+- Added Preserve attribute to prevent stripping of RuntimePath property
+
 ## [2.6.0] - 2025-06-03
 - Fixed issue where call to LoadAssetsAsync was treating single element keys into an array of characters.
 - Fixed binary catalog extraction & optimization tools.  InternalIds of locations were getting resolved with Editor data incorrectly.  They are now copied directly to the output files.
+
+## [2.5.0] - 2025-05-12
+- Added IP ping timeout to the Hosting Services window.
+- Fixed memory leak when loading Sprite objects from a SpriteAtlas asset.
+- Fixed sub-object loading from AssetReferences for types that are not Sprites in a SpriteAtlas.
+- Fixed Exception when using third build and load path variables option.
+- Fixed bug where identical locations were calculated multiple times in the download size
+- Fixed bug where we'd fetch the remote hash at start-up even though catalog updates were disabled
 
 ## [2.5.0] - 2025-05-12
 - Added IP ping timeout to the Hosting Services window.

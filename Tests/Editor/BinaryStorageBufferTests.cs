@@ -50,10 +50,10 @@ namespace UnityEditor.AddressableAssets.Tests
 
             var bytes = wr.SerializeToByteArray();
             var re = new BinaryStorageBuffer.Reader(bytes, cacheSize);
-            Assert.AreEqual(5, re.ReadValue<int>(intID));
-            Assert.AreEqual(true, re.ReadValue<bool>(boolId));
-            Assert.AreEqual(new SimpleStruct(1), re.ReadValue<SimpleStruct>(structId1));
-            Assert.AreEqual(new SimpleStruct(2), re.ReadValue<SimpleStruct>(structId2));
+            Assert.AreEqual(5, re.ReadValue<int>(intID, out var _));
+            Assert.AreEqual(true, re.ReadValue<bool>(boolId, out var _));
+            Assert.AreEqual(new SimpleStruct(1), re.ReadValue<SimpleStruct>(structId1, out var _));
+            Assert.AreEqual(new SimpleStruct(2), re.ReadValue<SimpleStruct>(structId2, out var _));
         }
 
         [Test]
@@ -68,10 +68,10 @@ namespace UnityEditor.AddressableAssets.Tests
 
             var bytes = wr.SerializeToByteArray();
             var re = new BinaryStorageBuffer.Reader(bytes, cacheSize);
-            Assert.AreEqual(5, re.ReadValue<int>(intID));
-            Assert.AreEqual(true, re.ReadValue<bool>(boolId));
-            Assert.AreEqual(new SimpleStruct(1), re.ReadValue<SimpleStruct>(structId1));
-            Assert.AreEqual(new SimpleStruct(2), re.ReadValue<SimpleStruct>(structId2));
+            Assert.AreEqual(5, re.ReadValue<int>(intID, out var _));
+            Assert.AreEqual(true, re.ReadValue<bool>(boolId, out var _));
+            Assert.AreEqual(new SimpleStruct(1), re.ReadValue<SimpleStruct>(structId1, out var _));
+            Assert.AreEqual(new SimpleStruct(2), re.ReadValue<SimpleStruct>(structId2, out var _));
         }
 
         [Test]
@@ -89,10 +89,10 @@ namespace UnityEditor.AddressableAssets.Tests
             wr.Write(structId1, new SimpleStruct(1));
             var bytes = wr.SerializeToByteArray();
             var re = new BinaryStorageBuffer.Reader(bytes, cacheSize);
-            Assert.AreEqual(5, re.ReadValue<int>(intID));
-            Assert.AreEqual(true, re.ReadValue<bool>(boolId));
-            Assert.AreEqual(new SimpleStruct(1), re.ReadValue<SimpleStruct>(structId1));
-            Assert.AreEqual(new SimpleStruct(2), re.ReadValue<SimpleStruct>(structId2));
+            Assert.AreEqual(5, re.ReadValue<int>(intID, out var _));
+            Assert.AreEqual(true, re.ReadValue<bool>(boolId, out var _));
+            Assert.AreEqual(new SimpleStruct(1), re.ReadValue<SimpleStruct>(structId1, out var _));
+            Assert.AreEqual(new SimpleStruct(2), re.ReadValue<SimpleStruct>(structId2, out var _));
         }
 
         [Test]
@@ -113,8 +113,8 @@ namespace UnityEditor.AddressableAssets.Tests
             wr.Write(arrayId2, array2);
 
             var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize);
-            var a1 = re.ReadValueArray<SimpleStruct>(arrayId);
-            var a2 = re.ReadValueArray<SimpleStruct>(arrayId2);
+            var a1 = re.ReadValueArray<SimpleStruct>(arrayId, out var _);
+            var a2 = re.ReadValueArray<SimpleStruct>(arrayId2, out var _);
             for (int i = 0; i < array.Length; i++)
             {
                 Assert.AreEqual(array[i], a1[i]);
@@ -191,12 +191,15 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void TestDynamicStringsReturnCachedValue()
         {
+            var str = "text/with/lots/of/slahes";
             var wr = new BinaryStorageBuffer.Writer(1024);
-            var strId1 = wr.WriteString("text/with/lots/of/slahes", '/');
-            var strId2 = wr.WriteString("text/with/lots/of/slahes", '/');
-            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), 1024);
-            var str1 = re.ReadString(strId1, '/');
-            var str2 = re.ReadString(strId2, '/');
+            var strId1 = wr.WriteString(str, '/');
+            var strId2 = wr.WriteString(str, '/');
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), 1024, 0);
+            var str1 = re.ReadString(strId1, out var str1Size, '/');
+            var str2 = re.ReadString(strId2, out var str2Size, '/');
+            Assert.AreEqual(46, str1Size);
+            Assert.AreEqual(0, str2Size);
             Assert.AreSame(str1, str2);
         }
 
@@ -215,7 +218,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var str = wr.WriteObject(objTxt, true);
             var bytes = wr.SerializeToByteArray();
             var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), 1024);
-            var rStr = re.ReadObject(str) as string;
+            var rStr = re.ReadObject(str, out var _) as string;
            //var rStr = re.ReadString(
             Assert.AreEqual(txt, rStr);
         }
@@ -229,7 +232,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var str = wr.WriteString(txt, sep);
             var bytes = wr.SerializeToByteArray();
             var re = new BinaryStorageBuffer.Reader(bytes, cacheSize);
-            var strRes = re.ReadString(str, sep);
+            var strRes = re.ReadString(str, out var _, sep);
             Assert.AreEqual(txt, strRes);
         }
         [Test]
@@ -245,8 +248,8 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(str, str2);
 
             var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize);
-            Assert.AreEqual(txt, re.ReadString(str, sep));
-            Assert.AreEqual(txt, re.ReadString(str2, sep));
+            Assert.AreEqual(txt, re.ReadString(str, out var _, sep));
+            Assert.AreEqual(txt, re.ReadString(str2, out var _, sep));
         }
 
         [Test]
@@ -258,7 +261,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var str = wr.WriteString(txt, sep);
             var bytes = wr.SerializeToByteArray();
             var re = new BinaryStorageBuffer.Reader(bytes, cacheSize);
-            var strRes = re.ReadString(str, sep);
+            var strRes = re.ReadString(str, out var _, sep);
             Assert.AreEqual(txt, strRes);
         }
 
@@ -280,7 +283,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var wr = new BinaryStorageBuffer.Writer(chunkSize);
             var id = wr.WriteString(str, '/');
             var r = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize);
-            var str2 = r.ReadString(id, '/');
+            var str2 = r.ReadString(id, out var _, '/');
             Assert.AreEqual(str, str2);
         }
 
@@ -312,7 +315,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var br = new BinaryStorageBuffer.Reader(data);
 
             for (int i = 0; i < ids.Count; i++)
-                Assert.AreEqual(strs[i], br.ReadString(ids[i], '/'));
+                Assert.AreEqual(strs[i], br.ReadString(ids[i], out var _, '/'));
 
             Assert.Less(data.Length, rawSize);
         }
@@ -347,7 +350,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var sw = new Stopwatch();
             sw.Start();
             for (int i = 0; i < 100000; i++)
-                r.ReadString(ids[UnityEngine.Random.Range(0, ids.Length)], '/');
+                r.ReadString(ids[UnityEngine.Random.Range(0, ids.Length)], out var _, '/');
             sw.Stop();
             Debug.Log($"ReadString time: {sw.ElapsedMilliseconds}ms.");
         }
@@ -392,18 +395,19 @@ namespace UnityEditor.AddressableAssets.Tests
                     public uint subId;
                 }
 
-                public object Deserialize(BinaryStorageBuffer.Reader reader, Type type, uint offset)
+                public object Deserialize(BinaryStorageBuffer.Reader reader, Type type, uint offset, out uint size)
                 {
-                    var data = reader.ReadValue<Data>(offset);
-                    var sub = reader.ReadValue<Data.Sub>(data.subId);
+                    var data = reader.ReadValue<Data>(offset, out var _);
+                    var sub = reader.ReadValue<Data.Sub>(data.subId, out var _);
+                    size = 0;
                     return new ComplexObject
                     {
                         intVal = data.intVal,
-                        stringVal = reader.ReadString(data.stringId),
+                        stringVal = reader.ReadString(data.stringId, out var _),
                         sub = new ComplexSubClass
                         {
                              floatV = sub.floatVal,
-                             stringVal = reader.ReadString(sub.stringId)
+                             stringVal = reader.ReadString(sub.stringId, out var _)
                         }
                     };
                 }
@@ -434,9 +438,9 @@ namespace UnityEditor.AddressableAssets.Tests
             var id = wr.WriteObject(expected, false);
             var id2 = wr.WriteObject(expected, true);
             var r = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize);
-            var str = r.ReadObject<string>(id);
+            var str = r.ReadObject<string>(id, out var _);
             Assert.AreEqual(expected, str);
-            var strObj = r.ReadObject(id2);
+            var strObj = r.ReadObject(id2, out var _);
             Assert.AreEqual(expected, strObj);
         }
 
@@ -446,8 +450,8 @@ namespace UnityEditor.AddressableAssets.Tests
             var wr = new BinaryStorageBuffer.Writer(1024, new ComplexObject.Serializer());
             var objs = new object[] { "string val", new ComplexObject(1) };
             var id = wr.WriteObjects(objs, true);
-            var r = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, new ComplexObject.Serializer());
-            var objs2 = r.ReadObjectArray(id);
+            var r = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, 0, new ComplexObject.Serializer());
+            var objs2 = r.ReadObjectArray(id, out var _);
             for (int i = 0; i < objs.Length; i++)
                 Assert.AreEqual(objs[i], objs2[i]);
         }
@@ -463,9 +467,9 @@ namespace UnityEditor.AddressableAssets.Tests
             for (int i = 0; i < count; i++)
                 wr.WriteObject(new ComplexObject(i), false);
             Assert.Less(wr.Length, size * 2);
-            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, new ComplexObject.Serializer());
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, 0, new ComplexObject.Serializer());
             for (int i = 0; i < ids.Length; i++)
-                Assert.AreEqual(new ComplexObject(i), re.ReadObject<ComplexObject>(ids[i]));
+                Assert.AreEqual(new ComplexObject(i), re.ReadObject<ComplexObject>(ids[i], out var _));
         }
 
 #if !ENABLE_JSON_CATALOG
@@ -488,7 +492,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var byteArray = writer.SerializeToByteArray();
             BinaryStorageBuffer.Reader reader = new BinaryStorageBuffer.Reader(byteArray);
 
-            var result = adapter.Deserialize(reader, typeof(AssetBundleRequestOptions), id) as AssetBundleRequestOptions;
+            var result = adapter.Deserialize(reader, typeof(AssetBundleRequestOptions), id, out var _) as AssetBundleRequestOptions;
 
             Assert.AreEqual(expectedTimeout, result.Timeout);
         }
@@ -512,7 +516,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var byteArray = writer.SerializeToByteArray();
             BinaryStorageBuffer.Reader reader = new BinaryStorageBuffer.Reader(byteArray);
 
-            var result = adapter.Deserialize(reader, typeof(AssetBundleRequestOptions), id) as AssetBundleRequestOptions;
+            var result = adapter.Deserialize(reader, typeof(AssetBundleRequestOptions), id, out var _) as AssetBundleRequestOptions;
 
             Assert.AreEqual(expectedRedirectLimit, result.RedirectLimit);
         }
@@ -526,11 +530,11 @@ namespace UnityEditor.AddressableAssets.Tests
                 objs[i] = new ComplexObject(i);
             uint objArrayWithoutType = wr.WriteObjects(objs, false);
             uint objArrayWithType = wr.WriteObjects(objs, true);
-            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, new ComplexObject.Serializer());
-            var typedObjs = re.ReadObjectArray<ComplexObject>(objArrayWithoutType);
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, 0, new ComplexObject.Serializer());
+            var typedObjs = re.ReadObjectArray<ComplexObject>(objArrayWithoutType, out var _);
             for (int i = 0; i < count; i++)
                 Assert.AreEqual(objs[i], typedObjs[i]);
-            var untypedObjs = re.ReadObjectArray(objArrayWithType);
+            var untypedObjs = re.ReadObjectArray(objArrayWithType, out var _);
             for (int i = 0; i < count; i++)
                 Assert.AreEqual(objs[i], untypedObjs[i]);
         }
@@ -550,13 +554,13 @@ namespace UnityEditor.AddressableAssets.Tests
             }
 
 
-            var r = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, new ComplexObject.Serializer());
+            var r = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, 0, new ComplexObject.Serializer());
             for (int i = 0; i < count; i++)
             {
                 if (i % 2 == 0)
-                    Assert.AreEqual(new ComplexObject(i), r.ReadObject(ids[i], false));
+                    Assert.AreEqual(new ComplexObject(i), r.ReadObject(ids[i], out var _, false));
                 else
-                    Assert.AreEqual($"very long start of string/a middle part that is also somewhat long/almost done.../this part is unique{i}...../this part has unicode characters, see ЁЁЁЁЁЁЁ", r.ReadString(ids[i], '/'));
+                    Assert.AreEqual($"very long start of string/a middle part that is also somewhat long/almost done.../this part is unique{i}...../this part has unicode characters, see ЁЁЁЁЁЁЁ", r.ReadString(ids[i], out var _, '/'));
             }
         }
 
@@ -567,7 +571,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var id = wr.WriteString(str, '/');
             var data = wr.SerializeToByteArray();
             var reader = new BinaryStorageBuffer.Reader(data);
-            var rStr = reader.ReadString(id, '/');
+            var rStr = reader.ReadString(id, out var _, '/');
             Assert.AreEqual(str, rStr);
             var len = reader.ComputeStringLength(id, '/');
             Assert.AreEqual(str.Length, len);
@@ -587,10 +591,10 @@ namespace UnityEditor.AddressableAssets.Tests
                 objs[i] = new ComplexObject(i);
             uint objArrayWithoutType = wr.WriteObjects(objs, false);
             uint objArrayWithType = wr.WriteObjects(objs, true);
-            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, new ComplexObject.Serializer());
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray(), cacheSize, 0, new ComplexObject.Serializer());
             var context = new TextContextObject();
-            var resultCount = re.ProcessObjectArray<ComplexObject, TextContextObject>(objArrayWithoutType, context,
-                (obj, context) =>
+            var resultCount = re.ProcessObjectArray<ComplexObject, TextContextObject>(objArrayWithoutType, out var _, context,
+                (obj, context, i, c) =>
                 {
                     Assert.NotNull(obj);
                     Assert.NotNull(context);

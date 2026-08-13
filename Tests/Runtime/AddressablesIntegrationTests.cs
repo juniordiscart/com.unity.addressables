@@ -129,7 +129,7 @@ namespace AddressableAssetsIntegrationTests
             if (!initializationComplete || TypeName != currentInitType)
             {
                 if (m_Addressables == null)
-                    m_Addressables = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+                    m_Addressables = new AddressablesImpl(new DefaultAllocationStrategy());
 
                 if (TypeName != currentInitType)
                 {
@@ -178,7 +178,7 @@ namespace AddressableAssetsIntegrationTests
             if (!initializationComplete || TypeName != currentInitType)
             {
                 if (m_Addressables == null)
-                    m_Addressables = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+                    m_Addressables = new AddressablesImpl(new DefaultAllocationStrategy());
 
                 currentInitType = TypeName;
 

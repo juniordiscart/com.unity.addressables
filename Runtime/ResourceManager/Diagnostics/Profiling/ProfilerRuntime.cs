@@ -1,3 +1,4 @@
+#if ENABLE_PROFILER
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -161,15 +162,10 @@ namespace UnityEngine.ResourceManagement.Profiling
                 // AssetDatabase mode has no dependencies
                 return "";
             }
+            if (location.Dependencies[0].Data is AssetBundleRequestOptions options)
+                return options.BundleName;
 
-            AssetBundleRequestOptions options = location.Dependencies[0].Data as AssetBundleRequestOptions;
-            if (options == null)
-            {
-                Debug.LogError($"Dependency bundle location does not have AssetBundleRequestOptions");
-                return "";
-            }
-
-            return options.BundleName;
+            return "";
         }
 
         public static void AddSceneOperation(AsyncOperationHandle<SceneInstance> handle, IResourceLocation location, ContentStatus status)
@@ -299,3 +295,4 @@ namespace UnityEngine.ResourceManagement.Profiling
         }
     }
 }
+#endif

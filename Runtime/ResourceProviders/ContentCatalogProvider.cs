@@ -431,8 +431,9 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
                 Addressables.LogFormat("Addressables - Content catalog load result = {0}.", ccd);
                 if (ccd != null)
                 {
+#if ENABLE_PROFILER
                     ResourceManagement.Profiling.ProfilerRuntime.AddCatalog(Hash128.Parse(ccd.BuildResultHash));
-
+#endif
                     ccd.location = m_ProviderInterface.Location;
                     ccd.LocalHash = m_LocalHashValue;
                     if (!string.IsNullOrEmpty(m_RemoteHashValue) && !string.IsNullOrEmpty(m_LocalDataPath))

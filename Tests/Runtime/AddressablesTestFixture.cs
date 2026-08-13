@@ -55,7 +55,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         Caching.ClearCache();
 #endif
         Assert.IsNull(m_Addressables);
-        m_Addressables = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+        m_Addressables = new AddressablesImpl(new DefaultAllocationStrategy());
         m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
         yield return InitAddressables();
     }

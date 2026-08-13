@@ -165,8 +165,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                             ActionComplete(m_RequestOperation);
                         else
                         {
+#if ENABLE_PROFILER
                             if (UnityEngine.Profiling.Profiler.enabled && m_ProvideHandle.IsValid)
                                 Profiling.ProfilerRuntime.AddAssetOperation(m_ProvideHandle, Profiling.ContentStatus.Loading);
+#endif
 
                             m_RequestOperation.completed += ActionComplete;
                         }
@@ -236,9 +238,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
             void CompleteOperation()
             {
+#if ENABLE_PROFILER
                 if (UnityEngine.Profiling.Profiler.enabled && m_Result != null && m_ProvideHandle.IsValid)
                     Profiling.ProfilerRuntime.AddAssetOperation(m_ProvideHandle, Profiling.ContentStatus.Active);
-
+#endif
                 Exception e = m_Result == null
                     ? new Exception($"Unable to load asset of type {m_ProvideHandle.Type} from location {m_ProvideHandle.Location}.")
                     : null;

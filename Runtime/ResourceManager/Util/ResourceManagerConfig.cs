@@ -437,10 +437,14 @@ namespace UnityEngine.ResourceManagement.Util
             public IEnumerable<BinaryStorageBuffer.ISerializationAdapter> Dependencies => null;
 
 
-            public object Deserialize(BinaryStorageBuffer.Reader reader, Type t, uint offset)
+            unsafe public object Deserialize(BinaryStorageBuffer.Reader reader, Type t, uint offset, out uint size)
             {
-                var d = reader.ReadValue<Data>(offset);
-                return new ObjectInitializationData { m_Id = reader.ReadString(d.id), m_ObjectType = new SerializedType { Value = reader.ReadObject<Type>(d.type) }, m_Data = reader.ReadString(d.data) };
+                var dataStruct = reader.ReadValue<Data>(offset, out var dataStructSize);
+                var dataId = reader.ReadString(dataStruct.id, out var idSize);
+                var dataType = new SerializedType { Value = reader.ReadObject<Type>(dataStruct.type, out var typeSize) };
+                var res = new ObjectInitializationData { m_Id = dataId, m_ObjectType = dataType, m_Data = reader.ReadString(dataStruct.data, out var dataSize) };
+                size = dataStructSize + idSize + typeSize + dataSize;
+                return res;
             }
 
             public uint Serialize(BinaryStorageBuffer.Writer writer, object val)

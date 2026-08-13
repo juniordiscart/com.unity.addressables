@@ -1460,23 +1460,26 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     var info = buildResult.BundleInfos[builtBundleNames[i]];
                     bundleResultInfo.Crc = info.Crc;
                     bundleResultInfo.Hash = info.Hash.ToString();
-                    var requestOptions = new AssetBundleRequestOptions
+                    var bundleName = Path.GetFileNameWithoutExtension(info.FileName);
+                    if (!schema.StripDownloadOptions)
                     {
-                        Crc = schema.UseAssetBundleCrc ? info.Crc : 0,
-                        UseCrcForCachedBundle = schema.UseAssetBundleCrcForCachedBundles,
-                        UseUnityWebRequestForLocalBundles = schema.UseUnityWebRequestForLocalBundles,
-                        Hash = schema.UseAssetBundleCache ? info.Hash.ToString() : "",
-                        ChunkedTransfer = schema.ChunkedTransfer,
-                        RedirectLimit = schema.RedirectLimit,
-                        RetryCount = schema.RetryCount,
-                        Timeout = schema.Timeout,
-                        BundleName = Path.GetFileNameWithoutExtension(info.FileName),
-                        AssetLoadMode = schema.AssetLoadMode,
-                        BundleSize = GetFileSize(info.FileName),
-                        ClearOtherCachedVersionsWhenLoaded = schema.AssetBundledCacheClearBehavior == BundledAssetGroupSchema.CacheClearBehavior.ClearWhenWhenNewVersionLoaded
-                    };
-                    dataEntry.Data = requestOptions;
-                    bundleResultInfo.InternalBundleName = requestOptions.BundleName;
+                        dataEntry.Data = new AssetBundleRequestOptions
+                        {
+                            Crc = schema.UseAssetBundleCrc ? info.Crc : 0,
+                            UseCrcForCachedBundle = schema.UseAssetBundleCrcForCachedBundles,
+                            UseUnityWebRequestForLocalBundles = schema.UseUnityWebRequestForLocalBundles,
+                            Hash = schema.UseAssetBundleCache ? info.Hash.ToString() : "",
+                            ChunkedTransfer = schema.ChunkedTransfer,
+                            RedirectLimit = schema.RedirectLimit,
+                            RetryCount = schema.RetryCount,
+                            Timeout = schema.Timeout,
+                            BundleName = bundleName,
+                            AssetLoadMode = schema.AssetLoadMode,
+                            BundleSize = GetFileSize(info.FileName),
+                            ClearOtherCachedVersionsWhenLoaded = schema.AssetBundledCacheClearBehavior == BundledAssetGroupSchema.CacheClearBehavior.ClearWhenWhenNewVersionLoaded
+                        };
+                    }
+                    bundleResultInfo.InternalBundleName = bundleName;
 
                     if (assetGroup == sharedBundleGroup && info.Dependencies.Length == 0 && !string.IsNullOrEmpty(info.FileName) &&
                         (info.FileName.EndsWith($"{BuiltInBundleBaseName}.bundle", StringComparison.Ordinal)
@@ -1585,6 +1588,9 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             if (assetGroup != null)
             {
+                if (!assetGroup.AllowNestedFolders && schema.BundleMode == BundledAssetGroupSchema.BundlePackingMode.PackSeparately)
+                    assetBundleName = assetBundleName.Replace('/', '_');
+
                 string groupName = assetGroup.Name.Replace(" ", "").Replace('\\', '/').Replace("//", "/").ToLower();
                 assetBundleName = groupName + "_" + assetBundleName;
             }

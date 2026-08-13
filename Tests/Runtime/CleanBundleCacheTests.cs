@@ -100,7 +100,7 @@ namespace AddressableAssetsIntegrationTests
         {
             if (m_Addressables != null)
                 m_Addressables.ResourceManager.Dispose();
-            m_Addressables = new AddressablesImpl(new LRUCacheAllocationStrategy(1000, 1000, 100, 10));
+            m_Addressables = new AddressablesImpl(new DefaultAllocationStrategy());
             m_RuntimeSettingsPath = m_Addressables.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName + buildId));
             var op = m_Addressables.InitializeAsync(m_RuntimeSettingsPath, null, false);
             yield return op;

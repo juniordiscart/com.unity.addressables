@@ -58,10 +58,26 @@ namespace UnityEditor.AddressableAssets.GUI
             }
         }
 
+        internal void ShowAllowNestedFoldersNotifications(AddressableAssetSettings settings)
+        {
+            bool allowNestedFolderCheck = ProjectConfigData.UserHasBeenInformedAbouNestedFolderStructure;
+            if (!allowNestedFolderCheck && settings.AllowNestedBundleFolders)
+            {
+                bool enableNestedFolders = EditorUtility.DisplayDialog(
+                "Enable Nested Bundle Folders",
+                "A new checkbox has been added to the Asset Settings to Allow Nested Folders. Previously if a group was marked Pack Separately and there is a slash in an Addressables key, the bundles would be put in subfolders. Most users will not want this functionality unless they have specific build processes that depend on it. Allow nested folders?",
+                "Yes", "No");
+
+                settings.AllowNestedBundleFolders = enableNestedFolders;
+                ProjectConfigData.UserHasBeenInformedAbouNestedFolderStructure = true;
+            }
+        }
+
         internal static void Show(AddressableAssetSettings settings)
         {
             var upgradeNotifications = new UpgradeNotifications();
             upgradeNotifications.ShowUpgradeNotifications(settings);
+            upgradeNotifications.ShowAllowNestedFoldersNotifications(settings);
         }
     }
 }

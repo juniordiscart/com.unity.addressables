@@ -975,15 +975,9 @@ namespace UnityEngine.AddressableAssets
                 }
             }
 
-            long size = 0;
-            foreach (IResourceLocation location in allLocations.Distinct(new ResourceLocationComparer()))
-            {
-                var sizeData = location.Data as ILocationSizeData;
-                if (sizeData != null)
-                    size += sizeData.ComputeSize(location, ResourceManager);
-            }
-
-            return ResourceManager.CreateCompletedOperation<long>(size, string.Empty);
+            GetDownloadSizeOperation downloadSizeOp = new GetDownloadSizeOperation();
+            downloadSizeOp.Init(allLocations.Distinct(new ResourceLocationComparer()), ResourceManager);
+            return ResourceManager.StartOperation(downloadSizeOp, default);
         }
 
         AsyncOperationHandle DownloadDependenciesAsyncWithChain(AsyncOperationHandle dep, object key, bool autoReleaseHandle)

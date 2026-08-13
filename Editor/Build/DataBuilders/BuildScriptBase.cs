@@ -196,6 +196,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var settings = aaContext.Settings;
             var schema = assetGroup.GetSchema<BundledAssetGroupSchema>();
 
+            if(settings.UseUnityWebRequestForLocalBundles && schema.StripDownloadOptions)
+            {
+                message = "Strip Download Options is enabled, but Use UnityWebRequest for Local Bundles is also enabled. " +
+                          "These options are mutually exclusive and cannot be used together.";
+            }
+
             string buildPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.BuildPath.Id);
             string loadPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.LoadPath.Id);
 

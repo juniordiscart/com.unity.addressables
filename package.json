@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "unity": "2023.1",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "2.4.0",
+    "com.unity.scriptablebuildpipeline": "2.4.1",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -59,15 +59,15 @@
     }
   ],
   "_upm": {
-    "changelog": "- Fixed issue where call to LoadAssetsAsync was treating single element keys into an array of characters.\n- Fixed binary catalog extraction & optimization tools.  InternalIds of locations were getting resolved with Editor data incorrectly.  They are now copied directly to the output files."
+    "changelog": "- Fixed issue where strikethrough appears on labels when reordering addressables labels in the labels window.\n- Changed GetDownloadSizeAsync to actually use an AsyncOperation and run the calculation as part of a coroutine.\n- Fix for CCD Upload Issue with Packed Separately Bundles.\n- Fixed an issue where you weren't able to assign Sprites in a AssetReferenceAtlasedSprite if the Atlas was a variant.\n- Fixed an issue when \"Use Defaults\" was selected for a Group. When building for Android the local settings were used for remote groups. This effectively disabled caching.\n- Fixed an issue where Profiler runtime data was not stripped for non-development builds.\n- Improved memory usage when using binary catalogs.\n- Improved performance of the Addressable Groups editor window for large projects - this should be noticable when first launching the window, and when searching for assets.\n- Fixed an issue where the Addressables Profiler Module would not work properly when using a standalone Profiler process.\n- Fix an issue where Custom group settings were not correctly applied to built-in bundles.\n- Revert name change to prevent gameobject warning on group Rename\n- Added Preserve attribute to prevent stripping of RuntimePath property"
   },
   "upmCi": {
-    "footprint": "b3aa1eed40d38ec1e6876cd06f85752f346ed14c"
+    "footprint": "5cb7fa9f436ab74e10fd99ddbb6ac0f7a1e3226c"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@2.6/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@2.7/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "609cc5121010016a95fcb575c4062072c4674bba"
+    "revision": "55af73f5199366815860539425454db98bb80d35"
   }
 }

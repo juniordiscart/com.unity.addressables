@@ -244,7 +244,7 @@ namespace UnityEngine.AddressableAssets.Initialization
 #if ENABLE_JSON_CATALOG
                 IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix);
 #else
-                IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix, BinaryCatalogInitialization.CatalogLocationCacheSize);
+                IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix);
 #endif
                 addressables.AddResourceLocator(locMap, data.LocalHash, data.location);
                 addressables.AddResourceLocator(new DynamicResourceLocator(addressables));

@@ -52,6 +52,8 @@ namespace UnityEditor.AddressableAssets.Settings
             internal bool userHasBeenInformedAboutBuildReportSettingPreBuild = false;
             [SerializeField]
             internal bool userHasBeenInformedAboutPathPairMigration = false;
+            [SerializeField]
+            internal bool userHasBeenInformedAboutNestedFolderStructure = false;
         }
 
         static ConfigSaveData s_Data;
@@ -144,6 +146,24 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (s_Data.userHasBeenInformedAboutPathPairMigration != value)
                 {
                     s_Data.userHasBeenInformedAboutPathPairMigration = value;
+                    SaveData();
+                }
+            }
+        }
+
+        internal static bool UserHasBeenInformedAbouNestedFolderStructure
+        {
+            get
+            {
+                ValidateData();
+                return s_Data.userHasBeenInformedAboutNestedFolderStructure;
+            }
+            set
+            {
+                ValidateData();
+                if (s_Data.userHasBeenInformedAboutNestedFolderStructure != value)
+                {
+                    s_Data.userHasBeenInformedAboutNestedFolderStructure = value;
                     SaveData();
                 }
             }

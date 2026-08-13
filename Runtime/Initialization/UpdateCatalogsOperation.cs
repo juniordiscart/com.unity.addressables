@@ -88,12 +88,7 @@ namespace UnityEngine.AddressableAssets
                 if (locator == null)
                 {
                     var catData = m_DepOp.Result[i].Result as ContentCatalogData;
-#if ENABLE_JSON_CATALOG
                     locator = catData.CreateCustomLocator(catData.location.PrimaryKey, null);
-#else
-                    locator = catData.CreateCustomLocator(catData.location.PrimaryKey, null, BinaryCatalogInitialization.CatalogLocationCacheSize);
-
-#endif
                     localHash = catData.LocalHash;
                     remoteLocation = catData.location;
                 }

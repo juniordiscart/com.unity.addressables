@@ -149,7 +149,7 @@ namespace UnityEngine.AddressableAssets
                     var catData = catalogOps[i].Result as ContentCatalogData;
                     if (catData == null)
                         return cacheDirsInUse;
-                    locator = catData.CreateCustomLocator(catData.location.PrimaryKey, null, BinaryCatalogInitialization.CatalogLocationCacheSize);
+                    locator = catData.CreateCustomLocator(catData.location.PrimaryKey, null);
                 }
 
                 foreach (var location in locator.AllLocations)
