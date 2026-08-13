@@ -102,9 +102,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void Build_WithAddrParentFolderAndAddrSubfolders_InSeparateGroups_Succeeds()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             var context = new AddressablesDataBuilderInput(Settings);
             foreach (IDataBuilder db in Settings.DataBuilders.Cast<IDataBuilder>())
             {

@@ -25,13 +25,6 @@ namespace UnityEditor.AddressableAssets.Tests
             get { return true; }
         }
 
-        [SetUp]
-        public void CheckForInstalledPlayer()
-        {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-        }
-
 		[Test]
 		public void CanCreateContentStateData()
 		{

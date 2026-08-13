@@ -72,9 +72,6 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
         [Test]
         public void Test_GenerateContentData_MissingReferencedBundle()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             LogAssert.Expect(LogType.Warning, "Asset Assets/AddressMe/brown.bmp referenced bundle folder_assets_assets/addressme_3876ae7ae6d93912555c4c93ef6e3fd7.bundle not loaded from build layout, attaching to parent scene_scenes_all_ea5d4d944831b5303deb66b664bd2e25.bundle");
             Test_GenerateContentData_FrameData(true, true, true, false);
         }

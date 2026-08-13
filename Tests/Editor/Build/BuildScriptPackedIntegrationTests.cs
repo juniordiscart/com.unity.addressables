@@ -62,9 +62,6 @@ public class BuildScriptPackedIntegrationTests
     [SetUp]
     public void Setup()
     {
-        if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-            Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
         m_SingleTestBuildFolder = "Temp/TestBuild";
         m_SingleTestAssetFolder = "Assets/SingleTestFolder";
         DeleteSingleTestDirectories();

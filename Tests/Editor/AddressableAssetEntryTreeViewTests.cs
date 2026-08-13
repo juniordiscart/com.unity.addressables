@@ -79,9 +79,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void BuildTree_Assets_SpriteAtlas_CreatesEntriesForAtlasAndAllSprites()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             var guid1 = CreateSpriteTexture(k_TreeViewTestFolderPath + "/testTexture1.png");
             var guid2 = CreateSpriteTexture(k_TreeViewTestFolderPath + "/testTexture2.png");
             var atlasPath = k_TreeViewTestFolderPath + "/testAtlas.spriteatlas";

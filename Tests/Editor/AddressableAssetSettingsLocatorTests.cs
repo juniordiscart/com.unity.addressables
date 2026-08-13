@@ -358,9 +358,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [UnityTest]
         public IEnumerator Locator_KeysProperty_Contains_Expected_Keys_ForAllBuildScripts()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             SetupLocatorAssets();
 
             AddressablesDataBuilderInput input = new AddressablesDataBuilderInput(m_Settings);

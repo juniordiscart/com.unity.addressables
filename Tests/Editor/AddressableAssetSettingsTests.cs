@@ -542,9 +542,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AddressablesClearCachedData_DoesNotThrowError()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             //individual clean paths
             foreach (ScriptableObject so in Settings.DataBuilders)
             {
@@ -562,9 +559,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AddressablesCleanCachedData_ClearsData()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             //Setup
             Settings.BuildPlayerContentImpl();
 
@@ -580,9 +574,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AddressablesCleanAllCachedData_ClearsAllData()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             //Setup
             Settings.BuildPlayerContentImpl();
 

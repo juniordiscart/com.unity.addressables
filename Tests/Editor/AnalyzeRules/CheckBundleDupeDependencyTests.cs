@@ -24,9 +24,6 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
 
         protected override void OnInit()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             base.OnInit();
 
             GameObject prefabA = new GameObject("PrefabA");

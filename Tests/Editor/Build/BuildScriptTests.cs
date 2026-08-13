@@ -19,22 +19,12 @@ namespace UnityEditor.AddressableAssets.Tests
 {
     public abstract class BuildScriptTests : AddressableAssetTestBase
     {
-        [SetUp]
-        public void CheckForInstalledPlayer()
-        {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-        }
-
         [TestFixture]
         abstract class StreamingAssetTests : AddressableAssetTestBase
         {
             [SetUp]
             public void Setup()
             {
-                if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                    Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
                 DirectoryUtility.DeleteDirectory(Application.streamingAssetsPath, recursiveDelete: true);
             }
 

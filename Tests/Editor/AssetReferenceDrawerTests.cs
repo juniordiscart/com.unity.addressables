@@ -477,9 +477,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CanRestrictLabel()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             TestObjectWithRestrictedRef obj = ScriptableObject.CreateInstance<TestObjectWithRestrictedRef>();
             var so = new SerializedObject(obj);
@@ -494,9 +491,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CanRestrictMultipleLabels()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             TestObjectWithRestrictedRefByMultipleLabels obj = ScriptableObject.CreateInstance<TestObjectWithRestrictedRefByMultipleLabels>();
             var so = new SerializedObject(obj);
@@ -514,9 +508,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AssetReferenceDrawer_GatherFilters_CanRestrictInSingleNestedClass()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             TestObjectWithRestrictedRefInNestedClass obj = ScriptableObject.CreateInstance<TestObjectWithRestrictedRefInNestedClass>();
             var so = new SerializedObject(obj);
@@ -530,9 +521,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AssetReferenceDrawer_GatherFilters_CanRestrictInDoubleNestedClass()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             m_AssetReferenceDrawer = new AssetReferenceDrawer();
             TestObjectWithRestrictedRefInNestedClass obj = ScriptableObject.CreateInstance<TestObjectWithRestrictedRefInNestedClass>();
             var so = new SerializedObject(obj);
@@ -546,9 +534,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void AssetReferenceDrawer_ValidateAsset_CanValidateAssetWithRestrictionsFromPath()
         {
-            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
-                Assert.Ignore("No supported modules installed. This is an invalid test environment");
-
             // Setup AssetReference
             string assetPath = "";
             var testObject = SetupAssetReference(out assetPath);
