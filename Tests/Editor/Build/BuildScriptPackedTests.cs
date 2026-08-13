@@ -65,6 +65,9 @@ namespace UnityEditor.AddressableAssets.Tests
         [SetUp]
         protected void Setup()
         {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
+                Assert.Ignore("No supported modules installed. This is an invalid test environment");
+
             using (new IgnoreFailingLogMessage())
             {
                 m_BuilderInput = new AddressablesDataBuilderInput(Settings);

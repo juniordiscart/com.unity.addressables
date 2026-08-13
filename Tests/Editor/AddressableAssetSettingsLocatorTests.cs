@@ -8,6 +8,7 @@ using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -357,6 +358,9 @@ namespace UnityEditor.AddressableAssets.Tests
         [UnityTest]
         public IEnumerator Locator_KeysProperty_Contains_Expected_Keys_ForAllBuildScripts()
         {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
+                Assert.Ignore("No supported modules installed. This is an invalid test environment");
+
             SetupLocatorAssets();
 
             AddressablesDataBuilderInput input = new AddressablesDataBuilderInput(m_Settings);

@@ -8,6 +8,7 @@ using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 
@@ -61,6 +62,9 @@ public class BuildScriptPackedIntegrationTests
     [SetUp]
     public void Setup()
     {
+        if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
+            Assert.Ignore("No supported modules installed. This is an invalid test environment");
+
         m_SingleTestBuildFolder = "Temp/TestBuild";
         m_SingleTestAssetFolder = "Assets/SingleTestFolder";
         DeleteSingleTestDirectories();

@@ -18,6 +18,7 @@ using UnityEngine.U2D;
 using UnityEditor.U2D;
 using UnityEditor.Presets;
 using UnityEditor.TestTools;
+using UnityEditor.Build.Pipeline;
 
 namespace BuildLayoutGenerationTaskPerPlatformTests
 {
@@ -48,6 +49,9 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
+            if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "temp")))
+                Assert.Ignore("No supported modules installed. This is an invalid test environment");
+
             ExecCount = 0;
         }
 
