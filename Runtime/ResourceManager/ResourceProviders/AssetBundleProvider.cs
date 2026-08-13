@@ -40,6 +40,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 	/// <summary>
 	/// Wrapper for asset bundles.
+    ///
+    /// WARNING: Loading bundles directly using LoadAssetAsync&lt;IAssetBundleResource&gt;() is NOT RECOMMENDED
+    /// for most use cases as it bypasses automatic dependency resolution and can cause serialization
+    /// issues with ScriptableObjects.
+    ///
+    /// RECOMMENDED: Use LoadAssetAsync&lt;T&gt;() to load individual assets instead, which provides
+    /// automatic dependency handling and better error resilience.
 	/// </summary>
 	public interface IAssetBundleResource
 	{
@@ -933,6 +940,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 	/// <summary>
 	/// IResourceProvider for asset bundles.  Loads bundles via UnityWebRequestAssetBundle API if the internalId starts with "http".  If not, it will load the bundle via AssetBundle.LoadFromFileAsync.
+    ///
+    /// WARNING: Direct bundle loading using this provider is NOT RECOMMENDED for most applications.
+    /// Use Addressables.LoadAssetAsync&lt;T&gt;() to load individual assets instead, which provides
+    /// automatic dependency resolution and better error handling.
+    ///
+    /// This provider is for advanced scenarios only where manual bundle management is required.
 	/// </summary>
 	[DisplayName("AssetBundle Provider")]
 	public class AssetBundleProvider : ResourceProviderBase

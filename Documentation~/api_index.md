@@ -30,7 +30,6 @@ In Unity Editor code:
 * [AddressableAssetSettings]: defines the Addressable settings.
 * [AddressableAssetSettingsDefaultObject]: provides access to the asset containing your Addressables settings.
 * [AnalyzeRule]: a base class for adding rules to the Analyze tool.
-* [IHostingService]: an interface for creating your own hosting service implementations.
 * [IDataBuilder]: an interface for creating your own build implementations.
 
 
@@ -44,6 +43,5 @@ In Unity Editor code:
 [AddressableAssetSettings]: xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings
 [AddressableAssetSettingsDefaultObject]: xref:UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject
 [AnalyzeRule]: xref:UnityEditor.AddressableAssets.Build.AnalyzeRules.AnalyzeRule
-[IHostingService]: xref:UnityEditor.AddressableAssets.HostingServices.IHostingService
 [IDataBuilder]: xref:UnityEditor.AddressableAssets.Build.IDataBuilder
 [ResourceManager]: xref:UnityEngine.ResourceManagement.ResourceManager

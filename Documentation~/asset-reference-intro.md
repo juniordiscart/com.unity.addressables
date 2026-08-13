@@ -1,19 +1,15 @@
-# Asset reference introduction
+# Introduction to asset references
 
-An [`AssetReference`](xref:UnityEngine.AddressableAssets.AssetReference) is a type that can reference an Addressable asset.
+To reference Addressable assets in your code, use the [`AssetReference`](xref:UnityEngine.AddressableAssets.AssetReference) type in a `MonoBehaviour` or `ScriptableObject` script. When you add a serializable `AssetReference` field to one of these classes, you can assign a value to the field in an Inspector window. You can optionally restrict the field to [only accept certain asset types](#assetreference-types) or [labels](Labels.md).
 
-Use the `AssetReference` class in a `MonoBehaviour` or `ScriptableObject`. When you add a serializable `AssetReference` field to one of these classes, you can assign a value to the field in an Inspector window. You can restrict the assets that can be assigned to a field by type and by label.
-
-![image alt text](images/assetreference-inspector.png)<br/>*An Inspector window displaying several AssetReference fields*
+![image alt text](images/asset-reference-inspector.png)<br/>*An Inspector window displaying a **Referenced Prefab** `AssetReferenceGameObject` field. The object picker displays Addressable prefabs to choose from.*
 
 To assign a value, drag an asset to the field or select the object picker icon to open a dialog that lets you choose an Addressable asset.
 
-If you drag a non-Addressable asset to an `AssetReference` field, the system automatically makes the asset Addressable and adds it to your default Addressables group. Sprite and SpriteAtlas assets can have sub-objects. AssetReferences assigned these types of asset display an additional object picker that you can use to specify which sub-object to reference.
-
-For examples of using `AssetReference` types in a project refer to the [Basic AssetReference](https://github.com/Unity-Technologies/Addressables-Sample/tree/master/Basic/Basic%20AssetReference), [Component Reference](https://github.com/Unity-Technologies/Addressables-Sample/tree/master/Basic/ComponentReference), and [Sprite Land](https://github.com/Unity-Technologies/Addressables-Sample/tree/master/Basic/Sprite%20Land) projects in the [Addressables-Sample](https://github.com/Unity-Technologies/Addressables-Sample) repository.
+If you drag a non-Addressable asset to an `AssetReference` field, Unity automatically makes the asset Addressable and adds it to the [default Addressables group](groups-create.md). Sprite and SpriteAtlas assets can have sub objects and display an additional object picker that you can use to specify which sub object to reference.
 
 > [!IMPORTANT]
-> To be able to assign assets from a group to an AssetReference field, you must enable the __Include GUIDs in Catalog__ property in the group’s Advanced Options. The __Include GUIDs in Catalog__ option is enabled by default. For more information, refer to [Content Packing & Loading schema reference](ContentPackingAndLoadingSchema.md).
+> To assign assets from a group to an AssetReference field, you must enable the __Include GUIDs in Catalog__ property in the group's Advanced Options. The __Include GUIDs in Catalog__ option is enabled by default. For more information, refer to [Group Inspector settings reference](ContentPackingAndLoadingSchema.md).
 
 ## AssetReference types
 
@@ -34,3 +30,9 @@ The types of AssetReference include:
 
 > [!NOTE]
 > If you want to use a [`CustomPropertyDrawer`](xref:editor-PropertyDrawers) with a generic `AssetReferenceT`, or are using a version of Unity earlier than 2020.1, you must make a concrete subclass to support custom `AssetReference` types.
+
+## Additional resources
+
+* [Create an asset reference field](asset-reference-create.md)
+* [Load asset references](LoadingAssetReferences.md)
+* [`AssetReference` API reference](xref:UnityEngine.AddressableAssets.AssetReference)

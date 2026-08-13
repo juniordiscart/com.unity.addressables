@@ -3,6 +3,14 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [2.7.3] - 2025-09-15
+- Changed Label window to have consistent Rename UX with the rest of the Editor. You can now press Enter (macOS) or F2 to enter rename, as well as clicking after selecting an item in the list.
+- Added documentation to mention the fact that loading AssetBundles directly via LoadAssetAsync does not handle dependencies.
+- Added null checks for analytics events to fix console error.
+- Fixed loading incorrect data when using dynamic internal id naming.
+- Documentation: Content model update.
+- Fixed an issue where trying to build after setting a custom profile value would sometimes cause a NullRefException.
+
 ## [2.7.2] - 2025-08-11
 - Fixed issue where builds were failing in Unity Cloud Build due to hash collisions in Addressables during dependency resolution.
 - Fixed an issue where remote binary catalogs would mistakenly be listed as having the .json file extension in the Build Report summary tab.

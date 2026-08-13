@@ -4,9 +4,9 @@ uid: addressables-modification-events
 
 # Modification events
 
-You can use modification events to signal to parts of the Addressables system when certain data is manipulated, such as when an `AddressableAssetGroup` or an `AddressableAssetEntry` is added or removed.
+You can use modification events to signal to parts of the Addressables system when certain data is manipulated, such as when an [`AddressableAssetGroup`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetGroup) or an [`AddressableAssetEntry`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetEntry) is added or removed.
 
-Modification events are triggered as part of `SetDirty` calls inside of Addressables. `SetDirty` is used to indicate when an asset needs to be re-serialized by the `AssetDatabase`.  As part of `SetDirty`, two modification event callbacks can trigger:
+Modification events are triggered as part of `SetDirty` calls inside of Addressables. `SetDirty` is used to indicate when an asset needs to be re-serialized by the `AssetDatabase`. As part of `SetDirty`, two modification event callbacks can trigger:
 
 * `public static event Action<AddressableAssetSettings, ModificationEvent, object> OnModificationGlobal`
 * `public Action<AddressableAssetSettings, ModificationEvent, object> OnModification { get; set; }`
@@ -32,6 +32,7 @@ AddressableAssetSettings.OnModificationGlobal += (settings, modificationEvent, d
             }
         };
 ```
+
 Modification events pass in a generic `object` for the data associated with the event. The following table outlines a list of the modification events and the data types that are passed with them.
 
 |**Modification event**|**Data passed**|
@@ -65,6 +66,10 @@ Modification events pass in a generic `object` for the data associated with the 
 |InitializationObjectRemoved|`ScriptableObject`, typically one that implements [`IObjectInitializationDataProvider`](xref:UnityEngine.ResourceManagement.Util.IObjectInitializationDataProvider), that was removed from the list of InitializationObjects.|
 |ActivePlayModeScriptChanged|[`IDataBuilder`](xref:UnityEditor.AddressableAssets.Build.IDataBuilder) that was set as the new active Play mode data builder.|
 |BatchModification|`null`.  This event is primarily used to indicate several modification events happening at the same time and the [`AddressableAssetSettings`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings) object needed to be marked dirty.|
-|HostingServicesManagerModified| [`HostingServicesManager`](xref:UnityEditor.AddressableAssets.HostingServices.HostingServicesManager), or [`HttpHostingService`](xref:UnityEditor.AddressableAssets.HostingServices.HttpHostingService) that were modified.|
 |GroupMoved|Full list of [`AddressableAssetGroups`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetGroup).|
 |CertificateHandlerChanged|New `System.Type` of the certificate handler to be used.|
+
+## Additional resources
+
+* [`AddressableAssetGroup` API reference](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetGroup)
+* [`AddressableAssetEntry` API reference](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetEntry)

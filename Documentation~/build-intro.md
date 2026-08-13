@@ -1,37 +1,52 @@
-# Build content introduction
+# Introduction to building Addressable assets
 
-A content build processes Addressables [groups](groups-intro.md) to produce the [content catalog](build-content-catalogs.md), runtime settings, and the [AssetBundles](xref:AssetBundlesIntro) that contain your assets. Addressables uses these files to load content at runtime.
+You can configure Unity to build Addressables assets in the following ways:
 
-You can configure the Addressables system to build your Addressables content as part of every Player build or you can build your content separately before making a Player build. Refer to [Building Addressables content with Player builds](build-player-builds.md) for more information about configuring these options.
+* [As part of every Player build.](build-player-builds.md)
+* [Separately as a content-only build.](builds-full-build.md)
 
-## Configure builds
+One of the benefits of using the Addressables system is that you can create separate builds of Addressables assets (content-only builds) to distribute remotely. In particular, this makes it easier to create [updates](builds-update-build.md) for your application.
 
-If you configure Unity to build your content as part of the Player build, use the __Build__ or __Build and Run__ buttons in the Unity Editor [Build Settings](xref:PublishingBuilds) window to start a build. You can also invoke the Editor on the command line, passing in one of the `-buildPlatformPlayer` options or use an API such as [`BuildPipeline.BuildPlayer`](xref:UnityEditor.BuildPipeline.BuildPlayer(UnityEditor.BuildPlayerOptions)) to start the build. In all cases, Unity builds your Addressables content as a pre-build step before building the Player.
+A content-only build processes Addressables [groups](groups-intro.md) to create the [content catalog](build-content-catalogs.md), runtime settings, and the [AssetBundles](xref:AssetBundlesIntro) that contain your project's assets. Addressables uses these files to load content at runtime.
 
-If you configure Unity to build your content separately, you must start the Addressables build using the __Build__ menu on the [Addressables Groups window](GroupsWindow.md) as described in [Making builds](xref:addressables-building-content). The next time you build the Player for your project, it uses the artifacts produced by the last Addressables content build run for the current platform. Refer to[Build scripting](xref:addressables-api-build-player-content) for information about automating your Addressables build process.
+To build the content as part of the Player build, you can configure this in the [**Build**](AddressableAssetSettings.md#build) section of the Addressable Asset Settings.
 
-## Content build types
+You can also create builds from scripts. For more information, refer to [Start a build from a script](build-scripting-start-build.md).
 
-Your content build can produce two general categories of content:
+## Defining a build
 
-* __Local content__: Content that's included directly in your player build. The Addressables system manages local content automatically as long as you use the default build path for your local content. If you change the local build path, you must copy the artifacts from the local build path to the project's `Assets/StreamingAssets` folder before making a Player build.
-* __Remote content__: Content that's downloaded from a URL after your application is installed. It's your responsibility to upload remote content to a hosting server so your application can access it the designated URL specified by a [`RemoteLoadPath`](xref:addressables-profiles).
+The Addressables system uses the following to determine how to build the Addressables content in your project:
 
-Refer to [Build artifacts](xref:addressables-build-artifacts) for more information about files produced by a content build.
+* [Group settings](xref:addressables-group-schemas): Determines which category a group belongs to.
+* [Profiles](xref:addressables-profiles): Determines the specific paths and URLs that the Addressables system uses to build and load the content.
+* [Addressable Asset settings](xref:addressables-asset-settings): Contain options that affect content-only builds, such as whether to build remote content.
 
-## Groups and profiles
+## Content-only build types
 
-Your project's [group settings](xref:addressables-group-schemas) determine which category a group belongs to. The active [Profile](xref:addressables-profiles) determines the specific paths and URLs that the Addressables system uses to build and load the content. The [Addressable Asset settings](xref:addressables-asset-settings) also contain options that affect your content builds, such as whether to build remote content at all.
+The content-only build can produce two general categories of content:
 
-## Start a build
+* __Local content__: Content that's included directly in the player build. The Addressables system manages local content automatically when you use the default build path for local content. If you change the local build path, you must copy the artifacts from the local build path to the project's `Assets/StreamingAssets` folder before making a Player build.
+* __Remote content__: Content that's downloaded from a URL after your application is installed. You must upload the remote content to a hosting server so that your application can access the designated URL specified by a [`RemoteLoadPath`](remote-content-intro.md).
 
-You can start builds from a script or from the __Groups__ window. Refer to [Build scripting](xref:addressables-api-build-player-content) for more information on how to extend building Addressable content.
+For more information about files produced by a content build, refer to [Build artifacts](BuildArtifacts.md).
+
+## Start a content-only build
+
+You can start content-only builds from a script or from the [__Groups__ window](GroupsWindow.md). For information on how to extend building Addressable content, refer to [Build scripting](build-scripting-builds.md).
 
 The Addressables system includes the following build scripts:
 
-* __Default Build Script__: Performs a full content build based on Group, Profile, and Addressables system settings.
+* __Default Build Script__: Performs a full content build based on the groups, profiles, and Addressables system settings in your project.
 * __Update a Previous Build__: Performs a differential content build to update a previously created build.
-* __Play Mode scripts__: The Play Mode scripts are technically build scripts and control how the Editor accesses your content in Play Mode. Refer to [Play Mode Scripts](xref:addressables-groups-window) for more information.
+* __Play Mode scripts__: The Play Mode scripts are build scripts that control how the Editor accesses your content in Play mode. For more information, refer to [Play Mode Scripts](GroupsWindow.md#play-mode-script).
 
-The build scripts also provide a function to clear the cached files they create. You can run these functions from the __Build > Clean Build__ menu of the [Groups window](GroupsWindow.md).
+You can also use the build scripts to clear the cached files they create. You can run these functions from the __Build > Clean Build__ menu of the [Groups window](GroupsWindow.md#build).
 
+For more information on how to start an Addressables build, refer to [Build Addressable assets](builds-full-build.md).
+
+## Additional resources
+
+* [Building Addressables content with Player builds](build-player-builds.md)
+* [Build artifacts](BuildArtifacts.md)
+* [Build scripting](build-scripting-builds.md)
+* [Build Addressable assets](builds-full-build.md)

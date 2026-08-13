@@ -21,7 +21,7 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         string ProviderId { get; }
 
         /// <summary>
-        /// Gets the dependencies to other IResourceLocations
+        /// Gets the dependencies of other IResourceLocations.
         /// </summary>
         /// <value>The dependencies.</value>
         IList<IResourceLocation> Dependencies { get; }
@@ -39,7 +39,7 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         int DependencyHashCode { get; }
 
         /// <summary>
-        /// Gets the dependencies to other IResourceLocations
+        /// Checks the dependencies of other IResourceLocations
         /// </summary>
         /// <value>The dependencies.</value>
         bool HasDependencies { get; }

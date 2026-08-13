@@ -12,11 +12,11 @@ The following examples explain how Addressables handles a `SpriteAtlas` differen
 
 ### Sprites in separate groups
 
-You have three Addressable textures in three separate groups, where each texture builds to around 500KB. Because they exist in separate groups, Unity builds them into three separate AssetBundles. Each AssetBundle uses around 500KB and only contains the sprite texture and associated metadata, with no dependencies.
+You have three Addressable textures in three separate groups, where each texture builds to around 500 KB. Because they exist in separate groups, Unity builds them into three separate AssetBundles. Each AssetBundle uses around 500 KB and only contains the sprite texture and associated metadata, with no dependencies.
 
 ### Sprites in a non-Addressable SpriteAtlas
 
-The three textures in the previous example are put into a non-Addressable `SpriteAtlas`. In this case, Unity still generates three AssetBundles, but they're not the same size. One of the AssetBundles contains the atlas texture and uses about 1500KB. The other two AssetBundles only contain sprite metadata and list the atlas AssetBundle as a dependency.
+The three textures in the previous example are put into a non-Addressable `SpriteAtlas`. In this case, Unity still generates three AssetBundles, but they're not the same size. One of the AssetBundles contains the atlas texture and uses about 1500 KB. The other two AssetBundles only contain sprite metadata and list the atlas AssetBundle as a dependency.
 
 Although you can't control which AssetBundle contains the texture, the process is deterministic, so the same AssetBundle contains the texture through different rebuilds. This is the main difference from the standard duplication of dependencies. The sprites are dependent on the SpriteAtlas texture to load, and yet that texture is not built into all three AssetBundles, but is instead built only into one.
 
@@ -36,4 +36,9 @@ The three textures from the previous example are added to a `SpriteAtlas`, and t
 
 ### Sprite prefabs in a SpriteAtlas AssetBundle
 
-The `SpriteAtlas` from the previous example is now also marked as Addressable. Conforming to the rules of explicit inclusion, the `SpriteAtlas` texture is included only in the AssetBundle containing the `SpriteAtlas`. The AssetBundles with prefabs reference this fourth AssetBundle as a dependency. This will lead to three AssetBundles of about 500KB and one of approximately 1500KB.
+The `SpriteAtlas` from the previous example is now also marked as Addressable. If you've explicitly included these assets then the `SpriteAtlas` texture is included only in the AssetBundle containing the `SpriteAtlas`. The AssetBundles with prefabs reference this fourth AssetBundle as a dependency. This will lead to three AssetBundles of about 500KB and one of approximately 1500KB.
+
+## Additional resources
+
+* [Build shaders](BuildingShaders.md)
+* [Build and Play Mode Scripts reference](AddressableAssetSettings.md#build-and-play-mode-scripts)

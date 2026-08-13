@@ -1113,6 +1113,14 @@ namespace UnityEngine.AddressableAssets
         /// <summary>
         /// Loads a single Addressable asset identified by an <see cref="IResourceLocation"/>.
         /// </summary>
+        /// <remarks>
+        /// This method automatically loads all dependencies, including MonoScript bundles for ScriptableObjects.
+        /// This is the recommended way to load Addressable content.
+        ///
+        /// NOTE: Loading bundles directly using LoadAssetAsync&lt;IAssetBundleResource&gt;() is discouraged
+        /// as it bypasses automatic dependency resolution and can cause serialization issues.
+        /// Use this method to load individual assets instead.
+        /// </remarks>
         /// <typeparam name="TObject">The type of the asset.</typeparam>
         /// <param name="key">The key of the location of the asset.</param>
         /// <returns>AsyncOperationHandle that is used to check when the operation has completed. The result of the operation is the loaded asset of the type `TObject`.</returns>

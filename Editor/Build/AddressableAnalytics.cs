@@ -21,10 +21,20 @@ namespace UnityEditor.AddressableAssets
         private const string UsageEvent = "addressablesUsageEvent";
         private const string BuildEvent = "addressablesBuildEvent";
 
-#if UNITY_2023_1_OR_NEWER
-        private static PackageManager.PackageInfo packageInfo = PackageManager.PackageInfo.FindForPackageName("com.unity.addressables");
-#endif
         private const string packageName = "com.unity.addressables";
+
+#if UNITY_2023_1_OR_NEWER
+        private static PackageManager.PackageInfo s_packageInfo = null;
+        private static PackageManager.PackageInfo packageInfo
+        {
+            get
+            {
+                if (s_packageInfo == null)
+                    s_packageInfo = PackageManager.PackageInfo.FindForPackageName(packageName);
+                return s_packageInfo;
+            }
+        }
+#endif
 
 #if UNITY_2023_3_OR_NEWER
         [AnalyticInfo(vendorKey: VendorKey, eventName: BuildEvent)]
@@ -82,7 +92,7 @@ namespace UnityEditor.AddressableAssets
                 IsUsingCCD = ud.IsUsingCCD;
                 AutoRunRestrictionsOption = ud.AutoRunRestrictionsOption;
                 package = packageName;
-                package_ver = packageInfo.version;
+                package_ver = packageInfo?.version;
             }
         }
 
@@ -166,7 +176,7 @@ namespace UnityEditor.AddressableAssets
                 BuildTarget = bd.BuildTarget;
                 ErrorCode = bd.ErrorCode;
                 package = packageName;
-                package_ver = packageInfo.version;
+                package_ver = packageInfo?.version;
             }
         }
 #endif

@@ -22,7 +22,7 @@ namespace UnityEngine.AddressableAssets
         Windows,
 
         /// <summary>
-        /// Use to indicate that the build platform is OSX.
+        /// Use to indicate that the build platform is macOS.
         /// </summary>
         OSX,
 
@@ -37,12 +37,12 @@ namespace UnityEngine.AddressableAssets
         PS4,
 
         /// <summary>
-        /// Use to indicate that the build platform is PS4.
+        /// Use to indicate that the build platform is Switch.
         /// </summary>
         Switch,
 
         /// <summary>
-        /// Use to indicate that the build platform is XboxOne.
+        /// Use to indicate that the build platform is Xbox One.
         /// </summary>
         XboxOne,
 

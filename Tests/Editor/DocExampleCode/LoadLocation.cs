@@ -85,7 +85,7 @@ namespace AddressableAssets.DocExampleCode
 
             AsyncOperationHandle<IList<IResourceLocation>> handle
                 = Addressables.LoadResourceLocationsAsync(
-                    new string[] {"knight", "villager"},
+                    new List<string> {"knight", "villager"},
                     Addressables.MergeMode.Union);
 
             yield return handle;
