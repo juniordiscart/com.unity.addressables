@@ -17,6 +17,7 @@ using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
+using UnityEditor.Build.Pipeline;
 
 public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanup
 {
@@ -132,6 +133,9 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
 
     protected void RunBuilder(AddressableAssetSettings settings, string id)
     {
+        if (!string.IsNullOrEmpty(ContentPipeline.CanBuildPlayer(EditorUserBuildSettings.activeBuildTarget, EditorUserBuildSettings.selectedBuildTargetGroup, "tempFolder")))
+            Assert.Ignore("Standalone support is required to build AssetBundles");
+
         var buildContext = new AddressablesDataBuilderInput(settings);
         buildContext.RuntimeSettingsFilename = "settings" + id + ".json";
         buildContext.RuntimeCatalogFilename = "catalog" + id + kCatalogExt;
