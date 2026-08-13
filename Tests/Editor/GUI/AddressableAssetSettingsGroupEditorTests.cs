@@ -380,6 +380,48 @@ namespace Tests.Editor.GUI
             }
         }
 
+        //ADDR-4068
+        [Test]
+        public void TestAdded_SerializedObjectUpdated()
+        {
+            // this test is checking that the SchemaSerializedObject is correctly updated
+            // when a group is created from schemas instances
+            var schemaPath = TestFolder + "/TestschemaSO.asset";
+            try
+            {
+                var template = ScriptableObject.Instantiate(Settings.GroupTemplateObjects[0]) as AddressableAssetGroupTemplate;
+                template.name = "TestschemaSO";
+
+                AssetDatabase.CreateAsset(template, schemaPath);
+                AssetDatabase.ImportAsset(schemaPath, ImportAssetOptions.ForceSynchronousImport);
+
+                template.AddSchema(typeof(SOTestSchema), false);
+
+                var lastIndex = template.SchemaObjects.Count - 1;
+                ((SOTestSchema)template.SchemaObjects[lastIndex]).CustomDescription = SOTestSchema.CustomEnum.OptionB;
+
+                m_GroupEditor.m_EntryTree.CreateNewGroup(template);
+
+                var testGroup = GetGroupByName("TestschemaSO");
+                var so = testGroup.Schemas[lastIndex].SchemaSerializedObject;
+                var enumValue = so.FindProperty("CustomDescription").enumValueIndex;
+
+                //Ensure that SchemaSerializedObject was indeed updated and points to the correct enum value
+                Assert.That(enumValue, Is.EqualTo((int)SOTestSchema.CustomEnum.OptionB));
+            }
+            finally
+            {
+                if (File.Exists(schemaPath))
+                {
+                    File.Delete(schemaPath);
+                }
+
+                if (File.Exists(schemaPath + ".meta"))
+                {
+                    File.Delete(schemaPath + ".meta");
+                }
+            }
+        }
 
         [Test]
         public void TestMove_MultipleElements()

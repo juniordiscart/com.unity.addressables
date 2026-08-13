@@ -1028,8 +1028,8 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_ShowPaths)
             {
                 EditorStyles.helpBox.fontSize = 12;
-                var baseBuildPathValue = BuildPath.GetValue(settings, false);
-                var baseLoadPathValue = LoadPath.GetValue(settings, false);
+                var baseBuildPathValue = !string.IsNullOrEmpty(BuildPath.Id) ? BuildPath.GetValue(settings, false) : "";
+                var baseLoadPathValue = !string.IsNullOrEmpty(LoadPath.Id) ? LoadPath.GetValue(settings, false) : "";
                 EditorGUILayout.HelpBox(String.Format("Build Path: {0}", settings.profileSettings.EvaluateString(settings.activeProfileId, baseBuildPathValue)), MessageType.None);
                 EditorGUILayout.HelpBox(String.Format("Load Path: {0}", settings.profileSettings.EvaluateString(settings.activeProfileId, baseLoadPathValue)), MessageType.None);
             }

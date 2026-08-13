@@ -399,7 +399,7 @@ namespace UnityEngine.AddressableAssets
                 return m_InitializationOperation;
             //these need to be referenced in order to prevent stripping on IL2CPP platforms.
             GC.KeepAlive(Application.streamingAssetsPath);
-#if !UNITY_SWITCH
+#if !UNITY_SWITCH && !UNITY_SWITCH2
             GC.KeepAlive(Application.persistentDataPath);
 #endif
             if (string.IsNullOrEmpty(runtimeDataPath))
@@ -518,7 +518,7 @@ namespace UnityEngine.AddressableAssets
                 };
                 catalogLoc.Dependencies.Add(hashResourceLocation);
 
-#if UNITY_SWITCH
+#if UNITY_SWITCH || UNITY_SWITCH2
                 string cacheHashFilePath = hashFilePath; // ResourceLocationBase does not allow empty string id
 #else
                 // The file name of the local cached catalog + hash file is the hash code of the remote hash path, without query parameters (if any).

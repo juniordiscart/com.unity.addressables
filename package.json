@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "2.7.3",
+  "version": "2.7.4",
   "unity": "2023.1",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "2.4.2",
+    "com.unity.scriptablebuildpipeline": "2.4.3",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -59,15 +59,15 @@
     }
   ],
   "_upm": {
-    "changelog": "- Changed Label window to have consistent Rename UX with the rest of the Editor. You can now press Enter (macOS) or F2 to enter rename, as well as clicking after selecting an item in the list.\n- Added documentation to mention the fact that loading AssetBundles directly via LoadAssetAsync does not handle dependencies.\n- Added null checks for analytics events to fix console error.\n- Fixed loading incorrect data when using dynamic internal id naming.\n- Documentation: Content model update.\n- Fixed an issue where trying to build after setting a custom profile value would sometimes cause a NullRefException."
+    "changelog": "- Fixed an issue where having an empty custom load or build path in the inspector would spam the console.\n- Fixed a faulty Inspector refresh mechanism when creating new addressables group from a template."
   },
   "upmCi": {
-    "footprint": "83e82bab13027845f20bd978efaed939960a71dd"
+    "footprint": "05fc8b51e84a7a69b2809e83f5304662a24325ed"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@2.7/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "f0921e4da4391806d26480fc056f4a9535774886"
+    "revision": "1166c8915fff48044e10740fdd8948ee58f75fa3"
   }
 }

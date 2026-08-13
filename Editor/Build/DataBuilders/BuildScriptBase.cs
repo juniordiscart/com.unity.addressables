@@ -186,6 +186,17 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return string.Empty;
         }
 
+        // If user has recently customized the build/load path in the inspector, it may not be retrievable from profileSettings yet
+        // We retrieve it directly from the build/load path variable in that case.
+        internal static string GetCustomOrDefaultPath(AddressableAssetSettings settings, ProfileValueReference pathValueReference, bool useCustomPaths)
+        {
+            if (useCustomPaths)
+            {
+                return pathValueReference.GetValue(settings, false);
+            }
+
+            return settings.profileSettings.GetValueById(settings.activeProfileId, pathValueReference.Id);
+        }
 
         internal static string ErrorCheckBundleSettings(AddressableAssetGroup assetGroup, AddressableAssetsBuildContext aaContext)
         {
@@ -196,14 +207,14 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var settings = aaContext.Settings;
             var schema = assetGroup.GetSchema<BundledAssetGroupSchema>();
 
-            if(settings.UseUnityWebRequestForLocalBundles && schema.StripDownloadOptions)
+            if (settings.UseUnityWebRequestForLocalBundles && schema.StripDownloadOptions)
             {
                 message = "Strip Download Options is enabled, but Use UnityWebRequest for Local Bundles is also enabled. " +
                           "These options are mutually exclusive and cannot be used together.";
             }
 
-            string buildPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.BuildPath.Id);
-            string loadPath = settings.profileSettings.GetValueById(settings.activeProfileId, schema.LoadPath.Id);
+            string buildPath = GetCustomOrDefaultPath(settings, schema.BuildPath, schema.m_UseCustomPaths);
+            string loadPath = GetCustomOrDefaultPath(settings, schema.LoadPath, schema.m_UseCustomPaths);
 
             bool buildLocal = AddressableAssetUtility.StringContains(buildPath, "[UnityEngine.AddressableAssets.Addressables.BuildPath]", StringComparison.Ordinal);
             bool loadLocal = AddressableAssetUtility.StringContains(loadPath, "{UnityEngine.AddressableAssets.Addressables.RuntimePath}", StringComparison.Ordinal);

@@ -1066,7 +1066,7 @@ namespace AddressableAssetsIntegrationTests
             op.Release();
         }
 
-#if !UNITY_SWITCH
+#if !UNITY_SWITCH && !UNITY_SWITCH2
         [UnityTest]
         public IEnumerator LoadContentCatalogAsync_SetsUpLocalAndRemoteAndCacheLocations()
         {
@@ -1159,7 +1159,7 @@ namespace AddressableAssetsIntegrationTests
             File.Delete(cacheHashFilePath);
         }
 #endif
-#if !UNITY_SWITCH
+#if !UNITY_SWITCH && !UNITY_SWITCH2
         [UnityTest]
         public IEnumerator LoadContentCatalogAsync_LocationsHaveTimeout()
         {

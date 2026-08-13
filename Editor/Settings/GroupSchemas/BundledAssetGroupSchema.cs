@@ -1515,8 +1515,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             if (m_ShowPaths)
             {
                 EditorStyles.helpBox.fontSize = 12;
-                var buildPathValue = m_BuildPath.GetValue(settings);
-                var loadPathValue = m_LoadPath.GetValue(settings);
+                var buildPathValue = !string.IsNullOrEmpty(m_BuildPath.Id) ? m_BuildPath.GetValue(settings) : "";
+                var loadPathValue = !string.IsNullOrEmpty(m_LoadPath.Id) ? m_LoadPath.GetValue(settings) : "";
                 EditorGUILayout.HelpBox(String.Format("Build Path: {0}", showMixedValue ? "-" : buildPathValue),
                     MessageType.None);
                 EditorGUILayout.HelpBox(String.Format("Load Path: {0}", showMixedValue ? "-" : loadPathValue), MessageType.None);
@@ -1689,7 +1689,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             {
                 DefaultSchemaSettings defaultLocalSettings = default;
                 DefaultSchemaSettings defaultRemoteSettings = default;
-#if UNITY_SWITCH
+#if UNITY_SWITCH || UNITY_SWITCH2
                 defaultLocalSettings.compression = BundleCompressionMode.Uncompressed;
                 defaultLocalSettings.useAssetBundleCache = false; // bundle caching not supported
                 defaultLocalSettings.assetBundledCacheClearBehavior = CacheClearBehavior.ClearWhenSpaceIsNeededInCache;

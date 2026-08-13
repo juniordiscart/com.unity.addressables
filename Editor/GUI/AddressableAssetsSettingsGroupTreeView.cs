@@ -1185,8 +1185,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			var groupTemplate = context as AddressableAssetGroupTemplate;
 			if (groupTemplate != null)
 			{
-                var newGroup = m_Editor.settings.CreateGroup(groupTemplate.Name, false, false, true, null, groupTemplate.GetTypes());
-				groupTemplate.ApplyToAddressableAssetGroup(newGroup);
+                var newGroup = m_Editor.settings.CreateGroup(groupTemplate.Name, false, false, true, groupTemplate.SchemaObjects);
 			}
 			else
 			{

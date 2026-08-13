@@ -3,6 +3,10 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [2.7.4] - 2025-10-06
+- Fixed an issue where having an empty custom load or build path in the inspector would spam the console.
+- Fixed a faulty Inspector refresh mechanism when creating new addressables group from a template.
+
 ## [2.7.3] - 2025-09-15
 - Changed Label window to have consistent Rename UX with the rest of the Editor. You can now press Enter (macOS) or F2 to enter rename, as well as clicking after selecting an item in the list.
 - Added documentation to mention the fact that loading AssetBundles directly via LoadAssetAsync does not handle dependencies.
