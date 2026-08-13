@@ -32,10 +32,11 @@ namespace UnityEditor.AddressableAssets.Build
                             typeof(SerializableGUID),
                             typeof(SerializableHash128)
                         },
-                        PreserveObjectReferences = true,
-                        DataContractSurrogate = new ContentStateSurrogate()
+                        PreserveObjectReferences = true
                     };
-                    s_Serializer = new DataContractSerializer(typeof(AddressablesContentState), settings);
+                    var serializer = new DataContractSerializer(typeof(AddressablesContentState), settings);
+                    serializer.SetSerializationSurrogateProvider(new ContentStateSurrogate());
+                    s_Serializer = serializer;
                 }
                 return s_Serializer;
             }
@@ -240,9 +241,9 @@ namespace UnityEditor.AddressableAssets.Build
     /// <summary>
     /// Data contract surrogate to handle Unity types during serialization.
     /// </summary>
-    internal class ContentStateSurrogate : IDataContractSurrogate
+    internal class ContentStateSurrogate : ISerializationSurrogateProvider
     {
-        public Type GetDataContractType(Type type)
+        public Type GetSurrogateType(Type type)
         {
             if (type == typeof(GUID))
                 return typeof(SerializableGUID);

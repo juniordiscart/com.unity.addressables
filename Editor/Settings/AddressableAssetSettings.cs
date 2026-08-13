@@ -508,6 +508,17 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 #endif
 
+        [SerializeField]
+        private bool m_DisableWriteTypeTree = false;
+        /// <summary>
+        /// If enabled, type tree data will not be written into asset bundles. This reduces bundle size but removes the ability to load bundles across different Unity versions.
+        /// </summary>
+        public bool DisableWriteTypeTree
+        {
+            get { return m_DisableWriteTypeTree; }
+            set { m_DisableWriteTypeTree = value; }
+        }
+
 		[SerializeField]
 		bool m_OptimizeCatalogSize = false;
 

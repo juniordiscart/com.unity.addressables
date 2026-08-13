@@ -561,6 +561,7 @@ namespace UnityEngine.AddressableAssets
     public static class Addressables
     {
         internal static bool reinitializeAddressables = true;
+        internal static bool isExitingPlaymode = false;
         internal static AddressablesImpl m_AddressablesInstance = new AddressablesImpl(new DefaultAllocationStrategy());
 
         static AddressablesImpl m_Addressables
@@ -572,7 +573,7 @@ namespace UnityEngine.AddressableAssets
                 // This waits until we are on the main thread so that calls like Addressables.Log don't
                 // end up calling the reinitialization code and blowing up if they're being called on
                 // a background thread.
-                if (InternalEditorUtility.CurrentThreadIsMainThread() && reinitializeAddressables && EditorSettings.enterPlayModeOptionsEnabled)
+                if (InternalEditorUtility.CurrentThreadIsMainThread() && reinitializeAddressables && !isExitingPlaymode && EditorSettings.enterPlayModeOptionsEnabled)
                 {
                     reinitializeAddressables = false;
                     m_AddressablesInstance.ReleaseSceneManagerOperation();
@@ -612,22 +613,23 @@ namespace UnityEngine.AddressableAssets
         [InitializeOnLoadMethod]
         static void RegisterPlayModeStateChange()
         {
-            EditorApplication.playModeStateChanged += SetAddressablesReInitFlagOnExitPlayMode;
+            EditorApplication.playModeStateChanged -= SetAddressablesReInitFlagOnPlayModeChange;
+            EditorApplication.playModeStateChanged += SetAddressablesReInitFlagOnPlayModeChange;
         }
 
-        static void SetAddressablesReInitFlagOnExitPlayMode(PlayModeStateChange change)
+        static void SetAddressablesReInitFlagOnPlayModeChange(PlayModeStateChange change)
         {
             if (change == PlayModeStateChange.EnteredEditMode || change == PlayModeStateChange.ExitingPlayMode)
             {
-                EditorApplication.delayCall -= EnableReinitializeAddressablesFlag;
-                EditorApplication.delayCall += EnableReinitializeAddressablesFlag;
-            }
-        }
-
-        static void EnableReinitializeAddressablesFlag()
-        {
+                isExitingPlaymode = true;
+                // Set flag IMMEDIATELY instead of via delayCall to eliminate race condition
+                // where the flag might not be set when operations start in the next cycle
                 reinitializeAddressables = true;
-            EditorApplication.delayCall -= EnableReinitializeAddressablesFlag;
+            }
+            else
+            {
+                isExitingPlaymode = false;
+            }
         }
 
 #endif

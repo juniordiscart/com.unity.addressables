@@ -12,6 +12,7 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Utilities;
+using UnityEditor.Graphs;
 using UnityEditor.TestTools;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -24,6 +25,8 @@ namespace UnityEditor.AddressableAssets.Tests
 {
     public abstract class ContentUpdateTests : AddressableAssetTestBase
 	{
+        const string k_AssetBundleProviderId = "UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider";
+
         protected override bool PersistSettings
         {
             get { return true; }
@@ -33,8 +36,8 @@ namespace UnityEditor.AddressableAssets.Tests
 		{
             AddressableAssetSettings m_Settings;
             AddressableAssetGroup m_AddedGroup;
-            public string ContentStatePath {get;private set;}
-            public string TypeTreeDataPath {get;private set;}
+            public string ContentStatePath { get; private set; }
+            public string TypeTreeDataPath { get; private set; }
             public ScopedContentState(AddressableAssetSettings settings, string assetGUIDToAdd)
             {
                 m_Settings = settings;
@@ -511,7 +514,7 @@ namespace UnityEditor.AddressableAssets.Tests
 		{
 			foreach (var p in paths)
             {
-                if(Path.GetFileNameWithoutExtension(p).EndsWith("catalog"))
+                if (Path.GetFileNameWithoutExtension(p).EndsWith("catalog"))
                     return ContentCatalogData.LoadFromFile(p, true).CreateCustomLocator();
             }
 			return null;
@@ -1374,6 +1377,261 @@ namespace UnityEditor.AddressableAssets.Tests
 			bool reverted = RevertUnchangedAssetsToPreviousAssetState.RevertBundleByNameContains("catalogBundleName", updateContext, aaContext);
 			Assert.IsTrue(reverted, "Expected to succeed where bundle to revert was not in either cache or current builds");
 		}
+
+        static ContentUpdateScript.ContentUpdateContext CreateBuiltinUpdateContext(params CachedBundleState[] cachedBundles)
+        {
+            return new ContentUpdateScript.ContentUpdateContext
+            {
+                ContentState = new AddressablesContentState
+                {
+                    cachedBundles = cachedBundles ?? Array.Empty<CachedBundleState>()
+                },
+                IdToCatalogDataEntryMap = new Dictionary<string, ContentCatalogDataEntry>(),
+                Registry = new FileRegistry()
+            };
+        }
+
+        AddressableAssetGroup CreateRemoteGroup(string groupName)
+        {
+            var group = Settings.CreateGroup(groupName, false, false, false, null);
+            var schema = group.AddSchema<BundledAssetGroupSchema>();
+            schema.BuildPath.SetVariableByName(Settings, AddressableAssetSettings.kRemoteBuildPath);
+            schema.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kRemoteLoadPath);
+            schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
+            return group;
+        }
+
+        [Test]
+        public void RevertBundle_BuiltinBundle_WhenContentUnchanged_RevertsMainEntryToPreviousBuild()
+        {
+            const string bundleName = "defaultgroup_unitybuiltinassets.bundle";
+
+            var cachedRequestOptions = new AssetBundleRequestOptions() { Crc = 123, Hash = "sameHash", BundleName = bundleName, BundleSize = 10 };
+            var updateContext = CreateBuiltinUpdateContext(
+                new CachedBundleState() { bundleFileId = "cachedBuiltinInternalId", data = cachedRequestOptions });
+
+            var currentRequestOptions = new AssetBundleRequestOptions() { Crc = 456, Hash = "sameHash", BundleName = bundleName, BundleSize = 20 };
+            var builtinEntry = new ContentCatalogDataEntry(typeof(AssetBundleResource), "currentBuiltinInternalId", k_AssetBundleProviderId,
+                new List<object>() { "builtinPrimaryKey" }, null, currentRequestOptions);
+
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.locations = new List<ContentCatalogDataEntry>() { builtinEntry };
+
+            bool reverted = RevertUnchangedAssetsToPreviousAssetState.RevertBundleByNameContains(BuildScriptBase.BuiltInBundleBaseName, updateContext, aaContext);
+
+            Assert.IsTrue(reverted);
+            Assert.AreEqual("cachedBuiltinInternalId", builtinEntry.InternalId);
+            Assert.AreEqual(cachedRequestOptions.Crc, ((AssetBundleRequestOptions)builtinEntry.Data).Crc);
+            Assert.AreEqual(cachedRequestOptions.Hash, ((AssetBundleRequestOptions)builtinEntry.Data).Hash);
+            Assert.AreEqual(cachedRequestOptions.BundleName, ((AssetBundleRequestOptions)builtinEntry.Data).BundleName);
+            Assert.AreEqual(cachedRequestOptions.BundleSize, ((AssetBundleRequestOptions)builtinEntry.Data).BundleSize);
+            Assert.AreEqual(1, aaContext.locations.Count);
+        }
+
+        [Test]
+        public void RevertBundle_BuiltinBundle_WhenContentChanged_RevertsMainEntryAndAddsRemoteDuplicate()
+        {
+            const string bundleName = "defaultgroup_unitybuiltinassets.bundle";
+            const string builtinPrimaryKey = "builtinPrimaryKey";
+            const string updatedRemoteBundleKey = "updatedRemoteBundleKey";
+            const string remoteBuiltinFileName = "defaultgroup_unitybuiltinassets_remote.bundle";
+
+            var cachedRequestOptions = new AssetBundleRequestOptions() { Crc = 123, Hash = "oldHash", BundleName = bundleName, BundleSize = 10 };
+            var updateContext = CreateBuiltinUpdateContext(
+                new CachedBundleState() { bundleFileId = "cachedBuiltinInternalId", data = cachedRequestOptions });
+
+            AddressableAssetGroup remoteGroup = null;
+            string builtinSourcePath = null;
+            string remoteDuplicatePath = null;
+
+            string remoteLoadPathId = Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteLoadPath).Id;
+            string oldRemoteLoadPath = Settings.profileSettings.GetValueById(Settings.activeProfileId, remoteLoadPathId);
+            Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, "http://fakeremotepath/");
+
+            try
+            {
+                remoteGroup = CreateRemoteGroup("BuiltinRemoteGroup");
+
+                string sharedBuildPath = Settings.GetSharedBundleGroup().GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(Settings);
+                string remoteBuildPath = remoteGroup.GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(Settings);
+                builtinSourcePath = Path.Combine(sharedBuildPath, bundleName);
+                remoteDuplicatePath = Path.Combine(remoteBuildPath, remoteBuiltinFileName);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(builtinSourcePath));
+                File.WriteAllText(builtinSourcePath, "builtin bundle");
+
+                var currentRequestOptions = new AssetBundleRequestOptions()
+                {
+                    Crc = 456,
+                    Hash = "newHash",
+                    BundleName = bundleName,
+                    BundleSize = 20,
+                    AssetLoadMode = AssetLoadMode.AllPackedAssetsAndDependencies,
+                    Timeout = 9,
+                    ChunkedTransfer = true,
+                    RedirectLimit = 7,
+                    RetryCount = 4,
+                    UseUnityWebRequestForLocalBundles = true
+                };
+
+                var builtinEntry = new ContentCatalogDataEntry(typeof(AssetBundleResource), builtinSourcePath, k_AssetBundleProviderId,
+                    new List<object>() { builtinPrimaryKey }, null, currentRequestOptions);
+                var dependentEntry = new ContentCatalogDataEntry(typeof(GameObject), "assetPath", "AssetProvider",
+                    new List<object>() { "assetKey" }, new List<object>() { builtinPrimaryKey, updatedRemoteBundleKey }, null);
+
+                var aaContext = new AddressableAssetsBuildContext();
+                aaContext.Settings = Settings;
+                aaContext.locations = new List<ContentCatalogDataEntry>() { builtinEntry, dependentEntry };
+                updateContext.IdToCatalogDataEntryMap[builtinEntry.InternalId] = builtinEntry;
+
+                bool reverted = RevertUnchangedAssetsToPreviousAssetState.RevertBundleByNameContains(BuildScriptBase.BuiltInBundleBaseName, updateContext, aaContext);
+
+                Assert.IsTrue(reverted);
+                Assert.AreEqual("cachedBuiltinInternalId", builtinEntry.InternalId);
+                Assert.AreEqual(cachedRequestOptions.Crc, ((AssetBundleRequestOptions)builtinEntry.Data).Crc);
+                Assert.AreEqual(cachedRequestOptions.Hash, ((AssetBundleRequestOptions)builtinEntry.Data).Hash);
+                Assert.AreEqual(cachedRequestOptions.BundleName, ((AssetBundleRequestOptions)builtinEntry.Data).BundleName);
+                Assert.AreEqual(cachedRequestOptions.BundleSize, ((AssetBundleRequestOptions)builtinEntry.Data).BundleSize);
+                Assert.AreEqual(3, aaContext.locations.Count);
+
+                var remoteBuiltinEntry = aaContext.locations.Single(l =>
+                    l.Provider == k_AssetBundleProviderId &&
+                    l.Keys.Count > 0 &&
+                    (l.Keys[0] as string) == remoteBuiltinFileName);
+
+                Assert.IsTrue(File.Exists(remoteDuplicatePath));
+                CollectionAssert.AreEqual(new object[] { remoteBuiltinEntry.Keys[0], updatedRemoteBundleKey }, dependentEntry.Dependencies);
+                Assert.IsTrue(updateContext.IdToCatalogDataEntryMap.ContainsKey(remoteBuiltinEntry.InternalId));
+                Assert.AreEqual($"{remoteGroup.GetSchema<BundledAssetGroupSchema>().LoadPath.GetValue(Settings).Replace('\\', '/').TrimEnd('/')}/{remoteBuiltinFileName}", remoteBuiltinEntry.InternalId);
+                Assert.AreEqual("newHash", ((AssetBundleRequestOptions)remoteBuiltinEntry.Data).Hash);
+                Assert.AreEqual(9, ((AssetBundleRequestOptions)remoteBuiltinEntry.Data).Timeout);
+                Assert.AreEqual(4, ((AssetBundleRequestOptions)remoteBuiltinEntry.Data).RetryCount);
+                Assert.AreEqual(7, ((AssetBundleRequestOptions)remoteBuiltinEntry.Data).RedirectLimit);
+                Assert.IsTrue(((AssetBundleRequestOptions)remoteBuiltinEntry.Data).ChunkedTransfer);
+                Assert.IsTrue(((AssetBundleRequestOptions)remoteBuiltinEntry.Data).UseUnityWebRequestForLocalBundles);
+                Assert.AreEqual("defaultgroup_unitybuiltinassets_remote", ((AssetBundleRequestOptions)remoteBuiltinEntry.Data).BundleName);
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(builtinSourcePath) && File.Exists(builtinSourcePath))
+                    File.Delete(builtinSourcePath);
+                if (!string.IsNullOrEmpty(remoteDuplicatePath) && File.Exists(remoteDuplicatePath))
+                    File.Delete(remoteDuplicatePath);
+                if (remoteGroup != null)
+                    Settings.RemoveGroup(remoteGroup);
+
+                Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, oldRemoteLoadPath);
+            }
+        }
+
+        [Test]
+        public void RevertBundle_BuiltinBundle_WhenPreviousBundleMissing_AddsRemoteDuplicateAndKeepsCurrentEntry()
+        {
+            const string bundleName = "defaultgroup_unitybuiltinassets.bundle";
+            const string builtinPrimaryKey = "builtinPrimaryKey";
+            const string remoteBuiltinFileName = "defaultgroup_unitybuiltinassets_remote.bundle";
+
+            var updateContext = CreateBuiltinUpdateContext();
+
+            AddressableAssetGroup remoteGroup = null;
+            string builtinSourcePath = null;
+            string remoteDuplicatePath = null;
+
+            string remoteLoadPathId = Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteLoadPath).Id;
+            string oldRemoteLoadPath = Settings.profileSettings.GetValueById(Settings.activeProfileId, remoteLoadPathId);
+            Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, "http://fakeremotepath/");
+
+            try
+            {
+                remoteGroup = CreateRemoteGroup("BuiltinRemoteGroupNoPrevious");
+
+                string sharedBuildPath = Settings.GetSharedBundleGroup().GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(Settings);
+                string remoteBuildPath = remoteGroup.GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(Settings);
+                builtinSourcePath = Path.Combine(sharedBuildPath, bundleName);
+                remoteDuplicatePath = Path.Combine(remoteBuildPath, remoteBuiltinFileName);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(builtinSourcePath));
+                File.WriteAllText(builtinSourcePath, "builtin bundle");
+
+                var currentRequestOptions = new AssetBundleRequestOptions() { Crc = 456, Hash = "newHash", BundleName = bundleName, BundleSize = 20 };
+                var builtinEntry = new ContentCatalogDataEntry(typeof(AssetBundleResource), builtinSourcePath, k_AssetBundleProviderId,
+                    new List<object>() { builtinPrimaryKey }, null, currentRequestOptions);
+                var dependentEntry = new ContentCatalogDataEntry(typeof(GameObject), "assetPath", "AssetProvider",
+                    new List<object>() { "assetKey" }, new List<object>() { builtinPrimaryKey }, null);
+
+                var aaContext = new AddressableAssetsBuildContext();
+                aaContext.Settings = Settings;
+                aaContext.locations = new List<ContentCatalogDataEntry>() { builtinEntry, dependentEntry };
+                updateContext.IdToCatalogDataEntryMap[builtinEntry.InternalId] = builtinEntry;
+
+                bool reverted = RevertUnchangedAssetsToPreviousAssetState.RevertBundleByNameContains(BuildScriptBase.BuiltInBundleBaseName, updateContext, aaContext);
+
+                Assert.IsTrue(reverted);
+                Assert.AreEqual(builtinSourcePath, builtinEntry.InternalId);
+                Assert.AreEqual("newHash", ((AssetBundleRequestOptions)builtinEntry.Data).Hash);
+                Assert.AreEqual(20, ((AssetBundleRequestOptions)builtinEntry.Data).BundleSize);
+                Assert.AreEqual(3, aaContext.locations.Count);
+
+                var remoteBuiltinEntry = aaContext.locations.Single(l =>
+                    l.Provider == k_AssetBundleProviderId &&
+                    l.Keys.Count > 0 &&
+                    (l.Keys[0] as string) == remoteBuiltinFileName);
+
+                Assert.IsTrue(File.Exists(remoteDuplicatePath));
+                Assert.AreEqual(remoteBuiltinEntry.Keys[0], dependentEntry.Dependencies[0]);
+                Assert.IsTrue(updateContext.IdToCatalogDataEntryMap.ContainsKey(remoteBuiltinEntry.InternalId));
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(builtinSourcePath) && File.Exists(builtinSourcePath))
+                    File.Delete(builtinSourcePath);
+                if (!string.IsNullOrEmpty(remoteDuplicatePath) && File.Exists(remoteDuplicatePath))
+                    File.Delete(remoteDuplicatePath);
+                if (remoteGroup != null)
+                    Settings.RemoveGroup(remoteGroup);
+
+                Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, oldRemoteLoadPath);
+            }
+        }
+
+        [Test]
+        public void RevertBundle_BuiltinBundle_WhenContentChangedAndNoRemoteGroup_Fails()
+        {
+            const string bundleName = "defaultgroup_unitybuiltinassets.bundle";
+
+            var cachedRequestOptions = new AssetBundleRequestOptions() { Crc = 123, Hash = "oldHash", BundleName = bundleName, BundleSize = 10 };
+            var updateContext = CreateBuiltinUpdateContext(
+                new CachedBundleState() { bundleFileId = "cachedBuiltinInternalId", data = cachedRequestOptions });
+
+            string sharedBuildPath = Settings.GetSharedBundleGroup().GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(Settings);
+            string builtinSourcePath = Path.Combine(sharedBuildPath, bundleName);
+
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(builtinSourcePath));
+                File.WriteAllText(builtinSourcePath, "builtin bundle");
+
+                var currentRequestOptions = new AssetBundleRequestOptions() { Crc = 456, Hash = "newHash", BundleName = bundleName, BundleSize = 20 };
+                var builtinEntry = new ContentCatalogDataEntry(typeof(AssetBundleResource), builtinSourcePath, k_AssetBundleProviderId,
+                    new List<object>() { "builtinPrimaryKey" }, null, currentRequestOptions);
+
+                var aaContext = new AddressableAssetsBuildContext();
+                aaContext.Settings = Settings;
+                aaContext.locations = new List<ContentCatalogDataEntry>() { builtinEntry };
+
+                LogAssert.Expect(LogType.Warning, new Regex(".*Addressables will attempt to create a modified duplicate.*"));
+                LogAssert.Expect(LogType.Error, new Regex(".*could not locate a remote group.*"));
+                bool reverted = RevertUnchangedAssetsToPreviousAssetState.RevertBundleByNameContains(BuildScriptBase.BuiltInBundleBaseName, updateContext, aaContext);
+
+                Assert.IsFalse(reverted);
+                Assert.AreEqual(1, aaContext.locations.Count);
+            }
+            finally
+            {
+                if (File.Exists(builtinSourcePath))
+                    File.Delete(builtinSourcePath);
+            }
+        }
 
 		[Test]
 		[TestCase("{Addressables.RuntimePath}/TargetPlatform/prefabA.bundle", "{Addressables.RuntimePath}/TargetPlatform", "Library/aa/TargetPlatform")]

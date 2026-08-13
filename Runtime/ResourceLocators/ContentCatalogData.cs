@@ -71,8 +71,11 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
     [Serializable]
     public class ContentCatalogData
     {
+        //This value was previously calculated from: nameof(ContentCatalogData).GetHashCode(), but string.GetHashCode is
+        //not guaranteed to be stable across platforms or runtime versions, so we switched to a hard coded value which
+        //matches the original hash code from Mono.
         //used to verify that this is a valid catalog data file
-        static int kMagic = nameof(ContentCatalogData).GetHashCode();
+        const int kMagic = 0x0de38942;
         //used to check the version of the data in case the format needs to change in the future
         const int kVersion = 2;
 

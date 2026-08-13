@@ -3,6 +3,11 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [2.10.1] - 2026-04-07
+- Fixed an issue where, during a content update, making a change in a remote group that required rebuilding the builtinassets bundle would result in missing textures/errors if the builtinassets bundle was built into a group set to Prevent Updates. In this case, a new duplicate bundle will now be created and attached to the first remote group in the project and shipped out as part of an update.
+- Added option to disable typetree data from bundles.
+- Properly setting flag to reinitialize Addressables in the Editor when domain reloads are disabled.
+- Fixed inconsistent internal asset IDs in Dynamic naming mode.
 
 ## [2.10.0] - 2026-03-05
 - Fixed an issue where Errors are thrown and Editor Crashes when downloading an Asset Bundle from LoadAssetAsync and from DownloadDependenciesAsync at the same time.

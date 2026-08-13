@@ -284,7 +284,16 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     string assetProvider = GetAssetProviderName(bEntry.Group);
                     var schema = bEntry.Group.GetSchema<BundledAssetGroupSchema>();
-                    foreach (GUID assetGUID in bEntry.Assets)
+
+                    // Sort assets by GUID when using Dynamic naming mode to ensure consistent internal ID generation
+                    List<GUID> assetsToProcess = bEntry.Assets;
+                    if (schema != null && schema.InternalIdNamingMode == BundledAssetGroupSchema.AssetNamingMode.Dynamic)
+                    {
+                        assetsToProcess = new List<GUID>(bEntry.Assets);
+                        assetsToProcess.Sort((a, b) => a.CompareTo(b));
+                    }
+
+                    foreach (GUID assetGUID in assetsToProcess)
                     {
                         if (guidToEntry.TryGetValue(assetGUID.ToString(), out AddressableAssetEntry entry))
                         {

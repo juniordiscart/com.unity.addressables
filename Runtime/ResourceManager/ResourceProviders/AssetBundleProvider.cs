@@ -69,6 +69,34 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 #endif
 	public class AssetBundleRequestOptions : ILocationSizeData
 	{
+        /// <summary>
+        /// Default constructor for AssetBundleRequestOptions.
+        /// </summary>
+        public AssetBundleRequestOptions()
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AssetBundleRequestOptions"/> class by copying the values from
+        /// the specified <paramref name="abro"/> instance.
+        /// </summary>
+        /// <param name="abro">The <see cref="AssetBundleRequestOptions"/> instance whose property values are copied to initialize the new
+        /// instance. Cannot be <see langword="null"/>.</param>
+        public AssetBundleRequestOptions(AssetBundleRequestOptions abro)
+        {
+            Crc = abro.Crc;
+            Hash = abro.Hash;
+            BundleSize = abro.BundleSize;
+            BundleName = abro.BundleName;
+            AssetLoadMode = abro.AssetLoadMode;
+            Timeout = abro.Timeout;
+            ChunkedTransfer = abro.ChunkedTransfer;
+            RedirectLimit = abro.RedirectLimit;
+            RetryCount = abro.RetryCount;
+            UseUnityWebRequestForLocalBundles = abro.UseUnityWebRequestForLocalBundles;
+        }
+
 		[FormerlySerializedAs("m_hash")]
 		[SerializeField]
 #if UNITY_6000_0_OR_NEWER

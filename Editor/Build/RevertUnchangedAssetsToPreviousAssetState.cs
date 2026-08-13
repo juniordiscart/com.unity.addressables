@@ -22,6 +22,8 @@ using static UnityEditor.AddressableAssets.Build.ContentUpdateScript;
 /// </summary>
 public class RevertUnchangedAssetsToPreviousAssetState
 {
+    const string k_AssetBundleProviderId = "UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider";
+
     internal struct AssetEntryRevertOperation
     {
         public CachedAssetState PreviousAssetState;
@@ -74,6 +76,8 @@ public class RevertUnchangedAssetsToPreviousAssetState
 
     internal static bool RevertBundleByNameContains(string containingString, ContentUpdateContext updateContext, AddressableAssetsBuildContext aaContext)
     {
+        bool isBuiltinBundleCase = string.Equals(containingString, BuildScriptBase.BuiltInBundleBaseName, StringComparison.Ordinal);
+
         CachedBundleState previousBundleCache = null;
         foreach (CachedBundleState cachedBundle in updateContext.ContentState.cachedBundles)
         {
@@ -86,10 +90,9 @@ public class RevertUnchangedAssetsToPreviousAssetState
         }
 
         ContentCatalogDataEntry currentLocation = null;
-        // find current location with it
         foreach (ContentCatalogDataEntry catalogEntry in aaContext.locations)
         {
-            if (catalogEntry.Provider == "UnityEngine.ResourceManagement.ResourceProviders.AssetBundleProvider")
+            if (catalogEntry.Provider == k_AssetBundleProviderId)
             {
                 var options = catalogEntry.Data as AssetBundleRequestOptions;
                 if (options != null && AddressableAssetUtility.StringContains(options.BundleName, containingString, StringComparison.Ordinal))
@@ -102,22 +105,45 @@ public class RevertUnchangedAssetsToPreviousAssetState
 
         if (previousBundleCache == null && currentLocation == null)
             return true; // bundle were not used in either build
-        if (previousBundleCache == null)
-        {
-            UnityEngine.Debug.LogError($"Matching cached update state for {currentLocation.InternalId} failed. Content not found in original build.");
-            return false; // bundle was in update build, but not original
-        }
 
         if (currentLocation == null)
             return true; // bundle not in update build but was in original is ok
 
-        currentLocation.InternalId = previousBundleCache.bundleFileId;
+        if (previousBundleCache == null && !isBuiltinBundleCase)
+        {
+            UnityEngine.Debug.LogError($"Matching cached update state for {currentLocation.InternalId} failed. Content not found in original build.");
+            return false; // bundle was in update build, but not original. For monoscript builds, this is an automatic fail.
+        }
+
         var currentOptions = currentLocation.Data as AssetBundleRequestOptions;
-        var prevOptions = previousBundleCache.data as AssetBundleRequestOptions;
+        var prevOptions = previousBundleCache != null ? previousBundleCache.data as AssetBundleRequestOptions : null;
+
+        // Special case: builtin bundle only. If a remote group relies on its content changing, create a duplicate for remote and rewire only updated remote entries to it.
+        if (isBuiltinBundleCase && currentOptions != null && (prevOptions == null || !string.Equals(currentOptions.Hash, prevOptions.Hash, StringComparison.Ordinal)))
+        {
+            Debug.LogWarning("A change was made in a remote group that required the unitybuiltinassets bundle to be rebuilt. " +
+                   "Because the unitybuiltinassets bundle was built as part of a group set to \"Prevent Updates\", " +
+                  $"Addressables will attempt to create a modified duplicate of the unitybuiltinassets bundle and place it into the first remote group in your project. " +
+                  $"To avoid this behavior, consider modifying your shared bundle settings to point to a group that is not set to Prevent Updates.");
+            bool success = CreateRemoteBuiltinDuplicateAndRewire(updateContext, aaContext, currentLocation, currentOptions, previousBundleCache);
+            if (!success)
+                return false;
+        }
+
+        if (prevOptions == null)
+        {
+            // There is a case where the unitybuiltinassets bundle can be set to a static location but not built during the first build (for example, if a user is using URP assets).
+            // If, in a subsequent build, the user then adds an asset that relies on unitybuiltinassets  a remote group, we will still need to create a remote version of the unitybuiltinassets bundle.
+            // Because in this case, there will be no previousBundleCache to revert to (since the bundle was not built in the original build), we can return here.
+            return true;
+        }
+
+        currentLocation.InternalId = previousBundleCache.bundleFileId;
         currentOptions.Crc = prevOptions.Crc;
         currentOptions.Hash = prevOptions.Hash;
         currentOptions.BundleSize = prevOptions.BundleSize;
         currentOptions.BundleName = prevOptions.BundleName;
+
         return true;
     }
 
@@ -215,15 +241,162 @@ public class RevertUnchangedAssetsToPreviousAssetState
         return path.Replace(rootLoadPath, rootBuildPath);
     }
 
-    private static bool IsPreviouslyRevertedDependency(string bundleFileId, ContentUpdateContext contentUpdateContext)
+    /// <summary>
+    /// When the builtin bundle content has changed during a content update, creates a duplicate of the new builtin bundle
+    /// in the first remote group's path and rewires only updated remote asset locations to depend on it.
+    /// </summary>
+    ///
+    private static bool CreateRemoteBuiltinDuplicateAndRewire(ContentUpdateContext updateContext, AddressableAssetsBuildContext aaContext,
+        ContentCatalogDataEntry builtInLocation, AssetBundleRequestOptions currentOptions, CachedBundleState previousBundleCache)
     {
-        foreach (CachedAssetState state in contentUpdateContext.PreviousAssetStateCarryOver)
+        AddressableAssetSettings settings = aaContext.Settings;
+
+        if (!TryGetBuiltinSourcePath(settings, builtInLocation, out string sourcePath))
+            return false;
+
+        if (!TryGetFirstRemoteGroupPaths(settings, out string remoteBuildPath, out string remoteLoadPath))
         {
-            if (state.bundleFileId == bundleFileId)
-                return true;
+            Debug.LogWarning("Cannot create remote builtin duplicate: no remote group found (no group with a URL load path). Skipping duplicate, failing build.");
+            return false;
         }
 
+        string remoteBuiltinFileName = Path.GetFileNameWithoutExtension(currentOptions.BundleName) + "_remote.bundle";
+        string remoteDestPath = Path.Combine(remoteBuildPath, remoteBuiltinFileName);
+        if (!CopyBuiltinToRemotePath(sourcePath, remoteDestPath))
+            return false;
+
+        updateContext.Registry.AddFile(remoteDestPath);
+
+        string remotePrimaryKey = remoteBuiltinFileName;
+        string remoteInternalId = CreateBuiltinBundleInternalId(remoteLoadPath, remoteBuiltinFileName);
+        ContentCatalogDataEntry remoteEntry = CreateRemoteBuiltinCatalogEntry(remoteInternalId, remotePrimaryKey, currentOptions);
+        aaContext.locations.Add(remoteEntry);
+        updateContext.IdToCatalogDataEntryMap[remoteInternalId] = remoteEntry;
+        string builtInPrimaryKey = GetPrimaryKey(builtInLocation) as string;
+
+        RewireAssetDependenciesToRemoteBuiltin(aaContext.locations, builtInPrimaryKey, remotePrimaryKey);
+        return true;
+    }
+
+    static bool TryGetBuiltinSourcePath(AddressableAssetSettings settings, ContentCatalogDataEntry builtinLocation, out string path)
+    {
+        path = null;
+        AddressableAssetGroup defaultGroup = settings.GetSharedBundleGroup();
+        BundledAssetGroupSchema schema = defaultGroup?.GetSchema<BundledAssetGroupSchema>();
+        if (schema == null)
+        {
+            Debug.LogError("Cannot create remote builtin duplicate: default group has no BundledAssetGroupSchema.");
+            return false;
+        }
+        string buildPath = schema.BuildPath.GetValue(settings);
+        if (string.IsNullOrEmpty(buildPath))
+        {
+            Debug.LogError("Cannot create remote builtin duplicate: default group build path is empty.");
+            return false;
+        }
+        string fileName = Path.GetFileName(builtinLocation.InternalId);
+        path = Path.Combine(buildPath, fileName);
+        if (!File.Exists(path))
+        {
+            Debug.LogError($"Cannot create remote builtin duplicate: builtin bundle not found at {path}.");
+            return false;
+        }
+        return true;
+    }
+
+    static bool TryGetFirstRemoteGroupPaths(AddressableAssetSettings settings, out string buildPath, out string loadPath)
+    {
+        buildPath = null;
+        loadPath = null;
+        AddressableAssetGroup defaultGroup = settings.GetSharedBundleGroup();
+        foreach (var group in settings.groups)
+        {
+            if (group == null || group.Guid == defaultGroup.Guid)
+                continue;
+            var schema = group.GetSchema<BundledAssetGroupSchema>();
+            if (schema == null)
+                continue;
+            string lp = schema.LoadPath.GetValue(settings);
+            if (string.IsNullOrEmpty(lp) || !ResourceManagerConfig.ShouldPathUseWebRequest(lp))
+                continue;
+            string bp = schema.BuildPath.GetValue(settings);
+            if (string.IsNullOrEmpty(bp))
+            {
+                continue;
+            }
+            buildPath = bp;
+            loadPath = lp.Replace('\\', '/').TrimEnd('/');
+            return true;
+        }
+        Debug.LogError("Cannot create remote builtin duplicate: could not locate a remote group to place remote builtin duplicate in.");
         return false;
+    }
+
+    static bool CopyBuiltinToRemotePath(string sourcePath, string destPath)
+    {
+        try
+        {
+            string dir = Path.GetDirectoryName(destPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+            File.Copy(sourcePath, destPath, true);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Failed to copy builtin bundle to remote path: {ex.Message}");
+            return false;
+        }
+    }
+
+    static string CreateBuiltinBundleInternalId(string remoteLoadPath, string fileName)
+    {
+        string internalId = remoteLoadPath + "/" + fileName;
+        if (!ResourceManagerConfig.ShouldPathUseWebRequest(remoteLoadPath))
+            internalId = internalId.Replace('/', Path.DirectorySeparatorChar);
+        return internalId;
+    }
+
+    static ContentCatalogDataEntry CreateRemoteBuiltinCatalogEntry(string internalId, string primaryKey, AssetBundleRequestOptions currentOptions)
+    {
+        var options = new AssetBundleRequestOptions(currentOptions);
+        options.BundleName = Path.GetFileNameWithoutExtension(primaryKey);
+
+        return new ContentCatalogDataEntry(
+            typeof(IAssetBundleResource),
+            internalId,
+            k_AssetBundleProviderId,
+            new List<object> { primaryKey },
+            null,
+            options);
+    }
+
+    static object GetPrimaryKey(ContentCatalogDataEntry entry)
+    {
+        return (entry.Keys != null && entry.Keys.Count > 0) ? entry.Keys[0] : null;
+    }
+
+    /// <summary>
+    /// For each asset location that depends on both the builtin bundle and at least one updated-remote bundle,
+    /// replace the builtin dependency key with the remote builtin key so they load the duplicate.
+    /// </summary>
+    static void RewireAssetDependenciesToRemoteBuiltin(List<ContentCatalogDataEntry> locations,
+        string builtInPrimaryKey, string remoteBundlePrimaryKey)
+    {
+        for (int i = 0; i < locations.Count; i++)
+        {
+            ContentCatalogDataEntry loc = locations[i];
+            if (loc.Dependencies == null || loc.Dependencies.Count == 0)
+                continue;
+
+            for (int j = 0; j < loc.Dependencies.Count; j++)
+            {
+                if (object.Equals(loc.Dependencies[j], builtInPrimaryKey))
+                {
+                    loc.Dependencies[j] = remoteBundlePrimaryKey;
+                }
+            }
+        }
     }
 
     internal static void ApplyAssetEntryUpdates(List<AssetEntryRevertOperation> operations, ContentUpdateContext contentUpdateContext)

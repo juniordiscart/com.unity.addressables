@@ -352,8 +352,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
                 string typeTreeDataBuildPath = null;
 
+                if (aaContext.Settings.DisableWriteTypeTree)
+                {
+                    buildParams.ContentBuildFlags |= UnityEditor.Build.Content.ContentBuildFlags.DisableWriteTypeTree;
+                }
 #if UNITY_6000_5_OR_NEWER
-                if (aaContext.Settings.ExtractTypeTreeData)
+                else if (aaContext.Settings.ExtractTypeTreeData)
                 {
                     buildParams.ContentBuildFlags |= UnityEditor.Build.Content.ContentBuildFlags.ExtractTypeTree;
                     typeTreeDataBuildPath = Path.Combine(aaContext.Settings.buildSettings.bundleBuildPath, kTypeTreeDataFileName);
@@ -1416,8 +1420,21 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var assetInternalIds = new HashSet<string>();
             var assetsInputDef = new AssetBundleBuild();
             assetsInputDef.assetBundleName = name.ToLower().Replace(" ", "").Replace('\\', '/').Replace("//", "/");
-            assetsInputDef.assetNames = assets.Select(s => s.AssetPath).ToArray();
-            assetsInputDef.addressableNames = assets.Select(s => s.GetAssetLoadPath(true, assetInternalIds)).ToArray();
+
+            // Sort assets by GUID when using Dynamic naming mode to ensure consistent internal ID generation
+            List<AddressableAssetEntry> processedAssets = assets;
+            if (assets.Count > 0 && assets[0].parentGroup != null)
+            {
+                var schema = assets[0].parentGroup.GetSchema<BundledAssetGroupSchema>();
+                if (schema != null && schema.InternalIdNamingMode == BundledAssetGroupSchema.AssetNamingMode.Dynamic)
+                {
+                    processedAssets = new List<AddressableAssetEntry>(assets);
+                    processedAssets.Sort((l, r) => new GUID(l.guid).CompareTo(new GUID(r.guid)));
+                }
+            }
+
+            assetsInputDef.assetNames = processedAssets.Select(s => s.AssetPath).ToArray();
+            assetsInputDef.addressableNames = processedAssets.Select(s => s.GetAssetLoadPath(true, assetInternalIds)).ToArray();
             return assetsInputDef;
         }
 

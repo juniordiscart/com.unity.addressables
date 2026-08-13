@@ -616,6 +616,9 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
         }
 
         [Test]
+#if UNITY_6000_6_OR_NEWER
+        [Ignore("SpriteAtlas dependencies to their sprites have been removed.")]
+#endif
         public void WhenReferencedObjectIdentifiedWithFilename_ObjectRepresentedInDataFromOtherAssets()
         {
             using (new SpritePackerScope(SpritePackerMode.BuildTimeOnlyAtlas))

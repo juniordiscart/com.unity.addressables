@@ -249,8 +249,12 @@ namespace UnityEditor.AddressableAssets.GUI
             new GUIContent("Allow Nested Folders", "If enabled and there is a path separator in an Addressables key, subfolders will be created when the bundle mode is set to Pack Separately.This is legacy behavior.");
 
 #if UNITY_6000_5_OR_NEWER
-        GUIContent m_extractTypeTreeDataContent =
-            new GUIContent("Extract TypeTree Data", "If enabled, type tree data will be extracted from all bundles and put into a combined file that is loaded at runtime during the initialization of Addressables.");
+        GUIContent m_typeTreeOptionContent =
+            new GUIContent("TypeTree Option", "Controls how type tree data is handled in asset bundles. 'Include' writes type trees normally, 'Extract' strips them into a separate file, 'Disable' omits them entirely.");
+        static readonly string[] m_TypeTreeOptionNames = { "Include", "Extract", "Disable" };
+#else
+        GUIContent m_disableWriteTypeTreeContent =
+            new GUIContent("Disable Write TypeTree", "If enabled, type tree data will not be written into asset bundles. This reduces bundle size but removes the ability to load bundles across different Unity versions.");
 #endif
 
 #if (ENABLE_CCD)
@@ -680,9 +684,21 @@ namespace UnityEditor.AddressableAssets.GUI
                 GUILayout.Space(postBlockContentSpace);
 
 #if UNITY_6000_5_OR_NEWER
-                bool extractTypeTreeData = EditorGUILayout.Toggle(m_extractTypeTreeDataContent, m_AasTarget.ExtractTypeTreeData);
-                if (extractTypeTreeData != m_AasTarget.ExtractTypeTreeData)
-                    m_QueuedChanges.Add(() => m_AasTarget.ExtractTypeTreeData = extractTypeTreeData);
+                int currentTypeTreeOption = m_AasTarget.DisableWriteTypeTree ? 2 : (m_AasTarget.ExtractTypeTreeData ? 1 : 0);
+                int selectedTypeTreeOption = EditorGUILayout.Popup(m_typeTreeOptionContent, currentTypeTreeOption, m_TypeTreeOptionNames);
+                if (selectedTypeTreeOption != currentTypeTreeOption)
+                {
+                    m_QueuedChanges.Add(() =>
+                    {
+                        m_AasTarget.ExtractTypeTreeData = selectedTypeTreeOption == 1;
+                        m_AasTarget.DisableWriteTypeTree = selectedTypeTreeOption == 2;
+                    });
+                }
+                GUILayout.Space(postBlockContentSpace);
+#else
+                bool disableWriteTypeTree = EditorGUILayout.Toggle(m_disableWriteTypeTreeContent, m_AasTarget.DisableWriteTypeTree);
+                if (disableWriteTypeTree != m_AasTarget.DisableWriteTypeTree)
+                    m_QueuedChanges.Add(() => m_AasTarget.DisableWriteTypeTree = disableWriteTypeTree);
                 GUILayout.Space(postBlockContentSpace);
 #endif
             }
