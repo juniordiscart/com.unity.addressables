@@ -5,7 +5,16 @@ using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace UnityEngine.ResourceManagement.Util
 {
-    internal interface IOperationCacheKey : IEquatable<IOperationCacheKey>
+    /// <summary>
+    /// Interface for keys used to cache and identify async operations in the Resource Manager.
+    /// Implementations of this interface provide equality comparisons to determine if two operations
+    /// are equivalent and can share the same cached result.
+    /// </summary>
+    /// <remarks>
+    /// Cache keys enable the Resource Manager to reuse in-progress or completed operations when
+    /// multiple requests target the same resource, avoiding redundant loading operations.
+    /// </remarks>
+    public interface IOperationCacheKey : IEquatable<IOperationCacheKey>
     {
     }
 

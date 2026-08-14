@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
@@ -18,14 +16,14 @@ namespace UnityEditor.AddressableAssets.Settings
     {
         string AssetPath { get; }
         string address { get; set; }
-        HashSet<string> labels { get; }
+        ISet<string> labels { get; }
     }
 
     internal struct ImplicitAssetEntry : IReferenceEntryData
     {
         public string AssetPath { get; set; }
         public string address { get; set; }
-        public HashSet<string> labels { get; set; }
+        public ISet<string> labels { get; set; }
     }
 
     /// <summary>
@@ -50,7 +48,7 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField]
         List<string> m_SerializedLabels;
 
-        SortedSet<string> m_Labels = new SortedSet<string>();
+        ISet<string> m_Labels = new SortedSet<string>();
 
         /// <summary>
         /// If true, this asset was changed after being built into an Addressable Group marked 'Cannot Change Post Release'.
@@ -175,9 +173,9 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// The set of labels for this entry.  There is no inherent limit to the number of labels.
         /// </summary>
-        public HashSet<string> labels
+        public ISet<string> labels
         {
-            get { return m_Labels.ToHashSet(); }
+            get { return m_Labels; }
         }
 
         internal Type m_cachedMainAssetType = null;

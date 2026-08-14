@@ -131,7 +131,7 @@ namespace UnityEditor.AddressableAssets.Settings
             return true;
         }
 
-        internal string GetString(HashSet<string> val, float width)
+        internal string GetString(ISet<string> val, float width)
         {
             if (val == null || val.Count == 0 || m_LabelStyle == null)
                 return "";

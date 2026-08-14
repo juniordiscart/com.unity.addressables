@@ -429,7 +429,7 @@ namespace SceneTests
         [UnityTest]
         public IEnumerator SceneTests_LoadSceneWithChainHandle_MatchesTrackedHandle()
         {
-            AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
             m_RuntimeSettingsPath = AddressablesImpl.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
             var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
             var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
@@ -439,13 +439,12 @@ namespace SceneTests
             Assert.IsTrue(m_Addressables.m_SceneInstances.Contains(op));
 
             yield return UnloadSceneFromHandler(op, m_Addressables);
-            impl.ResourceManager.Dispose();
         }
 
         [UnityTest]
         public IEnumerator SceneTests_UnloadScene_RemovesTrackedInstanceOp()
         {
-            AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
             m_RuntimeSettingsPath = AddressablesImpl.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
             var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
             var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
@@ -455,13 +454,12 @@ namespace SceneTests
             yield return UnloadSceneFromHandler(op, m_Addressables);
 
             Assert.AreEqual(0, m_Addressables.m_SceneInstances.Count);
-            impl.ResourceManager.Dispose();
         }
 
         [UnityTest]
         public IEnumerator SceneTests_UnloadSceneAsync_CanUnloadBaseHandle()
         {
-            AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
             m_RuntimeSettingsPath = AddressablesImpl.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
             var initOp = impl.InitializeAsync(m_RuntimeSettingsPath);
             var op = m_Addressables.LoadSceneWithChain(initOp, sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));

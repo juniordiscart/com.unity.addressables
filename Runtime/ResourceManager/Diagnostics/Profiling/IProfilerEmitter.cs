@@ -8,5 +8,6 @@ namespace UnityEngine.ResourceManagement.Profiling
         public void EmitFrameMetaData(Guid id, int tag, Array data);
 
         public void InitialiseCallbacks(Action<float> onLateUpdateDelegate);
+        public void CleanUpCallbacks(Action<float> onLateUpdateDelegate);
     }
 }

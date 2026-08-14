@@ -21,10 +21,10 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
         private AssetBundleRequestOptions m_Opts;
         private Dictionary<int, ContentStatus> m_FrameStatusMap = new Dictionary<int, ContentStatus>();
 
-        public ProfilerEventBuilder(TestProfiler testProfiler)
+        public ProfilerEventBuilder(TestProfiler testProfiler, ResourceManager manager)
         {
             m_TestProfiler = testProfiler;
-            m_Handle = new ProvideHandle(Addressables.ResourceManager, new TestOp());
+            m_Handle = new ProvideHandle(manager, new TestOp());
             m_SceneHandle = new AsyncOperationHandle<SceneInstance>(new TestSceneOp());
             m_Opts = new AssetBundleRequestOptions();
         }

@@ -27,6 +27,13 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_Types == null)
                 m_Types = GetTypes(m_SerializedFieldInfo);
 
+            if (m_Types == null)
+            {
+                // TODO: Replace this with a proper property drawer for SerializedType as used by LoadableInfo
+                EditorGUI.PropertyField(position, property, label);
+                return;
+            }
+
             List<GUIContent> typeContent = new List<GUIContent>();
             typeContent.Add(new GUIContent("<none>", "Clear the type."));
             foreach (var type in m_Types)

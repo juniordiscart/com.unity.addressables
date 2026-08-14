@@ -483,18 +483,19 @@ namespace UnityEditor.AddressableAssets.Tests
             var context = new AddressablesDataBuilderInput(Settings);
 
             AddressableAssetEntry entry = Settings.CreateOrMoveEntry(m_AssetGUID, Settings.DefaultGroup);
+            LogAssert.Expect(LogType.Error, $"Address '[test]' cannot contain '[ ]'.");
             entry.address = "[test]";
-            LogAssert.Expect(LogType.Error, $"Address '{entry.address}' cannot contain '[ ]'.");
+
             foreach (IDataBuilder db in Settings.DataBuilders)
             {
                 if (db.GetType() == typeof(BuildScriptFastMode) || db.GetType() == typeof(BuildScriptPackedPlayMode))
                     continue;
 
+                LogAssert.Expect(LogType.Exception, $"Exception: Address '{entry.address}' cannot contain '[ ]'.");
                 if (db.CanBuildData<AddressablesPlayerBuildResult>())
                     db.BuildData<AddressablesPlayerBuildResult>(context);
                 else if (db.CanBuildData<AddressablesPlayModeBuildResult>())
                     db.BuildData<AddressablesPlayModeBuildResult>(context);
-                LogAssert.Expect(LogType.Error, "Address '[test]' cannot contain '[ ]'.");
             }
 
             Settings.RemoveAssetEntry(m_AssetGUID, false);
@@ -520,13 +521,13 @@ namespace UnityEditor.AddressableAssets.Tests
                     db.GetType() == typeof(BuildScriptPackedPlayMode))
                     continue;
 
+                LogAssert.Expect(LogType.Exception,
+                    $"Exception: Cannot recognize file type for entry located at 'Assets/{GetType()}_Tests/fake.file'. Asset import failed for using an unsupported file type.");
+
                 if (db.CanBuildData<AddressablesPlayerBuildResult>())
                     db.BuildData<AddressablesPlayerBuildResult>(context);
                 else if (db.CanBuildData<AddressablesPlayModeBuildResult>())
                     db.BuildData<AddressablesPlayModeBuildResult>(context);
-
-                LogAssert.Expect(LogType.Error,
-                    $"Cannot recognize file type for entry located at 'Assets/{GetType()}_Tests/fake.file'. Asset import failed for using an unsupported file type.");
             }
 
             Settings.RemoveAssetEntry(guid, false);
@@ -554,6 +555,9 @@ namespace UnityEditor.AddressableAssets.Tests
                 if (db.GetType() == typeof(BuildScriptFastMode) || db.GetType() == typeof(BuildScriptPackedPlayMode))
                     continue;
 
+                LogAssert.Expect(LogType.Warning, new Regex($".*{path}.*ignored"));
+                LogAssert.Expect(LogType.Warning, new Regex($".*{path}.*stripped"));
+
                 if (db.CanBuildData<AddressablesPlayerBuildResult>())
                 {
                     var res = db.BuildData<AddressablesPlayerBuildResult>(context);
@@ -567,8 +571,6 @@ namespace UnityEditor.AddressableAssets.Tests
                     Assert.IsTrue(string.IsNullOrEmpty(res.Error));
                 }
 
-                LogAssert.Expect(LogType.Warning, new Regex($".*{path}.*ignored"));
-                LogAssert.Expect(LogType.Warning, new Regex($".*{path}.*stripped"));
             }
 
             Settings.RemoveAssetEntry(guid, false);

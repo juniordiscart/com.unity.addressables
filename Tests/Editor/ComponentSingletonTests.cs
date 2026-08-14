@@ -10,13 +10,30 @@ namespace UnityEditor.AddressableAssets.Tests
     {
         const string kTestSingletonName = "Test Singleton";
 
-        public class TestSingletonWithName : ComponentSingleton<TestSingletonWithName>
+        class TestSingletonWithName : InternalComponentSingleton<TestSingletonWithName>
         {
             protected override string GetGameObjectName() => kTestSingletonName;
         }
 
-        public class TestSingletonWithDefaultName : ComponentSingleton<TestSingletonWithDefaultName>
+        class TestSingletonWithDefaultName : InternalComponentSingleton<TestSingletonWithDefaultName>
         {
+        }
+
+        bool enterPlayModeOptionsEnabled;
+        private EnterPlayModeOptions enterPlayModeOptions;
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            enterPlayModeOptionsEnabled = EditorSettings.enterPlayModeOptionsEnabled;
+            enterPlayModeOptions = EditorSettings.enterPlayModeOptions;
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            EditorSettings.enterPlayModeOptionsEnabled = enterPlayModeOptionsEnabled;
+            EditorSettings.enterPlayModeOptions = enterPlayModeOptions;
         }
 
         [TearDown]
@@ -53,7 +70,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var singleton = TestSingletonWithName.Instance;
             var go = new GameObject("Duplicate");
             var duplicate = go.AddComponent<TestSingletonWithName>();
-            Assert.Null(duplicate, "Expected the duplicate singleton to be destroyed when one already exists");
+            Assert.True(duplicate == null, "Expected the duplicate singleton to be destroyed when one already exists");
             Assert.AreEqual(singleton, TestSingletonWithName.Instance);
         }
 
@@ -70,8 +87,13 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [UnityTest]
-        public IEnumerator ExitingPlayModeDestroysSingleton()
+        public IEnumerator ExitingPlayModeDestroysSingleton(
+            [Values(EnterPlayModeOptions.None, EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload)]
+            EnterPlayModeOptions playmodeOption)
         {
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = playmodeOption;
+
             yield return new EnterPlayMode();
 
             var instance = TestSingletonWithName.Instance;
@@ -90,11 +112,15 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [UnityTest]
-        [Ignore("Appears to be unstable in the Editor. Instance isn't being destroyed. https://jira.unity3d.com/browse/ADDR-3928")]
-        public IEnumerator EnteringPlayModeDestroysEditorSingleton()
+        public IEnumerator EnteringPlayModeDestroysEditorSingleton(
+            [Values(EnterPlayModeOptions.None, EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload)]
+            EnterPlayModeOptions playmodeOption)
         {
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = playmodeOption;
+
             var instance = TestSingletonWithName.Instance;
-            Assert.NotNull(instance);
+            Assert.True(instance != null, "Expected singleton instance to exist after creation.");
 
             yield return new EnterPlayMode();
 
@@ -109,8 +135,13 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [UnityTest]
-        public IEnumerator PlaymodeSingletonHasHideFlags_DontSave()
+        public IEnumerator PlaymodeSingletonHasHideFlags_DontSave(
+        [Values(EnterPlayModeOptions.None, EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload)]
+        EnterPlayModeOptions playmodeOption)
         {
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = playmodeOption;
+
             yield return new EnterPlayMode();
             Assert.True(Application.isPlaying);
             var instance = TestSingletonWithName.Instance;

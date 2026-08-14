@@ -218,6 +218,11 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>The created schema object.</returns>
         public AddressableAssetGroupSchema AddSchema(Type type, bool postEvent = true)
         {
+            return AddSchema(type, postEvent, true);
+        }
+
+        internal AddressableAssetGroupSchema AddSchema(Type type, bool postEvent, bool saveAssets)
+        {
             var added = m_SchemaSet.AddSchema(type, GetSchemaAssetPath);
             if (added != null)
             {
@@ -225,9 +230,13 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (m_Settings && m_Settings.IsPersisted)
                     EditorUtility.SetDirty(added);
 
+                if (added is ICanBeEnabled canEnableSchema && added.CanEnableSchema() != string.Empty)
+                    canEnableSchema.IsEnabled = false;
+
                 SetDirty(AddressableAssetSettings.ModificationEvent.GroupSchemaAdded, this, postEvent, true);
 
-                AssetDatabase.SaveAssets();
+                if (saveAssets)
+                    AssetDatabase.SaveAssets();
             }
 
             return added;
@@ -241,7 +250,12 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>The created schema object.</returns>
         public TSchema AddSchema<TSchema>(bool postEvent = true) where TSchema : AddressableAssetGroupSchema
         {
-            return AddSchema(typeof(TSchema), postEvent) as TSchema;
+            return AddSchema(typeof(TSchema), postEvent, true) as TSchema;
+        }
+
+        internal TSchema AddSchema<TSchema>(bool postEvent, bool saveAssets) where TSchema : AddressableAssetGroupSchema
+        {
+            return AddSchema(typeof(TSchema), postEvent, saveAssets) as TSchema;
         }
 
         /// <summary>
@@ -252,10 +266,19 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>True if the schema was found and removed, false otherwise.</returns>
         public bool RemoveSchema(Type type, bool postEvent = true)
         {
+            return RemoveSchema(type, postEvent, true);
+        }
+
+        internal bool RemoveSchema(Type type, bool postEvent, bool saveAssets)
+        {
             if (!m_SchemaSet.RemoveSchema(type))
                 return false;
 
             SetDirty(AddressableAssetSettings.ModificationEvent.GroupSchemaRemoved, this, postEvent, true);
+
+            if (saveAssets)
+                AssetDatabase.SaveAssets();
+
             return true;
         }
 
@@ -267,7 +290,12 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <returns>True if the schema was found and removed, false otherwise.</returns>
         public bool RemoveSchema<TSchema>(bool postEvent = true)
         {
-            return RemoveSchema(typeof(TSchema), postEvent);
+            return RemoveSchema(typeof(TSchema), postEvent, true);
+        }
+
+        internal bool RemoveSchema<TSchema>(bool postEvent, bool saveAssets)
+        {
+            return RemoveSchema(typeof(TSchema), postEvent, saveAssets);
         }
 
         /// <summary>
@@ -561,7 +589,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 {
                     address = entry.address,
                     AssetPath = entry.AssetPath,
-                    labels = new HashSet<string>(entry.labels)
+                    labels = new SortedSet<string>(entry.labels)
                 };
                 results.Add(reference);
             }
@@ -606,7 +634,7 @@ namespace UnityEditor.AddressableAssets.Settings
                     {
                         address = relativeAddress,
                         AssetPath = assetPath,
-                        labels = new HashSet<string>(folderEntry.labels)
+                        labels = new SortedSet<string>(folderEntry.labels)
                     };
                     results.Add(reference);
                 }

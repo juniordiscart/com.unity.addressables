@@ -6,6 +6,7 @@ using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceProviders;
+using static UnityEditor.AddressableAssets.Build.AddressablesPlayerBuildResult;
 
 namespace UnityEditor.AddressableAssets.Build.Layout
 {
@@ -35,6 +36,21 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                     if (m_BuildLayout == null)
                         return BuildTarget.NoTarget;
                     return m_BuildLayout.BuildTarget;
+                }
+            }
+
+            ///<summary>A unique identifier for an addressables build.</summary>
+            ///<remarks>This identifier uniquely identifies each addressables build, regardless of whether the build produces identical output.
+            ///Failed or cancelled builds will also have a unique session GUID.
+            ///This identifier is only used for Editor build tracking and analytics.
+            ///</remarks>
+            public GUID AddressablesBuildSessionGUID
+            {
+                get
+                {
+                    if (m_BuildLayout == null)
+                        return new GUID();
+                    return m_BuildLayout.AddressablesBuildSessionGUID;
                 }
             }
 
@@ -112,7 +128,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             get
             {
                 if (m_Header == null)
-                    m_Header = new LayoutHeader() {m_BuildLayout = this};
+                    m_Header = new LayoutHeader() { m_BuildLayout = this };
                 return m_Header;
             }
         }
@@ -130,6 +146,14 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// Hash of the build results
         /// </summary>
         public string BuildResultHash;
+
+        ///<summary>A unique identifier for an addressables build.</summary>
+        ///<remarks>This identifier uniquely identifies each addressables build, regardless of whether the build produces identical output.
+        ///Failed or cancelled builds will also have a unique session GUID.
+        ///This identifier is only used for Editor build tracking and analytics.
+        ///</remarks>
+        [SerializeField]
+        public GUID AddressablesBuildSessionGUID;
 
         /// <summary>
         /// If the build was a new build or an update for a previous build
@@ -200,6 +224,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public AddressablesRuntimeData AddressablesRuntimeSettings;
 
         /// <summary>
+        /// Represents a collection of content directory build results.
+        /// </summary>
+        [SerializeReference]
+        public List<ContentDirectory> ContentDirectories = new List<ContentDirectory>();
+
+        /// <summary>
         /// Name of the build script to build
         /// </summary>
         public string BuildScript;
@@ -260,6 +290,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public string BuildStartTime;
             public double Duration;
             public string BuildError;
+            public GUID BuildSessionGUID;
         }
 
         /// <summary>
@@ -312,7 +343,8 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                     BuildType = this.BuildType,
                     BuildStartTime = this.BuildStartTime,
                     Duration = this.Duration,
-                    BuildError = this.BuildError
+                    BuildError = this.BuildError,
+                    BuildSessionGUID = this.AddressablesBuildSessionGUID
                 };
                 headerJson = JsonUtility.ToJson(header, false);
                 headerJson = headerJson.Remove(headerJson.Length - 1, 1) + ',';
@@ -634,6 +666,17 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public class Group
         {
             /// <summary>
+            /// Checks to see if the Group has an associated Content Directory
+            /// </summary>
+            public bool IsAssetBundleGroup
+            {
+                get
+                {
+                    return string.IsNullOrEmpty(ContentDirectoryName);
+                }
+            }
+
+            /// <summary>
             /// The Name of the AdressableAssetGroup
             /// </summary>
             public string Name;
@@ -647,6 +690,11 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// The packing mode as defined by the BundledAssetGroupSchema on the AddressableAssetGroup
             /// </summary>
             public string PackingMode;
+
+            /// <summary>
+            /// The name of the Content Directory this Group was built into, if any
+            /// </summary>
+            public string ContentDirectoryName;
 
             /// <summary>
             /// A list of the AssetBundles associated with the Group
@@ -680,7 +728,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// <summary>
             /// These key-value-pairs include data about the AddressableAssetGroupSchema, such as PackingMode and Compression.
             /// </summary>
-            public List<Tuple<string, string>> KvpDetails = new List<Tuple<string, string>>();
+            public List<System.Tuple<string, string>> KvpDetails = new List<System.Tuple<string, string>>();
 
             [SerializeField]
             private StringPair[] SchemaDataPairs;
@@ -692,7 +740,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             {
                 SchemaDataPairs = new StringPair[KvpDetails.Count];
                 for (int i = 0; i < SchemaDataPairs.Length; ++i)
-                    SchemaDataPairs[i] = new StringPair() {Key = KvpDetails[i].Item1, Value = KvpDetails[i].Item2};
+                    SchemaDataPairs[i] = new StringPair() { Key = KvpDetails[i].Item1, Value = KvpDetails[i].Item2 };
             }
 
             /// <summary>
@@ -701,8 +749,83 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public void OnAfterDeserialize()
             {
                 for (int i = 0; i < SchemaDataPairs.Length; ++i)
-                    KvpDetails.Add(new Tuple<string, string>(SchemaDataPairs[i].Key, SchemaDataPairs[i].Value));
+                    KvpDetails.Add(new System.Tuple<string, string>(SchemaDataPairs[i].Key, SchemaDataPairs[i].Value));
                 SchemaDataPairs = null;
+            }
+        }
+
+        /// <summary>
+        /// Data store for Content Directory information
+        /// </summary>
+        [Serializable]
+        public class ContentDirectory
+        {
+            /// <summary>
+            /// The catalog name used for this Content Directory build.
+            /// </summary>
+            public string CatalogName;
+
+            /// <summary>
+            /// The path of the build report for this content directory build.
+            /// </summary>
+            public string BuildReportPath;
+
+            /// <summary>
+            /// The path of the ContentDirectory manifest file.
+            /// </summary>
+            public string ManifestPath;
+
+            /// <summary>
+            /// The path of the ContentDirectory build layout file.
+            /// </summary>
+            public string BuildLayoutPath;
+
+            /// <summary>
+            /// The BuildSessionGUID from the content directory build that produced this content.
+            /// Used to precisely identify the build and retrieve its metadata via BuildHistory APIs.
+            /// </summary>
+            public GUID BuildSessionGUID;
+
+            /// <summary>
+            /// A list of Addressable Groups that were part of this content directory build
+            /// </summary>
+            [SerializeReference]
+            public List<Group> Groups = new List<Group>();
+
+            /// <summary>
+            /// Determines whether two ContentDirectory instances are equal.
+            /// </summary>
+            /// <param name="a">The first ContentDirectory to compare.</param>
+            /// <param name="b">The second ContentDirectory to compare.</param>
+            /// <returns>True if both instances are equal; otherwise, false.</returns>
+            public static bool operator ==(ContentDirectory a, ContentDirectory b)
+            {
+                return a.Equals(b);
+            }
+
+            /// <summary>
+            /// Determines whether two ContentDirectory instances are not equal.
+            /// </summary>
+            /// <param name="a">The first ContentDirectory to compare.</param>
+            /// <param name="b">The second ContentDirectory to compare.</param>
+            /// <returns>True if the instances are not equal; otherwise, false.</returns>
+            public static bool operator !=(ContentDirectory a, ContentDirectory b)
+            {
+                return !a.Equals(b);
+            }
+
+            ///<inheritdoc/>
+            public override bool Equals(object obj)
+            {
+                ContentDirectory other = obj as ContentDirectory;
+                return CatalogName == other?.CatalogName && BuildReportPath == other?.BuildReportPath &&
+                    ManifestPath == other?.ManifestPath && BuildLayoutPath == other?.BuildLayoutPath;
+            }
+
+            ///<inheritdoc/>
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(CatalogName, BuildReportPath, ManifestPath);
             }
         }
 
@@ -1331,7 +1454,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         public Dictionary<string, BuildLayout.ExplicitAsset> GuidToExplicitAsset = new Dictionary<string, BuildLayout.ExplicitAsset>();
 
         /// <summary>
-        /// Group name to Group data map.
+        /// Group guid to Group data map.
         /// </summary>
         public Dictionary<string, BuildLayout.Group> GroupLookup = new Dictionary<string, BuildLayout.Group>();
 
@@ -1350,10 +1473,15 @@ namespace UnityEditor.AddressableAssets.Build.Layout
 
         internal Dictionary<string, ContentCatalogDataEntry> BundleNameToCatalogEntry = new Dictionary<string, ContentCatalogDataEntry>();
 
-        internal Dictionary<string, string> GroupNameToBuildPath = new Dictionary<string, string>();
+        internal Dictionary<string, string> GroupGuidToBuildPath = new Dictionary<string, string>();
+        internal Dictionary<string, Type> GroupGuidToBuildSchemaType = new Dictionary<string, Type>();
 
         internal Dictionary<string, AddressableAssetEntry> GuidToEntry = new Dictionary<string, AddressableAssetEntry>();
         internal Dictionary<string, AssetType> AssetPathToTypeMap = new Dictionary<string, AssetType>();
+
+        internal Dictionary<string, BuildLayout.ContentDirectory> GroupToContentDirectory = new Dictionary<string, BuildLayout.ContentDirectory>();
+        internal Dictionary<BuildLayout.ContentDirectory, List<string>> ContentDirectoryToGroupGuids = new Dictionary<BuildLayout.ContentDirectory, List<string>>();
+
     }
 
     internal class FileObjectData

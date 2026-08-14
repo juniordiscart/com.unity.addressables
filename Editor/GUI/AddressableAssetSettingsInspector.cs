@@ -50,12 +50,16 @@ namespace UnityEditor.AddressableAssets.GUI
         bool m_ShowPaths = true;
         bool m_ShowContentStatePath = true;
 
+        [NonSerialized]
         ReorderableList m_ProfileEntriesRl;
 
+        [NonSerialized]
         ReorderableList m_DataBuildersRl;
 
+        [NonSerialized]
         ReorderableList m_GroupTemplateObjectsRl;
 
+        [NonSerialized]
         ReorderableList m_InitObjectsRl;
 
         [FormerlySerializedAs("m_currentProfileIndex")]
@@ -166,6 +170,25 @@ namespace UnityEditor.AddressableAssets.GUI
 
         GUIContent m_BundleProvider =
             new GUIContent("Asset Bundle Provider", "The provider to use for loading AssetBundles (not the assets within bundles). Modify only if you have a custom AssetBundle provider.");
+
+#if ENABLE_CONTENT_DIRECTORIES
+        GUIContent m_ContentDirectoryProvider =
+            new GUIContent("Content Directory Provider", "The provider to use for loading content directories. Modify only if you have a custom content directory provider.");
+
+        GUIContent m_GroupRootAssetProvider =
+            new GUIContent("Group Root Asset Provider", "The provider to use for loading group root assets from content directories. Modify only if you have a custom group root asset provider.");
+
+        GUIContent m_GroupRootAssetEntryProvider =
+            new GUIContent("Group Root Asset Entry Provider", "The provider to use for loading entries from group root assets. Modify only if you have a custom group root asset entry provider.");
+
+        GUIContent m_ArchiveContentDirectories =
+            new GUIContent("Archive Content Directories",
+                "If enabled, content directory files are archived and compressed after building.");
+
+        GUIContent m_TargetArchiveSizeInMB =
+            new GUIContent("Target Archive Size (MB)",
+                "Target size per archive in MB. Files are distributed across archives using hash-based bucketing, so individual archives may be larger or smaller than this value.");
+#endif
 
         GUIContent m_RemoteCatBuildandLoadPaths =
             new GUIContent("Build & Load Paths", "Paths to build or load a remote content catalog");
@@ -422,6 +445,29 @@ namespace UnityEditor.AddressableAssets.GUI
                     m_QueuedChanges.Add(() => m_AasTarget.UpdateAssetBundleProviderType());
                 }
 
+#if ENABLE_CONTENT_DIRECTORIES
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_ContentDirectoryProviderType"), m_ContentDirectoryProvider, true);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    m_QueuedChanges.Add(() => m_AasTarget.UpdateContentDirectoryProviderType());
+                }
+
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_GroupRootAssetProviderType"), m_GroupRootAssetProvider, true);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    m_QueuedChanges.Add(() => m_AasTarget.UpdateGroupRootAssetProviderType());
+                }
+
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_GroupRootAssetEntryProviderType"), m_GroupRootAssetEntryProvider, true);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    m_QueuedChanges.Add(() => m_AasTarget.UpdateGroupRootAssetEntryProviderType());
+                }
+
+#endif
                 GUILayout.Space(postBlockContentSpace);
             }
 
@@ -637,6 +683,9 @@ namespace UnityEditor.AddressableAssets.GUI
                     {
                         for (int i = 0; i < m_AasTarget.groups.Count; i++)
                         {
+                            if (m_AasTarget.groups[i] == null)
+                                continue;
+
                             if (m_AasTarget.groups[i].IsDefaultGroup())
                                 m_AasTarget.SharedBundleSettingsCustomGroupIndex = i;
                         }
@@ -647,6 +696,19 @@ namespace UnityEditor.AddressableAssets.GUI
                 EditorGUILayout.BeginHorizontal();
                 GroupsPopupUtility.DrawGroupsDropdown(m_SharedBundleSettingsGroup, m_AasTarget.GetSharedBundleGroup(), !useDefaultGroup, false, true, SetSharedBundleSettingsCustomGroupIndex, null);
                 EditorGUILayout.EndHorizontal();
+
+                var idx = m_AasTarget.SharedBundleSettingsCustomGroupIndex;
+                if (m_AasTarget.groups != null && idx >= 0 && idx < m_AasTarget.groups.Count)
+                {
+                    var sharedGroup = useDefaultGroup ? m_AasTarget.DefaultGroup : m_AasTarget.groups[idx];
+                    if (sharedGroup == null)
+                        return;
+                    var bundledSchema = sharedGroup.GetSchema<BundledAssetGroupSchema>();
+                    if (sharedGroup != null && (bundledSchema == null || !bundledSchema.IsEnabled))
+                    {
+                        EditorGUILayout.HelpBox("Invalid group selection. \"Built In\" and \"MonoScript\" AssetBundle settings require an active Bundled Asset Group Schema. Select a Group with this schema enabled.", MessageType.Error);
+                    }
+                }
 
                 BuiltInBundleNaming builtInBundleNaming = (BuiltInBundleNaming)EditorGUILayout.Popup(m_BuiltInBundleNaming,
                     (int)m_AasTarget.BuiltInBundleNaming, new[] {"Project Name Hash", "Default Group GUID", "Custom"});
@@ -692,6 +754,20 @@ namespace UnityEditor.AddressableAssets.GUI
                 bool disableWriteTypeTree = EditorGUILayout.Toggle(m_disableWriteTypeTreeContent, m_AasTarget.DisableWriteTypeTree);
                 if (disableWriteTypeTree != m_AasTarget.DisableWriteTypeTree)
                     m_QueuedChanges.Add(() => m_AasTarget.DisableWriteTypeTree = disableWriteTypeTree);
+                GUILayout.Space(postBlockContentSpace);
+#endif
+
+#if ENABLE_CONTENT_DIRECTORIES
+                bool archiveCD = EditorGUILayout.Toggle(m_ArchiveContentDirectories, m_AasTarget.ArchiveContentDirectories);
+                if (archiveCD != m_AasTarget.ArchiveContentDirectories)
+                    m_QueuedChanges.Add(() => m_AasTarget.ArchiveContentDirectories = archiveCD);
+
+                if (m_AasTarget.ArchiveContentDirectories)
+                {
+                    float targetSizeMb = EditorGUILayout.DelayedFloatField(m_TargetArchiveSizeInMB, m_AasTarget.TargetArchiveSizeInMB);
+                    if (targetSizeMb != m_AasTarget.TargetArchiveSizeInMB)
+                        m_QueuedChanges.Add(() => m_AasTarget.TargetArchiveSizeInMB = targetSizeMb);
+                }
                 GUILayout.Space(postBlockContentSpace);
 #endif
             }
@@ -826,6 +902,9 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             for (int i = 0; i < settings.groups.Count; i++)
             {
+                if(settings.groups[i] == null)
+                    continue;
+
                 if (settings.groups[i].Guid == group.Guid)
                     settings.SharedBundleSettingsCustomGroupIndex = i;
             }

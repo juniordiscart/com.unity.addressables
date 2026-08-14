@@ -77,6 +77,25 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         }
 
         /// <summary>
+        /// Creates the cache key used to lookup operations in the ResourceManager cache.
+        /// Override this method to provide custom cache key generation for your provider.
+        /// </summary>
+        /// <param name="rm">The ResourceManager instance.</param>
+        /// <param name="location">The resource location.</param>
+        /// <param name="desiredType">The desired type of the resource.</param>
+        /// <returns>An IOperationCacheKey for use with the async operation cache.</returns>
+        public virtual IOperationCacheKey CreateCacheKeyForLocation(ResourceManager rm, IResourceLocation location, Type desiredType)
+        {
+            return new LocationCacheKey(location, desiredType);
+        }
+
+        /// <summary>
+        /// The type to use when loading this provider's dependencies for a scene.
+        /// Override this property to specify a different dependency type for your scene provider.
+        /// </summary>
+        public virtual Type SceneDependencyResourceType  => typeof(IAssetBundleResource);
+
+        /// <summary>
         /// Provide the object specified in the provideHandle.
         /// </summary>
         /// <param name="provideHandle">Contains all data needed to provide the requested object.</param>

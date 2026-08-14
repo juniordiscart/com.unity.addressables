@@ -261,8 +261,8 @@ namespace AddressableTests.SyncAddressables
             op.Init(m_Addressables.ResourceManager, null, loc, new AsyncOperationHandle<IList<AsyncOperationHandle>>());
             ProvideHandle h = new ProvideHandle(m_Addressables.ResourceManager, op);
 
-            AssetBundleResource.GetLoadInfo(h, out AssetBundleResource.LoadType loadType, out string path);
-            var expectedLoadType = isLocal ? useUnityWebRequestForLocalBundles ? AssetBundleResource.LoadType.Web : AssetBundleResource.LoadType.Local : AssetBundleResource.LoadType.Web;
+            AssetBundleResource.GetLoadInfo(h, out LoadType loadType, out string path);
+            var expectedLoadType = isLocal ? useUnityWebRequestForLocalBundles ? LoadType.Web : LoadType.Local : LoadType.Web;
             Assert.AreEqual(expectedLoadType, loadType, "Incorrect load type found for internalId " + internalId);
 
             // we can't do this in the definition so we have to do it here

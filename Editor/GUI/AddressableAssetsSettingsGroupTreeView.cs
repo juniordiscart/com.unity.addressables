@@ -194,7 +194,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 SortGroups();
                 var guidMap = new Dictionary<string, AddressableAssetGroup>();
 				foreach (var group in m_Editor.settings.groups)
+                {
+                    if (group == null)
+                        continue;
                     guidMap.Add(group.Guid, group);
+                }
 
                 foreach (var groupGuid in GetTreeViewState().sortOrderList)
                     AddGroupChildrenBuild(guidMap[groupGuid], root);
@@ -401,7 +405,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
                 for (var i = 0; i <  m_Editor.settings.groups.Count; i++)
                 {
-                    var guid = m_Editor.settings.groups[i].Guid;
+                    var group = m_Editor.settings.groups[i];
+                    if (group == null)
+                        continue;
+
+                    var guid = group.Guid;
                     newSortOrder.Add(guid);
                     guidToName[guid] = m_Editor.settings.groups[i].Name;
                     if (!guidToExistingIndex.ContainsKey(guid))
@@ -1016,7 +1024,10 @@ namespace UnityEditor.AddressableAssets.GUI
 				menu.AddItem(new GUIContent("Create New Group/" + templateObject.name), false, CreateNewGroup, templateObject);
 			}
 
+            if (HasAnyContentUpdateWarnings())
 			menu.AddItem(new GUIContent("Clear Content Update Warnings"), false, ClearContentUpdateWarnings);
+            else
+                menu.AddDisabledItem(new GUIContent("Clear Content Update Warnings"));
 		}
 
 		void ClearContentUpdateWarnings()
@@ -1025,6 +1036,42 @@ namespace UnityEditor.AddressableAssets.GUI
 				ContentUpdateScript.ClearContentUpdateNotifications(group);
 			Reload();
 		}
+
+        bool HasAnyContentUpdateWarnings()
+        {
+            if (m_Editor.settings.groups == null)
+                return false;
+
+            foreach (var group in m_Editor.settings.groups)
+            {
+                if (group != null && group.FlaggedDuringContentUpdateRestriction)
+                    return true;
+            }
+
+            return false;
+        }
+
+        bool HasContentUpdateWarningsInSelection(List<AssetEntryTreeViewItem> selectedNodes)
+        {
+            if (selectedNodes == null || selectedNodes.Count == 0)
+                return false;
+
+            foreach (var item in selectedNodes)
+            {
+                if (item.IsGroup && item.group != null)
+                {
+                    if (item.group.FlaggedDuringContentUpdateRestriction)
+                        return true;
+                }
+                else if (item.entry != null)
+                {
+                    if (item.entry.FlaggedDuringContentUpdateRestriction)
+                        return true;
+                }
+            }
+
+            return false;
+        }
 
 		void HandleCustomContextMenuItemGroups(object context)
 		{
@@ -1081,23 +1128,27 @@ namespace UnityEditor.AddressableAssets.GUI
 				return;
 
 			GenericMenu menu = new GenericMenu();
+            if (selectedNodes.Count == 1)
+            {
+                var label = CheckForRename(selectedNodes.First(), false);
+                if (!string.IsNullOrEmpty(label))
+                    menu.AddItem(new GUIContent(label), false, RenameItem, selectedNodes);
+            }
             if (!hasReadOnly)
 			{
 				if (isGroup)
 				{
 					var group = selectedNodes.First().group;
-					if (!group.IsDefaultGroup())
-					{
-						menu.AddItem(new GUIContent("Delete Group(s)"), false, DeleteGroup, selectedNodes);
-					}
-
 					menu.AddItem(new GUIContent("Simplify Addressable Names"), false, SimplifyAddresses, selectedNodes);
 					if (selectedNodes.Count == 1)
 					{
 						if (!group.IsDefaultGroup() && group.CanBeSetAsDefault())
 							menu.AddItem(new GUIContent("Set as Default"), false, SetGroupAsDefault, selectedNodes);
-						menu.AddItem(new GUIContent("Inspect Group Settings"), false, GoToGroupAsset, selectedNodes);
 					}
+                    menu.AddItem(new GUIContent("Convert schema(s) to Content Directory"), false, ConvertToContentDirectory, selectedNodes);
+
+                    if (!group.IsDefaultGroup())
+                        menu.AddItem(new GUIContent("Delete Group(s)"), false, RemoveGroup, selectedNodes);
 
 					foreach (var i in AddressableAssetSettings.CustomAssetGroupCommands)
 						menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemGroups, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));
@@ -1133,14 +1184,10 @@ namespace UnityEditor.AddressableAssets.GUI
 				}
 			}
 
-			if (selectedNodes.Count == 1)
-			{
-				var label = CheckForRename(selectedNodes.First(), false);
-				if (!string.IsNullOrEmpty(label))
-					menu.AddItem(new GUIContent(label), false, RenameItem, selectedNodes);
-			}
-
-			PopulateGeneralContextMenu(ref menu);
+            if (HasContentUpdateWarningsInSelection(selectedNodes))
+                menu.AddItem(new GUIContent("Clear Content Update Warnings"), false, ClearContentUpdateWarnings);
+            else
+                menu.AddDisabledItem(new GUIContent("Clear Content Update Warnings"));
 
 			menu.ShowAsContext();
 		}
@@ -1330,6 +1377,99 @@ namespace UnityEditor.AddressableAssets.GUI
 
 			m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entries, true, false);
 		}
+
+        protected void ConvertToContentDirectory(object context)
+        {
+            List<AssetEntryTreeViewItem> selectedNodes = context as List<AssetEntryTreeViewItem>;
+            if (selectedNodes == null || selectedNodes.Count < 1)
+                return;
+
+            // Check if we need to show the warning popup
+            const string editorPrefKey = "Addressables.ContentDirectory.ShownBundleWarning";
+            bool hasShownWarning = EditorPrefs.GetBool(editorPrefKey, false);
+
+            string buildPath = Path.Combine(Addressables.LibraryPath, "aa");
+
+            if (!hasShownWarning)
+            {
+                string message = $"Converting to Content Directories will invalidate the AssetBundles in the default build path.\r\nThis action will also delete all AssetBundles in {buildPath} to ensure invalid AssetBundles don't end up in your Player build.";
+
+                if (!EditorUtility.DisplayDialog("Convert to Content Directory", message, "Convert & Delete", "Cancel"))
+                    return;
+
+                // Mark that we've shown the warning
+                EditorPrefs.SetBool(editorPrefKey, true);
+            }
+
+            // Delete the default build path directory to remove all built bundles
+            // This happens every time, regardless of whether the warning was shown
+            if (Directory.Exists(buildPath))
+            {
+                try
+                {
+                    Directory.Delete(buildPath, true);
+                    Debug.Log($"Deleted bundles from {buildPath} after converting to Content Directory");
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to delete {buildPath}: {e.Message}");
+                }
+            }
+
+            var modifiedGroups = new List<AddressableAssetGroup>();
+
+            foreach (var item in selectedNodes)
+            {
+                if (!item.IsGroup || item.group == null)
+                    continue;
+
+                var group = item.group;
+
+                //If the group already has the schema, skip it.
+                if (group.HasSchema<ContentDirectoryGroupSchema>())
+                    continue;
+
+                // Store the build and load paths if BundledAssetGroupSchema exists
+                string buildPathId = null;
+                string loadPathId = null;
+
+                if (group.HasSchema<BundledAssetGroupSchema>())
+                {
+                    var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
+                    buildPathId = bundledSchema.BuildPath.Id;
+                    loadPathId = bundledSchema.LoadPath.Id;
+
+                    // Remove the BundledAssetGroupSchema
+                    Undo.RecordObject(group, "Remove BundledAssetGroupSchema");
+                    group.RemoveSchema<BundledAssetGroupSchema>(false);
+                }
+
+                Undo.RecordObject(group, "Add ContentDirectoryGroupSchema");
+                //We've already validated that the group doesn't have this schema, so we can add it without checking for duplicates.
+                group.AddSchema<ContentDirectoryGroupSchema>(false);
+
+                var contentDirSchema = group.GetSchema<ContentDirectoryGroupSchema>();
+
+                // Set the build and load paths from the captured values
+                if (!string.IsNullOrEmpty(buildPathId))
+                {
+                    contentDirSchema.m_BuildPath.Id = buildPathId;
+                    contentDirSchema.m_LoadPath.Id = loadPathId;
+                }
+
+                modifiedGroups.Add(group);
+                EditorUtility.SetDirty(group);
+            }
+
+            if (modifiedGroups.Count > 0)
+            {
+                m_Editor.settings.SetDirty(AddressableAssetSettings.ModificationEvent.GroupSchemaModified, modifiedGroups, true, true);
+                foreach (var g in modifiedGroups)
+                {
+                    AddressableAssetUtility.OpenAssetIfUsingVCIntegration(g);
+                }
+            }
+        }
 
 		protected void RemoveEntry(object context)
 		{
@@ -1646,15 +1786,28 @@ namespace UnityEditor.AddressableAssets.GUI
             if (state is AddressableAssetEntryTreeViewState s)
             {
                 var settings = AddressableAssetGroupSortSettings.GetSettings(m_Editor.settings);
-                settings.sortOrder = new string[s.sortOrderList.Count];
-                for (var i = 0; i < s.sortOrderList.Count; i++)
+
+                bool hasChanged = settings.sortOrder == null || settings.sortOrder.Length != s.sortOrderList.Count;
+                if (!hasChanged)
                 {
-                    settings.sortOrder[i] = s.sortOrderList[i];
+                    for (var i = 0; i < s.sortOrderList.Count; i++)
+                    {
+                        if (settings.sortOrder[i] != s.sortOrderList[i])
+                        {
+                            hasChanged = true;
+                            break;
+                        }
+                    }
                 }
 
-                AddressableAssetUtility.OpenAssetIfUsingVCIntegration(settings);
-                EditorUtility.SetDirty(settings);
-                AssetDatabase.SaveAssets();
+                // Only update and save if something actually changed
+                if (hasChanged)
+                {
+                    settings.sortOrder = s.sortOrderList.ToArray();
+
+                    AddressableAssetUtility.OpenAssetIfUsingVCIntegration(settings);
+                    EditorUtility.SetDirty(settings);
+                }
             }
 
             if (multiColumnHeader is AddressableAssetSettingsGroupHeader h)

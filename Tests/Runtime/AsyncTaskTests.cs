@@ -63,7 +63,7 @@ namespace AddressableTests.AsyncTask
 
         IEnumerator LoadAllImp(Func<AddressablesImpl, List<AsyncOperationHandle>, Task> func)
         {
-            AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
             var op = impl.InitializeAsync(m_RuntimeSettingsPath);
             var task = op.Task;
             while (!task.IsCompleted)
@@ -121,7 +121,7 @@ namespace AddressableTests.AsyncTask
         [UnityTest]
         public IEnumerator AsyncTask_MaintainsCorrectRefCountAfterCompletion()
         {
-            AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
             var op = impl.InitializeAsync(m_RuntimeSettingsPath);
             var task = op.Task;
             while (!task.IsCompleted)
@@ -136,7 +136,7 @@ namespace AddressableTests.AsyncTask
         {
             for (int i = 0; i < 100; i++)
             {
-                AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
+                using AddressablesImpl impl = new AddressablesImpl(new DefaultAllocationStrategy());
                 var op = impl.InitializeAsync(m_RuntimeSettingsPath);
                 var task = op.Task;
                 while (!task.IsCompleted)

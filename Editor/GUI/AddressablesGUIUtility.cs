@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 
 
 namespace UnityEditor.AddressableAssets.GUI
@@ -94,14 +97,37 @@ namespace UnityEditor.AddressableAssets.GUI
             m_CachedSessionStates.Add(stateKey, foldoutState);
         }
 
+        internal static float HeaderHeight = 22f;
+
+        internal static void DrawDivider()
+        {
+            GUILayout.Space(1.5f);
+            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(2.5f));
+            r.x = 0;
+            r.width = EditorGUIUtility.currentViewWidth;
+            r.height = 1;
+
+            EditorGUI.DrawRect(r, HeaderBorderColor);
+        }
+
         internal static Color HeaderBorderColor
         {
             get
             {
-                float shade = EditorGUIUtility.isProSkin ? 0.12f : 0.6f;
+                float shade = EditorGUIUtility.isProSkin ? 26f / 255f : 0.6f;
                 return new Color(shade, shade, shade, 1);
             }
         }
+
+        internal static Color BottomBorderColor
+        {
+            get
+            {
+                float shade = EditorGUIUtility.isProSkin ? 48f / 255f : 205f / 255f;
+                return new Color(shade, shade, shade, 1);
+            }
+        }
+
 
         internal static Color HeaderNormalColor
         {
@@ -148,9 +174,69 @@ namespace UnityEditor.AddressableAssets.GUI
             return isActive;
         }
 
-        public static bool BeginFoldoutHeaderGroupWithHelp(bool isActive, GUIContent content, Action helpAction = null, int indent = 0, Action<Rect> menuAction = null)
+        public static bool DrawEnableButton(Rect enableButtonRect, AddressableAssetGroupSchema schema, AddressableAssetGroup groupTarget, AddressableAssetGroup[] groupTargets)
+        {
+            var schemaType = schema.GetType();
+            var canEnableSchema = schema as ICanBeEnabled;
+            if (canEnableSchema == null)
+                return false;
+            bool isEnabledValueToDisplay = canEnableSchema.IsEnabled;
+
+            bool hasMixedValues = false;
+            if (groupTargets.Length > 1)
+            {
+                foreach (var group in groupTargets)
+                {
+                    if (group != groupTarget && group.HasSchema(schemaType))
+                    {
+                        var otherSchema = group.GetSchema(schemaType) as ICanBeEnabled;
+                        if (otherSchema != null && otherSchema.IsEnabled != isEnabledValueToDisplay)
+                        {
+                            hasMixedValues = true;
+                            break;
+                        }
+                    }
+                }
+                EditorGUI.showMixedValue = hasMixedValues;
+            }
+
+            EditorGUI.BeginChangeCheck();
+            bool newEnabled = EditorGUI.Toggle(enableButtonRect, GUIContent.none, isEnabledValueToDisplay);
+            if (EditorGUI.EndChangeCheck())
+            {
+                // When toggling with mixed values, default to false.
+                // This makes disabling large numbers of schemas at once easier.
+                newEnabled = hasMixedValues ? false : newEnabled;
+                Undo.RecordObject(schema, (newEnabled ? "Enable" : "Disable") + " Schema");
+                canEnableSchema.IsEnabled = newEnabled;
+                EditorUtility.SetDirty(schema);
+                if (groupTargets.Length > 1)
+                {
+                    foreach (var group in groupTargets)
+                    {
+                        if (group != groupTarget && group.HasSchema(schemaType))
+                        {
+                            var groupSchema = group.GetSchema(schemaType);
+                            var canBeEnabled = groupSchema as ICanBeEnabled;
+                            if (canBeEnabled != null)
+                            {
+                                Undo.RecordObject(groupSchema, (newEnabled ? "Enable" : "Disable") + " Schema");
+                                canBeEnabled.IsEnabled = newEnabled;
+                                EditorUtility.SetDirty(groupSchema);
+                            }
+                        }
+                    }
+                }
+            }
+            EditorGUI.showMixedValue = false;
+            return newEnabled;
+        }
+
+        public static bool BeginFoldoutHeaderGroupWithHelp(bool isActive, GUIContent content, Action helpAction = null, int indent = 0, Action<Rect> menuAction = null,
+                                                           AddressableAssetGroupSchema schema = null, AddressableAssetGroup groupTarget = null, AddressableAssetGroup[] groupTargets = null)
         {
             Rect headerRect = EditorGUILayout.GetControlRect();
+            headerRect.height = HeaderHeight;
 
             Rect bgRect = new Rect(headerRect);
             bgRect.x = 0;
@@ -160,11 +246,12 @@ namespace UnityEditor.AddressableAssets.GUI
 
             bgRect.y = headerRect.y - 1;
             bgRect.height = 1;
-            Color color = HeaderBorderColor;
-            EditorGUI.DrawRect(bgRect, color);
+            Color topColor = HeaderBorderColor;
+            EditorGUI.DrawRect(bgRect, topColor);
             bgRect.y = headerRect.y + headerRect.height + 1;
             bgRect.height = 0.5f;
-            EditorGUI.DrawRect(bgRect, color);
+            Color bottomColor = BottomBorderColor;
+            EditorGUI.DrawRect(bgRect, bottomColor);
             headerRect.y += 1;
 
             if (indent > 0)
@@ -177,15 +264,27 @@ namespace UnityEditor.AddressableAssets.GUI
             if (menuAction != null)
             {
                 Rect menuButtonRect = headerRect;
+                menuButtonRect.y = headerRect.y + 3;
                 menuButtonRect.x = headerRect.x + headerRect.width - menuButtonRect.height;
                 menuButtonRect.width = menuButtonRect.height;
-                if (UnityEngine.GUI.Button(menuButtonRect, EditorGUIUtility.IconContent("_Popup"), iconStyle))
+                if (UnityEngine.GUI.Button(menuButtonRect, EditorGUIUtility.IconContent("_Menu"), iconStyle))
                     menuAction.Invoke(menuButtonRect);
+            }
+
+            var toggleRect = headerRect;
+            bool schemaIsEnabled = true;
+            float labelOffset = 7f;
+            if (schema != null && schema is ICanBeEnabled)
+            {
+                labelOffset = 20f;
+                toggleRect.x += 7;
+                schemaIsEnabled = DrawEnableButton(toggleRect, schema, groupTarget, groupTargets);
             }
 
             if (helpAction != null)
             {
                 Rect helpRect = headerRect;
+                helpRect.y = headerRect.y + 3;
                 helpRect.x = headerRect.x + headerRect.width - helpRect.height;
                 if (menuAction != null)
                     helpRect.x -= helpRect.height;
@@ -202,10 +301,59 @@ namespace UnityEditor.AddressableAssets.GUI
                 UnityEngine.GUI.changed = true;
             }
 
-            EditorGUI.Foldout(headerRect, isActive, content, false);
+            var labelRect = toggleRect;
+            labelRect.x += labelOffset;
+            EditorGUI.BeginDisabledGroup(!schemaIsEnabled);
+            GUIStyle style = EditorStyles.boldLabel;
+            EditorGUI.LabelField(labelRect, content, style);
+            EditorGUI.EndDisabledGroup();
+            EditorGUI.Foldout(headerRect, isActive, new GUIContent(), false);
             if (isActive)
-                GUILayout.Space(6f);
+                GUILayout.Space(7f);
+            else
+                GUILayout.Space(4f);
             return isActive;
+        }
+
+        /// <summary>
+        /// Draws an error section with icon, word-wrapped message, and a clickable link, with a top divider.
+        /// </summary>
+        internal static void DrawErrorBoxWithLink(string message, string linkText, string url)
+        {
+            DrawDivider();
+            GUILayout.Space(6f);
+
+            EditorGUILayout.BeginVertical();
+            {
+                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                {
+                    GUIContent iconContent = EditorGUIUtility.IconContent("console.erroricon");
+                    if (iconContent != null && iconContent.image != null)
+                        GUILayout.Label(iconContent, GUILayout.ExpandWidth(false), GUILayout.MinWidth(20f));
+
+                    EditorGUILayout.BeginVertical();
+                    {
+                        GUILayout.Label(message, EditorStyles.wordWrappedLabel);
+                        GUILayout.FlexibleSpace();
+                        EditorGUILayout.BeginHorizontal();
+                        {
+                            GUILayout.FlexibleSpace();
+                            if (GUILayout.Button(linkText, EditorStyles.linkLabel))
+                                Application.OpenURL(url);
+                            EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
+                        }
+                        EditorGUILayout.EndHorizontal();
+                    }
+                    EditorGUILayout.EndVertical();
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            EditorGUILayout.EndVertical();
+        }
+
+        internal static string CanEnableSchemaError(string groupName, Type thisSchemaType, Type otherSchemaType)
+        {
+            return $"Failed to enable schema \"{AddressableAssetUtility.GetCachedTypeDisplayName(thisSchemaType)}\" because group named \"{groupName}\" already has a schema of type \"{AddressableAssetUtility.GetCachedTypeDisplayName(otherSchemaType)}\" enabled. Disable one to resolve.";
         }
     }
 }

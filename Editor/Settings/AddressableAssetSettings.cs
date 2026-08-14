@@ -11,6 +11,7 @@ using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
@@ -110,6 +111,24 @@ namespace UnityEditor.AddressableAssets.Settings
 			}
 #endif
 		}
+
+        [InitializeOnLoadMethod]
+        static void CheckForUpgrades()
+        {
+#if ENABLE_CONTENT_DIRECTORIES
+            {
+                var settings = AddressableAssetSettingsDefaultObject.Settings;
+                if (settings == null)
+                    return;
+
+                if (!settings.ContentDirectoryGroupTemplateCreated)
+                {
+                    CreateContentDirectoryGroupTemplate(settings);
+                    settings.EnsureBuildScriptAdded<BuildScriptSchemaDriven>();
+                }
+            }
+#endif
+        }
 
 		private static void TryAddAssetPostprocessorOnNextUpdate()
 		{
@@ -552,6 +571,26 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializedTypeRestriction(type = typeof(IResourceProvider))]
         internal SerializedType m_AssetBundleProviderType;
 
+#if ENABLE_CONTENT_DIRECTORIES
+        [SerializeField]
+        [SerializedTypeRestriction(type = typeof(IResourceProvider))]
+        internal SerializedType m_ContentDirectoryProviderType;
+
+        [SerializeField]
+        [SerializedTypeRestriction(type = typeof(IResourceProvider))]
+        internal SerializedType m_GroupRootAssetProviderType;
+
+        [SerializeField]
+        [SerializedTypeRestriction(type = typeof(IResourceProvider))]
+        internal SerializedType m_GroupRootAssetEntryProviderType;
+
+        [SerializeField]
+        bool m_ArchiveContentDirectories = true;
+
+        [SerializeField]
+        float m_TargetArchiveSizeInMB = 2000f;
+#endif
+
         [SerializeField]
 		bool m_IgnoreUnsupportedFilesInBuild = false;
 
@@ -573,6 +612,19 @@ namespace UnityEditor.AddressableAssets.Settings
 #else
         bool m_CCDEnabled = true;
 #endif
+
+        [SerializeField]
+        bool m_ContentDirectoryGroupTemplateCreated = false;
+        internal bool ContentDirectoryGroupTemplateCreated
+        {
+            get { return m_ContentDirectoryGroupTemplateCreated; }
+            set
+            {
+                m_ContentDirectoryGroupTemplateCreated = value;
+                EditorUtility.SetDirty(this);
+            }
+        }
+
         /// <summary>
         /// A flag indicating whether or not a compatible version of the CCD package is installed
         /// for use with the CCD integration workflow
@@ -689,7 +741,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                    if (schema != null && schema.IsEnabled)
                     {
                         schema.UseUnityWebRequestForLocalBundles = value;
                         if(value)
@@ -714,7 +766,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                    if (schema != null && schema.IsEnabled)
                         schema.Timeout = value;
                 }
                 m_BundleTimeout = value;
@@ -735,7 +787,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                    if (schema != null && schema.IsEnabled)
                         schema.RetryCount = value;
                 }
                 m_BundleRetryCount = value;
@@ -756,7 +808,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                    if (schema != null && schema.IsEnabled)
                         schema.RedirectLimit = value;
                 }
                 m_BundleRedirectLimit = value;
@@ -860,7 +912,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                    if (schema != null && schema.IsEnabled)
                         schema.InternalIdNamingMode = value;
                 }
                 m_InternalIdNamingMode = value;
@@ -881,7 +933,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                    if (schema != null && schema.IsEnabled)
                         schema.InternalBundleIdMode = value;
                 }
                 m_InternalBundleIdMode = value;
@@ -902,7 +954,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                    if (schema != null && schema.IsEnabled)
                         schema.AssetLoadMode = value;
                 }
                 m_AssetLoadMode = value;
@@ -930,7 +982,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                if (schema != null && schema.IsEnabled)
                     schema.BundledAssetProviderType = BundledAssetProviderType;
             }
         }
@@ -956,10 +1008,101 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     var schema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (schema != null)
+                if (schema != null && schema.IsEnabled)
                     schema.AssetBundleProviderType = AssetBundleProviderType;
             }
         }
+#if ENABLE_CONTENT_DIRECTORIES
+        /// <summary>
+        /// The provider type to use for loading content directories.
+        /// </summary>
+        public SerializedType ContentDirectoryProviderType
+        {
+            get => m_ContentDirectoryProviderType;
+            set
+            {
+                m_ContentDirectoryProviderType = value;
+                UpdateContentDirectoryProviderType();
+            }
+        }
+
+        internal void UpdateContentDirectoryProviderType()
+        {
+            foreach (AddressableAssetGroup group in groups)
+            {
+                if (group == null)
+                    continue;
+
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+                if (schema != null)
+                    schema.ContentDirectoryProviderType = ContentDirectoryProviderType;
+            }
+        }
+
+        /// <summary>
+        /// The provider type to use for loading group root assets from content directories.
+        /// </summary>
+        public SerializedType GroupRootAssetProviderType
+        {
+            get => m_GroupRootAssetProviderType;
+            set
+            {
+                m_GroupRootAssetProviderType = value;
+                UpdateGroupRootAssetProviderType();
+            }
+        }
+
+        internal void UpdateGroupRootAssetProviderType()
+        {
+            foreach (AddressableAssetGroup group in groups)
+            {
+                if (group == null)
+                    continue;
+
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+                if (schema != null)
+                    schema.GroupRootAssetProviderType = GroupRootAssetProviderType;
+            }
+        }
+
+        /// <summary>
+        /// The provider type to use for loading entries from group root assets.
+        /// </summary>
+        public SerializedType GroupRootAssetEntryProviderType
+        {
+            get => m_GroupRootAssetEntryProviderType;
+            set
+            {
+                m_GroupRootAssetEntryProviderType = value;
+                UpdateGroupRootAssetEntryProviderType();
+            }
+        }
+
+        internal void UpdateGroupRootAssetEntryProviderType()
+        {
+            foreach (AddressableAssetGroup group in groups)
+            {
+                if (group == null)
+                    continue;
+
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+                if (schema != null)
+                    schema.GroupRootAssetEntryProviderType = GroupRootAssetEntryProviderType;
+            }
+        }
+
+        internal bool ArchiveContentDirectories
+        {
+            get { return m_ArchiveContentDirectories; }
+            set { m_ArchiveContentDirectories = value; }
+        }
+
+        internal float TargetArchiveSizeInMB
+        {
+            get { return m_TargetArchiveSizeInMB; }
+            set { m_TargetArchiveSizeInMB = Mathf.Max(1f, value); }
+        }
+#endif
 
 		[SerializeField]
 		bool m_StripUnityVersionFromBundleBuild = false;
@@ -1127,7 +1270,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			get
 			{
-				if (m_RemoteCatalogBuildPath.Id == null)
+                if (m_RemoteCatalogBuildPath?.Id == null)
 				{
 					m_RemoteCatalogBuildPath = new ProfileValueReference();
 					m_RemoteCatalogBuildPath.SetVariableByName(this, kRemoteBuildPath);
@@ -1149,7 +1292,7 @@ namespace UnityEditor.AddressableAssets.Settings
 		{
 			get
 			{
-				if (m_RemoteCatalogLoadPath.Id == null)
+                if (m_RemoteCatalogLoadPath?.Id == null)
 				{
 					m_RemoteCatalogLoadPath = new ProfileValueReference();
 					m_RemoteCatalogLoadPath.SetVariableByName(this, kRemoteLoadPath);
@@ -1422,6 +1565,16 @@ namespace UnityEditor.AddressableAssets.Settings
 				return false;
 			}
 
+            // Avoid duplicates: same reference, or same asset file (e.g. after downgrade/upgrade the list may have been deserialized with different references to the same template asset)
+            string assetPath = AssetDatabase.GetAssetPath(so);
+            foreach (var templateObj in m_GroupTemplateObjects)
+            {
+                if (templateObj == so)
+                    return false;
+                if (!string.IsNullOrEmpty(assetPath) && templateObj != null && AssetDatabase.GetAssetPath(templateObj) == assetPath)
+                    return false;
+            }
+
 			m_GroupTemplateObjects.Add(so);
 			SetDirty(ModificationEvent.GroupTemplateAdded, so, postEvent, true);
 			return true;
@@ -1592,7 +1745,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
 		[FormerlySerializedAs("m_activePlayerDataBuilderIndex")]
 		[SerializeField]
-        int m_ActivePlayerDataBuilderIndex = 2;
+        int m_ActivePlayerDataBuilderIndex = 3;
 
 		[FormerlySerializedAs("m_dataBuilders")]
 		[SerializeField]
@@ -1954,10 +2107,13 @@ namespace UnityEditor.AddressableAssets.Settings
 		}
 
 		private string m_DefaultGroupTemplateName = "Packed Assets";
+        private string m_ContentDirectoryGroupTemplateName = "Content Directory";
+        private static Type SchemaDrivenType = typeof(BuildScriptSchemaDriven);
+        // private static Type PackedModeType = typeof(BuildScriptPackedMode);
 		private static Type PackedModeType = typeof(BuildScriptPackedMultiCatalogMode);
 		private static Type FastModeType = typeof(BuildScriptFastMode);
 
-		void Validate()
+        internal void Validate()
 		{
 			// Begin update any SchemaTemplate to GroupTemplateObjects
 			if (m_SchemaTemplates != null && m_SchemaTemplates.Count > 0)
@@ -1967,7 +2123,16 @@ namespace UnityEditor.AddressableAssets.Settings
 			}
 
 			if (m_GroupTemplateObjects.Count == 0)
+            {
 				CreateDefaultGroupTemplate(this);
+            }
+
+#if ENABLE_CONTENT_DIRECTORIES
+            if (!ContentDirectoryGroupTemplateCreated)
+            {
+                CreateContentDirectoryGroupTemplate(this);
+            }
+#endif
 			// End update of SchemaTemplate to GroupTemplates
 
 			if (m_BuildSettings == null)
@@ -1985,6 +2150,7 @@ namespace UnityEditor.AddressableAssets.Settings
 				m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedPlayMode>());
 				m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedMode>());
 				m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedMultiCatalogMode>());
+                m_DataBuilders.Add(CreateScriptAsset<BuildScriptSchemaDriven>());
 
 				m_ActivePlayerDataBuilderIndex = 4;
 			}
@@ -2002,13 +2168,29 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
 			if (ActivePlayerDataBuilder != null && !ActivePlayerDataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
-				ActivePlayerDataBuilderIndex = m_DataBuilders.IndexOf(m_DataBuilders.Find(s => s.GetType() == PackedModeType));
+                ActivePlayerDataBuilderIndex = m_DataBuilders.IndexOf(m_DataBuilders.Find(s => s.GetType() == SchemaDrivenType));
 			if (ActivePlayModeDataBuilder != null && !ActivePlayModeDataBuilder.CanBuildData<AddressablesPlayModeBuildResult>())
 				ActivePlayModeDataBuilderIndex = m_DataBuilders.IndexOf(m_DataBuilders.Find(s => s.GetType() == FastModeType));
 
 			profileSettings.Validate(this);
 			buildSettings.Validate(this);
 		}
+
+        void EnsureBuildScriptAdded<T>() where T : BuildScriptBase
+        {
+            var type = typeof(T);
+            bool found = false;
+            foreach (var so in m_DataBuilders)
+            {
+                if (so != null && so.GetType() == type)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                m_DataBuilders.Add(CreateScriptAsset<T>());
+        }
 
 		internal T CreateScriptAsset<T>() where T : ScriptableObject
 		{
@@ -2017,7 +2199,10 @@ namespace UnityEditor.AddressableAssets.Settings
 				Directory.CreateDirectory(DataBuilderFolder);
 			var path = DataBuilderFolder + "/" + typeof(T).Name + ".asset";
 			if (!File.Exists(path))
+            {
 				AssetDatabase.CreateAsset(script, path);
+                return script;
+            }
 			return AssetDatabase.LoadAssetAtPath<T>(path);
 		}
 
@@ -2244,6 +2429,24 @@ namespace UnityEditor.AddressableAssets.Settings
             schema.UseDefaultSchemaSettings = true;
             return true;
 		}
+
+        private static bool CreateContentDirectoryGroupTemplate(AddressableAssetSettings aa)
+        {
+            string assetPath = aa.GroupTemplateFolder + "/" + aa.m_ContentDirectoryGroupTemplateName + ".asset";
+
+            if (File.Exists(assetPath))
+            {
+                aa.ContentDirectoryGroupTemplateCreated = true;
+                return LoadGroupTemplateObject(aa, assetPath);
+            }
+
+            AddressableAssetGroupTemplate groupTemplate = aa.CreateAndAddGroupTemplateInternal(aa.m_ContentDirectoryGroupTemplateName, "Pack assets into ContentDirectories.", typeof(ContentDirectoryGroupSchema));
+            if (groupTemplate == null)
+                return false;
+
+            aa.ContentDirectoryGroupTemplateCreated = true;
+            return true;
+        }
 
 		private static bool LoadGroupTemplateObject(AddressableAssetSettings aa, string assetPath)
 		{
@@ -3392,6 +3595,14 @@ namespace UnityEditor.AddressableAssets.Settings
                 m_AssetBundleProviderType.Value = typeof(AssetBundleProvider);
             if (m_BundledAssetProviderType.Value == null)
                 m_BundledAssetProviderType.Value = typeof(BundledAssetProvider);
+#if ENABLE_CONTENT_DIRECTORIES
+            if (m_ContentDirectoryProviderType.Value == null)
+                m_ContentDirectoryProviderType.Value = typeof(ContentDirectoryProvider);
+            if (m_GroupRootAssetProviderType.Value == null)
+                m_GroupRootAssetProviderType.Value = typeof(GroupRootAssetProvider);
+            if (m_GroupRootAssetEntryProviderType.Value == null)
+                m_GroupRootAssetEntryProviderType.Value = typeof(GroupRootAssetEntryProvider);
+#endif
         }
 	}
 }

@@ -3,24 +3,13 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [3.0.0] - 2026-04-15
+- Fixed `PrefabPackedIdentifiers.SerializationIndexFromObjectIdentifier` so that when "Prefab Packed Header Size" is below 4, the leading bytes of the asset hash affect the **most significant** bits of the serialization index (little-endian safe), restoring contiguous bundle ordering without shrinking per-object entropy to 32 bits.
+- Added a configurable warning when loading Addressables outside of Play Mode to inform about the risks of resources being forcibly unloaded when the playmode state changes (Disable via Preferences or Addressables.WarnOnAddressablesUsageOutsidePlaymode).
+- Fixed NullReferenceException occurring during Disabled Importer Builds.
+
 ## [2.11.1] - 2026-04-23
 - Fixed `PrefabPackedIdentifiers.SerializationIndexFromObjectIdentifier` so that when "Prefab Packed Header Size" is below 4, the leading bytes of the asset hash affect the **most significant** bits of the serialization index (little-endian safe), restoring contiguous bundle ordering without shrinking per-object entropy to 32 bits.
-
-## [2.10.1] - 2026-04-07
-- Fixed an issue where, during a content update, making a change in a remote group that required rebuilding the builtinassets bundle would result in missing textures/errors if the builtinassets bundle was built into a group set to Prevent Updates. In this case, a new duplicate bundle will now be created and attached to the first remote group in the project and shipped out as part of an update.
-- Added option to disable typetree data from bundles.
-- Properly setting flag to reinitialize Addressables in the Editor when domain reloads are disabled.
-- Fixed inconsistent internal asset IDs in Dynamic naming mode.
-
-## [2.10.0] - 2026-03-05
-- Fixed an issue where Errors are thrown and Editor Crashes when downloading an Asset Bundle from LoadAssetAsync and from DownloadDependenciesAsync at the same time.
-- Auto Group Generator tool has been added to Addressables.
-- Replace deprecated BinaryFormatter.
-- Sort Labels on Add.
-- Added Documentation on Auto Group Generator,TypeTree extraction and other fixes.
-
-## [2.11.0] - 2026-04-15
-- TEMP
 
 ## [2.10.1] - 2026-04-07
 - Fixed an issue where, during a content update, making a change in a remote group that required rebuilding the builtinassets bundle would result in missing textures/errors if the builtinassets bundle was built into a group set to Prevent Updates. In this case, a new duplicate bundle will now be created and attached to the first remote group in the project and shipped out as part of an update.

@@ -2,6 +2,7 @@
     "name": "Unity.Addressables.Editor.Tests",
     "rootNamespace": "",
     "references": [
+        "Unity.AutoGroupGenerator.Editor",
         "Unity.Addressables.Editor",
         "Unity.Addressables",
         "Unity.ResourceManager",
@@ -52,6 +53,11 @@
             "name": "com.unity.services.ccd.management",
             "expression": "[3.0.0,4.0.0)",
             "define": "CCD_3_OR_NEWER"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.6.0a5",
+            "define": "ENABLE_CONTENT_DIRECTORIES"
         }
     ],
     "noEngineReferences": false

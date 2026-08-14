@@ -15,6 +15,9 @@ using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace UnityEngine.ResourceManagement.ResourceProviders
 {
@@ -314,27 +317,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 	/// </summary>
 	public class AssetBundleResource : IAssetBundleResource, IUpdateReceiver
 	{
-		/// <summary>
-		/// Options for where an AssetBundle can be loaded from.
-		/// </summary>
-		public enum LoadType
-		{
-			/// <summary>
-			/// Cannot determine where the AssetBundle is located.
-			/// </summary>
-			None,
-
-			/// <summary>
-			/// Load the AssetBundle from a local file location.
-			/// </summary>
-			Local,
-
-			/// <summary>
-			/// Download the AssetBundle from a web server.
-			/// </summary>
-			Web
-        }
-
         internal enum CacheStatus
         {
             /// <summary>
@@ -492,7 +474,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// </summary>
         internal void InitializeForProvide(IResourceLocation location, ResourceManager resourceManager)
         {
-            GetLoadInfo(location, resourceManager, out LoadType loadType, out string transformedInternalId);
+            ResourceLocationUtil.GetLoadInfo(location, resourceManager, out LoadType loadType, out string transformedInternalId);
             var options = location.Data as AssetBundleRequestOptions;
             bool isDownloadOnly = location is DownloadOnlyLocation;
             CacheStatus cacheStatus = GetCacheStatus(options);
@@ -778,36 +760,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		/// <param name="path">The file path or url where the AssetBundle is located.</param>
 		public static void GetLoadInfo(ProvideHandle handle, out LoadType loadType, out string path)
 		{
-			GetLoadInfo(handle.Location, handle.ResourceManager, out loadType, out path);
-		}
-
-		internal static void GetLoadInfo(IResourceLocation location, ResourceManager resourceManager, out LoadType loadType, out string path)
-		{
-			var options = location?.Data as AssetBundleRequestOptions;
-			if (options == null)
-			{
-                loadType = LoadType.Local;
-                path = resourceManager.TransformInternalId(location);
-                if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
-                    Debug.LogWarning($"Location {location} appears to be remote but the download option have been stripped.  Ensure that the group that contains this bundle does not have StripDownloadOptions enabled.");
-				return;
-			}
-
-			path = resourceManager.TransformInternalId(location);
-            if (Application.platform == RuntimePlatform.Android && path.StartsWith("jar:", StringComparison.Ordinal))
-				loadType = options.UseUnityWebRequestForLocalBundles ? LoadType.Web : LoadType.Local;
-			else if (ResourceManagerConfig.ShouldPathUseWebRequest(path))
-				loadType = LoadType.Web;
-			else if (options.UseUnityWebRequestForLocalBundles)
-			{
-				path = "file:///" + Path.GetFullPath(path);
-				loadType = LoadType.Web;
-			}
-			else
-				loadType = LoadType.Local;
-
-            if (loadType == LoadType.Web)
-                path = path.Replace('\\', '/');
+            ResourceLocationUtil.GetLoadInfo(handle.Location, handle.ResourceManager, out loadType, out path);
 		}
 
 		private void BeginOperation()
@@ -1113,38 +1066,53 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 	[DisplayName("AssetBundle Provider")]
 	public class AssetBundleProvider : ResourceProviderBase
 	{
-        internal static Dictionary<string, AssetBundleUnloadOperation> m_UnloadingBundles = new Dictionary<string, AssetBundleUnloadOperation>();
-        internal static Dictionary<string, AssetBundleResource> m_LoadingRemoteBundles = new Dictionary<string, AssetBundleResource>();
+        static Dictionary<string, AssetBundleUnloadOperation> s_UnloadingBundles = new();
+        static Dictionary<string, AssetBundleResource> s_LoadingRemoteBundles = new();
 
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Init()
         {
-            m_UnloadingBundles = new Dictionary<string, AssetBundleUnloadOperation>();
-            m_LoadingRemoteBundles = new Dictionary<string, AssetBundleResource>();
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            s_UnloadingBundles.Clear();
+            s_LoadingRemoteBundles.Clear();
         }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            if (change == PlayModeStateChange.ExitingPlayMode || change == PlayModeStateChange.ExitingEditMode)
+            {
+                WaitForAllUnloadingBundlesToComplete();
+                s_UnloadingBundles.Clear();
+                s_LoadingRemoteBundles.Clear();
+            }
+        }
+#endif
 
         /// <summary>
         /// Stores async operations that unload the requested AssetBundles.
         /// </summary>
         protected internal static Dictionary<string, AssetBundleUnloadOperation> UnloadingBundles
         {
-            get { return m_UnloadingBundles; }
-            internal set { m_UnloadingBundles = value; }
+            get { return s_UnloadingBundles; }
+            internal set { s_UnloadingBundles = value; }
         }
 
         internal static Dictionary<string, AssetBundleResource> LoadingRemoteBundles
         {
-            get { return m_LoadingRemoteBundles; }
-            set { m_LoadingRemoteBundles = value; }
+            get { return s_LoadingRemoteBundles; }
+            set { s_LoadingRemoteBundles = value; }
         }
 
-        internal static int UnloadingAssetBundleCount => m_UnloadingBundles.Count;
+        internal static int UnloadingAssetBundleCount => s_UnloadingBundles.Count;
         internal static int AssetBundleCount => AssetBundle.GetAllLoadedAssetBundles().Count() - UnloadingAssetBundleCount;
         internal static void WaitForAllUnloadingBundlesToComplete()
         {
             if (UnloadingAssetBundleCount > 0)
             {
-                var bundles = m_UnloadingBundles.Values.ToArray();
+                var bundles = s_UnloadingBundles.Values.ToArray();
                 foreach (var b in bundles)
                     b.WaitForCompletion();
             }
@@ -1155,7 +1123,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 		{
             string internalId = providerInterface.Location.InternalId;
 
-            if (m_UnloadingBundles.TryGetValue(internalId, out var unloadOp))
+            if (s_UnloadingBundles.TryGetValue(internalId, out var unloadOp))
             {
                 if (unloadOp.isDone)
                     unloadOp = null;
@@ -1167,7 +1135,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             if (newResource.IsWebDownload())
             {
                 // Check if there's already an in-flight download for this bundle
-                if (m_LoadingRemoteBundles.TryGetValue(internalId, out var existingResource))
+                if (s_LoadingRemoteBundles.TryGetValue(internalId, out var existingResource))
                 {
                     if (!existingResource.m_Completed)
                     {
@@ -1188,7 +1156,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 }
 
                 // Start new web download and track it
-                m_LoadingRemoteBundles.Add(internalId, newResource);
+                s_LoadingRemoteBundles.Add(internalId, newResource);
                 try
                 {
                     newResource.Start(providerInterface, unloadOp, ShouldRetryDownloadError, this);
@@ -1212,6 +1180,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			return typeof(IAssetBundleResource);
 		}
 
+        /// <summary>
+        /// The type to use when loading this provider's dependencies for a scene.
+        /// Override this property to specify a different dependency type for your scene provider.
+        /// </summary>
+        public override Type SceneDependencyResourceType => typeof(IAssetBundleResource);
+
 		/// <summary>
 		/// Releases the asset bundle via AssetBundle.Unload(true).
 		/// </summary>
@@ -1233,8 +1207,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			{
                 if (bundle.Unload(out var unloadOp))
                 {
-                    m_UnloadingBundles.Add(location.InternalId, unloadOp);
-                    unloadOp.completed += op => m_UnloadingBundles.Remove(location.InternalId);
+                    s_UnloadingBundles.Add(location.InternalId, unloadOp);
+                    unloadOp.completed += op => s_UnloadingBundles.Remove(location.InternalId);
                 }
 			}
 		}
@@ -1249,7 +1223,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             return uwrResult.ShouldRetryDownloadError();
         }
 
-        internal virtual IOperationCacheKey CreateCacheKeyForLocation(ResourceManager rm, IResourceLocation location, Type desiredType)
+        /// <inheritdoc/>
+        public override IOperationCacheKey CreateCacheKeyForLocation(ResourceManager rm, IResourceLocation location, Type desiredType)
         {
             //We need to transform the ID first
             //so we don't try and load the same bundle twice if the user is manipulating the path at runtime.
@@ -1258,8 +1233,8 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
         internal void RemoveLoadRemoteBundle(string internalId, AssetBundleResource resource)
         {
-            if (m_LoadingRemoteBundles.TryGetValue(internalId, out var trackedResource) && trackedResource == resource)
-                m_LoadingRemoteBundles.Remove(internalId);
+            if (s_LoadingRemoteBundles.TryGetValue(internalId, out var trackedResource) && trackedResource == resource)
+                s_LoadingRemoteBundles.Remove(internalId);
         }
 	}
 }

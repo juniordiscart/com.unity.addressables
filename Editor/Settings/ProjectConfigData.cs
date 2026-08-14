@@ -10,6 +10,9 @@ using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Serialization;
+#if !ENABLE_JSON_CATALOG
+using static UnityEngine.AddressableAssets.ResourceLocators.ContentCatalogData.ResourceLocator.ResourceLocation.Serializer;
+#endif
 
 namespace UnityEditor.AddressableAssets.Settings
 {

@@ -47,6 +47,22 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
+        [SerializeField]
+        string m_ContentDirectoryBuildPath = "Temp/com.unity.addressables/ContentDirectories";
+
+        /// <summary>
+        /// //Specifies where to build content directories, this is usually a temporary folder (or a folder in the project).  Content Directories are copied out of this location to their final destination.
+        /// </summary>
+        public string contentDirectoryBuildPath
+        {
+            get { return m_ContentDirectoryBuildPath; }
+            set
+            {
+                m_ContentDirectoryBuildPath = value;
+                SetDirty();
+            }
+        }
+
         [FormerlySerializedAs("m_bundleBuildPath")]
         [SerializeField]
         string m_BundleBuildPath = "Temp/com.unity.addressables/AssetBundles";

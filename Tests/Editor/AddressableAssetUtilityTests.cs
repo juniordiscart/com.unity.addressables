@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -393,9 +394,8 @@ namespace UnityEditor.AddressableAssets.Tests
         public void GetPackageVersion_ReturnsAValidVersion()
         {
             string v = AddressableAssetUtility.GetVersionFromPackageData();
-            Assert.IsTrue(v.StartsWith("2."), $"Failed to get a valid version from package.json data. Expected 2.X but was {v}");
-            Assert.IsTrue(v.Split('.').Length == 2,
-                $"Format from GetVersionFromPackageData, produced {v} which is incorrectly formatted");
+            Assert.IsTrue(Regex.IsMatch(v, @"^\d+\.\d+$"),
+                $"Failed to get a valid version from package.json data. Expected major.minor from package.json (e.g. 3.0) but was {v}");
         }
 
         [Test]

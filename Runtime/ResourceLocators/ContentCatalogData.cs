@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine.AddressableAssets.Utility;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -170,6 +171,7 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             m_LocatorId = id;
             SetData(entries);
         }
+
 #endif
 
 
@@ -843,6 +845,16 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
             {
                 get { return values[map[key]]; }
             }
+        }
+
+        /// <summary>
+        /// Construct catalog data with entries, this is for compatibility with the binary catalog serialization.
+        /// </summary>
+        /// <param name="data">The data entries.</param>
+        /// <param name="id">The locator id.</param>
+        public byte[] SerializeToByteArray()
+        {
+            return Encoding.UTF8.GetBytes(JsonUtility.ToJson(this));
         }
 
         /// <summary>

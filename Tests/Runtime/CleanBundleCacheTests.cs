@@ -112,7 +112,7 @@ namespace AddressableAssetsIntegrationTests
         void ReleaseAddressables()
         {
             if (m_Addressables != null)
-                m_Addressables.ResourceManager.Dispose();
+                m_Addressables.Dispose();
             m_Addressables = null;
         }
 

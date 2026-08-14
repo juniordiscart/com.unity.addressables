@@ -16,6 +16,11 @@
             "name": "com.unity.services.ccd.management",
             "expression": "[2.0.0,4.0.0)",
             "define": "ENABLE_CCD"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.6.0a5",
+            "define": "ENABLE_CONTENT_DIRECTORIES"
         }
     ],
     "noEngineReferences": false

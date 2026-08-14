@@ -1,6 +1,7 @@
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace UnityEditor.AddressableAssets
 {
@@ -36,6 +37,10 @@ namespace UnityEditor.AddressableAssets
 
         internal class Properties
         {
+            public static readonly GUIContent playmodeSettings = EditorGUIUtility.TrTextContent("Playmode Settings");
+            public static readonly GUIContent editorUsageWarning = EditorGUIUtility.TrTextContent("Warn on Editor usage",
+                "Logs a warning when entering playmode if Addressables have been used outside playmode.");
+
             public static readonly GUIContent buildSettings = EditorGUIUtility.TrTextContent("Build Settings");
 
             public static readonly GUIContent buildLayoutReport = EditorGUIUtility.TrTextContent("Debug Build Layout",
@@ -59,7 +64,7 @@ namespace UnityEditor.AddressableAssets
         static SettingsProvider CreateAddressableSettingsProvider()
         {
             var provider = new SettingsProvider("Preferences/Addressables", SettingsScope.User, SettingsProvider.GetSearchKeywordsFromGUIContentProperties<Properties>());
-            provider.guiHandler = sarchContext => OnGUI();
+            provider.guiHandler = _ => OnGUI();
             return provider;
         }
 
@@ -73,6 +78,17 @@ namespace UnityEditor.AddressableAssets
 
         static void DrawProperties()
         {
+            GUILayout.Label(Properties.playmodeSettings, EditorStyles.boldLabel);
+
+            var warnOnEditorUsage = Addressables.WarnOnAddressablesUsageOutsidePlaymode;
+            var warnOnEditorUsageChange = EditorGUILayout.Toggle(Properties.editorUsageWarning, warnOnEditorUsage);
+            if (warnOnEditorUsageChange != warnOnEditorUsage)
+            {
+                Addressables.WarnOnAddressablesUsageOutsidePlaymode = warnOnEditorUsageChange;
+            }
+
+            GUILayout.Space(15);
+
             GUILayout.Label(Properties.buildSettings, EditorStyles.boldLabel);
 
             ProjectConfigData.GenerateBuildLayout = EditorGUILayout.Toggle(Properties.buildLayoutReport, ProjectConfigData.GenerateBuildLayout);

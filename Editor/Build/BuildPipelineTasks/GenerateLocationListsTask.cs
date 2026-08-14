@@ -269,6 +269,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Create a location for each bundle
             foreach (BundleEntry bEntry in bundleToEntry.Values)
             {
+                var bundledSchema = bEntry.Group.GetSchema<BundledAssetGroupSchema>();
+                if (bundledSchema == null || !bundledSchema.IsEnabled)
+                {
+                    throw new Exception($"AssetBundle {bEntry.BundleName} is associated with group {bEntry.Group.name} which does not have a Bundled Asset Group Schema, or the schema is disabled. Cannot build Addressables with this configuration. " +
+                        $"You can add a Content Packing and Loading schema to this group. If this is a builtinassets or monoscripts .bundle file you can change the associated Group in the AddressableAssetSettings -> Shared Bundle Settings. ");
+                }
+
                 string bundleProvider = GetBundleProviderName(bEntry.Group);
                 string bundleInternalId = GetLoadPath(bEntry.Group, bEntry.BundleName, input.Target);
                 locations.Add(new ContentCatalogDataEntry(typeof(IAssetBundleResource), bundleInternalId, bundleProvider, new object[] {bEntry.BundleName}));
@@ -284,6 +291,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     string assetProvider = GetAssetProviderName(bEntry.Group);
                     var schema = bEntry.Group.GetSchema<BundledAssetGroupSchema>();
+                    if (schema == null || !schema.IsEnabled)
+                        continue;
 
                     // Sort assets by GUID when using Dynamic naming mode to ensure consistent internal ID generation
                     List<GUID> assetsToProcess = bEntry.Assets;
@@ -324,18 +333,24 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         internal static string GetBundleProviderName(AddressableAssetGroup group)
         {
-            return group.GetSchema<BundledAssetGroupSchema>().GetBundleCachedProviderId();
+            var schema = group.GetSchema<BundledAssetGroupSchema>();
+            if (schema == null || !schema.IsEnabled)
+                return null;
+            return schema.GetBundleCachedProviderId();
         }
 
         internal static string GetAssetProviderName(AddressableAssetGroup group)
         {
-            return group.GetSchema<BundledAssetGroupSchema>().GetAssetCachedProviderId();
+            var schema = group.GetSchema<BundledAssetGroupSchema>();
+            if (schema == null || !schema.IsEnabled)
+                return null;
+            return schema.GetAssetCachedProviderId();
         }
 
         internal static string GetLoadPath(AddressableAssetGroup group, string name, BuildTarget target)
         {
             var bagSchema = group.GetSchema<BundledAssetGroupSchema>();
-            if (bagSchema == null || bagSchema.LoadPath == null)
+            if (bagSchema == null || !bagSchema.IsEnabled || bagSchema.LoadPath == null)
             {
                 Debug.LogError("Unable to determine load path for " + name + ".");
                 return string.Empty;

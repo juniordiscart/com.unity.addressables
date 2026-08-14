@@ -127,7 +127,6 @@ namespace UnityEditor.AddressableAssets.Settings
                 Directory.CreateDirectory(path != null ? path : DEFAULT_PATH);
                 aa = CreateInstance<ProfileDataSourceSettings>();
                 AssetDatabase.CreateAsset(aa, assetPath);
-                aa = AssetDatabase.LoadAssetAtPath<ProfileDataSourceSettings>(assetPath);
                 aa.profileGroupTypes = CreateDefaultGroupTypes();
                 EditorUtility.SetDirty(aa);
             }

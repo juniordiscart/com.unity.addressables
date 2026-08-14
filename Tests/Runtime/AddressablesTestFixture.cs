@@ -38,7 +38,8 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     {
         Fast,
         PackedPlaymode,
-        Packed
+        Packed,
+        SchemaDriven
     }
 
     protected virtual TestBuildScriptMode BuildScriptMode { get; }
@@ -77,7 +78,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     [TearDown]
     public virtual void RuntimeTeardown()
     {
-        m_Addressables.ResourceManager.Dispose();
+        m_Addressables.Dispose();
         m_Addressables = null;
     }
 
@@ -144,7 +145,12 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         }
 
         IDataBuilder b = GetBuilderOfType(settings, GetBuildScriptTypeFromMode(BuildScriptMode));
-        b.BuildData<AddressableAssetBuildResult>(buildContext);
+#if ENABLE_CONTENT_DIRECTORIES
+        if(BuildScriptMode == TestBuildScriptMode.SchemaDriven)
+            b.BuildData<AddressablesPlayerBuildResult>(buildContext);
+        else
+#endif
+            b.BuildData<AddressableAssetBuildResult>(buildContext);
         PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath + id, PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
     }
 
@@ -167,6 +173,9 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
             case TestBuildScriptMode.Fast: return typeof(BuildScriptFastMode);
             case TestBuildScriptMode.Packed: return typeof(BuildScriptPackedMode);
             case TestBuildScriptMode.PackedPlaymode: return typeof(BuildScriptPackedPlayMode);
+#if ENABLE_CONTENT_DIRECTORIES
+            case TestBuildScriptMode.SchemaDriven: return typeof(BuildScriptSchemaDriven);
+#endif
         }
 
         throw new Exception("Unknown script mode");
@@ -176,7 +185,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
 
         protected string GetRuntimeAddressablesSettingsPath(string id)
     {
-        if (BuildScriptMode == TestBuildScriptMode.Packed || BuildScriptMode == TestBuildScriptMode.PackedPlaymode)
+        if (BuildScriptMode == TestBuildScriptMode.Packed || BuildScriptMode == TestBuildScriptMode.PackedPlaymode || BuildScriptMode == TestBuildScriptMode.SchemaDriven)
             return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + id + ".json";
         else if (BuildScriptMode == TestBuildScriptMode.Fast)
         {

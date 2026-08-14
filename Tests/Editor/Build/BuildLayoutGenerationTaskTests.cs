@@ -4,10 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEditor;
+using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.Build.Content;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.AddressableAssets.Tests;
 using UnityEditor.Build.Pipeline.Utilities;
@@ -18,7 +19,8 @@ using UnityEngine.U2D;
 using UnityEditor.U2D;
 using UnityEditor.Presets;
 using UnityEditor.TestTools;
-using UnityEditor.Build.Pipeline;
+using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
 
 namespace BuildLayoutGenerationTaskPerPlatformTests
 {
@@ -65,7 +67,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
             m_PrevGenerateBuildLayout = ProjectConfigData.GenerateBuildLayout;
             m_PrevFileFormat = ProjectConfigData.BuildLayoutReportFileFormat;
-            BuildScriptPackedMode.s_SkipCompilePlayerScripts = true;
+            BundledAssetSchemaBuilder.s_SkipCompilePlayerScripts = true;
             ProjectConfigData.GenerateBuildLayout = true;
             if (Directory.Exists(TempPath))
                 Directory.Delete(TempPath, true);
@@ -77,7 +79,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
         [TearDown]
         public void Teardown()
         {
-            BuildScriptPackedMode.s_SkipCompilePlayerScripts = false;
+            BundledAssetSchemaBuilder.s_SkipCompilePlayerScripts = false;
             ProjectConfigData.GenerateBuildLayout = m_PrevGenerateBuildLayout;
             ProjectConfigData.BuildLayoutReportFileFormat = m_PrevFileFormat;
             // Many of the tests keep recreating assets in the same path, so we need to unload them completely so they don't get reused by the next test
@@ -219,6 +221,13 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             return Settings.CreateGroup(name, false, false, false, null, typeof(BundledAssetGroupSchema));
         }
 
+#if ENABLE_CONTENT_DIRECTORIES
+        AddressableAssetGroup CreateContentDirectoryGroup(string name)
+        {
+            return Settings.CreateGroup(name, false, false, false, null, typeof(ContentDirectoryGroupSchema));
+        }
+#endif
+
         void PrintText(BuildLayout layout)
         {
             MemoryStream stream = new MemoryStream();
@@ -229,11 +238,16 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
         internal BuildLayout BuildAndExtractLayout()
         {
+            return BuildAndExtractLayout(out _);
+        }
+
+        internal BuildLayout BuildAndExtractLayout(out AddressablesPlayerBuildResult buildResult)
+        {
             try
             {
                 BuildLayout layout = null;
                 BuildLayoutGenerationTask.s_LayoutCompleteCallback = (x, y) => layout = y;
-                Settings.BuildPlayerContentImpl();
+                buildResult = Settings.BuildPlayerContentImpl();
                 return layout;
             }
             finally
@@ -599,6 +613,56 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             }
         }
 
+#if ENABLE_CONTENT_DIRECTORIES
+        [Test]
+        public void Verify_ContentDirectoryData_IncludedInBuildLayout()
+        {
+            string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+            AddressableAssetGroup group = null;
+
+            try
+            {
+                // setup
+                group = CreateContentDirectoryGroup("ContentDirectoryGroup");
+                CreateAddressablePrefab("p1", group);
+                AssetDatabase.SaveAssets();
+
+                BuildLayout layout = BuildAndExtractLayout(out AddressablesPlayerBuildResult buildResult);
+
+                string hashPath = $"{layout.LocalCatalogBuildPath}/BuildManifestHash.txt";
+                string hash = File.Exists(hashPath) ? File.ReadAllText(hashPath) : "NoHashFound";
+
+                if(hash == "NoHashFound")
+                    Assert.Fail("BuildManifestHash.txt not found or empty, cannot complete test");
+
+                Assert.AreEqual(1, layout.ContentDirectories.Count);
+                Assert.AreEqual($"{layout.LocalCatalogBuildPath}/{hash}.json", layout.ContentDirectories[0].ManifestPath);
+                Assert.AreEqual("ContentDirectoryCatalog", layout.ContentDirectories[0].CatalogName);
+
+                Assert.IsNotNull(buildResult.ContentDirectoryBuildResults);
+                Assert.AreEqual(1, buildResult.ContentDirectoryBuildResults.Count);
+                Assert.IsFalse(buildResult.ContentDirectoryBuildResults[0].BuildSessionGUID.Empty(),
+                    "ContentDirectoryBuildResult should have a BuildSessionGUID after a content directory build.");
+
+                Assert.IsFalse(layout.ContentDirectories[0].BuildSessionGUID.Empty(),
+                    "BuildLayout.ContentDirectory should have a non-empty BuildSessionGUID.");
+
+                Assert.AreEqual(
+                    buildResult.ContentDirectoryBuildResults[0].BuildSessionGUID,
+                    layout.ContentDirectories[0].BuildSessionGUID,
+                    "BuildSessionGUID in the build layout should match the one in the build result.");
+            }
+            finally // cleanup
+            {
+                if (group != null)
+                    Settings.RemoveGroup(group);
+                if (File.Exists(layoutFilePath))
+                    File.Delete(layoutFilePath);
+                DeletePrefab("p1");
+            }
+        }
+#endif
+
         class SpritePackerScope : IDisposable
         {
             SpritePackerMode m_PrevMode;
@@ -761,6 +825,66 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                     Settings.RemoveGroup(group);
                 Settings.RemoveGroup(null);
 
+                if (File.Exists(layoutFilePath))
+                    File.Delete(layoutFilePath);
+                DeletePrefab("p1");
+            }
+        }
+
+        [Test]
+        public void WhenAddressablesBuildSucceeds_BuildSessionGUIDIsGenerated()
+        {
+            string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+            AddressableAssetGroup group = null;
+
+            try
+            {
+                group = CreateGroup("Group1");
+                CreateAddressablePrefab("p1", group);
+                AssetDatabase.SaveAssets();
+
+                BuildLayout layout = BuildAndExtractLayout();
+
+                Assert.IsNotNull(layout, "Build should produce a layout.");
+                Assert.IsFalse(layout.AddressablesBuildSessionGUID.Empty(), "AddressablesBuildSessionGUID should be set for every build.");
+                Assert.AreEqual(layout.AddressablesBuildSessionGUID, layout.Header.AddressablesBuildSessionGUID, "Header.AddressablesBuildSessionGUID should match layout.AddressablesBuildSessionGUID.");
+            }
+            finally
+            {
+                if (group != null)
+                    Settings.RemoveGroup(group);
+                if (File.Exists(layoutFilePath))
+                    File.Delete(layoutFilePath);
+                DeletePrefab("p1");
+            }
+        }
+
+        [Test]
+        public void WhenTwoIdenticalBuildsRun_BuildSessionGUIDsAreUnique()
+        {
+            string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
+            AddressableAssetGroup group = null;
+
+            try
+            {
+                group = CreateGroup("Group1");
+                CreateAddressablePrefab("p1", group);
+                AssetDatabase.SaveAssets();
+
+                BuildLayout layout1 = BuildAndExtractLayout();
+                Assert.IsNotNull(layout1, "First build should produce a layout.");
+                Assert.IsFalse(layout1.AddressablesBuildSessionGUID.Empty(), "First build should have a AddressablesBuildSessionGUID.");
+
+                BuildLayout layout2 = BuildAndExtractLayout();
+                Assert.IsNotNull(layout2, "Second build should produce a layout.");
+                Assert.IsFalse(layout2.AddressablesBuildSessionGUID.Empty(), "Second build should have a AddressablesBuildSessionGUID.");
+
+                Assert.AreNotEqual(layout1.AddressablesBuildSessionGUID, layout2.AddressablesBuildSessionGUID, "Two builds must have distinct BuildSessionGUIDs even when content is identical.");
+            }
+            finally
+            {
+                if (group != null)
+                    Settings.RemoveGroup(group);
                 if (File.Exists(layoutFilePath))
                     File.Delete(layoutFilePath);
                 DeletePrefab("p1");

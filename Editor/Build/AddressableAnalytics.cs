@@ -468,7 +468,7 @@ namespace UnityEditor.AddressableAssets
                 numberOfAddressableAssets += group.entries.Count;
 
                 var schema = group.GetSchema<BundledAssetGroupSchema>();
-                if (schema == null)
+                if (schema == null || !schema.IsEnabled)
                     continue;
 
                 int selected = schema.DetermineSelectedIndex(groupTypes, -1, currentSettings, vars);

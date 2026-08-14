@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "2.11.1",
+  "version": "3.0.0",
   "unity": "6000.0",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "3.0.2",
+    "com.unity.scriptablebuildpipeline": "3.1.0",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -59,15 +59,15 @@
     }
   ],
   "_upm": {
-    "changelog": "- Fixed `PrefabPackedIdentifiers.SerializationIndexFromObjectIdentifier` so that when \"Prefab Packed Header Size\" is below 4, the leading bytes of the asset hash affect the **most significant** bits of the serialization index (little-endian safe), restoring contiguous bundle ordering without shrinking per-object entropy to 32 bits."
+    "changelog": "- Fixed `PrefabPackedIdentifiers.SerializationIndexFromObjectIdentifier` so that when \"Prefab Packed Header Size\" is below 4, the leading bytes of the asset hash affect the **most significant** bits of the serialization index (little-endian safe), restoring contiguous bundle ordering without shrinking per-object entropy to 32 bits.\n- Added a configurable warning when loading Addressables outside of Play Mode to inform about the risks of resources being forcibly unloaded when the playmode state changes (Disable via Preferences or Addressables.WarnOnAddressablesUsageOutsidePlaymode).\n- Fixed NullReferenceException occurring during Disabled Importer Builds."
   },
   "upmCi": {
-    "footprint": "6d0207c21459d7c77c808a9215ea215996918597"
+    "footprint": "d10000a101b1e1b0ce943609dd143422a4378cbd"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@2.11/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@3.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "d37aa4f31ca774d7d38b8a62db89ba63ae37315f"
+    "revision": "fe3f85b8a8204a56f6bbb1398f8b59baee97a502"
   }
 }

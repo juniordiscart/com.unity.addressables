@@ -12,7 +12,7 @@ namespace UnityEngine.ResourceManagement.Profiling
 {
     internal static class ProfilerRuntime
     {
-        internal static IProfilerEmitter m_profilerEmitter = new EngineEmitter();
+        internal static IProfilerEmitter s_ProfilerEmitter = new EngineEmitter();
         public static readonly Guid kResourceManagerProfilerGuid = new Guid("4f8a8c93-7634-4ef7-bbbc-6c9928567fa4");
         public const int kCatalogTag = 0;
         public const int kBundleDataTag = 1;
@@ -45,7 +45,12 @@ namespace UnityEngine.ResourceManagement.Profiling
             m_AssetData.Data.Clear();
             m_SceneData.Data.Clear();
 
-            m_profilerEmitter.InitialiseCallbacks(InstanceOnOnLateUpdateDelegate);
+            s_ProfilerEmitter.InitialiseCallbacks(InstanceOnOnLateUpdateDelegate);
+        }
+
+        public static void CleanUp()
+        {
+            s_ProfilerEmitter.CleanUpCallbacks(InstanceOnOnLateUpdateDelegate);
         }
 
         private static void InstanceOnOnLateUpdateDelegate(float deltaTime)
@@ -211,13 +216,13 @@ namespace UnityEngine.ResourceManagement.Profiling
 
         internal static void PushToProfilerStream()
         {
-            if (!m_profilerEmitter.IsEnabled)
+            if (!s_ProfilerEmitter.IsEnabled)
                 return;
             RefreshChangedReferenceCounts();
-            m_profilerEmitter.EmitFrameMetaData(kResourceManagerProfilerGuid, kCatalogTag, m_CatalogData.Values);
-            m_profilerEmitter.EmitFrameMetaData(kResourceManagerProfilerGuid, kBundleDataTag, m_BundleData.Values);
-            m_profilerEmitter.EmitFrameMetaData(kResourceManagerProfilerGuid, kAssetDataTag, m_AssetData.Values);
-            m_profilerEmitter.EmitFrameMetaData(kResourceManagerProfilerGuid, kSceneDataTag, m_SceneData.Values);
+            s_ProfilerEmitter.EmitFrameMetaData(kResourceManagerProfilerGuid, kCatalogTag, m_CatalogData.Values);
+            s_ProfilerEmitter.EmitFrameMetaData(kResourceManagerProfilerGuid, kBundleDataTag, m_BundleData.Values);
+            s_ProfilerEmitter.EmitFrameMetaData(kResourceManagerProfilerGuid, kAssetDataTag, m_AssetData.Values);
+            s_ProfilerEmitter.EmitFrameMetaData(kResourceManagerProfilerGuid, kSceneDataTag, m_SceneData.Values);
             m_CatalogData.Data.Clear();
         }
 

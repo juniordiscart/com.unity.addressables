@@ -262,12 +262,12 @@ namespace UnityEditor.AddressableAssets.GUI
 
         static void DrawIncludeInBuildToggle(Object[] targets)
         {
-            var schemas = new List<BundledAssetGroupSchema>();
+            var schemas = new List<ICanIncludeInBuild>();
             foreach (Object t in targets)
             {
                 if (t is AddressableAssetGroup group)
                 {
-                    var schema = group.GetSchema<BundledAssetGroupSchema>();
+                    var schema = group.Schemas.OfType<ICanIncludeInBuild>().FirstOrDefault();
 
                     if (schema != null)
                         schemas.Add(schema);
@@ -289,7 +289,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     bool newIncludeInBuildValue = GUILayout.Toggle(false, m_IncludeInBuildGUIContent, s_ToggleMixed);
                     if (EditorGUI.EndChangeCheck())
                     {
-                        foreach (BundledAssetGroupSchema schema in schemas)
+                        foreach (ICanIncludeInBuild schema in schemas)
                         {
                             schema.IncludeInBuild = newIncludeInBuildValue;
                         }
@@ -301,7 +301,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     bool newIncludeInBuildValue = GUILayout.Toggle(schemas[0].IncludeInBuild, m_IncludeInBuildGUIContent);
                     if (EditorGUI.EndChangeCheck())
                     {
-                        foreach (BundledAssetGroupSchema schema in schemas)
+                        foreach (ICanIncludeInBuild schema in schemas)
                         {
                             schema.IncludeInBuild = newIncludeInBuildValue;
                         }
@@ -436,7 +436,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (s_Cache != null && s_Cache.TryGetCached(selectionHashCode, out targetInfos))
             {
                 bool isValid = true;
-                foreach(var targetInfo in targetInfos)
+                foreach (var targetInfo in targetInfos)
                 {
                     if (targetInfo.MainAssetEntry?.parentGroup == null || targetInfo.TargetObject == null)
                     {

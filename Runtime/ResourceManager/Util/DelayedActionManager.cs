@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using UnityEditor;
 
 namespace UnityEngine.ResourceManagement.Util
 {
-    internal class DelayedActionManager : ComponentSingleton<DelayedActionManager>
+    internal class DelayedActionManager : InternalComponentSingleton<DelayedActionManager>
     {
         struct DelegateInfo
         {
@@ -66,6 +65,9 @@ namespace UnityEngine.ResourceManagement.Util
         Stack<LinkedListNode<DelegateInfo>> m_NodeCache = new Stack<LinkedListNode<DelegateInfo>>(10);
         int m_CollectionIndex;
         bool m_DestroyOnCompletion;
+        // Used when the singleton is being destroyed to avoid queueing new callbacks back into the delayed actions list.
+        bool m_IsBeingDestroyed = false;
+
 
         LinkedListNode<DelegateInfo> GetNode(ref DelegateInfo del)
         {
@@ -98,7 +100,7 @@ namespace UnityEngine.ResourceManagement.Util
         void AddActionInternal(Delegate action, float delay, params object[] parameters)
         {
             var del = new DelegateInfo(action, Time.unscaledTime + delay, parameters);
-            if (delay > 0)
+            if (delay > 0 && !m_IsBeingDestroyed)
             {
                 if (m_DelayedActions.Count == 0)
                 {
@@ -118,18 +120,6 @@ namespace UnityEngine.ResourceManagement.Util
             else
                 m_Actions[m_CollectionIndex].Add(del);
         }
-
-#if UNITY_EDITOR
-        void Awake()
-        {
-            if (!Application.isPlaying)
-            {
-                //                    Debug.Log("DelayedActionManager called outside of play mode, registering with EditorApplication.update.");
-                EditorApplication.update += LateUpdate;
-            }
-        }
-
-#endif
 
         public static bool IsActive
         {
@@ -173,7 +163,6 @@ namespace UnityEngine.ResourceManagement.Util
 
         void InternalLateUpdate(float t)
         {
-            int iterationCount = 0;
             while (m_DelayedActions.Count > 0 && m_DelayedActions.First.Value.InvocationTime <= t)
             {
                 m_Actions[m_CollectionIndex].Add(m_DelayedActions.First.Value);
@@ -181,6 +170,15 @@ namespace UnityEngine.ResourceManagement.Util
                 m_DelayedActions.RemoveFirst();
             }
 
+            InvokeActionsList();
+
+            if (m_DestroyOnCompletion && !IsActive)
+                Destroy(gameObject);
+        }
+
+        private void InvokeActionsList()
+        {
+            int iterationCount = 0;
             do
             {
                 int invokeIndex = m_CollectionIndex;
@@ -196,9 +194,6 @@ namespace UnityEngine.ResourceManagement.Util
                 iterationCount++;
                 Debug.Assert(iterationCount < 100);
             } while (m_Actions[m_CollectionIndex].Count > 0);
-
-            if (m_DestroyOnCompletion && !IsActive)
-                Destroy(gameObject);
         }
 
         private void OnApplicationQuit()
@@ -206,5 +201,24 @@ namespace UnityEngine.ResourceManagement.Util
             if (Exists)
                 Destroy(Instance.gameObject);
         }
+
+#if UNITY_EDITOR
+        protected override void OnDestroy()
+        {
+            // When in Editor, ensure everything is called when destroyed
+            // to avoid Editor scripts waiting indefinitely on callbacks.
+            while (m_DelayedActions.Count > 0)
+            {
+                m_Actions[m_CollectionIndex].Add(m_DelayedActions.First.Value);
+                m_NodeCache.Push(m_DelayedActions.First);
+                m_DelayedActions.RemoveFirst();
+            }
+
+            m_IsBeingDestroyed = true;
+            InvokeActionsList();
+
+            base.OnDestroy();
+        }
+#endif
     }
 }

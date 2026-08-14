@@ -100,13 +100,13 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.NotNull(locations.FirstOrDefault(s => s.InternalId == e), $"Locations do not contain entry with internal id of {e}");
         }
 
-        [UnityTest, Ignore("Instability, sometimes main thread locks up. https://jira.unity3d.com/browse/ADDR-3397")]
+        [UnityTest]
         public IEnumerator CanLoadAssetAsync_InEditMode()
         {
             var entry = m_Settings.CreateOrMoveEntry(CreateAsset("x", GetPath("x.asset")), m_Settings.DefaultGroup).address = "x";
-            Addressables.Instance.hasStartedInitialization = false;
-            Addressables.Instance.InitializeAsync($"GUID:{AssetDatabase.AssetPathToGUID(m_Settings.AssetPath)}");
-            var op = Addressables.LoadAssetAsync<UnityEngine.AddressableAssets.Tests.TestObject>("x");
+            using var addressables = new AddressablesImpl(new DefaultAllocationStrategy());
+            addressables.InitializeAsync($"GUID:{AssetDatabase.AssetPathToGUID(m_Settings.AssetPath)}").WaitForCompletion();
+            var op = addressables.LoadAssetAsync<UnityEngine.AddressableAssets.Tests.TestObject>("x");
             while (!op.IsDone)
                 yield return null;
             Assert.IsNotNull(op.Result);
@@ -118,9 +118,9 @@ namespace UnityEditor.AddressableAssets.Tests
         public void CanLoadAssetSync_InEditMode()
         {
             var entry = m_Settings.CreateOrMoveEntry(CreateAsset("y", GetPath("y.asset")), m_Settings.DefaultGroup).address = "y";
-            Addressables.Instance.hasStartedInitialization = false;
-            Addressables.Instance.InitializeAsync($"GUID:{AssetDatabase.AssetPathToGUID(m_Settings.AssetPath)}");
-            var op = Addressables.LoadAssetAsync<UnityEngine.AddressableAssets.Tests.TestObject>("y");
+            using var addressables = new AddressablesImpl(new DefaultAllocationStrategy());
+            addressables.InitializeAsync($"GUID:{AssetDatabase.AssetPathToGUID(m_Settings.AssetPath)}");
+            var op = addressables.LoadAssetAsync<UnityEngine.AddressableAssets.Tests.TestObject>("y");
             op.WaitForCompletion();
             Assert.IsNotNull(op.Result);
             op.Release();
@@ -367,16 +367,16 @@ namespace UnityEditor.AddressableAssets.Tests
             var packedMode = ScriptableObject.CreateInstance<BuildScriptPackedMode>();
             var packedPlayMode = ScriptableObject.CreateInstance<BuildScriptPackedPlayMode>();
 
-            AddressablesImpl fastModeImpl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl fastModeImpl = new AddressablesImpl(new DefaultAllocationStrategy());
             fastModeImpl.AddResourceLocator(new AddressableAssetSettingsLocator(m_Settings));
 
             var fastModeSettingsPath = fastMode.BuildData<AddressableAssetBuildResult>(input).OutputPath;
             var packedModeSettingsPath = packedMode.BuildData<AddressableAssetBuildResult>(input).OutputPath;
             var packedPlayModeSettingsPath = packedPlayMode.BuildData<AddressableAssetBuildResult>(input).OutputPath;
 
-            AddressablesImpl fmImpl = new AddressablesImpl(new DefaultAllocationStrategy());
-            AddressablesImpl packedImpl = new AddressablesImpl(new DefaultAllocationStrategy());
-            AddressablesImpl packedPlayImpl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl fmImpl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl packedImpl = new AddressablesImpl(new DefaultAllocationStrategy());
+            using AddressablesImpl packedPlayImpl = new AddressablesImpl(new DefaultAllocationStrategy());
 
             fmImpl.AddResourceLocator(new AddressableAssetSettingsLocator(m_Settings));
             packedImpl.AddResourceLocator(new AddressableAssetSettingsLocator(m_Settings));

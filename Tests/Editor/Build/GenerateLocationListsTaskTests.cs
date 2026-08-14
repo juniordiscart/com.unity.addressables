@@ -114,6 +114,18 @@ public class GenerateLocationListsTaskTests : AddressableBuildTaskTestBase
     }
 
     [Test]
+    public void ErrorIsLogged_WhenBuildingBundles_AndSharedGroup_IsInvalid()
+    {
+        GenerateLocationListsTask.Input input = GenerateDefaultInput();
+        AddressableAssetGroup groupX = CreateGroupMappedToBundle(input, "X");
+        groupX.RemoveSchema<BundledAssetGroupSchema>();
+        var guid = CreateAddressablePrefab(input, "p1", groupX, "fileX");
+        input.AddressableAssetEntries = BuildAddressableAssetEntryList(input.Settings);
+
+        Assert.Throws<System.Exception>(() => GenerateLocationListsTask.ProcessInput(input));
+    }
+
+    [Test]
     public void CollectsGuidMapping_WhenCatalogKeysNotIncluded()
     {
         GenerateLocationListsTask.Input input = GenerateDefaultInput();

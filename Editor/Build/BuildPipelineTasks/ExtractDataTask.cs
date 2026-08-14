@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
 using UnityEditor.Build.Pipeline.Interfaces;
@@ -50,18 +51,39 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             get { return m_BuildContext; }
         }
 
+#if ENABLE_CONTENT_DIRECTORIES
+        /// <summary>
+        /// Gets the context for generating and managing build reports.
+        /// </summary>
+        public IBuildReportContext BuildReportContext
+        {
+            get => m_BuildReport;
+        }
+#endif
+
 #pragma warning disable 649
-        [InjectContext(ContextUsage.In)]
+        [InjectContext(ContextUsage.In, true)]
+        [BuildOverwriteProtected]
         IDependencyData m_DependencyData;
 
-        [InjectContext(ContextUsage.In)]
+        [InjectContext(ContextUsage.In, true)]
+        [BuildOverwriteProtected]
         IBundleWriteData m_WriteData;
 
-        [InjectContext(ContextUsage.In)]
+        [InjectContext(ContextUsage.In, true)]
+        [BuildOverwriteProtected]
         IBuildCache m_BuildCache;
 
         [InjectContext(ContextUsage.In)]
+        [BuildOverwriteProtected]
         internal IBuildContext m_BuildContext;
+
+#if ENABLE_CONTENT_DIRECTORIES
+        [InjectContext(ContextUsage.In, true)]
+        [BuildOverwriteProtected]
+        IBuildReportContext m_BuildReport;
+#endif
+
 #pragma warning restore 649
 
         /// <summary>

@@ -87,29 +87,28 @@ namespace AutoGroupGenerator
             m_AssetIgnoreCache = null;
         }
 
-        private void AddAssetToDependencyGraph(string assetPath)
+        internal void AddAssetToDependencyGraph(string assetPath)
         {
-            var dependencyGraph = m_DataContainer.DependencyGraph;
-
             if (SkipAsset(assetPath))
             {
                 return;
             }
 
+            var dependencyGraph = m_DataContainer.DependencyGraph;
+            dependencyGraph.AddNode(assetPath);
 
             string[] dependencies = null;
             try
             {
                 dependencies = AssetDatabase.GetDependencies(assetPath, false);
             }
-            catch
+            catch(Exception e)
             {
+                Debug.LogWarning($"Failed to get dependencies for {assetPath}: {e.Message}");
             }
 
             if (dependencies == null || dependencies.Length == 0)
             {
-                dependencyGraph.AddNode(assetPath);
-
                 return;
             }
 

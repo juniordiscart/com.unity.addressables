@@ -100,18 +100,6 @@ namespace UnityEditor.AddressableAssets.GUI
         //            }
         //        }
 
-        void DrawDivider()
-        {
-            GUILayout.Space(1.5f);
-            Rect r = EditorGUILayout.GetControlRect(GUILayout.Height(2.5f));
-            r.height = 1;
-
-            if (EditorGUIUtility.isProSkin)
-                EditorGUI.DrawRect(r, Color.black);
-            else
-                EditorGUI.DrawRect(r, Color.gray);
-        }
-
         public override void OnInspectorGUI()
         {
             try
@@ -153,14 +141,14 @@ namespace UnityEditor.AddressableAssets.GUI
                 var schema = m_AddressableAssetGroupTarget.SchemaObjects[i];
                 int currentIndex = i;
 
-                DrawDivider();
+                AddressablesGUIUtility.DrawDivider();
                 EditorGUILayout.BeginHorizontal();
                 m_FoldoutState[i] = EditorGUILayout.Foldout(m_FoldoutState[i], AddressableAssetUtility.GetCachedTypeDisplayName(m_AddressableAssetGroupTarget.SchemaObjects[i].GetType()));
 
                 GUILayout.FlexibleSpace();
                 GUIStyle gearIconStyle = UnityEngine.GUI.skin.FindStyle("IconButton") ?? EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle("IconButton");
 
-                if (EditorGUILayout.DropdownButton(EditorGUIUtility.IconContent("_Popup"), FocusType.Keyboard, gearIconStyle))
+                if (EditorGUILayout.DropdownButton(EditorGUIUtility.IconContent("_Menu"), FocusType.Keyboard, gearIconStyle))
                 {
                     var menu = new GenericMenu();
                     menu.AddItem(AddressableAssetGroup.RemoveSchemaContent, false, () =>
@@ -225,7 +213,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
             }
 
-            DrawDivider();
+            AddressablesGUIUtility.DrawDivider();
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
             GUIStyle addSchemaButton = new GUIStyle(UnityEngine.GUI.skin.button);
@@ -299,7 +287,7 @@ namespace UnityEditor.AddressableAssets.GUI
         //                GUILayout.FlexibleSpace();
         //                GUIStyle gearIconStyle = UnityEngine.GUI.skin.FindStyle("IconButton") ?? EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle("IconButton");
         //
-        //                if (EditorGUILayout.DropdownButton(EditorGUIUtility.IconContent("_Popup"), FocusType.Keyboard, gearIconStyle))
+        //                if (EditorGUILayout.DropdownButton(EditorGUIUtility.IconContent("_Menu"), FocusType.Keyboard, gearIconStyle))
         //                {
         //                    var menu = new GenericMenu();
         //                    menu.AddItem(AddressableAssetGroup.RemoveSchemaContent, false, () =>

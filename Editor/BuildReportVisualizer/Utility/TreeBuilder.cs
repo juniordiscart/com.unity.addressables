@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine; // explicitly imported for GUID backwards compatibility
+using UnityEditor; // explicitly imported for GUID backwards compatibility
 using UnityEngine.UIElements;
-using UnityEngine;
-using UnityEditor;
 
 namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 {

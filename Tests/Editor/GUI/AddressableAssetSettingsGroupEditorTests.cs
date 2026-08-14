@@ -27,7 +27,11 @@ namespace Tests.Editor.GUI
         public void SetUp()
         {
             Assert.AreEqual(1, Settings.groups.Count, "Expect only Default Group is initialized at test startup.");
+#if ENABLE_CONTENT_DIRECTORIES
+            Assert.AreEqual(2, Settings.GroupTemplateObjects.Count, "Expect Packed Group and Content Directory Templates are initialized at test startup.");
+#else
             Assert.AreEqual(1, Settings.GroupTemplateObjects.Count, "Expect only Packed Group Template is initialized at test startup.");
+#endif
 
             settingsGuid = AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(Settings));
 
@@ -627,6 +631,71 @@ namespace Tests.Editor.GUI
             });
         }
 
+        [Test]
+        public void GetGroupsWithSchema_ReturnsOnlyWritableGroupsWithSchema()
+        {
+            var groupWithSchema = Settings.CreateGroup("WithSchema", false, false, false, null);
+            groupWithSchema.AddSchema(typeof(BundledAssetGroupSchema));
+
+            var groupWithoutSchema = Settings.CreateGroup("WithoutSchema", false, false, false, null);
+            groupWithoutSchema.AddSchema(typeof(ContentUpdateGroupSchema));
+
+            var groups = new[] { groupWithSchema, groupWithoutSchema };
+            var filteredGroups = AddressableAssetGroupInspector.GetGroupsWithSchema(groups, typeof(BundledAssetGroupSchema));
+            Assert.AreEqual(1, filteredGroups.Count, "Exactly one group should have the schema");
+            Assert.IsTrue(filteredGroups.Contains(groupWithSchema));
+            Assert.IsFalse(filteredGroups.Contains(groupWithoutSchema));
+        }
+
+        [Test]
+        public void GetGroupsWithSchema_ExcludesReadOnlyGroups()
+        {
+            var groupReadOnly = Settings.CreateGroup("ReadOnlyWithSchema", false, false, false, null);
+            groupReadOnly.AddSchema(typeof(BundledAssetGroupSchema));
+            groupReadOnly.ReadOnly = true;
+
+            var groupWritable = Settings.CreateGroup("WritableWithSchema", false, false, false, null);
+            groupWritable.AddSchema(typeof(BundledAssetGroupSchema));
+
+            var groups = new[] { groupReadOnly, groupWritable };
+            var filteredGroups = AddressableAssetGroupInspector.GetGroupsWithSchema(groups, typeof(BundledAssetGroupSchema));
+            Assert.AreEqual(1, filteredGroups.Count, "Read-only group should be excluded");
+            Assert.IsTrue(filteredGroups.Contains(groupWritable));
+            Assert.IsFalse(filteredGroups.Contains(groupReadOnly));
+        }
+
+        [Test]
+        public void GetGroupsWithoutSchema_ReturnsOnlyWritableGroupsWithoutSchema()
+        {
+            var groupWithSchema = Settings.CreateGroup("WithSchema", false, false, false, null);
+            groupWithSchema.AddSchema(typeof(BundledAssetGroupSchema));
+
+            var groupWithoutSchema = Settings.CreateGroup("WithoutSchema", false, false, false, null);
+            groupWithoutSchema.AddSchema(typeof(ContentUpdateGroupSchema));
+
+            var groups = new[] { groupWithSchema, groupWithoutSchema };
+            var filteredGroups = AddressableAssetGroupInspector.GetGroupsWithoutSchema(groups, typeof(BundledAssetGroupSchema));
+            Assert.AreEqual(1, filteredGroups.Count, "Exactly one group should not have the schema");
+            Assert.IsTrue(filteredGroups.Contains(groupWithoutSchema));
+            Assert.IsFalse(filteredGroups.Contains(groupWithSchema));
+        }
+
+        [Test]
+        public void GetGroupsWithoutSchema_ExcludesReadOnlyGroups()
+        {
+            var groupReadOnly = Settings.CreateGroup("ReadOnly", false, false, false, null);
+            groupReadOnly.AddSchema(typeof(ContentUpdateGroupSchema));
+            groupReadOnly.ReadOnly = true;
+
+            var groupWritable = Settings.CreateGroup("Writable", false, false, false, null);
+            groupWritable.AddSchema(typeof(ContentUpdateGroupSchema));
+
+            var groups = new[] { groupReadOnly, groupWritable };
+            var filteredGroups = AddressableAssetGroupInspector.GetGroupsWithoutSchema(groups, typeof(BundledAssetGroupSchema));
+            Assert.AreEqual(1, filteredGroups.Count, "Read-only group should be excluded");
+            Assert.IsTrue(filteredGroups.Contains(groupWritable));
+            Assert.IsFalse(filteredGroups.Contains(groupReadOnly));
+        }
 
         AddressableAssetGroup GetGroupByName(string name)
         {

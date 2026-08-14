@@ -1,24 +1,26 @@
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NUnit.Framework;
+using System.Text.RegularExpressions;
+using UnityEditor;
 using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.Build.CatalogBuilders;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Utilities;
+using UnityEditor.TestTools;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
-using UnityEditor.TestTools;
-using UnityEditor;
-using System.Text.RegularExpressions;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
@@ -41,7 +43,7 @@ namespace UnityEditor.AddressableAssets.Tests
             var group = Settings.CreateGroup("PackedTest", false, false, false, null, typeof(BundledAssetGroupSchema));
             var bundleToAssetGroup = new Dictionary<string, string>();
 
-            List<string> uniqueNames = BuildScriptPackedMode.HandleBundleNames(bundleBuilds, bundleToAssetGroup, group.Guid);
+            List<string> uniqueNames = BundledAssetSchemaBuilder.HandleBundleNames(bundleBuilds, bundleToAssetGroup, group.Guid);
 
             var uniqueNamesInBundleBuilds = bundleBuilds.Select(b => b.assetBundleName).Distinct();
             Assert.AreEqual(bundleBuilds.Count, uniqueNames.Count());
@@ -56,6 +58,7 @@ namespace UnityEditor.AddressableAssets.Tests
         private ResourceManagerRuntimeData m_RuntimeData;
         private AddressableAssetsBuildContext m_BuildContext;
         private BuildScriptPackedMode m_BuildScript;
+        private BundledAssetSchemaBuilder m_SchemaBuilder;
         private AssetBundle m_AssetBundle;
 
         protected override bool PersistSettings => false;
@@ -71,6 +74,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 m_BuilderInput = new AddressablesDataBuilderInput(Settings);
                 m_BuildScript = ScriptableObject.CreateInstance<BuildScriptPackedMode>();
                 m_BuildScript.InitializeBuildContext(m_BuilderInput, out m_BuildContext);
+                m_SchemaBuilder = m_BuildScript.SchemaBuilders.OfType<BundledAssetSchemaBuilder>().First();
                 m_RuntimeData = m_BuildContext.runtimeData;
             }
         }
@@ -87,6 +91,28 @@ namespace UnityEditor.AddressableAssets.Tests
             m_PersistedSettings = null;
         }
 
+        private CatalogPathConfig CreateTestCatalogPathConfig()
+        {
+            return new CatalogPathConfig()
+            {
+                BuildPath = UnityEngine.AddressableAssets.Addressables.BuildPath,
+                LoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}",
+                RemoteBuildPath = Settings.RemoteCatalogBuildPath.GetValue(Settings),
+                RemoteLoadPath = Settings.RemoteCatalogLoadPath.GetValue(Settings),
+                RuntimeCatalogFilename = m_BuilderInput.RuntimeCatalogFilename,
+                VersionedCatalogFileName = m_BuilderInput.RuntimeCatalogFilename
+            };
+        }
+
+        private ContentCatalogDataEntry CreateTestCatalogEntry()
+        {
+            return new ContentCatalogDataEntry(
+                typeof(object),
+                "test_internal_id",
+                typeof(object).ToString(),
+                new[] { "test_key" });
+        }
+
         [Test]
         [TestCase(SharedBundleSettings.DefaultGroup)]
         [TestCase(SharedBundleSettings.CustomGroup)]
@@ -96,7 +122,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AddressableAssetGroup testGroup = m_BuildContext.Settings.CreateGroup("SharedBundleSettingsTest", false, false, false, null);
 
             SharedBundleSettings savedBundleSettings = m_BuildContext.Settings.SharedBundleSettings;
-            int savedGroupIndex= m_BuildContext.Settings.SharedBundleSettingsCustomGroupIndex;
+            int savedGroupIndex = m_BuildContext.Settings.SharedBundleSettingsCustomGroupIndex;
             m_BuildContext.Settings.SharedBundleSettings = sharedBundleSettings;
 
             //Test
@@ -125,7 +151,7 @@ namespace UnityEditor.AddressableAssets.Tests
             SharedBundleSettings savedBundleSettings = m_BuildContext.Settings.SharedBundleSettings;
             int savedGroupIndex = m_BuildContext.Settings.SharedBundleSettingsCustomGroupIndex;
             m_BuildContext.Settings.SharedBundleSettings = SharedBundleSettings.CustomGroup;
-            for(int i = 0; i < m_BuildContext.Settings.groups.Count; i++)
+            for (int i = 0; i < m_BuildContext.Settings.groups.Count; i++)
             {
                 if (m_BuildContext.Settings.groups[i].Guid == testGroup.Guid)
                     m_BuildContext.Settings.SharedBundleSettingsCustomGroupIndex = i;
@@ -158,7 +184,7 @@ namespace UnityEditor.AddressableAssets.Tests
             switch (shaderBundleNaming)
             {
                 case BuiltInBundleNaming.ProjectName:
-                    expectedValue = Hash128.Compute(BuildScriptPackedMode.GetProjectName()).ToString();
+                    expectedValue = Hash128.Compute(BundledAssetSchemaBuilder.GetProjectName()).ToString();
                     break;
                 case BuiltInBundleNaming.DefaultGroupGuid:
                     expectedValue = m_BuildContext.Settings.DefaultGroup.Guid;
@@ -169,7 +195,7 @@ namespace UnityEditor.AddressableAssets.Tests
             }
 
             //Test
-            string bundleName = BuildScriptPackedMode.GetBuiltInBundleNamePrefix(m_BuildContext);
+            string bundleName = BundledAssetSchemaBuilder.GetBuiltInBundleNamePrefix(m_BuildContext);
 
             //Assert
             Assert.AreEqual(expectedValue, bundleName);
@@ -194,7 +220,7 @@ namespace UnityEditor.AddressableAssets.Tests
             switch (monoScriptBundleNaming)
             {
                 case MonoScriptBundleNaming.ProjectName:
-                    expectedValue = Hash128.Compute(BuildScriptPackedMode.GetProjectName()).ToString();
+                    expectedValue = Hash128.Compute(BundledAssetSchemaBuilder.GetProjectName()).ToString();
                     break;
                 case MonoScriptBundleNaming.DefaultGroupGuid:
                     expectedValue = m_BuildContext.Settings.DefaultGroup.Guid;
@@ -205,7 +231,7 @@ namespace UnityEditor.AddressableAssets.Tests
             }
 
             //Test
-            string bundleName = BuildScriptPackedMode.GetMonoScriptBundleNamePrefix(m_BuildContext);
+            string bundleName = BundledAssetSchemaBuilder.GetMonoScriptBundleNamePrefix(m_BuildContext);
 
             //Assert
             Assert.AreEqual(expectedValue, bundleName);
@@ -299,11 +325,11 @@ namespace UnityEditor.AddressableAssets.Tests
                 buildScript.BuildData<AddressableAssetBuildResult>(m_BuilderInput);
 
                 // test
-                string monoBundle = BuildScriptPackedMode.GetMonoScriptBundleNamePrefix(Settings);
+                string monoBundle = BundledAssetSchemaBuilder.GetMonoScriptBundleNamePrefix(Settings);
                 monoBundle = Path.Combine(schema.BuildPath.GetValue(assetGroup.Settings), monoBundle + "_monoscripts.bundle");
                 Assert.IsTrue(File.Exists(monoBundle), "MonoScript bundle not found at " + monoBundle);
 
-                string builtInBundle = BuildScriptPackedMode.GetBuiltInBundleNamePrefix(assetGroup.Settings) + "_unitybuiltinassets.bundle";
+                string builtInBundle = BundledAssetSchemaBuilder.GetBuiltInBundleNamePrefix(assetGroup.Settings) + "_unitybuiltinassets.bundle";
                 builtInBundle = Path.Combine(schema.BuildPath.GetValue(assetGroup.Settings), builtInBundle);
                 Assert.IsTrue(File.Exists(builtInBundle), "Built in Shaders bundle not found at " + builtInBundle);
             }
@@ -380,7 +406,7 @@ namespace UnityEditor.AddressableAssets.Tests
             };
 
             IBundleWriteData writeData = new BundleWriteData();
-            writeData.AssetToFiles.Add(entry1Guid, new List<string>() {bundleFile});
+            writeData.AssetToFiles.Add(entry1Guid, new List<string>() { bundleFile });
             writeData.FileToBundle.Add(bundleFile, internalBundleName);
 
             Dictionary<string, ContentCatalogDataEntry> catalogMap = new Dictionary<string, ContentCatalogDataEntry>()
@@ -392,7 +418,7 @@ namespace UnityEditor.AddressableAssets.Tests
                 }
             };
 
-            BuildScriptPackedMode.SetAssetEntriesBundleFileIdToCatalogEntryBundleFileId(entries, bundleToIdMap, writeData, catalogMap);
+            BundledAssetSchemaBuilder.SetAssetEntriesBundleFileIdToCatalogEntryBundleFileId(entries, bundleToIdMap, writeData, catalogMap);
 
             Assert.AreEqual(bundleCatalogEntryInternalId, entry1.BundleFileId);
             Assert.IsNull(entry2.BundleFileId);
@@ -426,7 +452,7 @@ namespace UnityEditor.AddressableAssets.Tests
             };
 
             IBundleWriteData writeData = new BundleWriteData();
-            writeData.AssetToFiles.Add(entry1Guid, new List<string>() {bundleFile});
+            writeData.AssetToFiles.Add(entry1Guid, new List<string>() { bundleFile });
             writeData.FileToBundle.Add(bundleFile, internalBundleName);
 
             Dictionary<string, ContentCatalogDataEntry> catalogMap = new Dictionary<string, ContentCatalogDataEntry>()
@@ -439,7 +465,7 @@ namespace UnityEditor.AddressableAssets.Tests
             };
 
             //Test
-            BuildScriptPackedMode.SetAssetEntriesBundleFileIdToCatalogEntryBundleFileId(entries, bundleToIdMap, writeData, catalogMap);
+            BundledAssetSchemaBuilder.SetAssetEntriesBundleFileIdToCatalogEntryBundleFileId(entries, bundleToIdMap, writeData, catalogMap);
 
             //Assert
             Assert.AreEqual(bundleCatalogEntryInternalIdUnHashed, entry1.BundleFileId);
@@ -463,7 +489,14 @@ namespace UnityEditor.AddressableAssets.Tests
             ContentCatalogDataEntry dataEntry = new ContentCatalogDataEntry(typeof(ContentCatalogData), targetBundleInternalIdHashed, typeof(BundledAssetProvider).FullName, new List<object>());
             FileRegistry registry = new FileRegistry();
             registry.AddFile(targetBundlePathHashed);
-            m_BuildScript.AddPostCatalogUpdatesInternal(group, callbacks, dataEntry, targetBundlePathHashed, registry);
+            foreach (var schemaBuilder in m_BuildScript.SchemaBuilders)
+            {
+                if (schemaBuilder is BundledAssetSchemaBuilder assetBundleBundler)
+                {
+                    assetBundleBundler.AddPostCatalogUpdatesInternal(group, callbacks, dataEntry, targetBundlePathHashed, registry);
+                    break;
+                }
+            }
 
             //Assert setup
             Assert.AreEqual(1, callbacks.Count);
@@ -493,7 +526,14 @@ namespace UnityEditor.AddressableAssets.Tests
             ContentCatalogDataEntry dataEntry = new ContentCatalogDataEntry(typeof(ContentCatalogData), targetBundleInternalId, typeof(BundledAssetProvider).FullName, new List<object>());
             FileRegistry registry = new FileRegistry();
             registry.AddFile(targetBundlePathHashed);
-            m_BuildScript.AddPostCatalogUpdatesInternal(group, callbacks, dataEntry, targetBundlePathHashed, registry);
+            foreach (var schemaBuilder in m_BuildScript.SchemaBuilders)
+            {
+                if (schemaBuilder is BundledAssetSchemaBuilder assetBundleBundler)
+                {
+                    assetBundleBundler.AddPostCatalogUpdatesInternal(group, callbacks, dataEntry, targetBundlePathHashed, registry);
+                    break;
+                }
+            }
 
             //Assert Setup
             Assert.AreEqual(1, callbacks.Count);
@@ -575,46 +615,116 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CreateCatalogFiles_NullArgs_ShouldFail()
         {
-            var jsonText = "Some text in catalog file";
-            var result = m_BuildScript.CreateCatalogFiles(jsonText, m_BuilderInput, null);
-            Assert.IsFalse(result);
-            LogAssert.Expect(LogType.Error, new Regex("catalog", RegexOptions.IgnoreCase));
+            var catalogBuilder = new JsonCatalogBuilder();
+            var catalogPathConfig = CreateTestCatalogPathConfig();
+            var catalogDataEntries = new List<ContentCatalogDataEntry> { CreateTestCatalogEntry() };
+            var catalogLocations = new List<ResourceLocationData>();
+            var providerTypes = new HashSet<Type> { typeof(AssetBundleProvider) };
 
-            result = m_BuildScript.CreateCatalogFiles(jsonText, null, m_BuildContext);
-            Assert.IsFalse(result);
-            LogAssert.Expect(LogType.Error, new Regex("catalog", RegexOptions.IgnoreCase));
+            // Test null catalog path config
+            Assert.Throws<NullReferenceException>(() =>
+            {
+                catalogBuilder.GenerateCatalog(
+                    m_BuilderInput.Logger,
+                    null,
+                    ResourceManagerRuntimeData.kCatalogAddress,
+                    catalogDataEntries,
+                    catalogLocations,
+                    providerTypes,
+                    m_BuilderInput.Registry,
+                    "test_hash",
+                    false,
+                    0);
+            });
 
-            result = m_BuildScript.CreateCatalogFiles((string)null, m_BuilderInput, m_BuildContext);
-            Assert.IsFalse(result);
-            LogAssert.Expect(LogType.Error, new Regex("catalog", RegexOptions.IgnoreCase));
+            // Test null catalog entries
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                catalogBuilder.GenerateCatalog(
+                    m_BuilderInput.Logger,
+                    catalogPathConfig,
+                    ResourceManagerRuntimeData.kCatalogAddress,
+                    null,
+                    catalogLocations,
+                    providerTypes,
+                    m_BuilderInput.Registry,
+                    "test_hash",
+                    false,
+                    0);
+            });
+
+            // Test null catalog locations
+            Assert.Throws<NullReferenceException>(() =>
+            {
+                catalogBuilder.GenerateCatalog(
+                    m_BuilderInput.Logger,
+                    catalogPathConfig,
+                    ResourceManagerRuntimeData.kCatalogAddress,
+                    catalogDataEntries,
+                    null,
+                    providerTypes,
+                    m_BuilderInput.Registry,
+                    "test_hash",
+                    false,
+                    0);
+            });
         }
 
         [Test]
         public void CatalogLocationData_IsNotNull_ForAnyCatalogLocation()
         {
-            var fileName = m_BuilderInput.RuntimeCatalogFilename;
-            var jsonText = "Some text in catalog file";
+            var catalogBuilder = new JsonCatalogBuilder();
+            var catalogPathConfig = CreateTestCatalogPathConfig();
+            var catalogDataEntries = new List<ContentCatalogDataEntry> { CreateTestCatalogEntry() };
+            var catalogLocations = new List<ResourceLocationData>();
+            var providerTypes = new HashSet<Type> { typeof(AssetBundleProvider) };
 
-            var result = m_BuildScript.CreateCatalogFiles(jsonText, m_BuilderInput, m_BuildContext);
-            Assert.IsTrue(result);
+            var result = catalogBuilder.GenerateCatalog(
+                m_BuilderInput.Logger,
+                catalogPathConfig,
+                ResourceManagerRuntimeData.kCatalogAddress,
+                catalogDataEntries,
+                catalogLocations,
+                providerTypes,
+                m_BuilderInput.Registry,
+                "test_hash",
+                false,
+                0);
 
-            foreach (var catalogLoc in m_BuildContext.runtimeData.CatalogLocations)
+            Assert.IsNotNull(result);
+            Assert.IsTrue(catalogLocations.Count > 0);
+
+            foreach (var catalogLoc in catalogLocations)
                 Assert.IsNotNull(catalogLoc.Data);
         }
 
         [Test]
         public void CreateCatalogFiles_DefaultOptions_ShouldCreateLocalJsonCatalogFile()
         {
-            var fileName = m_BuilderInput.RuntimeCatalogFilename;
-            var jsonText = "Some text in catalog file";
+            var catalogBuilder = new JsonCatalogBuilder();
+            var catalogPathConfig = CreateTestCatalogPathConfig();
+            var catalogDataEntries = new List<ContentCatalogDataEntry> { CreateTestCatalogEntry() };
+            var catalogLocations = new List<ResourceLocationData>();
+            var providerTypes = new HashSet<Type> { typeof(AssetBundleProvider) };
 
-            var result = m_BuildScript.CreateCatalogFiles(jsonText, m_BuilderInput, m_BuildContext);
+            var result = catalogBuilder.GenerateCatalog(
+                m_BuilderInput.Logger,
+                catalogPathConfig,
+                ResourceManagerRuntimeData.kCatalogAddress,
+                catalogDataEntries,
+                catalogLocations,
+                providerTypes,
+                m_BuilderInput.Registry,
+                "test_hash",
+                false,
+                0);
 
-            Assert.IsTrue(result);
+            Assert.IsNotNull(result);
 
             // Assert locations
-            Assert.IsTrue(m_RuntimeData.CatalogLocations.Count == 1);
-            Assert.IsTrue(m_RuntimeData.CatalogLocations.Any(l => l.InternalId.EndsWith(fileName)));
+            Assert.AreEqual(1, catalogLocations.Count);
+            var fileName = m_BuilderInput.RuntimeCatalogFilename + ".json";
+            Assert.IsTrue(catalogLocations.Any(l => l.InternalId.EndsWith(fileName)));
 
             // Assert file paths
             var registryPaths = m_BuilderInput.Registry.GetFilePaths().ToList();
@@ -627,17 +737,40 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             Settings.BundleLocalCatalog = true;
 
+            var catalogBuilder = new JsonCatalogBuilder();
+            var catalogPathConfig = CreateTestCatalogPathConfig();
+            var catalogDataEntries = new List<ContentCatalogDataEntry> { CreateTestCatalogEntry() };
+            var catalogLocations = new List<ResourceLocationData>();
+            var providerTypes = new HashSet<Type> { typeof(AssetBundleProvider) };
+
+            var catalogBundleConfig = new CatalogBundleConfig
+            {
+                ConfigFolder = ConfigFolder,
+                TargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup,
+                Target = EditorUserBuildSettings.activeBuildTarget
+            };
+
+            var result = catalogBuilder.GenerateCatalog(
+                m_BuilderInput.Logger,
+                catalogPathConfig,
+                ResourceManagerRuntimeData.kCatalogAddress,
+                catalogDataEntries,
+                catalogLocations,
+                providerTypes,
+                m_BuilderInput.Registry,
+                "test_hash",
+                false,
+                0,
+                catalogBundleConfig);
+
+            Assert.IsNotNull(result);
+
             var defaultFileName = m_BuilderInput.RuntimeCatalogFilename;
-            var bundleFileName = defaultFileName.Replace(".json", ".bundle");
-            var jsonText = "Some text in catalog file";
-
-            var result = m_BuildScript.CreateCatalogFiles(jsonText, m_BuilderInput, m_BuildContext);
-
-            Assert.IsTrue(result);
+            var bundleFileName = defaultFileName + ".bundle";
 
             // Assert locations
-            Assert.AreEqual(1, m_RuntimeData.CatalogLocations.Count);
-            Assert.AreEqual(1, m_RuntimeData.CatalogLocations.Count(l => l.InternalId.EndsWith(bundleFileName)));
+            Assert.AreEqual(1, catalogLocations.Count);
+            Assert.AreEqual(1, catalogLocations.Count(l => l.InternalId.EndsWith(bundleFileName)));
 
             // Assert file paths
             var registryPaths = m_BuilderInput.Registry.GetFilePaths().ToList();
@@ -646,13 +779,14 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(0, registryPaths.Count(p => p.EndsWith(defaultFileName)));
             Assert.IsTrue(File.Exists(registryBundlePath));
 
-            // Assert catalogs
+            // Assert catalogs - load bundle and verify it contains the catalog data
             m_AssetBundle = AssetBundle.LoadFromFile(registryBundlePath);
             Assert.IsNotNull(m_AssetBundle);
 
             var assets = m_AssetBundle.LoadAllAssets<TextAsset>();
             Assert.AreEqual(1, assets.Length);
-            Assert.AreEqual(jsonText, assets.First().text);
+            // Verify the bundle contains the JSON catalog content
+            Assert.IsTrue(assets.First().text.Contains("test_internal_id"));
         }
 
         [Test]
@@ -669,18 +803,41 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.RemoteCatalogLoadPath = new ProfileValueReference();
             Settings.RemoteCatalogLoadPath.Id = "http://my/server/";
 
+            var catalogBuilder = new JsonCatalogBuilder();
+            var catalogPathConfig = CreateTestCatalogPathConfig();
+            var catalogDataEntries = new List<ContentCatalogDataEntry> { CreateTestCatalogEntry() };
+            var catalogLocations = new List<ResourceLocationData>();
+            var providerTypes = new HashSet<Type> { typeof(AssetBundleProvider) };
+
+            var catalogBundleConfig = new CatalogBundleConfig
+            {
+                ConfigFolder = ConfigFolder,
+                TargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup,
+                Target = EditorUserBuildSettings.activeBuildTarget
+            };
+
+            var result = catalogBuilder.GenerateCatalog(
+                m_BuilderInput.Logger,
+                catalogPathConfig,
+                ResourceManagerRuntimeData.kCatalogAddress,
+                catalogDataEntries,
+                catalogLocations,
+                providerTypes,
+                m_BuilderInput.Registry,
+                "test_hash",
+                true, // buildRemoteCatalog
+                0,
+                catalogBundleConfig);
+
+            Assert.IsNotNull(result);
+
             var defaultFileName = m_BuilderInput.RuntimeCatalogFilename;
-            var bundleFileName = defaultFileName.Replace(".json", ".bundle");
-            var jsonText = "Some text in catalog file";
-
-            var result = m_BuildScript.CreateCatalogFiles(jsonText, m_BuilderInput, m_BuildContext);
-
-            Assert.IsTrue(result);
+            var bundleFileName = defaultFileName + ".bundle";
 
             // Assert locations
-            Assert.AreEqual(4, m_RuntimeData.CatalogLocations.Count);
-            Assert.AreEqual(1, m_RuntimeData.CatalogLocations.Count(l => l.InternalId.EndsWith(bundleFileName)));
-            Assert.AreEqual(3, m_RuntimeData.CatalogLocations.Count(l => l.InternalId.EndsWith(".hash")));
+            Assert.AreEqual(4, catalogLocations.Count);
+            Assert.AreEqual(1, catalogLocations.Count(l => l.InternalId.EndsWith(bundleFileName)));
+            Assert.AreEqual(3, catalogLocations.Count(l => l.InternalId.EndsWith(".hash")));
 
             // Assert file paths
             var remoteBuildFolder = Settings.RemoteCatalogBuildPath.GetValue(Settings);
@@ -697,16 +854,18 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsTrue(File.Exists(registryRemoteCatalogPath));
             Assert.IsTrue(File.Exists(registryRemoteHashPath));
 
-            // Assert catalogs
+            // Assert catalogs - load bundle and verify it contains the catalog data
             m_AssetBundle = AssetBundle.LoadFromFile(registryBundlePath);
             Assert.IsNotNull(m_AssetBundle);
 
             var assets = m_AssetBundle.LoadAllAssets<TextAsset>();
             Assert.AreEqual(1, assets.Length);
-            Assert.AreEqual(jsonText, assets.First().text);
+            // Verify the bundle contains the JSON catalog content
+            Assert.IsTrue(assets.First().text.Contains("test_internal_id"));
 
             var remoteCatalogText = File.ReadAllText(registryRemoteCatalogPath);
-            Assert.AreEqual(jsonText, remoteCatalogText);
+            // Verify the remote catalog contains the JSON catalog content
+            Assert.IsTrue(remoteCatalogText.Contains("test_internal_id"));
 
             File.Delete(registryRemoteCatalogPath);
             File.Delete(registryRemoteHashPath);

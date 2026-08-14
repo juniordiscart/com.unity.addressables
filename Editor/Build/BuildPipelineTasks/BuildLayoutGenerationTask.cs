@@ -7,6 +7,7 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Injector;
@@ -54,7 +55,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         [InjectContext(ContextUsage.In)]
         IBuildParameters m_Parameters;
 
-        [InjectContext]
+        [InjectContext(ContextUsage.InOut, true)]
         IBundleWriteData m_WriteData;
 
         [InjectContext(ContextUsage.In, true)]
@@ -63,16 +64,16 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         [InjectContext]
         IBuildResults m_Results;
 
-        [InjectContext(ContextUsage.In)]
+        [InjectContext(ContextUsage.In, true)]
         IDependencyData m_DependencyData;
 
-        [InjectContext(ContextUsage.In)]
+        [InjectContext(ContextUsage.In, true)]
         IObjectDependencyData m_ObjectDependencyData;
 
-        [InjectContext(ContextUsage.In)]
+        [InjectContext(ContextUsage.In, true)]
         IBundleBuildResults m_BuildBundleResults;
 
-        [InjectContext(ContextUsage.In)]
+        [InjectContext(ContextUsage.In, true)]
         IBuildLayoutParameters m_BuildLayoutParameters;
 #pragma warning restore 649
 
@@ -218,6 +219,165 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         private LayoutLookupTables GenerateLookupTables(AddressableAssetsBuildContext aaContext)
         {
             LayoutLookupTables lookup = new LayoutLookupTables();
+
+            BuildGroupLookupTables(aaContext.Settings, lookup);
+            if (aaContext.ContainsAssetBundleData)
+                GenerateAssetBundleLookupTables(aaContext, lookup);
+            if (aaContext.ContainsContentDirectoryData)
+                GenerateContentDirectoryLookupTables(aaContext, lookup);
+            return lookup;
+        }
+
+        private void BuildGroupLookupTables(AddressableAssetSettings aaSettings, LayoutLookupTables lookup)
+        {
+            // create groups
+            foreach (AddressableAssetGroup group in aaSettings.groups)
+            {
+                if (group == null)
+                    continue;
+
+                if (group.Name != group.name)
+                {
+                    Debug.LogWarningFormat(
+                        "Group name in settings does not match name in group asset, reset group name: \"{0}\" to \"{1}\"",
+                        group.name, group.Name);
+                    group.name = group.Name;
+                }
+
+                var grp = new BuildLayout.Group();
+                grp.Name = group.Name;
+                grp.Guid = group.Guid;
+
+                foreach (AddressableAssetGroupSchema schema in group.Schemas)
+                {
+                    var sd = GenerateSchemaData(schema, aaSettings);
+
+                    BundledAssetGroupSchema bSchema = schema as BundledAssetGroupSchema;
+                    if (bSchema != null && bSchema.IsEnabled)
+                    {
+                        for (int i = 0; i < sd.KvpDetails.Count; ++i)
+                        {
+                            if (sd.KvpDetails[i].Item1 == "BundleMode")
+                            {
+                                string modeStr = bSchema.BundleMode.ToString();
+                                sd.KvpDetails[i] = new System.Tuple<string, string>("PackingMode", modeStr);
+                                grp.PackingMode = modeStr;
+                                break;
+                            }
+                        }
+
+                        lookup.GroupGuidToBuildPath[group.Guid] = bSchema.BuildPath.GetValue(aaSettings);
+                        lookup.GroupGuidToBuildSchemaType[group.Guid] = typeof(BundledAssetGroupSchema);
+                    }
+                    else if (schema is ContentDirectoryGroupSchema cdSchema && cdSchema.IsEnabled)
+                    {
+                        lookup.GroupGuidToBuildPath[group.Guid] = cdSchema.BuildPath.GetValue(aaSettings);
+                        lookup.GroupGuidToBuildSchemaType[group.Guid] = typeof(ContentDirectoryGroupSchema);
+                    }
+
+                    grp.Schemas.Add(sd);
+                }
+
+                lookup.GroupLookup.Add(group.Guid, grp);
+            }
+        }
+
+        private void GenerateContentDirectoryLookupTables(AddressableAssetsBuildContext aaContext, LayoutLookupTables lookup)
+        {
+            if (m_BuildLayoutParameters?.BuildResult == null)
+            {
+                Debug.LogError("BuildLayoutParameters.BuildResult is null. Cannot generate Content Directory layout data.");
+                return;
+            }
+
+            var cdResults = m_BuildLayoutParameters.BuildResult.ContentDirectoryBuildResults;
+            if (cdResults == null || cdResults.Count == 0)
+            {
+                Debug.LogError("ContainsContentDirectoryData has indicated that the build contains Content Directory information, but no Content Directory Build Results " +
+                    "were present in the Build Result.");
+                return;
+            }
+
+            foreach (var contentDirectoryBuild in cdResults)
+            {
+                if (contentDirectoryBuild.GroupGuids == null || contentDirectoryBuild.GroupGuids.Count == 0)
+                {
+                    Debug.LogError("ContainsContentDirectoryData has indicated that the build contains Content Directory information, but no groups were built as part of the content directory build.");
+                    continue;
+                }
+
+                // since all groups should have same build location, pull build location using the first group guid.
+                if (!lookup.GroupGuidToBuildPath.TryGetValue(contentDirectoryBuild.GroupGuids[0], out string buildDirectory))
+                {
+                    Debug.LogError($"Build directory could not be found for group with guid {contentDirectoryBuild.GroupGuids[0]}");
+                    continue;
+                }
+
+                string hashPath = $"{buildDirectory}/BuildManifestHash.txt";
+                string hash = File.Exists(hashPath) ? File.ReadAllText(hashPath) : "NoHashFound";
+
+                BuildLayout.ContentDirectory buildLayoutContentDirectory = new BuildLayout.ContentDirectory
+                {
+                    CatalogName = contentDirectoryBuild.CatalogName,
+                    ManifestPath =  $"{buildDirectory}/{hash}.json",
+                    BuildLayoutPath = $"{contentDirectoryBuild.ContentDirectoryMetaDataPath}/Layout.json",
+                    BuildReportPath = $"{contentDirectoryBuild.ContentDirectoryMetaDataPath}/LastBuild.buildreport",
+                    BuildSessionGUID = contentDirectoryBuild.BuildSessionGUID,
+                    Groups = new List<BuildLayout.Group>()
+                };
+
+                foreach (var groupGuid in contentDirectoryBuild.GroupGuids)
+                {
+                    BuildLayout.Group group = null;
+                    if (!lookup.GroupLookup.TryGetValue(groupGuid, out group))
+                    {
+                        string errorMessage = $"Content Directory build to path {buildDirectory} references a group with guid {groupGuid}, but a group with that guid cannot be found.";
+                        Debug.LogError(errorMessage);
+                        continue;
+                    }
+
+                    if (lookup.GroupToContentDirectory.ContainsKey(group.Guid))
+                        continue;
+
+                    if (!lookup.GroupGuidToBuildPath.TryGetValue(groupGuid, out string bd))
+                    {
+                        Debug.LogError($"Build directory could not be found for group with name: {group.Name}");
+                        continue;
+                    }
+
+                    if (!string.Equals(bd, buildDirectory))
+                    {
+                        Debug.LogError($"Build directory should be the same for all content directory groups, " +
+                            $"but group with name {group.Name} builds to path: {bd} instead of expected path: {buildDirectory}. " +
+                            $"Please ensure all of your groups marked with a Content Directory schema have the same build path.");
+                        continue;
+                    }
+
+                    Type buildSchemaType = null;
+                    if (!lookup.GroupGuidToBuildSchemaType.TryGetValue(group.Guid, out buildSchemaType) ||
+                        buildSchemaType != typeof(ContentDirectoryGroupSchema))
+                    {
+                        string errorMessage = $"Content Directory build to path {buildDirectory} refers to " +
+                        $"Addressables Group: {group.Name}, but {group.Name} does not have a Content Directory Group Schema attached to it.";
+                        Debug.LogError(errorMessage);
+                        continue;
+                    }
+
+                    lookup.GroupToContentDirectory.Add(group.Guid, buildLayoutContentDirectory);
+                    if (!lookup.ContentDirectoryToGroupGuids.ContainsKey(buildLayoutContentDirectory))
+                        lookup.ContentDirectoryToGroupGuids.Add(buildLayoutContentDirectory, new List<string>());
+                    lookup.ContentDirectoryToGroupGuids[buildLayoutContentDirectory].Add(group.Guid);
+                }
+            }
+        }
+
+        private void GenerateAssetBundleLookupTables(AddressableAssetsBuildContext aaContext, LayoutLookupTables lookup)
+        {
+            if (m_WriteData == null)
+            {
+                throw new BuildFailedException("IBundleWriteData is required to generate AssetBundle layout data. The build context " +
+                    "indicates that there should be AssetBundle data present, but the IBundleWriteData is not present.");
+            }
 
             Dictionary<ObjectIdentifier, Type[]> objectTypes = new Dictionary<ObjectIdentifier, Type[]>(1024);
             foreach (KeyValuePair<GUID, AssetResultData> assetResult in m_Results.AssetResults)
@@ -572,8 +732,6 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     }
                 }
             }
-
-            return lookup;
         }
 
         private static Dictionary<long, string> GetObjectsIdForAsset(string assetPath)
@@ -769,9 +927,18 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         private BuildLayout GenerateBuildLayout(AddressableAssetsBuildContext aaContext, LayoutLookupTables lookup)
         {
             BuildLayout layout = new BuildLayout();
+            layout.AddressablesBuildSessionGUID = GUID.Generate();
             layout.BuildStart = aaContext.buildStartTime;
 
-            layout.LocalCatalogBuildPath = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(aaContext.Settings);
+            //TODO: This should be able to grab a single schema and not do all this checking. We discussed doing an IPrimarySchema interface for these main build schemas, so
+            //this would be one place to use that
+            if (aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>() is BundledAssetGroupSchema bundleSchema && bundleSchema.IsEnabled)
+                layout.LocalCatalogBuildPath = bundleSchema.BuildPath.GetValue(aaContext.Settings);
+            else if (aaContext.Settings.DefaultGroup.GetSchema<ContentDirectoryGroupSchema>() is ContentDirectoryGroupSchema contentDirectorySchema && contentDirectorySchema.IsEnabled)
+                layout.LocalCatalogBuildPath = contentDirectorySchema.BuildPath.GetValue(aaContext.Settings);
+            else
+                throw new System.ArgumentException("Default Group does not have an enabled BundledAssetGroupSchema or ContentDirectoryGroupSchema, cannot determine LocalCatalogBuildPath");
+
             layout.RemoteCatalogBuildPath = aaContext.Settings.RemoteCatalogBuildPath.GetValue(aaContext.Settings);
 
             AddressableAssetSettings aaSettings = aaContext.Settings;
@@ -793,51 +960,25 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             // Map from GUID to AddrssableAssetEntry
             lookup.GuidToEntry = aaContext.assetEntries.ToDictionary(x => x.guid, x => x);
 
-            // create groups
+            // add groups to the layout
             foreach (AddressableAssetGroup group in aaSettings.groups)
             {
                 if (group == null)
                     continue;
 
-                if (group.Name != group.name)
+                BuildLayout.Group grp = null;
+                if (lookup.GroupLookup.TryGetValue(group.Guid, out var layoutGroup))
+                    grp = layoutGroup;
+                else
                 {
-                    Debug.LogWarningFormat(
-                        "Group name in settings does not match name in group asset, reset group name: \"{0}\" to \"{1}\"",
-                        group.name, group.Name);
-                    group.name = group.Name;
+                    Debug.LogError($"Attempting to find default group {group.Name} in layout lookup, but it was not found. " +
+                        $"The Guid to Group lookup table should already be populated by this point.");
+                    continue;
                 }
 
-                var grp = new BuildLayout.Group();
-                grp.Name = group.Name;
-                grp.Guid = group.Guid;
                 if (group.IsDefaultGroup())
                     layout.DefaultGroup = grp;
 
-                foreach (AddressableAssetGroupSchema schema in group.Schemas)
-                {
-                    var sd = GenerateSchemaData(schema, aaSettings);
-
-                    BundledAssetGroupSchema bSchema = schema as BundledAssetGroupSchema;
-                    if (bSchema != null)
-                    {
-                        for (int i = 0; i < sd.KvpDetails.Count; ++i)
-                        {
-                            if (sd.KvpDetails[i].Item1 == "BundleMode")
-                            {
-                                string modeStr = bSchema.BundleMode.ToString();
-                                sd.KvpDetails[i] = new Tuple<string, string>("PackingMode", modeStr);
-                                grp.PackingMode = modeStr;
-                                break;
-                            }
-                        }
-
-                        lookup.GroupNameToBuildPath[group.name] = bSchema.BuildPath.GetValue(aaSettings);
-                    }
-
-                    grp.Schemas.Add(sd);
-                }
-
-                lookup.GroupLookup.Add(group.Guid, grp);
                 layout.Groups.Add(grp);
             }
 
@@ -848,6 +989,32 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     lookup.BundleNameToRequestOptions.Add(options.BundleName, options);
                     lookup.BundleNameToCatalogEntry.Add(options.BundleName, entry);
+                }
+            }
+
+            using (m_Log.ScopedStep(LogLevel.Info, "Correlate Content Directories to Groups"))
+            {
+                if (m_BuildLayoutParameters.BuildResult != null)
+                {
+                    HashSet<string> processedContentDirectories = new HashSet<string>();
+                    foreach (var contentDirectory in lookup.GroupToContentDirectory.Values)
+                    {
+                        //Once we've processed a content directory, we don't need to do it again
+                        if (processedContentDirectories.Contains(contentDirectory.CatalogName))
+                            continue;
+
+                        foreach (var groupGuid in lookup.ContentDirectoryToGroupGuids[contentDirectory])
+                        {
+                            if (lookup.GroupLookup.TryGetValue(groupGuid, out var group))
+                            {
+                                group.ContentDirectoryName = contentDirectory.CatalogName;
+                                contentDirectory.Groups.Add(group);
+                            }
+                        }
+
+                        layout.ContentDirectories.Add(contentDirectory);
+                        processedContentDirectories.Add(contentDirectory.CatalogName);
+                    }
                 }
             }
 
@@ -898,23 +1065,23 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     object propertyObject = property.GetValue(schema);
                     if (propertyObject != null)
-                        sd.KvpDetails.Add(new Tuple<string, string>(propertyName, propertyObject.ToString()));
+                        sd.KvpDetails.Add(new System.Tuple<string, string>(propertyName, propertyObject.ToString()));
                 }
                 else if (property.PropertyType == typeof(string))
                 {
                     if (property.GetValue(schema) is string stringValue)
-                        sd.KvpDetails.Add(new Tuple<string, string>(propertyName, stringValue));
+                        sd.KvpDetails.Add(new System.Tuple<string, string>(propertyName, stringValue));
                 }
                 else if (property.PropertyType == typeof(SerializedType))
                 {
                     SerializedType serializeTypeValue = (SerializedType)property.GetValue(schema);
-                    sd.KvpDetails.Add(new Tuple<string, string>(propertyName, serializeTypeValue.ClassName));
+                    sd.KvpDetails.Add(new System.Tuple<string, string>(propertyName, serializeTypeValue.ClassName));
                 }
                 else if (property.PropertyType == typeof(ProfileValueReference))
                 {
                     if (property.GetValue(schema) is ProfileValueReference profileValue)
                         sd.KvpDetails.Add(
-                            new Tuple<string, string>(propertyName, profileValue.GetValue(aaSettings)));
+                            new System.Tuple<string, string>(propertyName, profileValue.GetValue(aaSettings)));
                 }
             }
 
@@ -932,7 +1099,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 b.Name = m_BuildLayoutParameters.BundleNameRemap[b.Name];
                 b.Group = assetGroup;
                 lookup.FilenameToBundle[b.Name] = b;
-                var filePath = Path.Combine(lookup.GroupNameToBuildPath[assetGroup.Name], b.Name);
+                var filePath = Path.Combine(lookup.GroupGuidToBuildPath[assetGroup.Guid], b.Name);
 
                 b.FileSize = GetFileSizeFromPath(filePath, out bool success);
                 if (!success)
@@ -951,7 +1118,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     Debug.LogWarning($"Group with GUID {selectedGroup.Guid} not found in lookup. Bundle group assignment skipped for {b.Name}.");
                 lookup.FilenameToBundle[b.Name] = b;
 
-                b.FileSize = GetFileSizeFromPath(Path.Combine(lookup.GroupNameToBuildPath[selectedGroup.Name], b.Name), out bool success);
+                b.FileSize = GetFileSizeFromPath(Path.Combine(lookup.GroupGuidToBuildPath[selectedGroup.Guid], b.Name), out bool success);
                 if (!success)
                     Debug.LogWarning($"Built in assetBundle {b.Name} was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
 
@@ -1095,7 +1262,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.MainAssetType);
             rootAsset.InternalId = rootEntry.GetAssetLoadPath(true, loadPathsForBundle);
             rootAsset.Labels = new string[rootEntry.labels.Count];
-            rootEntry.labels.CopyTo(rootAsset.Labels);
+            rootEntry.labels.CopyTo(rootAsset.Labels, 0);
             rootAsset.GroupGuid = rootEntry.parentGroup.Guid;
 
             if (rootAsset.Bundle == null)
@@ -1321,6 +1488,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 return;
 
             BuildLayout layout = new BuildLayout();
+            layout.AddressablesBuildSessionGUID = GUID.Generate();
             layout.BuildStart = aaContext.buildStartTime;
             layout.BuildError = error;
             SetLayoutMetaData(layout, aaSettings);

@@ -56,15 +56,18 @@ namespace AddressableAssetsIntegrationTests
         [UnityTest]
         public IEnumerator AsyncCache_IsCleaned_OnFailedOperation()
         {
-            yield return Init();
+           yield return Init();
 
-            AsyncOperationHandle<GameObject> op;
-            using (new IgnoreFailingLogMessage())
-                op = m_Addressables.LoadAssetAsync<GameObject>("notARealKey");
-
-            op.Completed += handle => { Assert.AreEqual(0, m_Addressables.ResourceManager.CachedOperationCount()); };
-
-            yield return op;
+           AsyncOperationHandle<GameObject> op = default;
+           try {
+               using (new IgnoreFailingLogMessage())
+                   op = m_Addressables.LoadAssetAsync<GameObject>("notARealKey");
+               yield return op;
+               Assert.AreEqual(0, m_Addressables.ResourceManager.CachedOperationCount());
+           } finally {
+               if (op.IsValid())
+                   m_Addressables.Release(op);
+           }
         }
 
         [UnityTest]
@@ -1408,7 +1411,7 @@ namespace AddressableAssetsIntegrationTests
 
             var expectedHash = catalogRemotePath.Replace(kCatalogExt, ".hash").GetHashCode();
             string expectedCatalogName = expectedHash + kCatalogExt;
-            string cachedDataPath = m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + expectedCatalogName);
+            string cachedDataPath = Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + expectedCatalogName);
             string cachedHashPath = cachedDataPath.Replace(kCatalogExt, ".hash");
             Assert.IsTrue(File.Exists(cachedDataPath));
             Assert.IsTrue(File.Exists(cachedHashPath));
@@ -1757,7 +1760,7 @@ namespace AddressableAssetsIntegrationTests
             Directory.CreateDirectory(kCatalogFolderPath);
             string fullRemotePath = Path.Combine(kCatalogFolderPath, kCatalogRemotePath);
             string fullRemoteHashPath = fullRemotePath.Replace(kCatalogExt, ".hash");
-            string cachedDataPath = m_Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPath.GetHashCode() + fullRemotePath.Substring(fullRemotePath.LastIndexOf(".")));
+            string cachedDataPath = Addressables.ResolveInternalId(AddressablesImpl.kCacheDataFolder + fullRemoteHashPath.GetHashCode() + fullRemotePath.Substring(fullRemotePath.LastIndexOf(".")));
             string cachedHashPath = cachedDataPath.Replace(kCatalogExt, ".hash");
             string remoteHashPath = WriteHashFileForCatalog(fullRemoteHashPath, "123");
 

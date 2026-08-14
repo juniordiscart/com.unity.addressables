@@ -156,7 +156,7 @@ namespace UnityEngine.AddressableAssets
                 {
                     if (location.Data is AssetBundleRequestOptions options)
                     {
-                        GetLoadInfo(location, m_Addressables.ResourceManager, out LoadType loadType, out string path);
+                        ResourceLocationUtil.GetLoadInfo(location, m_Addressables.ResourceManager, out LoadType loadType, out string path);
                         if (loadType == LoadType.Web)
                         {
                             string cacheDir = Path.Combine(Caching.currentCacheForWriting.path, options.BundleName); // Cache entries are named in this format "baseCachePath/bundleName/hash"
@@ -190,7 +190,7 @@ namespace UnityEngine.AddressableAssets
                     {
                         if (location.Data is AssetBundleRequestOptions options)
                         {
-                            GetLoadInfo(location, m_Addressables.ResourceManager, out LoadType loadType, out string path);
+                            ResourceLocationUtil.GetLoadInfo(location, m_Addressables.ResourceManager, out LoadType loadType, out string path);
                             if (loadType == LoadType.Web)
                             {
                                 string cacheDir = Path.Combine(Caching.currentCacheForWriting.path, options.BundleName); // Cache entries are named in this format "baseCachePath/bundleName/hash"

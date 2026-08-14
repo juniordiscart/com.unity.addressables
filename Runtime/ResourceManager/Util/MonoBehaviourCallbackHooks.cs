@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.ResourceManagement.Util;
 
-internal class MonoBehaviourCallbackHooks : ComponentSingleton<MonoBehaviourCallbackHooks>
+internal class MonoBehaviourCallbackHooks : InternalComponentSingleton<MonoBehaviourCallbackHooks>
 {
     internal Action<float> m_OnUpdateDelegate;
     internal Action<float> m_OnLateUpdateDelegate;

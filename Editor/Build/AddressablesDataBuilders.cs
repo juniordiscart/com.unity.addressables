@@ -87,6 +87,8 @@ namespace UnityEditor.AddressableAssets.Build
     {
         internal List<BundleBuildResult> m_AssetBundleBuildResults = new List<BundleBuildResult>();
 
+        internal List<ContentDirectoryBuildResult> m_ContentDirectoryBuildResults = new List<ContentDirectoryBuildResult>();
+
         /// <summary>
         /// Information about a bundle build results.
         /// </summary>
@@ -113,6 +115,49 @@ namespace UnityEditor.AddressableAssets.Build
             /// The asset hash of the assets included inside the AssetBundle.
             /// </summary>
             public string Hash;
+
+            /// <summary>
+            /// The catalog name that contains this bundle as part of its content.
+            /// </summary>
+            public string CatalogName;
+        }
+
+        /// <summary>
+        /// Information about the result of a content directory build.
+        /// </summary>
+        [System.Serializable]
+        public class ContentDirectoryBuildResult
+        {
+            /// <summary>
+            /// The directory path where content is built to.
+            /// </summary>
+            public string ContentDirectoryPath;
+
+            /// <summary>
+            /// The list of metadata file paths created for the content directory.
+            /// </summary>
+            public string ContentDirectoryMetaDataPath;
+
+            /// <summary>
+            /// The hash of the build manifest for the content directory.
+            /// </summary>
+            public string Hash;
+
+            /// <summary>
+            /// The catalog name that contains this bundle as part of its content.
+            /// </summary>
+            public string CatalogName;
+
+            /// <summary>
+            /// List of guids for each group built as part of this Content Directory build
+            /// </summary>
+            public List<string> GroupGuids;
+
+            /// <summary>
+            /// The BuildSessionGUID from the content directory build.
+            /// Used to precisely identify the build and retrieve its metadata via BuildHistory APIs.
+            /// </summary>
+            public GUID BuildSessionGUID;
         }
 
         /// <summary>
@@ -124,6 +169,11 @@ namespace UnityEditor.AddressableAssets.Build
         /// List of <see cref="BundleBuildResult"/> for AssetBundles created during the build.
         /// </summary>
         public List<BundleBuildResult> AssetBundleBuildResults => m_AssetBundleBuildResults;
+
+        /// <summary>
+        /// List of <see cref="ContentDirectoryBuildResult"/> for Content Directories created during the build.
+        /// </summary>
+        public List<ContentDirectoryBuildResult> ContentDirectoryBuildResults => m_ContentDirectoryBuildResults;
 
         /// <summary>
         /// File path to the generated remote catalog hash file.

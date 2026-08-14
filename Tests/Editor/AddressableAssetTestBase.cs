@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using NUnit.Framework;
+using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.SceneManagement;
@@ -207,6 +208,22 @@ namespace UnityEditor.AddressableAssets.Tests
             m_Settings = null;
             EditorBuildSettings.RemoveConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName);
             EditorBuildSettings.TryGetConfigObject(AddressableAssetSettingsDefaultObject.kDefaultConfigAssetName, out m_Settings);
+        }
+
+        /// <summary>
+        /// Discards the in-memory settings instance and reloads it from disk (used by serialization determinism tests).
+        /// Also assigns <see cref="AddressableAssetSettingsDefaultObject.Settings"/> so code paths that read the global
+        /// default use the same instance as this test base after reload.
+        /// </summary>
+        protected void ReloadSettingsAssetFromDisk()
+        {
+            if (m_Settings == null)
+                throw new InvalidOperationException($"{nameof(ReloadSettingsAssetFromDisk)} requires Settings to exist.");
+
+            string path = AssetDatabase.GetAssetPath(m_Settings);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            m_Settings = AssetDatabase.LoadAssetAtPath<AddressableAssetSettings>(path);
+            AddressableAssetSettingsDefaultObject.Settings = m_Settings;
         }
 
         protected string GetExpectedPath(string filename)

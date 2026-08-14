@@ -33,6 +33,11 @@
             "name": "com.unity.services.ccd.management",
             "expression": "[3.0.0,4.0.0)",
             "define": "CCD_REQUEST_LOGGING"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.6.0a5",
+            "define": "ENABLE_CONTENT_DIRECTORIES"
         }
     ],
     "noEngineReferences": false

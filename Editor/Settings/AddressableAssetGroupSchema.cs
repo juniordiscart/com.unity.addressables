@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor.AddressableAssets.GUI;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
+using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
 
@@ -11,7 +13,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// <summary>
     /// Contains data for AddressableAssetGroups.
     /// </summary>
-    public class AddressableAssetGroupSchema : ScriptableObject
+    public class AddressableAssetGroupSchema : ScriptableObject, ICanBeEnabled
     {
         [FormerlySerializedAs("m_group")]
         [AddressableReadOnly]
@@ -19,6 +21,12 @@ namespace UnityEditor.AddressableAssets.Settings
         AddressableAssetGroup m_Group;
 
         SerializedObject m_SchemaSerializedObject = null;
+
+        /// <summary>
+        /// The identifier used to associate this schema's group with a specific content catalog.
+        /// Groups with the same CatalogId will be built into the same catalog.
+        /// </summary>
+        public virtual string CatalogId { get; set; } = ResourceManagerRuntimeData.kCatalogAddress;
 
         internal SerializedObject SchemaSerializedObject
         {
@@ -29,6 +37,28 @@ namespace UnityEditor.AddressableAssets.Settings
                 return m_SchemaSerializedObject;
             }
             set { m_SchemaSerializedObject = value; }
+        }
+
+        /// <summary>
+        /// Backing field for <see cref="IsEnabled"/>. Indicates whether this schema is enabled for builds.
+        /// </summary>
+        [SerializeField]
+        protected bool m_SchemaIsEnabled = true;
+
+        /// <summary>
+        /// Determines whether this schema is enabled and will participate in builds.
+        /// </summary>
+        public virtual bool IsEnabled
+        {
+            get => m_SchemaIsEnabled;
+            set
+            {
+                if (m_SchemaIsEnabled != value)
+                {
+                    m_SchemaIsEnabled = value;
+                    SetDirty(true);
+                }
+            }
         }
 
         /// <summary>
@@ -61,6 +91,16 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
+        /// Determines whether a given schema can be enabled or not.
+        /// </summary>
+        /// <returns>Returns an empty string if enabling the schema is valid.
+        /// If enabling the schema is not valid, it will instead return an error/warning string.</returns>
+        public virtual string CanEnableSchema()
+        {
+            return "";
+        }
+
+        /// <summary>
         /// Used to display the GUI of the schema.
         /// </summary>
         public virtual void OnGUI()
@@ -69,11 +109,11 @@ namespace UnityEditor.AddressableAssets.Settings
             var fieldMap = new Dictionary<string, FieldInfo>();
             BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
 
-            for(var t = type;  t != null; t = t.BaseType)
+            for (var t = type; t != null; t = t.BaseType)
             {
-                foreach(var field in t.GetFields(flags))
+                foreach (var field in t.GetFields(flags))
                 {
-                    if(!fieldMap.ContainsKey(field.Name))
+                    if (!fieldMap.ContainsKey(field.Name))
                         fieldMap.Add(field.Name, field);
                 }
             }
@@ -82,7 +122,7 @@ namespace UnityEditor.AddressableAssets.Settings
             p.Next(true);
             while (p.Next(false))
             {
-                if(fieldMap.ContainsKey(p.name))
+                if (fieldMap.ContainsKey(p.name))
                     EditorGUILayout.PropertyField(p, true);
             }
 
@@ -101,7 +141,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Used to notify the addressables settings that data has been modified.  This must be called by subclasses to ensure proper cache invalidation.
         /// </summary>
         /// <param name="postEvent">Determines if this method call will post an event to the internal addressables event system</param>
-        protected void SetDirty(bool postEvent)
+        protected internal void SetDirty(bool postEvent)
         {
             m_SchemaSerializedObject = null;
             if (m_Group != null)
@@ -131,7 +171,13 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="otherSchemas">The list of schemas that may contain the property.</param>
         /// <param name="type">The property type.</param>
         /// <param name="propertyName">The property name.</param>
-        protected void ShowMixedValue(SerializedProperty property, List<AddressableAssetGroupSchema> otherSchemas, Type type, string propertyName)
+        protected internal void ShowMixedValue(SerializedProperty property, List<AddressableAssetGroupSchema> otherSchemas, Type type, string propertyName)
+        {
+            ShowMixedValue<AddressableAssetGroupSchema>(property, otherSchemas, type, propertyName);
+        }
+
+        internal void ShowMixedValue<TSchema>(SerializedProperty property, List<TSchema> otherSchemas, Type type, string propertyName)
+            where TSchema : AddressableAssetGroupSchema
         {
             foreach (var schema in otherSchemas)
             {
@@ -147,12 +193,13 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 if (type == typeof(ProfileValueReference))
                 {
-                    var field = property.serializedObject.targetObject.GetType().GetField(property.name,
-                        BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance |
-                        BindingFlags.DeclaredOnly);
+                    var targetObj = property.serializedObject.targetObject;
+                    var otherObj = s_prop.serializedObject.targetObject;
+                    FieldInfo field = GetField(targetObj, property.name);
+                    FieldInfo otherField = GetField(otherObj, property.name);
 
-                    string lhsId = (field?.GetValue(property.serializedObject.targetObject) as ProfileValueReference)?.Id;
-                    string rhsId = (field?.GetValue(s_prop.serializedObject.targetObject) as ProfileValueReference)?.Id;
+                    string lhsId = (field?.GetValue(targetObj) as ProfileValueReference)?.Id;
+                    string rhsId = (otherField?.GetValue(otherObj) as ProfileValueReference)?.Id;
 
                     if (lhsId != null && rhsId != null && lhsId != rhsId)
                     {
@@ -178,6 +225,13 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
             }
         }
+        internal FieldInfo GetField(UnityEngine.Object obj, string propertyName)
+        {
+            return obj.GetType().GetField(propertyName,
+                BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance |
+                BindingFlags.DeclaredOnly);
+        }
+
         /// <summary>
         /// Compare two AddressableAssetGroupSchemas to see if they're the same.
         /// </summary>
@@ -194,6 +248,30 @@ namespace UnityEditor.AddressableAssets.Settings
                 return 1;
             // you can only have one schema of a given type in a set so using the name should be ok.
             return string.CompareOrdinal(x.SchemaSerializedObject.targetObject.name, y.SchemaSerializedObject.targetObject.name);
+        }
+
+        internal void SetPathVariable(AddressableAssetSettings addressableAssetSettings, ref ProfileValueReference path, string newPathName, string oldPathName, List<string> variableNames)
+        {
+            if (path == null || !path.HasValue(addressableAssetSettings))
+            {
+                bool hasNewPath = variableNames.Contains(newPathName);
+                bool hasOldPath = variableNames.Contains(oldPathName);
+
+                if (hasNewPath && string.IsNullOrEmpty(path?.Id))
+                {
+                    path = new ProfileValueReference();
+                    path.SetVariableByName(addressableAssetSettings, newPathName);
+                    SetDirty(true);
+                }
+                else if (hasOldPath && string.IsNullOrEmpty(path?.Id))
+                {
+                    path = new ProfileValueReference();
+                    path.SetVariableByName(addressableAssetSettings, oldPathName);
+                    SetDirty(true);
+                }
+                else if (!hasOldPath && !hasNewPath)
+                    Debug.LogWarning("Default path variable " + newPathName + " not found when initializing BundledAssetGroupSchema. Please manually set the path via the groups window.");
+            }
         }
     }
 }

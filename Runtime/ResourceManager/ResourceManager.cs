@@ -395,14 +395,13 @@ namespace UnityEngine.ResourceManagement
         /// <returns>An IOperationCacheKey for use with the async operation cache.</returns>
         internal IOperationCacheKey CreateCacheKeyForLocation(IResourceProvider provider, IResourceLocation location, Type desiredType = null)
         {
-            //Actual key generation has been moved to AssetBundleProvider virtual method to allow provider derived from AssetBundleProvider
-            //skip calling TransformInternalId method, as it may return different values before and after asset bundle is loaded,
-            //for example when using Play Asset Delivery for Android.
-            //For major package release consider this method to be made a part of IResourceProvider to simplify this whole logic.
-            if(provider is AssetBundleProvider abProvider)
-                return abProvider.CreateCacheKeyForLocation(this, location, desiredType);
-            else
-                return new LocationCacheKey(location, desiredType);
+            // Delegate to the provider's virtual method if it extends ResourceProviderBase.
+            // This allows providers like AssetBundleProvider and ContentDirectoryProvider to use
+            // TransformInternalId for cache key generation, which may return different values
+            // before and after asset bundle is loaded (e.g., when using Play Asset Delivery for Android).
+            if (provider is ResourceProviderBase rpb)
+                return rpb.CreateCacheKeyForLocation(this, location, desiredType);
+            return new LocationCacheKey(location, desiredType);
         }
 
         Dictionary<Type, Type> m_ProviderOperationTypeCache = new Dictionary<Type, Type>();
@@ -1139,6 +1138,10 @@ namespace UnityEngine.ResourceManagement
                 MonoBehaviourCallbackHooks.Instance.OnUpdateDelegate -= Update;
                 m_RegisteredForCallbacks = false;
             }
+
+#if ENABLE_PROFILER
+            Profiling.ProfilerRuntime.CleanUp();
+#endif
         }
     }
 }

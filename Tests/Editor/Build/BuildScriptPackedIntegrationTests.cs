@@ -82,6 +82,7 @@ public class BuildScriptPackedIntegrationTests
     [TearDown]
     public void TearDown()
     {
+        AssetDatabase.DeleteAsset(m_Settings.AssetPath);
         DeleteSingleTestDirectories();
     }
 

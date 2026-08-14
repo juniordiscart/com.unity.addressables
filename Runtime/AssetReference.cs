@@ -341,10 +341,6 @@ namespace UnityEngine.AddressableAssets
             internal set
             {
                 m_Operation = value;
-#if UNITY_EDITOR
-                if (m_Operation.Status != AsyncOperationStatus.Failed)
-                    m_ActiveAssetReferences.Add(this);
-#endif
             }
         }
 
@@ -430,47 +426,12 @@ namespace UnityEngine.AddressableAssets
             get { return m_Operation.IsDone; }
         }
 
-#if UNITY_EDITOR
-        [InitializeOnLoadMethod]
-        static void RegisterForPlaymodeChange()
-        {
-            EditorApplication.playModeStateChanged -= EditorApplicationOnplayModeStateChanged;
-            EditorApplication.playModeStateChanged += EditorApplicationOnplayModeStateChanged;
-        }
-
-        static HashSet<AssetReference> m_ActiveAssetReferences = new HashSet<AssetReference>();
-
-        static void EditorApplicationOnplayModeStateChanged(PlayModeStateChange state)
-        {
-            if (EditorSettings.enterPlayModeOptionsEnabled && Addressables.reinitializeAddressables)
-            {
-                foreach (AssetReference reference in m_ActiveAssetReferences)
-                {
-                    reference.ReleaseHandleWhenPlaymodeStateChanged(state);
-                }
-            }
-        }
-
-        void ReleaseHandleWhenPlaymodeStateChanged(PlayModeStateChange state)
-        {
-            if (m_Operation.IsValid())
-                m_Operation.Release();
-        }
-#endif
-
         /// <summary>
         /// Construct a new AssetReference object.
         /// </summary>
         public AssetReference()
         {
         }
-
-#if UNITY_EDITOR
-        ~AssetReference()
-        {
-            m_ActiveAssetReferences.Remove(this);
-        }
-#endif
 
         /// <summary>
         /// Construct a new AssetReference object.

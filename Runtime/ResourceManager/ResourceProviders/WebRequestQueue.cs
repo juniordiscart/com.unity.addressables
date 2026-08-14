@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine.Networking;
 using UnityEngine.ResourceManagement.Util;
 
@@ -58,15 +59,49 @@ namespace UnityEngine.ResourceManagement
         }
     }
 
-
     /// <summary>
     /// Represents a queue of web requests. Completed requests are removed from the queue.
     /// </summary>
     public static class WebRequestQueue
     {
         internal static int s_MaxRequest = 3;
-        internal static Queue<WebRequestQueueOperation> s_QueuedOperations = new Queue<WebRequestQueueOperation>();
-        internal static List<UnityWebRequestAsyncOperation> s_ActiveRequests = new List<UnityWebRequestAsyncOperation>();
+        internal static Queue<WebRequestQueueOperation> s_QueuedOperations = new();
+        internal static List<UnityWebRequestAsyncOperation> s_ActiveRequests = new();
+
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStaticsOnLoad()
+        {
+            EditorApplication.playModeStateChanged -= OnPlaymodeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlaymodeStateChanged;
+
+            s_MaxRequest = 3;
+
+            s_QueuedOperations.Clear();
+            // Ensure that if any operation happen while in edit mode, the requests callback are properly removed.
+            foreach (var operation in s_ActiveRequests)
+            {
+                operation.completed -= OnWebAsyncOpComplete;
+                operation.webRequest.Abort();
+            }
+            s_ActiveRequests.Clear();
+        }
+
+        static void OnPlaymodeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode)
+            {
+                s_QueuedOperations.Clear();
+                foreach (var operation in s_ActiveRequests)
+                {
+                    operation.webRequest.Abort();
+                    operation.completed -= OnWebAsyncOpComplete;
+                }
+                s_ActiveRequests.Clear();
+            }
+        }
+#endif
 
         /// <summary>
         /// Sets the max number of web requests running at the same time.

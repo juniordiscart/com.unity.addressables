@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -96,8 +97,20 @@ namespace UnityEditor.AddressableAssets.GUI
 
             m_CurrentName = m_SearchField.OnGUI(searchRect, m_CurrentName);
             m_Tree.searchString = m_CurrentName;
-            m_Tree.IsEnterKeyPressed = isEnterKeyPressed;
-            m_Tree.OnGUI(remainingRect);
+
+            if (m_Tree.GetRows().Count == 0)
+            {
+                string helpMessage = "The Shared Bundle Settings Group must have an enabled Content Packing & Loading schema attached to it. It appears none of the Groups that match your search criteria " +
+                    "have this schema attached and enabled. A quick fix is to create an empty Group with the Content Packing & Loading schema, then set the shared Group to that empty Group.";
+                float helpBoxHeight = EditorStyles.helpBox.CalcHeight(new GUIContent(helpMessage), remainingRect.width);
+                Rect helpBoxRect = new Rect(remainingRect.x, remainingRect.y, remainingRect.width, helpBoxHeight);
+                EditorGUI.HelpBox(helpBoxRect, helpMessage, MessageType.Info);
+            }
+            else
+            {
+                m_Tree.IsEnterKeyPressed = isEnterKeyPressed;
+                m_Tree.OnGUI(remainingRect);
+            }
 
             if (m_ShouldClose || isEnterKeyPressed)
             {
@@ -157,6 +170,9 @@ namespace UnityEditor.AddressableAssets.GUI
 
             internal void SetInitialSelection(string assetString)
             {
+                if(rootItem == null || rootItem.children == null)
+                    return;
+
                 foreach (var child in rootItem.children)
                 {
                     if (child.displayName.IndexOf(assetString, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -196,6 +212,9 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
 
                 List<TreeViewItemAdapter> rows = new List<TreeViewItemAdapter>();
+                if(root.children == null)
+                    return rows;
+
                 foreach (var child in rootItem.children)
                 {
                     if (child.displayName.IndexOf(searchString, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -218,6 +237,13 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     foreach (AddressableAssetGroup group in aaSettings.groups)
                     {
+                        if (group == null)
+                            continue;
+
+                        var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
+                        if (bundledSchema == null || !bundledSchema.IsEnabled)
+                            continue;
+
                         if (!m_ShowReadOnlyGroups && group.ReadOnly)
                             continue;
                         var child = new GroupsPopupTreeItem(group.Guid.GetHashCode(), 0, group.name, group, m_Popup.m_FolderTexture);
@@ -254,7 +280,9 @@ namespace UnityEditor.AddressableAssets.GUI
                     s_FolderTexture = EditorGUIUtility.IconContent("Folder Icon").image;
                 }
 
-                GUIContent groupGUIContent = new GUIContent(displayGroup.Name, s_FolderTexture);
+                string displayName = displayGroup != null ? displayGroup.Name : "No Valid Group";
+
+                GUIContent groupGUIContent = new GUIContent(displayName, s_FolderTexture);
                 Rect groupFieldRect = GUILayoutUtility.GetRect(new GUIContent(), EditorStyles.objectField);
                 float newXPos = EditorGUIUtility.labelWidth + 20;
                 float newWidth = groupFieldRect.width + (groupFieldRect.x - newXPos);

@@ -47,6 +47,16 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         private string m_SettingsAssetPath;
 
         /// <summary>
+        /// Indicates whether the build contains asset bundle data.
+        /// </summary>
+        public bool ContainsAssetBundleData = false;
+
+        /// <summary>
+        /// Indicates whether the build contains content directory data.
+        /// </summary>
+        public bool ContainsContentDirectoryData = false;
+
+        /// <summary>
         /// The time the build started
         /// </summary>
         public DateTime buildStartTime;
@@ -62,7 +72,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         public List<ContentCatalogDataEntry> locations;
 
         /// <summary>
-        /// Mapping of bundles to asset groups.
+        /// Mapping of bundle name to group guid
         /// </summary>
         public Dictionary<string, string> bundleToAssetGroup;
 
@@ -70,6 +80,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// Mapping of asset group to bundles.
         /// </summary>
         public Dictionary<AddressableAssetGroup, List<string>> assetGroupToBundles;
+
+        /// <summary>
+        /// Mapping of asset bundle internal names to output names
+        /// </summary>
+        public Dictionary<string, string> internalToOutputBundleName;
 
         /// <summary>
         /// Set of provider types needed in this build.

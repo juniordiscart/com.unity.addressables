@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 #if UNITY_2022_2_OR_NEWER
 using UnityEditor.AddressableAssets.BuildReportVisualizer;
 #endif
@@ -9,15 +8,12 @@ using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Utilities;
-using UnityEditor.Experimental;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.Initialization;
-using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
-using System.Reflection;
 
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -110,7 +106,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     else
                         errMessage = e.Message;
 
-                    Debug.LogError(errMessage);
+                    Debug.LogException(e);
                     return AddressableAssetBuildResult.CreateResult<TResult>(null, 0, errMessage);
                 }
 
@@ -157,6 +153,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     return "No groups found to process in build script " + Name;
                 }
 
+                var checkBuildPathError = PreProcessContentDirectoryGroups(aaContext);
+                if (!string.IsNullOrEmpty(checkBuildPathError))
+                {
+                    return checkBuildPathError;
+                }
+
                 //intentionally for not foreach so groups can be added mid-loop.
                 for (int index = 0; index < aaContext.Settings.groups.Count; index++)
                 {
@@ -186,6 +188,33 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return string.Empty;
         }
 
+        //This is really only needed while we don't support Content Directories having different build paths.
+        //Once that's supported, we can pull this out.
+        string PreProcessContentDirectoryGroups(AddressableAssetsBuildContext aaContext)
+        {
+            string buildPath = "";
+            foreach (var group in aaContext.Settings.groups)
+            {
+                if (group == null)
+                    continue;
+
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+                if (schema != null && schema.IsEnabled)
+                {
+                    if (string.IsNullOrEmpty(buildPath))
+                        buildPath = schema.BuildPath.GetValue(aaContext.Settings);
+                    else
+                    {
+                        if(schema.BuildPath.GetValue(aaContext.Settings) != buildPath)
+                        {
+                            return $"Currently, all Content Directory Groups must share the same Build Path. Group '{group.Name}' has a different Build Path.";
+                        }
+                    }
+                }
+            }
+            return string.Empty;
+        }
+
         // If user has recently customized the build/load path in the inspector, it may not be retrievable from profileSettings yet
         // We retrieve it directly from the build/load path variable in that case.
         internal static string GetCustomOrDefaultPath(AddressableAssetSettings settings, ProfileValueReference pathValueReference, bool useCustomPaths)
@@ -206,6 +235,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var message = string.Empty;
             var settings = aaContext.Settings;
             var schema = assetGroup.GetSchema<BundledAssetGroupSchema>();
+            if (schema == null || !schema.IsEnabled)
+                return string.Empty;
 
             if (settings.UseUnityWebRequestForLocalBundles && schema.StripDownloadOptions)
             {
@@ -306,6 +337,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 registry.RemoveFile(path);
                 return false;
             }
+        }
+
+        // this is just a wrapper for BuildScriptSchemaDriven
+        internal static bool WriteStringToFile(string path, string content, FileRegistry registry)
+        {
+            return WriteFile(path, content, registry);
         }
 
         /// <summary>

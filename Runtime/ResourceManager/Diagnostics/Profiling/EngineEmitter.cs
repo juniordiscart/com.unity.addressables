@@ -35,5 +35,14 @@ namespace UnityEngine.ResourceManagement.Profiling
         {
             MonoBehaviourCallbackHooks.Instance.OnLateUpdateDelegate += d;
         }
+
+        /// <summary>
+        /// Removes a callback from the MonoBehaviourCallbackHooks instance
+        /// </summary>
+        /// <param name="d">The callback to remove</param>
+        public void CleanUpCallbacks(Action<float> d)
+        {
+            MonoBehaviourCallbackHooks.Instance.OnLateUpdateDelegate -= d;
+        }
     }
 }

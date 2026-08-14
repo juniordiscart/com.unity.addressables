@@ -4,6 +4,7 @@ using System.IO;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
@@ -863,6 +864,19 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
+        public void AddressableAssetSettings_AddGroupTemplateObject_DoesNotAddDuplicateWhenAlreadyInList()
+        {
+            var template = ScriptableObject.CreateInstance<AddressableAssetGroupTemplate>();
+            var firstAdd = Settings.AddGroupTemplateObject(template);
+            Assert.IsTrue(firstAdd, "First add should succeed");
+            int count = Settings.GroupTemplateObjects.Count;
+
+            var secondAdd = Settings.AddGroupTemplateObject(template);
+            Assert.IsFalse(secondAdd, "Second add returns false (already present)");
+            Assert.AreEqual(count, Settings.GroupTemplateObjects.Count, "Count unchanged when adding same reference again");
+        }
+
+        [Test]
         public void AddressableAssetSettings_CreateAndAddGroupTemplate_CannotAddInvalidGroupTemplateObject()
         {
             Assert.IsFalse(Settings.CreateAndAddGroupTemplate(null, "test template function", null));
@@ -1612,5 +1626,121 @@ namespace UnityEditor.AddressableAssets.Tests
             }
             Assert.AreEqual(expectedBundledAssetProviderValue, group.GetSchema<BundledAssetGroupSchema>().BundledAssetProviderType, "The value of BundledAssetProviderType should be unchanged.");
         }
+
+#if ENABLE_CONTENT_DIRECTORIES
+        [Test]
+        public void CanSetGroupSettings_ContentDirectoryProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedGroupRootAssetProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType;
+            var expectedGroupRootAssetEntryProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType;
+            {
+                var expectedContentDirectoryProviderValue = new SerializedType() { Value = typeof(ContentDirectoryProvider) };
+                settings.ContentDirectoryProviderType = expectedContentDirectoryProviderValue;
+                settings.UpdateContentDirectoryProviderType();
+                Assert.AreEqual(expectedContentDirectoryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType, "The value of ContentDirectoryProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedGroupRootAssetProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType, "The value of GroupRootAssetProviderType should be unchanged.");
+            Assert.AreEqual(expectedGroupRootAssetEntryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType, "The value of GroupRootAssetEntryProviderType should be unchanged.");
+        }
+
+        [Test]
+        public void CanSetGroupSettings_UpdateContentDirectoryProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedGroupRootAssetProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType;
+            var expectedGroupRootAssetEntryProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType;
+            {
+                var expectedContentDirectoryProviderValue = new SerializedType() { Value = typeof(ContentDirectoryProvider) };
+                settings.m_ContentDirectoryProviderType = expectedContentDirectoryProviderValue;
+                settings.UpdateContentDirectoryProviderType();
+                Assert.AreEqual(expectedContentDirectoryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType, "The value of ContentDirectoryProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedGroupRootAssetProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType, "The value of GroupRootAssetProviderType should be unchanged.");
+            Assert.AreEqual(expectedGroupRootAssetEntryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType, "The value of GroupRootAssetEntryProviderType should be unchanged.");
+        }
+
+        [Test]
+        public void CanSetGroupSettings_GroupRootAssetProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedContentDirectoryProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType;
+            var expectedGroupRootAssetEntryProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType;
+            {
+                var expectedGroupRootAssetProviderValue = new SerializedType() { Value = typeof(GroupRootAssetProvider) };
+                settings.GroupRootAssetProviderType = expectedGroupRootAssetProviderValue;
+                settings.UpdateGroupRootAssetProviderType();
+                Assert.AreEqual(expectedGroupRootAssetProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType, "The value of GroupRootAssetProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedContentDirectoryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType, "The value of ContentDirectoryProviderType should be unchanged.");
+            Assert.AreEqual(expectedGroupRootAssetEntryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType, "The value of GroupRootAssetEntryProviderType should be unchanged.");
+        }
+
+        [Test]
+        public void CanSetGroupSettings_UpdateGroupRootAssetProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedContentDirectoryProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType;
+            var expectedGroupRootAssetEntryProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType;
+            {
+                var expectedGroupRootAssetProviderValue = new SerializedType() { Value = typeof(GroupRootAssetProvider) };
+                settings.m_GroupRootAssetProviderType = expectedGroupRootAssetProviderValue;
+                settings.UpdateGroupRootAssetProviderType();
+                Assert.AreEqual(expectedGroupRootAssetProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType, "The value of GroupRootAssetProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedContentDirectoryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType, "The value of ContentDirectoryProviderType should be unchanged.");
+            Assert.AreEqual(expectedGroupRootAssetEntryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType, "The value of GroupRootAssetEntryProviderType should be unchanged.");
+        }
+
+        [Test]
+        public void CanSetGroupSettings_GroupRootAssetEntryProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedContentDirectoryProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType;
+            var expectedGroupRootAssetProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType;
+            {
+                var expectedGroupRootAssetEntryProviderValue = new SerializedType() { Value = typeof(GroupRootAssetEntryProvider) };
+                settings.GroupRootAssetEntryProviderType = expectedGroupRootAssetEntryProviderValue;
+                settings.UpdateGroupRootAssetEntryProviderType();
+                Assert.AreEqual(expectedGroupRootAssetEntryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType, "The value of GroupRootAssetEntryProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedContentDirectoryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType, "The value of ContentDirectoryProviderType should be unchanged.");
+            Assert.AreEqual(expectedGroupRootAssetProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType, "The value of GroupRootAssetProviderType should be unchanged.");
+        }
+
+        [Test]
+        public void CanSetGroupSettings_UpdateGroupRootAssetEntryProviderType()
+        {
+            var settings = AddressableAssetSettings.Create(ConfigFolder, k_TestConfigName + "_GlobalSettingsTest", false, false);
+            var group = settings.CreateGroup("GlobalSettingsTest", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType = new SerializedType() { Value = typeof(ResourceProviderBase) };
+
+            var expectedContentDirectoryProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType;
+            var expectedGroupRootAssetProviderValue = group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType;
+            {
+                var expectedGroupRootAssetEntryProviderValue = new SerializedType() { Value = typeof(GroupRootAssetEntryProvider) };
+                settings.m_GroupRootAssetEntryProviderType = expectedGroupRootAssetEntryProviderValue;
+                settings.UpdateGroupRootAssetEntryProviderType();
+                Assert.AreEqual(expectedGroupRootAssetEntryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetEntryProviderType, "The value of GroupRootAssetEntryProviderType should be changed.");
+            }
+            Assert.AreEqual(expectedContentDirectoryProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().ContentDirectoryProviderType, "The value of ContentDirectoryProviderType should be unchanged.");
+            Assert.AreEqual(expectedGroupRootAssetProviderValue, group.GetSchema<ContentDirectoryGroupSchema>().GroupRootAssetProviderType, "The value of GroupRootAssetProviderType should be unchanged.");
+        }
+#endif
     }
 }

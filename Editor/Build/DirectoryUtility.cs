@@ -85,4 +85,11 @@ internal static class DirectoryUtility
             }
         }
     }
+
+    public static string EnsureTrailingSlash(string path)
+    {
+        if (path.EndsWith("/"))
+            return path;
+        return path + "/";
+    }
 }

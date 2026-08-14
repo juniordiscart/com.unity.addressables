@@ -11,7 +11,6 @@ using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.Networking;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.Exceptions;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
@@ -19,7 +18,7 @@ using UnityEngine.SceneManagement;
 
 namespace UnityEngine.AddressableAssets
 {
-    internal class AddressablesImpl : IEqualityComparer<IResourceLocation>
+    internal class AddressablesImpl : IEqualityComparer<IResourceLocation>, IDisposable
     {
         ResourceManager m_ResourceManager;
         IInstanceProvider m_InstanceProvider;
@@ -84,9 +83,24 @@ namespace UnityEngine.AddressableAssets
             SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
-        internal void ReleaseSceneManagerOperation()
+        public void Dispose()
         {
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
+
+            // This will unload every addressable reference loaded in memory.
+            // It has to work on a copy of the list given the Release will change the list itself.
+            var handles = new List<AsyncOperationHandle>(m_resultToHandle.Values);
+            foreach (var handle in handles)
+            {
+                m_ResourceManager.Release(handle);
+            }
+            handles = new List<AsyncOperationHandle>(m_SceneInstances);
+            foreach (var handle in handles)
+            {
+                m_ResourceManager.Release(handle);
+            }
+
+            m_ResourceManager.Dispose();
         }
 
         public Func<IResourceLocation, string> InternalIdTransformFunc

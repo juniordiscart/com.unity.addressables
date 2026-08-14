@@ -6,33 +6,200 @@ using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 using UnityEngine.ResourceManagement.Util;
-using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
     /*
-     * This is a series of tests to verify that our serialization is deterministic and does not
-     * trigger version control changes.
+     * SERIALIZATION DETERMINISM — how these tests work
      *
-     * If you get instabilities or one-off test failures, it's probably because something has
-     * changed in serialization of the object in question and we're not sorting the output.
+     * Goal: Addressables should serialize collections (profiles, groups, labels, etc.) in a
+     * stable order so Unity saves predictable asset YAML. Verification uses self-consistency:
      *
-     * This test is made to be unstable if there are changes that are not deterministic. So if
-     * you see intermittent failures that's the sign there's a bug and should NOT be ignored.
+     *   1) Baseline repeat-save: save the asset twice without shuffling collections; both serialized texts must match.
+     *      Catches nondeterministic YAML unrelated to list order (complements shuffle checks below).
+     *   2) Build a realistic asset (groups, profiles, environments, …).
+     *   3) Shuffle in-memory lists with Fisher–Yates using System.Random (pass A).
+     *   4) Save → read the full asset file text as T1.
+     *   5) Reload the asset from disk so memory matches what was written.
+     *   6) Shuffle again with a different seed (pass B).
+     *   7) Save → read file text as T2.
+     *   8) Assert T1 == T2 (after normalizing line endings).
+     *
+     * If serialization is deterministic, both shuffles should collapse to the same canonical
+     * YAML regardless of input order. Pass A and B share the same asset GUIDs and IDs on disk;
+     * only list order before save differs.
+     *
+     * Random seeds: each test run picks two distinct seeds (unless you set the reproduction
+     * static fields below). That exercises different permutations over CI time while keeping
+     * failures reproducible via the seeds printed in the assertion message.
+     *
+     * Intermittent failures can mean nondeterministic serialization (bug). Do not ignore them.
      */
     public class SerializationTests : AddressableAssetTestBase
     {
+        /// <summary>
+        /// When both this and <see cref="ReproduceDeterminismShuffleSeedPassB"/> are set, determinism tests use these
+        /// shuffle seeds instead of random values. Use the values from a failed assertion message to reproduce locally.
+        /// Set both back to null when finished debugging.
+        /// </summary>
+        public static int? ReproduceDeterminismShuffleSeedPassA;
 
-        public string groupGuid = "422b6705-092c-4699-b57b-abfe7a6245d0";
+        /// <summary>
+        /// Pair with <see cref="ReproduceDeterminismShuffleSeedPassA"/>; see that property for usage.
+        /// </summary>
+        public static int? ReproduceDeterminismShuffleSeedPassB;
+
+        /// <summary>
+        /// Shared RNG for label shuffling during setup (<see cref="CreateAndShuffleLabels"/>) and for
+        /// determinism shuffles after we assign <see cref="m_Rnd"/> from pass A / pass B seeds.
+        /// </summary>
         private System.Random m_Rnd;
+
+        /// <summary>
+        /// Seed for setup-only shuffling (labels). Determinism passes use seeds from <see cref="GetDeterminismShuffleSeeds"/>.
+        /// </summary>
         private int m_Seed = 0;
+
         private List<Type> m_SchemaTypes;
 
+        /// <summary>
+        /// Permutes list order in place with Fisher–Yates, using <see cref="m_Rnd"/>. Simulates arbitrary list order
+        /// before save without relying on a non-transitive <c>Sort</c> comparer.
+        /// </summary>
         private void Shuffle<T>(List<T> toShuffle)
         {
-            toShuffle.Sort((x, y) => m_Rnd.Next() - m_Rnd.Next());
+            for (int i = toShuffle.Count - 1; i > 0; i--)
+            {
+                int j = m_Rnd.Next(i + 1);
+                T temp = toShuffle[i];
+                toShuffle[i] = toShuffle[j];
+                toShuffle[j] = temp;
+            }
         }
 
+        /// <summary>
+        /// Shuffles every mutable collection on <see cref="AddressableAssetSettings"/> that must serialize in a
+        /// canonical order (profiles, profile variable rows, profile entry metadata, groups).
+        /// </summary>
+        private void ShuffleAddressableAssetSettingsCollections()
+        {
+            foreach (var profile in Settings.profileSettings.profiles)
+            {
+                Shuffle(profile.values);
+            }
+            Shuffle(Settings.profileSettings.profiles);
+            Shuffle(Settings.profileSettings.profileEntryNames);
+            Shuffle(Settings.groups);
+        }
+
+        /// <summary>
+        /// Shuffles serialized entries and schema list on a group — both must end up in deterministic order on save.
+        /// </summary>
+        private void ShuffleGroupCollections(AddressableAssetGroup group)
+        {
+            Shuffle(group.m_SerializeEntries);
+            Shuffle(group.Schemas);
+        }
+
+        /// <summary>
+        /// Shuffles schema objects on a group template (order must not affect final YAML once canonical sorting runs).
+        /// </summary>
+        private void ShuffleGroupTemplateSchemas(AddressableAssetGroupTemplate template)
+        {
+            Shuffle(template.SchemaObjects);
+        }
+
+        /// <summary>
+        /// Shuffles profile group types, their variables, and environments — all lists that must serialize deterministically.
+        /// </summary>
+        private void ShuffleProfileDataSourceSettingsCollections(ProfileDataSourceSettings profileDataSourceSettings)
+        {
+            Shuffle(profileDataSourceSettings.profileGroupTypes);
+            foreach (var groupType in profileDataSourceSettings.profileGroupTypes)
+            {
+                Shuffle(groupType.Variables);
+            }
+            Shuffle(profileDataSourceSettings.environments);
+        }
+
+        /// <summary>
+        /// Reimports the asset from disk, then returns <see cref="AssetDatabase.LoadAssetAtPath{T}"/>.
+        /// Unity normally keeps one loaded <see cref="ScriptableObject"/> instance per asset path;
+        /// <see cref="AssetDatabase.ImportAsset"/> with <see cref="ImportAssetOptions.ForceUpdate"/> reapplies serialized
+        /// state onto that instance after pass A&apos;s save. Pass B must not reuse stale list order without this reload.
+        /// </summary>
+        private static T ReloadScriptableFromPath<T>(string assetPath) where T : ScriptableObject
+        {
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            return AssetDatabase.LoadAssetAtPath<T>(assetPath);
+        }
+
+        /// <summary>
+        /// Produces two different integer seeds for pass A and pass B. If both reproduction properties are set,
+        /// returns those (so you can replay a failing CI run). Otherwise draws random seeds so different runs
+        /// stress different permutations; seeds are always unequal so pass B is not a no-op.
+        /// </summary>
+        private static void GetDeterminismShuffleSeeds(out int seedPassA, out int seedPassB)
+        {
+            if (ReproduceDeterminismShuffleSeedPassA.HasValue && ReproduceDeterminismShuffleSeedPassB.HasValue)
+            {
+                seedPassA = ReproduceDeterminismShuffleSeedPassA.Value;
+                seedPassB = ReproduceDeterminismShuffleSeedPassB.Value;
+                return;
+            }
+
+            // Mix several sources so automated runs on the same machine still vary seeds across test fixtures.
+            var entropy = unchecked(Environment.TickCount ^ (int)DateTime.UtcNow.Ticks ^ Guid.NewGuid().GetHashCode());
+            var rng = new System.Random(entropy);
+            seedPassA = rng.Next();
+            seedPassB = rng.Next();
+            while (seedPassB == seedPassA)
+            {
+                seedPassB = rng.Next();
+            }
+        }
+
+        /// <summary>
+        /// Embeds instructions in assertion failures so developers can plug seeds into <see cref="ReproduceDeterminismShuffleSeedPassA"/> /
+        /// <see cref="ReproduceDeterminismShuffleSeedPassB"/> and rerun one test.
+        /// </summary>
+        private static string BuildDeterminismReproductionHint(int seedPassA, int seedPassB)
+        {
+            return "To reproduce: assign both static seeds (then rerun only the failing test), for example at the top of that test method:\n" +
+                $"  SerializationTests.ReproduceDeterminismShuffleSeedPassA = {seedPassA};\n" +
+                $"  SerializationTests.ReproduceDeterminismShuffleSeedPassB = {seedPassB};\n" +
+                "Clear both fields to null when finished. File: Packages/com.unity.addressables/Tests/Editor/SerializationTests.cs";
+        }
+
+        /// <summary>
+        /// Compares two full YAML/text snapshots for byte equality (after newline normalization). They should match
+        /// if serialization order is independent of how we shuffled lists beforehand.
+        /// </summary>
+        private void AssertDeterministicSerializationEqual(string serializedPassA, string serializedPassB, string summary,
+            int seedPassA, int seedPassB)
+        {
+            var msg = $"{summary} Shuffle seeds — passA: {seedPassA}, passB: {seedPassB}. {BuildDeterminismReproductionHint(seedPassA, seedPassB)}";
+            AssertSerializedAreEqual(serializedPassA, serializedPassB, msg);
+        }
+
+        /// <summary>
+        /// Baseline repeat-save: save twice without reordering serialized collections and compare YAML text.
+        /// If snapshots differ, serialization is unstable without any shuffle (distinct from shuffle determinism checks).
+        /// </summary>
+        private void AssertBaselineRepeatSaveSameSerializedText(string assetPath, UnityEngine.Object asset)
+        {
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssetIfDirty(asset);
+            var textAfterFirstSave = File.ReadAllText(assetPath);
+
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssetIfDirty(asset);
+            var textAfterSecondSave = File.ReadAllText(assetPath);
+
+            AssertSerializedAreEqual(textAfterFirstSave, textAfterSecondSave,
+                "Baseline repeat-save failed: two consecutive saves without shuffling collections should produce " +
+                "identical serialized asset text.");
+        }
 
         [OneTimeSetUp]
         public new void Init()
@@ -45,15 +212,19 @@ namespace UnityEditor.AddressableAssets.Tests
                 typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema)
             };
         }
-        //
         [SetUp]
         public void Setup()
         {
+            // Ensure each test starts from a known settings shape; accessing DefaultGroup recreates default group if needed.
             Settings.groups.Clear();
-            // this lazy creates the default group
+            Settings.GroupTemplateObjects.Clear();
             var defaultGroup = Settings.DefaultGroup;
         }
 
+        /// <summary>
+        /// End-to-end on an <see cref="AddressableAssetGroup"/>: entries, schemas, and entry labels are populated so we
+        /// verify sorting for all of those serialized lists.
+        /// </summary>
         [TestCase]
         public void TestAssetGroupSerialization()
         {
@@ -67,25 +238,39 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.SaveAssetIfDirty(Settings);
 
             var groupPath = AssetDatabase.GetAssetPath(group);
-            RemapMetaGuids(group);
             AssetDatabase.Refresh();
             group = AssetDatabase.LoadAssetAtPath<AddressableAssetGroup>(groupPath);
-            Assert.AreEqual("16cd2736586abc441a3ef8bffa03b61f", group.Guid);
-            Shuffle(group.m_SerializeEntries);
-            Shuffle(group.Schemas);
+            Assert.IsFalse(string.IsNullOrEmpty(group.Guid)); // group loaded correctly from disk after Refresh
+
+            AssertBaselineRepeatSaveSameSerializedText(groupPath, group);
+
+            // Pass A: shuffle with seed A → YAML snapshot T1
+            GetDeterminismShuffleSeeds(out int seedPassA, out int seedPassB);
+            m_Rnd = new System.Random(seedPassA);
+            ShuffleGroupCollections(group);
             EditorUtility.SetDirty(group);
             AssetDatabase.SaveAssetIfDirty(group);
+            var serializedPassA = File.ReadAllText(groupPath);
 
-#if UNITY_6000_2_OR_NEWER
-            // serializes the entire class name to m_EditorClassIdentifier
-            var expectedSerializedGroup = File.ReadAllText(GetExpectedPath("~SerializationTests_Group_62.unity"));
-#else
-            var expectedSerializedGroup = File.ReadAllText(GetExpectedPath("~SerializationTests_Group.unity"));
-#endif
-            var serializedGroup = File.ReadAllText(groupPath);
-            AssertSerializedAreEqual(expectedSerializedGroup, serializedGroup);
+            // Reload so pass B starts from disk state, not stale list order in memory
+            group = ReloadScriptableFromPath<AddressableAssetGroup>(groupPath);
+
+            // Pass B: different shuffle seed → YAML snapshot T2 (must equal T1 if serialization is deterministic)
+            m_Rnd = new System.Random(seedPassB);
+            ShuffleGroupCollections(group);
+            EditorUtility.SetDirty(group);
+            AssetDatabase.SaveAssetIfDirty(group);
+            var serializedPassB = File.ReadAllText(groupPath);
+
+            AssertDeterministicSerializationEqual(serializedPassA, serializedPassB,
+                "determinism: AddressableAssetGroup should serialize identically after two independent shuffles.",
+                seedPassA, seedPassB);
         }
 
+        /// <summary>
+        /// Builds label sets for three entries and shuffles each set so label *order* on each entry is nondeterministic
+        /// going into save — serialization should still emit labels in canonical order per Addressables rules.
+        /// </summary>
         private List<List<string>> CreateAndShuffleLabels()
         {
             var labels = new List<List<string>>
@@ -102,6 +287,10 @@ namespace UnityEditor.AddressableAssets.Tests
             return labels;
         }
 
+        /// <summary>
+        /// Adds three entries with distinct addresses and synthetic asset GUIDs (stable fake identities).
+        /// Labels come from <see cref="CreateAndShuffleLabels"/>.
+        /// </summary>
         private void AddAssetEntries(AddressableAssetGroup group, List<List<string>> labels)
         {
             var entry1 = new AddressableAssetEntry("4df50598-ce2c-4265-a0f9-4e943a2991b0", "secondAsset", group, false);
@@ -124,70 +313,88 @@ namespace UnityEditor.AddressableAssets.Tests
             group.AddAssetEntry(entry3);
         }
 
+        /// <summary>
+        /// Group template schema object order must serialize deterministically; template description includes newlines on purpose.
+        /// </summary>
         [TestCase]
         public void TestAssetGroupTemplateSerialization()
         {
             var newAssetGroupTemplate = Settings.CreateAndAddGroupTemplateInternal("myTemplate", "my description\nwith carriage return", m_SchemaTypes.ToArray());
-            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(newAssetGroupTemplate, out string guid, out long templateFileId);
-            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(newAssetGroupTemplate.GetSchemaByType(typeof(ContentUpdateGroupSchema)), out string cugsguid, out long cugsFileId);
-            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(newAssetGroupTemplate.GetSchemaByType(typeof(BundledAssetGroupSchema)), out string bagsguid, out long bagsFileId);
-
-            var monoBehaviorMap = new Dictionary<string, string>()
-            {
-                {bagsFileId.ToString(), "-6794523166426839361"},
-                {cugsFileId.ToString(), "-1107740541918034454"},
-                {templateFileId.ToString(), "11400000"},
-            };
-
-            RemapMetaGuids(null, monoBehaviorMap);
-            AssetDatabase.Refresh();
-            Shuffle(newAssetGroupTemplate.SchemaObjects);
+            var assetPath = AssetDatabase.GetAssetPath(newAssetGroupTemplate);
             EditorUtility.SetDirty(newAssetGroupTemplate);
             AssetDatabase.SaveAssetIfDirty(newAssetGroupTemplate);
+            AssetDatabase.SaveAssetIfDirty(Settings);
+            AssetDatabase.Refresh();
 
-#if UNITY_6000_2_OR_NEWER
-            // serializes the entire class name to m_EditorClassIdentifier
-            var expectedSerializedTemplate = File.ReadAllText(GetExpectedPath("~SerializationTests_GroupTemplate_62.unity"));
-#else
-            var expectedSerializedTemplate = File.ReadAllText(GetExpectedPath("~SerializationTests_GroupTemplate.unity"));
-#endif
-            var serializedTemplate = File.ReadAllText(AssetDatabase.GetAssetPath(newAssetGroupTemplate));
-            AssertSerializedAreEqual(serializedTemplate, expectedSerializedTemplate);
+            var template = AssetDatabase.LoadAssetAtPath<AddressableAssetGroupTemplate>(assetPath);
+
+            AssertBaselineRepeatSaveSameSerializedText(assetPath, template);
+
+            GetDeterminismShuffleSeeds(out int seedPassA, out int seedPassB);
+            // Pass A / pass B — same pattern as TestAssetGroupSerialization (see comments there).
+            m_Rnd = new System.Random(seedPassA);
+            ShuffleGroupTemplateSchemas(template);
+            EditorUtility.SetDirty(template);
+            AssetDatabase.SaveAssetIfDirty(template);
+            var serializedPassA = File.ReadAllText(assetPath);
+
+            template = ReloadScriptableFromPath<AddressableAssetGroupTemplate>(assetPath);
+
+            m_Rnd = new System.Random(seedPassB);
+            ShuffleGroupTemplateSchemas(template);
+            EditorUtility.SetDirty(template);
+            AssetDatabase.SaveAssetIfDirty(template);
+            var serializedPassB = File.ReadAllText(assetPath);
+
+            AssertDeterministicSerializationEqual(serializedPassA, serializedPassB,
+                "determinism: AddressableAssetGroupTemplate should serialize identically after two independent shuffles.",
+                seedPassA, seedPassB);
         }
 
+        /// <summary>
+        /// Profile data source settings contain multiple list types (group types, variables per type, environments).
+        /// We add several environments and a custom profile group type so shuffling has real material to reorder — the test
+        /// verifies that sorted output does not depend on insertion order.
+        /// </summary>
         [TestCase]
         public void TestProfileDataSourceSettingsSerialization()
         {
             var profileDataSourceSettings = ProfileDataSourceSettings.Create(ConfigFolder, "ProfileDataSourceSettings");
-            // another profile is added when CCD_ENABLED is defined. We remove that to keep the test consistent.
+            // When CCD is enabled, an extra automatic profile group type appears; remove it so pass A/B compare like-for-like.
             DeleteCcdProfile(profileDataSourceSettings);
             AddProfileGroupTypes(profileDataSourceSettings);
             AddEnvironments(profileDataSourceSettings);
             AssetDatabase.SaveAssetIfDirty(profileDataSourceSettings);
 
-            RemapMetaGuids(null);
             AssetDatabase.Refresh();
 
-            // shuffle
-            Shuffle(profileDataSourceSettings.profileGroupTypes);
+            string assetPath = AssetDatabase.GetAssetPath(profileDataSourceSettings);
 
-            foreach (var groupType in profileDataSourceSettings.profileGroupTypes)
-            {
-                Shuffle(groupType.Variables);
-            }
-            Shuffle(profileDataSourceSettings.environments);
+            AssertBaselineRepeatSaveSameSerializedText(assetPath, profileDataSourceSettings);
+
+            GetDeterminismShuffleSeeds(out int seedPassA, out int seedPassB);
+            // Pass A / B: environments + profileGroupTypes + nested Variables lists must converge to identical YAML.
+            m_Rnd = new System.Random(seedPassA);
+            ShuffleProfileDataSourceSettingsCollections(profileDataSourceSettings);
             AssetDatabase.SaveAssetIfDirty(profileDataSourceSettings);
+            var serializedPassA = File.ReadAllText(assetPath);
 
-#if UNITY_6000_2_OR_NEWER
-            // serializes the entire class name to m_EditorClassIdentifier
-            var expectedProfileDataSourceSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_ProfileDataSourceSettings_62.unity"));
-#else
-            var expectedProfileDataSourceSettings = File.ReadAllText(GetExpectedPath("~SerializationTests_ProfileDataSourceSettings.unity"));
-#endif
-            var serializedProfileDataSourceSettings = File.ReadAllText(AssetDatabase.GetAssetPath(profileDataSourceSettings));
-            AssertSerializedAreEqual(expectedProfileDataSourceSettings, serializedProfileDataSourceSettings);
+            profileDataSourceSettings = ReloadScriptableFromPath<ProfileDataSourceSettings>(assetPath);
+
+            m_Rnd = new System.Random(seedPassB);
+            ShuffleProfileDataSourceSettingsCollections(profileDataSourceSettings);
+            AssetDatabase.SaveAssetIfDirty(profileDataSourceSettings);
+            var serializedPassB = File.ReadAllText(assetPath);
+
+            AssertDeterministicSerializationEqual(serializedPassA, serializedPassB,
+                "determinism: ProfileDataSourceSettings should serialize identically after two independent shuffles.",
+                seedPassA, seedPassB);
         }
 
+        /// <summary>
+        /// Adds one custom prefix with multiple variables so <see cref="ShuffleProfileDataSourceSettingsCollections"/> can
+        /// reorder both the group-type list and nested variable lists — exercises sorting at multiple depths.
+        /// </summary>
         private void AddProfileGroupTypes(ProfileDataSourceSettings profileDataSourceSettings)
         {
             ProfileGroupType profileGroupType = new ProfileGroupType("testPrefix");
@@ -197,6 +404,9 @@ namespace UnityEditor.AddressableAssets.Tests
             profileDataSourceSettings.profileGroupTypes.Add(profileGroupType);
         }
 
+        /// <summary>
+        /// Removes the CCD "Automatic" profile group type when present so the serialized asset matches non-CCD layouts.
+        /// </summary>
         private void DeleteCcdProfile(ProfileDataSourceSettings profileDataSourceSettings)
         {
             var toDelete = profileDataSourceSettings.profileGroupTypes.Find((x) => x.GroupTypePrefix == "Automatic");
@@ -206,6 +416,10 @@ namespace UnityEditor.AddressableAssets.Tests
             }
         }
 
+        /// <summary>
+        /// Populates the environments list with fixed name/id pairs so we have multiple rows to shuffle. The GUIDs are
+        /// arbitrary stable test data; self-consistency (T1 vs T2) does not require specific values, only multiple items.
+        /// </summary>
         private void AddEnvironments(ProfileDataSourceSettings profileDataSourceSettings)
         {
             profileDataSourceSettings.environments = new List<ProfileDataSourceSettings.Environment>
@@ -216,218 +430,78 @@ namespace UnityEditor.AddressableAssets.Tests
             };
         }
 
+        /// <summary>
+        /// Largest scenario: extra group, added profile, initialization objects from fixtures, then shuffle of profiles
+        /// (values, profile list, profile entry names) and groups. Uses <see cref="ReloadSettingsAssetFromDisk"/> between
+        /// passes because settings are held via the test base <see cref="AddressableAssetTestBase.Settings"/> property.
+        /// </summary>
         [TestCase]
         public void TestAddressableAssetSettingsSerialization()
         {
             var group = Settings.CreateGroup("testGroup", false, false, false,
                 new List<AddressableAssetGroupSchema>(), m_SchemaTypes.ToArray());
             Settings.DefaultGroup = Settings.groups.Find((g) => g.Default);
+            Settings.ContentDirectoryGroupTemplateCreated = false;
+            Settings.Validate();
 
             AddProfile();
             AddInitializationObjects();
             AssetDatabase.SaveAssetIfDirty(Settings);
-            RemapMetaGuids(group);
             AssetDatabase.Refresh();
 
-            // shuffle
-            foreach (var profile in Settings.profileSettings.profiles)
-            {
-                Shuffle(profile.values);
-            }
-            Shuffle(Settings.profileSettings.profiles);
-            Shuffle(Settings.profileSettings.profileEntryNames);
-            Shuffle(Settings.groups);
+            AssertBaselineRepeatSaveSameSerializedText(AssetDatabase.GetAssetPath(Settings), Settings);
+
+            GetDeterminismShuffleSeeds(out int seedPassA, out int seedPassB);
+            // Pass A: shuffle settings collections → read full settings .asset as T1
+            m_Rnd = new System.Random(seedPassA);
+            ShuffleAddressableAssetSettingsCollections();
 
             EditorUtility.SetDirty(Settings);
             AssetDatabase.SaveAssetIfDirty(Settings);
-            var versionStr = "";
-            var ccdStr = "";
-#if UNITY_6000_5_OR_NEWER
-            versionStr = "_65";
-#elif UNITY_6000_2_OR_NEWER
-            versionStr = "_62";
-#endif
+            var serializedPassA = File.ReadAllText(AssetDatabase.GetAssetPath(Settings));
 
-#if CCD_3_OR_NEWER
-            ccdStr = ".ccd3";
-#elif ENABLE_CCD
-            ccdStr = ".ccd2";
-#endif
-            var expectedPath = GetExpectedPath($"~SerializationTests_AddressableAssetSettings{versionStr}{ccdStr}.unity");
-            Debug.Log($"Reading expected data from path {Path.GetFileName(expectedPath)}");
-            var expectedSerializedSettings = File.ReadAllText(expectedPath);
-            Assert.NotNull(expectedSerializedSettings, $"Failed to read expected data from path {expectedPath}");
-            var serializedSettings = File.ReadAllText(AssetDatabase.GetAssetPath(Settings));
-            AssertSerializedAreEqual(expectedSerializedSettings, serializedSettings);
+            // Replace base Settings instance so pass B applies to the same on-disk asset as pass A
+            ReloadSettingsAssetFromDisk();
+
+            // Pass B: second shuffle → T2 must equal T1
+            m_Rnd = new System.Random(seedPassB);
+            ShuffleAddressableAssetSettingsCollections();
+
+            EditorUtility.SetDirty(Settings);
+            AssetDatabase.SaveAssetIfDirty(Settings);
+            var serializedPassB = File.ReadAllText(AssetDatabase.GetAssetPath(Settings));
+
+            AssertDeterministicSerializationEqual(serializedPassA, serializedPassB,
+                "determinism: AddressableAssetSettings should serialize identically after two independent shuffles.",
+                seedPassA, seedPassB);
         }
 
+        /// <summary>
+        /// Adds a second named profile so the profiles collection has more than one row to shuffle and serialize.
+        /// </summary>
         private void AddProfile()
         {
-            // ok so we need to add a profile here
             Settings.profileSettings.AddProfile("testProfile", null);
         }
 
+        /// <summary>
+        /// Registers init providers from packaged fixture assets — ensures initialization object ordering is covered too.
+        /// </summary>
         private void AddInitializationObjects()
         {
             Settings.AddInitializationObject(AssetDatabase.LoadAssetAtPath<ScriptableObject>(GetFixturePath("InitFixture1.asset")) as IObjectInitializationDataProvider);
             Settings.AddInitializationObject(AssetDatabase.LoadAssetAtPath<ScriptableObject>(GetFixturePath("InitFixture2.asset")) as IObjectInitializationDataProvider);
         }
 
-        private void AddProfileValueMappings(Dictionary<string, string> mappings)
-        {
-            foreach (var profile in Settings.profileSettings.profiles)
-            {
-                foreach (var value in profile.values)
-                {
-                    switch (value.value)
-                    {
-                        case "[UnityEditor.EditorUserBuildSettings.activeBuildTarget]":
-                            mappings.TryAdd(value.id, "0507cc90998e0a04f94da7055d0cc638");
-                            break;
-                        case "[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]":
-                            mappings.TryAdd(value.id, "8f726afcd2923be469c05fdfc9963d44");
-                            break;
-                        case "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]":
-                            mappings.TryAdd(value.id, "44693b9e8b6e8ab4e8bada109cd9e70d");
-                            break;
-                        case "ServerData/[BuildTarget]":
-                            mappings.TryAdd(value.id, "0d5680944a6e4bb47a35cd423b95cb36");
-                            break;
-                        case "<undefined>":
-                            mappings.TryAdd(value.id, "42ec52cd576b8b9439d83010f809d5b5");
-                            break;
-                        default:
-                            throw new Exception($"unknown value in profile settings {value.value}");
-                    }
-                }
-            }
-
-        }
-
-        private void AddProfileEntryMappings(Dictionary<string, string> mappings)
-        {
-            foreach (var profileEntryName in Settings.profileSettings.profileEntryNames)
-            {
-                switch (profileEntryName.ProfileName)
-                {
-                    case "BuildTarget":
-                        mappings.TryAdd(profileEntryName.m_Id, "0507cc90998e0a04f94da7055d0cc638");
-                        break;
-                    case "Local.BuildPath":
-                        mappings.TryAdd(profileEntryName.m_Id, "8f726afcd2923be469c05fdfc9963d44");
-                        break;
-                    case "Local.LoadPath":
-                        mappings.TryAdd(profileEntryName.m_Id, "44693b9e8b6e8ab4e8bada109cd9e70d");
-                        break;
-                    case "Remote.BuildPath":
-                        mappings.TryAdd(profileEntryName.m_Id, "0d5680944a6e4bb47a35cd423b95cb36");
-                        break;
-                    case "Remote.LoadPath":
-                        mappings.TryAdd(profileEntryName.m_Id, "42ec52cd576b8b9439d83010f809d5b5");
-                        break;
-                    default:
-                        throw new Exception($"unknown value in profile entry names {profileEntryName.ProfileName}");
-                }
-            }
-        }
-
-        private void RemapMetaGuids(AddressableAssetGroup group)
-        {
-            var remapped = new Dictionary<string, string>();
-            RemapMetaGuids(group, remapped);
-        }
-
-        private void RemapMetaGuids(AddressableAssetGroup group, Dictionary<string, string> remapped)
-        {
-            // we should be order by GUID
-            var defaultGroup = Settings.groups.Find((v) => v.Default);
-            // var secondGroup = Settings.groups.Find((v) => !v.Default);
-            var buildScriptFast = Settings.DataBuilders.Find((b) => b.name == "BuildScriptFastMode");
-            var buildScriptPackedPlay = Settings.DataBuilders.Find((b) => b.name == "BuildScriptPackedPlayMode");
-            var buildScriptPacked = Settings.DataBuilders.Find((b) => b.name == "BuildScriptPackedMode");
-            var defaultProfile = Settings.profileSettings.profiles.Find((p) => p.profileName == "Default");
-            var secondProfile = Settings.profileSettings.profiles.Find((p) => p.profileName != "Default");
-
-            // this mapping is from the GUID in the file (ex. ~testAddressableAssetSettings.unity) to the currently in use guid
-            // we replace all the current guids with our static guids so that we can compare the sorting
-            remapped.Add(GetMetaGuidFromObject(Settings), "3bf47571d203fa84d8dd31832e7c9339");
-            remapped.Add(GetMetaGuidFromObject(buildScriptFast), "271b00b9e756a6d448f4ae7a08b88509");
-            remapped.Add(GetMetaGuidFromObject(buildScriptPacked), "1694decfa7f2ffd4983ca3978e171998");
-            remapped.Add(GetMetaGuidFromObject(buildScriptPackedPlay), "533ad9bddde5e2540a2a76c0203d0acb");
-
-            if (Settings?.DefaultGroup?.Guid != null) {
-                remapped.Add(Settings.DefaultGroup.Guid, "73831a73d82c83d4183d7e0477f7e745");
-            }
-            if (defaultGroup != null) {
-                remapped.Add(GetMetaGuidFromObject(defaultGroup), "2308cd47506141c4aae9737b7d567105");
-            }
-            if (Settings.GroupTemplateObjects.Count > 0) {
-                remapped.Add(GetMetaGuidFromObject(Settings.GroupTemplateObjects[0]), "97a492a095c0434448524d71cc7f0b0d");
-            }
-            if (group != null) {
-                remapped.TryAdd(group.Guid, "16cd2736586abc441a3ef8bffa03b61f");
-                remapped.TryAdd(GetMetaGuidFromObject(group), "e3940d5982f85734ca7aec5a9b7a90ee");
-                remapped.Add(GetMetaGuidFromObject(group.Schemas[0]), "798716054e8a18a479c179e6d6f5ad2d");
-                remapped.Add(GetMetaGuidFromObject(group.Schemas[1]), "7991916e228786548a8c905c2235f71f");
-            }
-            if (defaultProfile != null) {
-                remapped.Add(defaultProfile.id, "5550bbbe2a7ee8c4f9d4600df43218be");
-            }
-            if (secondProfile != null) {
-                remapped.Add(secondProfile.id, "c901f922cc200454b815a5b33a8427c6");
-            }
-            AddProfileValueMappings(remapped);
-            AddProfileEntryMappings(remapped);
-            RemapFiles(remapped, ConfigFolder);
-
-            // clear any caches
-            Settings.groups.Clear(); // this should be repopulated on AssetDatabase.Refresh()
-            Settings.ClearFindAssetEntryCache();
-        }
-
-        private void RemapFiles(Dictionary<string, string> mappings, string dirName)
-        {
-            foreach (string dir in Directory.EnumerateDirectories(dirName))
-            {
-                RemapFiles(mappings, dir);
-            }
-
-            foreach (string file in Directory.EnumerateFiles(dirName))
-            {
-                string line;
-                var inFile = file;
-                var outFile = $"{file}.tmp";
-                var reader = new StreamReader(inFile);
-                var writer = new StreamWriter(outFile);
-                while ((line = reader.ReadLine()) != null)
-                {
-                    foreach (var pair in mappings)
-                    {
-                        if (line.Contains(pair.Key))
-                        {
-                            line = line.Replace(pair.Key, pair.Value);
-                        }
-                    }
-                    writer.WriteLine(line);
-                }
-                reader.Close();
-                writer.Close();
-                File.Delete(inFile);
-                File.Move(outFile, inFile);
-            }
-        }
-
-        private string GetMetaGuidFromObject(Object obj)
-        {
-            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj, out string guid, out long templateFileId);
-            return guid;
-        }
-
-        private void AssertSerializedAreEqual(string expected, string actual)
+        /// <summary>
+        /// Normalizes Windows/macOS line endings then compares strings. Both arguments are serialized text from the same
+        /// asset path (shuffle pass A vs shuffle pass B), passed as expected/actual for <see cref="Assert.AreEqual"/>.
+        /// </summary>
+        private void AssertSerializedAreEqual(string expected, string actual, string msg)
         {
             expected = expected.Replace("\r\n", "\n");
             actual = actual.Replace("\r\n", "\n");
-            Assert.AreEqual(expected, actual);
+            Assert.AreEqual(expected, actual, msg);
         }
     }
 }

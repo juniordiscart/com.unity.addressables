@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using NUnit.Framework;
 using UnityEditor.AddressableAssets.Diagnostics;
 using UnityEngine;
@@ -13,16 +11,17 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
 
     internal class TestProfiler : IProfilerEmitter, IFrameDataStore
     {
-        // maybe have a key
+        /// <summary>
+        /// Must match <see cref="AddressablesProfilerDetailsView.FrameData"/>, which always reads via
+        /// <c>GetRawFrameDataView(frame, 0)</c>. Using the real managed thread id breaks lookups when tests
+        /// do not run on thread 0.
+        /// </summary>
+        private const int k_FakeProfilerMainThreadIndex = 0;
+
         private Dictionary<string, List<CatalogFrameData>> m_catalogFrames = new();
         private Dictionary<string, List<BundleFrameData>> m_bundleFrames = new();
         private Dictionary<string, List<AssetFrameData>> m_assetFrames = new();
         private Dictionary<string, List<AssetFrameData>> m_sceneFrames = new();
-
-        public int CurrentThread
-        {
-            get => Thread.CurrentContext.ContextID;
-        }
 
         public bool IsEnabled { get; set; } = true;
 
@@ -31,7 +30,7 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
 
         private string GetKey()
         {
-            return $"{CurrentFrame}-{CurrentThread}";
+            return $"{CurrentFrame}-{k_FakeProfilerMainThreadIndex}";
         }
 
         /*
@@ -83,8 +82,12 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
 
         public void InitialiseCallbacks(Action<float> onLateUpdateDelegate)
         {
-            // make sure we get rid of the delegate if it has already been registered, although maybe we don't want to do this explicitly?
+        }
+
+        public void CleanUpCallbacks(Action<float> onLateUpdateDelegate)
+        {
             MonoBehaviourCallbackHooks.Instance.OnLateUpdateDelegate -= onLateUpdateDelegate;
+
         }
 
         public FrameDataViewRef GetRawFrameDataView(int frameIndex, int threadIndex)

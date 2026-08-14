@@ -56,55 +56,89 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         }
 
         /// <inheritdoc/>
+        public override void OnGUI()
+        {
+            using (new EditorGUI.DisabledScope(!IsEnabled))
+            {
+                // Include Resources Folders
+                var includeResourcesFolders = EditorGUILayout.Toggle(
+                    new GUIContent("Include Resources Folders",
+                        "Assets in resources folders will have addresses generated during the build"),
+                    m_IncludeResourcesFolders);
+                if (includeResourcesFolders != m_IncludeResourcesFolders)
+                {
+                    var prop = SchemaSerializedObject.FindProperty("m_IncludeResourcesFolders");
+                    prop.boolValue = includeResourcesFolders;
+                    SchemaSerializedObject.ApplyModifiedProperties();
+                }
+
+                // Include Build Settings Scenes
+                var includeBuildSettingsScenes = EditorGUILayout.Toggle(
+                    new GUIContent("Include Build Settings Scenes",
+                        "All scenes in the editor build settings will have addresses generated during the build"),
+                    m_IncludeBuildSettingsScenes);
+                if (includeBuildSettingsScenes != m_IncludeBuildSettingsScenes)
+                {
+                    var prop = SchemaSerializedObject.FindProperty("m_IncludeBuildSettingsScenes");
+                    prop.boolValue = includeBuildSettingsScenes;
+                    SchemaSerializedObject.ApplyModifiedProperties();
+                }
+            }
+        }
+
+        /// <inheritdoc/>
         public override void OnGUIMultiple(List<AddressableAssetGroupSchema> otherSchemas)
         {
-            SerializedProperty prop;
-            string propertyName = "m_IncludeResourcesFolders";
-            HashSet<SerializedObject> applyModifications = new HashSet<SerializedObject>();
-
-            // IncludeResourcesFolders
-            prop = SchemaSerializedObject.FindProperty(propertyName);
-            ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
-            EditorGUI.BeginChangeCheck();
-            bool newIncludeResourcesFolders = (bool)EditorGUILayout.Toggle(new GUIContent(prop.displayName, "Assets in resources folders will have addresses generated during the build"),
-                IncludeResourcesFolders);
-            if (EditorGUI.EndChangeCheck())
+            using (new EditorGUI.DisabledScope(!IsEnabled))
             {
-                prop.boolValue = newIncludeResourcesFolders;
-                applyModifications.Add(SchemaSerializedObject);
-                foreach (var s in otherSchemas)
+                SerializedProperty prop;
+                string propertyName = "m_IncludeResourcesFolders";
+                HashSet<SerializedObject> applyModifications = new HashSet<SerializedObject>();
+
+                // IncludeResourcesFolders
+                prop = SchemaSerializedObject.FindProperty(propertyName);
+                ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
+                EditorGUI.BeginChangeCheck();
+                bool newIncludeResourcesFolders = (bool)EditorGUILayout.Toggle(new GUIContent(prop.displayName, "Assets in resources folders will have addresses generated during the build"),
+                    IncludeResourcesFolders);
+                if (EditorGUI.EndChangeCheck())
                 {
-                    var otherProp = s.SchemaSerializedObject.FindProperty(propertyName);
-                    otherProp.boolValue = newIncludeResourcesFolders;
-                    applyModifications.Add(s.SchemaSerializedObject);
+                    prop.boolValue = newIncludeResourcesFolders;
+                    applyModifications.Add(SchemaSerializedObject);
+                    foreach (var s in otherSchemas)
+                    {
+                        var otherProp = s.SchemaSerializedObject.FindProperty(propertyName);
+                        otherProp.boolValue = newIncludeResourcesFolders;
+                        applyModifications.Add(s.SchemaSerializedObject);
+                    }
                 }
-            }
 
-            EditorGUI.showMixedValue = false;
+                EditorGUI.showMixedValue = false;
 
-            // IncludeBuildSettingsScenes
-            propertyName = "m_IncludeBuildSettingsScenes";
-            prop = SchemaSerializedObject.FindProperty(propertyName);
-            ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
-            EditorGUI.BeginChangeCheck();
-            bool newIncludeBuildSettingsScenes =
-                (bool)EditorGUILayout.Toggle(new GUIContent(prop.displayName, "All scenes in the editor build settings will have addresses generated during the build"), IncludeBuildSettingsScenes);
-            if (EditorGUI.EndChangeCheck())
-            {
-                prop.boolValue = newIncludeBuildSettingsScenes;
-                applyModifications.Add(SchemaSerializedObject);
-                foreach (var s in otherSchemas)
+                // IncludeBuildSettingsScenes
+                propertyName = "m_IncludeBuildSettingsScenes";
+                prop = SchemaSerializedObject.FindProperty(propertyName);
+                ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
+                EditorGUI.BeginChangeCheck();
+                bool newIncludeBuildSettingsScenes =
+                    (bool)EditorGUILayout.Toggle(new GUIContent(prop.displayName, "All scenes in the editor build settings will have addresses generated during the build"), IncludeBuildSettingsScenes);
+                if (EditorGUI.EndChangeCheck())
                 {
-                    var otherProp = s.SchemaSerializedObject.FindProperty(propertyName);
-                    otherProp.boolValue = newIncludeBuildSettingsScenes;
-                    applyModifications.Add(s.SchemaSerializedObject);
+                    prop.boolValue = newIncludeBuildSettingsScenes;
+                    applyModifications.Add(SchemaSerializedObject);
+                    foreach (var s in otherSchemas)
+                    {
+                        var otherProp = s.SchemaSerializedObject.FindProperty(propertyName);
+                        otherProp.boolValue = newIncludeBuildSettingsScenes;
+                        applyModifications.Add(s.SchemaSerializedObject);
+                    }
                 }
+
+                EditorGUI.showMixedValue = false;
+
+                foreach (SerializedObject serializedObject in applyModifications)
+                    serializedObject.ApplyModifiedProperties();
             }
-
-            EditorGUI.showMixedValue = false;
-
-            foreach (SerializedObject serializedObject in applyModifications)
-                serializedObject.ApplyModifiedProperties();
         }
     }
 }

@@ -38,40 +38,46 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         /// <inheritdoc/>
         public override void OnGUI()
         {
-            var staticContent = EditorGUILayout.Toggle(m_UpdateRestrictionGUIContent, m_StaticContent);
-            if (staticContent != m_StaticContent)
+            using (new EditorGUI.DisabledScope(!IsEnabled))
             {
-                var prop = SchemaSerializedObject.FindProperty("m_StaticContent");
-                prop.boolValue = staticContent;
-                SchemaSerializedObject.ApplyModifiedProperties();
+                var staticContent = EditorGUILayout.Toggle(m_UpdateRestrictionGUIContent, m_StaticContent);
+                if (staticContent != m_StaticContent)
+                {
+                    var prop = SchemaSerializedObject.FindProperty("m_StaticContent");
+                    prop.boolValue = staticContent;
+                    SchemaSerializedObject.ApplyModifiedProperties();
+                }
             }
         }
 
         /// <inheritdoc/>
         public override void OnGUIMultiple(List<AddressableAssetGroupSchema> otherSchemas)
         {
-            string propertyName = "m_StaticContent";
-            var prop = SchemaSerializedObject.FindProperty(propertyName);
-
-            // Type/Static Content
-            ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
-            EditorGUI.BeginChangeCheck();
-
-            var staticContent = EditorGUILayout.Toggle(m_UpdateRestrictionGUIContent, m_StaticContent);
-
-            if (EditorGUI.EndChangeCheck())
+            using (new EditorGUI.DisabledScope(!IsEnabled))
             {
-                prop.boolValue = staticContent;
-                SchemaSerializedObject.ApplyModifiedProperties();
-                foreach (var s in otherSchemas)
-                {
-                    var otherProp = s.SchemaSerializedObject.FindProperty(propertyName);
-                    otherProp.boolValue = staticContent;
-                    s.SchemaSerializedObject.ApplyModifiedProperties();
-                }
-            }
+                string propertyName = "m_StaticContent";
+                var prop = SchemaSerializedObject.FindProperty(propertyName);
 
-            EditorGUI.showMixedValue = false;
+                // Type/Static Content
+                ShowMixedValue(prop, otherSchemas, typeof(bool), propertyName);
+                EditorGUI.BeginChangeCheck();
+
+                var staticContent = EditorGUILayout.Toggle(m_UpdateRestrictionGUIContent, m_StaticContent);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    prop.boolValue = staticContent;
+                    SchemaSerializedObject.ApplyModifiedProperties();
+                    foreach (var s in otherSchemas)
+                    {
+                        var otherProp = s.SchemaSerializedObject.FindProperty(propertyName);
+                        otherProp.boolValue = staticContent;
+                        s.SchemaSerializedObject.ApplyModifiedProperties();
+                    }
+                }
+
+                EditorGUI.showMixedValue = false;
+            }
         }
     }
 }

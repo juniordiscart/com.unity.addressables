@@ -68,6 +68,9 @@ namespace AddressableAssetsIntegrationTests
         [OneTimeTearDown]
         public virtual void DeleteTempFiles()
         {
+            m_Addressables?.Dispose();
+            m_Addressables = null;
+
             ResourceManager.ExceptionHandler = m_PrevHandler;
             AddressablesTestUtility.TearDown(TypeName, PathFormat, "BASE");
         }
@@ -203,6 +206,7 @@ namespace AddressableAssetsIntegrationTests
 
         private void ResetAddressables()
         {
+            m_Addressables?.Dispose();
             m_Addressables = null;
             currentInitType = null;
             initializationComplete = false;

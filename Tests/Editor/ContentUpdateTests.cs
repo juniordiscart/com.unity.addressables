@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Content;
@@ -55,7 +56,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
 			Assert.IsTrue(string.IsNullOrEmpty(op.Error), op.Error);
                 ContentStatePath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
-                TypeTreeDataPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + "/aa/" + PlatformMappingService.GetPlatformPathSubFolder() + "/" + BuildScriptPackedMode.kTypeTreeDataFileName;
+                TypeTreeDataPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + "/aa/" + PlatformMappingService.GetPlatformPathSubFolder() + "/" + BundledAssetSchemaBuilder.kTypeTreeDataFileName;
             }
 
             public void Dispose()
@@ -515,7 +516,12 @@ namespace UnityEditor.AddressableAssets.Tests
 			foreach (var p in paths)
             {
                 if (Path.GetFileNameWithoutExtension(p).EndsWith("catalog"))
+#if ENABLE_JSON_CATALOG
+                    return ContentCatalogData.LoadFromFile(p).CreateCustomLocator();
+#else
+
                     return ContentCatalogData.LoadFromFile(p, true).CreateCustomLocator();
+#endif
             }
 			return null;
 		}

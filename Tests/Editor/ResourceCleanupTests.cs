@@ -1,13 +1,15 @@
 using System;
+using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.ResourceManagement.Util;
+using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.Tests
 {
     using Object = UnityEngine.Object;
 
-    public class ResourceCleanupTests : AddressableAssetTestBase
+    public class ResourceCleanupTests
     {
         int CountResourcesByName(string name)
         {
@@ -21,19 +23,18 @@ namespace UnityEditor.AddressableAssets.Tests
             return count;
         }
 
-        [Test]
-        public void CleanupDelayedActionManager()
+        [UnityTest]
+        public IEnumerator CleanupDelayedActionManager()
         {
-            var currentDAMCount = CountResourcesByName("DelayedActionManager");
-
-            EditorApplication.isPlaying = true;
+            yield return new EnterPlayMode();
+            Assert.AreEqual(0, CountResourcesByName("DelayedActionManager"));
             DelayedActionManager.AddAction(new Action(() => { }));
             Assert.True(DelayedActionManager.Exists);
             Assert.NotNull(DelayedActionManager.Instance);
-            EditorApplication.isPlaying = false;
+            Assert.AreEqual(1, CountResourcesByName("DelayedActionManager"));
+            yield return new ExitPlayMode();
             Assert.False(DelayedActionManager.Exists);
-
-            Assert.AreEqual(currentDAMCount, CountResourcesByName("DelayedActionManager"));
+            Assert.AreEqual(0, CountResourcesByName("DelayedActionManager"));
         }
     }
 }

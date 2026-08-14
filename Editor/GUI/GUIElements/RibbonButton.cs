@@ -4,7 +4,6 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-[assembly: UxmlNamespacePrefix("UnityEditor.AddressableAssets.GUIElements", "AddressablesGUI")]
 namespace UnityEditor.AddressableAssets.GUIElements
 {
 #if UNITY_6000_0_OR_NEWER

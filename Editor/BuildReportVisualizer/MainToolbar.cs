@@ -19,7 +19,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         public void CreateGUI(VisualElement rootVisualElement)
         {
-            var mainToolbar = rootVisualElement.Q<Toolbar>(BuildReportUtility.MainToolbar);
+            var mainToolbar = rootVisualElement.Q<UnityEditor.UIElements.Toolbar>(BuildReportUtility.MainToolbar);
 
             //var themeStyle = AssetDatabase.LoadAssetAtPath(EditorGUIUtility.isProSkin ? BuildReportUtility.MainToolbarButtonsDarkUssPath : BuildReportUtility.MainToolbarButtonsLightUssPath, typeof(StyleSheet)) as StyleSheet;
             //mainToolbar.styleSheets.Add(themeStyle);
