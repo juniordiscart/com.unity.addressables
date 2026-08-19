@@ -115,7 +115,7 @@ namespace UnityEditor.AddressableAssets.Settings
                         continue;
 
                     GroupSchemas.BundledAssetGroupSchema s = g.GetSchema<GroupSchemas.BundledAssetGroupSchema>();
-                    if (s != null && !s.IncludeInEditorFastMode)
+                    if (s != null && !s.IncludeInEditorAssetDatabaseMode)
                         continue;
 
                     foreach (AddressableAssetEntry e in g.entries)

@@ -4,7 +4,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
 	public interface IMultipleCatalogsBuilder
 	{
-		List<ExternalCatalogSetup> ExternalCatalogs
+		List<ExternalCatalogConfig> ExternalCatalogs
 		{
 			get; set;
 		}

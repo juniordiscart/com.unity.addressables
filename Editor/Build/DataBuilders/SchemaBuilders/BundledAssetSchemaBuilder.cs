@@ -99,12 +99,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
         }
 
 
-        private string m_CatalogBuildPath;
+        protected string m_CatalogBuildPath;
         private string m_BuiltTypeTreeDataPath;
         UnityEditor.Build.Pipeline.Utilities.LinkXmlGenerator m_Linker;
 
         /// <inheritdoc/>
-        public string Name => "Bundled Assets";
+        public virtual string Name => "Bundled Assets";
 
         /// <inheritdoc/>
         public bool CanBuildSchema(AddressableAssetGroupSchema schema)
@@ -912,18 +912,20 @@ FileRegistry registry)
         }
 
         /// <inheritdoc/>
-        public List<ContentCatalogData> GenerateCatalogs(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, AddressablesPlayerBuildResult addrResult)
+        public virtual List<ContentCatalogData> GenerateCatalogs(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, AddressablesPlayerBuildResult addrResult)
         {
             // save off the catalog build path for IsDataBuilt checks
             m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, builderInput.RuntimeCatalogFilename);
 
             var aaSettings = aaContext.Settings;
+            var loadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + builderInput.RuntimeCatalogFilename;
             var versionedFileName = aaSettings.profileSettings.EvaluateString(aaSettings.activeProfileId, "/catalog_" + builderInput.PlayerVersion);
             var remoteBuildPath = aaSettings.RemoteCatalogBuildPath.Id != "" ? aaSettings.RemoteCatalogBuildPath.GetValue(aaSettings) : "";
             var remoteLoadPath = aaSettings.RemoteCatalogLoadPath.Id != "" ?  aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings) : "";
             var catalogPathConfig = new CatalogPathConfig()
             {
                 BuildPath = Addressables.BuildPath,
+                LoadPath = loadPath,
                 RemoteBuildPath = remoteBuildPath,
                 RemoteLoadPath = remoteLoadPath,
                 RuntimeCatalogFilename = builderInput.RuntimeCatalogFilename,

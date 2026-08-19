@@ -1148,7 +1148,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     menu.AddItem(new GUIContent("Convert schema(s) to Content Directory"), false, ConvertToContentDirectory, selectedNodes);
 
                     if (!group.IsDefaultGroup())
-                        menu.AddItem(new GUIContent("Delete Group(s)"), false, RemoveGroup, selectedNodes);
+                        menu.AddItem(new GUIContent("Delete Group(s)"), false, DeleteGroup, selectedNodes);
 
 					foreach (var i in AddressableAssetSettings.CustomAssetGroupCommands)
 						menu.AddItem(new GUIContent(i), false, HandleCustomContextMenuItemGroups, new Tuple<string, List<AssetEntryTreeViewItem>>(i, selectedNodes));

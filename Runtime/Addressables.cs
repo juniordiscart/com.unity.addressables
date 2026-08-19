@@ -2151,7 +2151,7 @@ namespace UnityEngine.AddressableAssets
 		/// <param name="destinationScene">Existing Scene to merge the source Scene into.</param>
 		public static void MergeScenes(Scene sourceScene, Scene destinationScene)
 		{
-			m_Addressables.MergeScenes(sourceScene, destinationScene);
+            s_Addressables.MergeScenes(sourceScene, destinationScene);
 		}
 
 		/// <summary>

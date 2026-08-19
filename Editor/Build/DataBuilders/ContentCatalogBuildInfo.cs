@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEditor.AddressableAssets.Build.CatalogBuilders;
 using UnityEngine.AddressableAssets.ResourceLocators;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -28,22 +29,17 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         public readonly List<ContentCatalogDataEntry> Locations = new List<ContentCatalogDataEntry>();
 
         /// <summary>
-        /// The directory path this catalog is expected to be build.
+        /// Configuration for defining and managing catalog paths.
+        ///
+        /// This variable holds an instance of <c>CatalogPathConfig</c>, which is utilized in catalog generation processes
+        /// to specify and manage path-related configurations for content catalogs.
         /// </summary>
-		public string BuildPath;
-
-        /// <summary>
-        /// The directory path this catalog is expected to be loaded from.
-        /// </summary>
-		public string LoadPath;
+        public CatalogPathConfig PathConfig;
 
 		/// <summary>
-		/// Determines whether the catalog is going to be registered in settings.json.
-		///
-		/// Registered catalogs are automatically loaded on application startup.
-		/// Use "false" for catalogs that are to be loaded dynamicaly.
+		/// Represents the result of the hash calculation for a content catalog during the build process.
 		/// </summary>
-		public bool Register = true;
+		public string BuildHashResult;
 
         /// <summary>
         /// Construct an empty catalog build info.

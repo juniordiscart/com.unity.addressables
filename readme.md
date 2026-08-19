@@ -12,10 +12,9 @@ you require a specific version.
 ## Notes before you begin
 
 1. This multi-catalog version of Addressables **does not support catalog and group updates for subsequent content
-   builds!** If
-   your project requires content to be updated regularly and downloaded by your users without a new player build, then
-   this package will not work for you. If you do require it, please consider implementing this feature in a fork from
-   this repository.
+   builds!** If your project requires content to be updated regularly and downloaded by your users without a new player
+   build, then this package will not work for you. If you do require it, please consider implementing this feature in a
+   fork from this repository.
 2. This repository does not track every available version of the _vanilla_ Addressables package. It's only kept
    up-to-date sporadically.
 3. For additional features found in this fork of Addressables, check the [Additional features](#additional-features)
@@ -25,6 +24,9 @@ you require a specific version.
 
 When upgrading from Addressables version `1.21.2` to `1.21.9` or later, please read the upgrade notes
 for [migration help](#from-1212-to-1219-and-later) with breaking changes.
+
+When upgrading to Addressables version `3.0.0` and beyond, please read the [migration help](#from-2111-to-300-and-later)
+with breaking changes.
 
 ## Why does this exist?
 
@@ -47,22 +49,19 @@ The vanilla implementation of Addressables assumes you have a single content cat
 this catalog by labeling the DLC-specific content in your catalog. However, it will require you to constantly dance
 around the DLC content addresses available in the catalog by implementing entitlement checks and preventing them from
 being loaded. This is not only cumbersome and error-prone, but it also allows your players to easily mine the data and
-assume
-content might be available but is just soft-locked behind some simple checks. If you actually have the DLC content data
-shipped with the base game all the time as well, it can cause even more frustration as it's taking up disk space for
-something
-that player will not even be able to use.
+assume content might be available but is just soft-locked behind some simple checks. If you actually have the DLC
+content data shipped with the base game all the time as well, it can cause even more frustration as it's taking up disk
+space for something that player will not even be able to use.
 
 This sparked the idea of splitting off the actual DLC content to its separate content bundles along with a catalog that
-works independently of the base catalog shipped with the base game binary. This is largely possible in the vanilla
-implementation, but comes with a serious caveat: the Addressables system implicitly pulls in all of its dependencies in
-its generated bundles, and the build cache assumes only a single catalog is built per project, invalidating the build
-cache everytime a different catalog is built. This causes huge build times, and large output files. What's even worse is
-duplicated assets in memory when running the game because the implicitly copied assets that are duplicates from those in
-the base game's catalog are now seen as new and unique items when loaded. And finally, due to the fickle nature of the
-build process
-and its constant invalidation of the build cache, it can also trigger larger uploads and consequently larger downloads
-for players when using services such as Valve's Steampipe.
+works independently of the main content catalog shipped with the base game binary. This is largely possible in the
+vanilla implementation, but comes with a serious caveat: the Addressables system implicitly pulls in all of its
+dependencies in its generated bundles, and the build cache assumes only a single catalog is built per project,
+invalidating the build cache everytime a different catalog is built. This causes huge build times, and large output
+files. What's even worse is duplicated assets in memory. When running the game, the implicitly copied assets that are
+duplicates from those in the base game's catalog, are now seen as new and unique items when loaded. And finally, due to
+the fickle nature of the build process and its constant invalidation of the build cache, it can also trigger larger
+uploads and consequently larger downloads for players when using services such as Valve's Steampipe.
 
 This is unacceptable from a developer's as well as a player's perspective.
 
@@ -71,10 +70,10 @@ This is unacceptable from a developer's as well as a player's perspective.
 So we're looking for a system that overcomes the frustrations outlined above. The system should allow the following:
 
 * Split off DLC-specific content to its own content bundles and content catalog.
-   * Easy development - no dancing around entitlement checks.
-   * Only load content the player is entitled to access in the game.
-   * Not to waste disk space when not needed on the player's system.
-   * Not to duplicate assets in memory.
+    * Easy development - no dancing around entitlement checks.
+    * Only load content the player is entitled to access in the game.
+    * Not to waste disk space when not needed on the player's system.
+    * Not to duplicate assets in memory.
 * Retain the build cache for faster builds, smaller uploads and consequently smaller updates.
 
 ### The solution
@@ -83,10 +82,10 @@ The solution comes in the form of setting up a DLC catalog object per DLC packag
 game. These DLC catalog objects are added to the content build pipeline, which will analyse which addresses and content
 belongs to their respective DLC package.
 
-When everything has been built by the content build processor, the content is
-separated based on which catalog it belongs to. DLC content is stripped away from the main catalog and copied to the
-location defined by the DLC catalog configuration. After that's done, everything that remains is part of the main
-catalog and ready to be shipped with the base game.
+When everything has been built by the content build processor, the content is separated based on which catalog it
+belongs to. DLC content is stripped away from the main catalog and copied to the location defined by the DLC catalog
+configuration. After that's done, everything that remains is part of the main catalog and ready to be shipped with the
+base game.
 
 ## Installation
 
@@ -126,28 +125,22 @@ objects rather than starting with a clean slate:
 
 With the multi-catalog system installed, additional catalogs can now be created and included in build:
 
-1. Create a new `ExternalCatalogSetup` object, one for each DLC package:
+1. Create a new `ExternalCatalogConfig` object, one for each DLC package:
 
    > Create → Addressables → new External Catalog
 
 2. In this object, fill in the following properties:
-   * Catalog name: the name of the catalog file produced during build.
-   * Build path: where this catalog and it's assets will be exported to after the build is done. This supports the same
-     variable syntax as the build path in the Addressable Asset Settings.
-   * Runtime load path: when the game is running, where should these assets be loaded from. This should depend on how
-     you will deploy your DLC assets on the systems of your players. It also supports the same variable syntax.
+    * Catalog name: the name of the catalog file produced during build.
+    * Build path: where this catalog and it's assets will be exported to after the build is done. This supports the same
+      variable syntax as the build path in the Addressable Asset Settings.
+    * Runtime load path: when the game is running, where should these assets be loaded from. This should depend on how
+      you will deploy your DLC assets on the systems of your players. It also supports the same variable syntax.
 
    ![Set external catalog properties](Documentation~/images/multi_catalogs/SetCatalogSettings.png)
 
 3. Assign the Addressable asset groups that belong to this package.
 
-   **Note**: Addressable asset groups that are assigned to an external catalog, but still have their `BuildPath` and
-   `LoadPath` values set to point to the main/default catalog's build and load path, will have them replaced with that
-   of the external catalog during build time. So you don't have to perform specific actions with regards to the
-   Addressable asset groups themselves, unless you wish to have them build to a specific other location other than next
-   to the external catalog file.
-
-4. Now, select the `BuildScriptPackedMultiCatalogMode` data builder object and assign your external catalog object(s).
+4. Now, select the `BuildScriptMultiCatalogPackedMode` data builder object and assign your external catalog object (s).
 
    ![Assign external catalogs to data builder](Documentation~/images/multi_catalogs/AssignCatalogsToDataBuilder.png)
 
@@ -156,8 +149,8 @@ With the multi-catalog system installed, additional catalogs can now be created 
 With everything set up and configured, it's time to build the project's contents!
 
 In your Addressable Groups window, tick all 'Include in build' boxes of those groups that should be built. From the
-build tab, there's a new `Default build script - Multi-Catalog` option. Select this one to start a content build with
-the multi-catalog setup.
+build tab, there's a new `Multi-catalog Build Script` option. Select this one to start a content build with the
+multi-catalog setup.
 
 **Note**: built-in content is automatically included along with the player build as a post-build process. External
 catalogs and their content are built and moved to their location when they are build. It's up to the user to configure
@@ -180,12 +173,27 @@ of Addressables.
 When merging scenes using `SceneManager.MergeScenes`, the source scene will be unloaded by Unity. If this source scene
 is a scene loaded by Addressables, then its loading handle will be disposed off and releasing all assets associated with
 the scene. This will cause all merged assets from the source scene that were handled by this single handle be unloaded
-as well. This may cause several assets to not show up properly anymore, e.g. the well known pink missing material, no
-meshes, audio clips, etc. will all be missing.
+as well. This may cause several assets to not show up properly anymore.
 
 This is resolved by adding a `MergeScenes` method to `Addressables`, similar to `SceneManager.MergeScenes`, but will
 keep the Addressable scene's loading handle alive until the destination scene is unloaded. This process can be repeated
 multiple times, passing the loading handle until it's current bearer is unloaded.
+
+### Editor Fast-Mode Exclusion
+
+When a project aims to support multiple target platforms or variants of the same project, you may want some groups to be
+available or not during testing for that specific platform. However, using the fast-mode script in editor will always
+yield all results of assets that are registered as an Addressable asset.
+
+This fork provides an option to include or exclude a specific group from the playmode that uses the asset database as a
+source of assets.
+
+### Addressables Group Sorting Fix
+
+The object that holds the sort settings for Addressable Asset Groups is always placed at `Assets/AddressableAssetsData`,
+regardless of where the AddressableAssetSettings object lives. This group sorting object in this fork of Addressables is
+always placed next to the AddressableAssetSettings object. This makes it easier to work with multiple
+AddressableAssetSettings in a single project.
 
 ## Migration Notes
 
@@ -199,3 +207,18 @@ If you're updating from a multi-catalog version of Addressables with version num
   to work with Addressables' `ProfileValueReference` framework. This allows to work with the built-in string evaluation
   functions and profile-defined variables in a more transparent way as it also properly previews the result in the
   inspector window.
+
+### From 2.11.1 to 3.0.0 and later
+
+The update from `2.11.1` to `3.0.0` was a major rewrite of the build system of Addressables. To keep this package
+somewhat maintainable, some implicit build behaviour that originally shipped with the Multi-Catalog edition of
+Addressables has been removed and now requires explicit action by the person setting up the Addressables Asset Groups.
+
+* Originally, Addressable Asset Groups that were assigned to an external catalog but that had their build and load path
+  still set to the local build and load path, would silently had their paths swapped out with the that of the external
+  catalog. From `3.0.0` on, this behaviour no longer happens. Addressable Asset Groups now require their build and load
+  paths be explicitly be set to their desired destinations. To alleviate this inconvenience, the `ExternalContentConfig`
+  inspector window has been given a button to update the paths of the assigned Addressable Asset Groups to that of the
+  external catalog they belong to.
+* Renamed the `ExternalCatalogSetup` class to `ExternalCatalogConfig`.
+* Renamed the `BuildScriptPackedMultiCatalogMode` class to `BuildScriptMultiCatalogPackedMode`.

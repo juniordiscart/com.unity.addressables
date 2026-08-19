@@ -2110,7 +2110,7 @@ namespace UnityEditor.AddressableAssets.Settings
         private string m_ContentDirectoryGroupTemplateName = "Content Directory";
         private static Type SchemaDrivenType = typeof(BuildScriptSchemaDriven);
         // private static Type PackedModeType = typeof(BuildScriptPackedMode);
-		private static Type PackedModeType = typeof(BuildScriptPackedMultiCatalogMode);
+		private static Type PackedModeType = typeof(BuildScriptMultiCatalogPackedMode);
 		private static Type FastModeType = typeof(BuildScriptFastMode);
 
         internal void Validate()
@@ -2149,7 +2149,7 @@ namespace UnityEditor.AddressableAssets.Settings
 				m_DataBuilders.Add(CreateScriptAsset<BuildScriptFastMode>());
 				m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedPlayMode>());
 				m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedMode>());
-				m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedMultiCatalogMode>());
+				m_DataBuilders.Add(CreateScriptAsset<BuildScriptMultiCatalogPackedMode>());
                 m_DataBuilders.Add(CreateScriptAsset<BuildScriptSchemaDriven>());
 
 				m_ActivePlayerDataBuilderIndex = 4;

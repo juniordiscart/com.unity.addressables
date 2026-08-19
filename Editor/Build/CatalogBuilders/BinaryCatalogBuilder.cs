@@ -98,10 +98,11 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
                 Addressables.LogError("Unable to create content catalog (Null arguments).");
                 return false;
             }
+
             // Path needs to be resolved at runtime.
             var runtimeCatalogFilename = AddExtensionToCatalogFilename(catalogPaths.RuntimeCatalogFilename);
-            string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + runtimeCatalogFilename;
-            string catalogBuildPath = Path.Combine(Addressables.BuildPath, runtimeCatalogFilename);
+            string localLoadPath = $"{DirectoryUtility.EnsureTrailingSlash(catalogPaths.LoadPath)}{runtimeCatalogFilename}";
+            string catalogBuildPath = Path.Combine(catalogPaths.BuildPath, runtimeCatalogFilename);
 
             BuildScriptBase.WriteFile(catalogBuildPath, data, registry);
             BuildScriptBase.WriteStringToFile(catalogBuildPath.Replace(".bin", ".hash"), HashingMethods.Calculate(data).ToString(), registry);

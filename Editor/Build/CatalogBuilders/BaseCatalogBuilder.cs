@@ -41,7 +41,7 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
         /// </summary>
         /// <param name="catalogFilename">The catalog filename to modify.</param>
         /// <returns>The filename with the appropriate catalog extension.</returns>
-        protected string AddExtensionToCatalogFilename(string catalogFilename)
+        public string AddExtensionToCatalogFilename(string catalogFilename)
         {
             if (Path.GetExtension(catalogFilename) != $".{CatalogExtension}")
             {

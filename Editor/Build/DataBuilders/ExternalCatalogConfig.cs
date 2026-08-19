@@ -12,7 +12,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 	/// Separate catalog for the assigned asset groups.
 	/// </summary>
 	[CreateAssetMenu(menuName = "Addressables/External Catalog", fileName = "ExternalCatalogSetup")]
-	public class ExternalCatalogSetup : ScriptableObject
+	public class ExternalCatalogConfig : ScriptableObject
 	{
 		[SerializeField, Tooltip("Assets groups that belong to this catalog. Entries found in these will get extracted from the default catalog.")]
 		private List<AddressableAssetGroup> assetGroups = new List<AddressableAssetGroup>();
@@ -67,27 +67,23 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 		/// <returns>True if it's part of the catalog. False otherwise.</returns>
 		public bool IsPartOfCatalog(ContentCatalogDataEntry loc, AddressableAssetsBuildContext aaContext)
 		{
-			// Don't bother if the asset groups is empty.
+			// Don't bother if the asset groups are empty.
 			if (assetGroups == null || assetGroups.Count <= 0)
 			{
 				return false;
 			}
 
-			if ((loc.ResourceType == typeof(IAssetBundleResource)))
-			{
-				AddressableAssetEntry entry = aaContext.assetEntries.Find(ae => string.Equals(ae.BundleFileId, loc.InternalId));
-				if (entry != null)
-				{
-					return assetGroups.Exists(ag => ag.entries.Contains(entry));
-				}
-
-				// If no entry was found, it may refer to a folder asset.
-				return assetGroups.Exists(ag => ag.entries.Any(e => e.IsFolder && string.Equals(e.BundleFileId, loc.InternalId)));
-			}
-			else
+			if (loc.ResourceType != typeof(IAssetBundleResource))
 			{
 				return assetGroups.Exists(ag => ag.entries.Any(e => (e.IsFolder && e.SubAssets.Any(a => loc.Keys.Contains(a.guid))) || loc.Keys.Contains(e.guid)));
 			}
+
+			AddressableAssetEntry entry = aaContext.assetEntries.Find(ae => string.Equals(ae.BundleFileId, loc.InternalId));
+			return
+				entry != null ?
+					assetGroups.Exists(ag => ag.entries.Contains(entry)) :
+					// If no entry was found, it may refer to a folder asset.
+					assetGroups.Exists(ag => ag.entries.Any(e => e.IsFolder && string.Equals(e.BundleFileId, loc.InternalId)));
 		}
 
 		/// <summary>
@@ -115,12 +111,14 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 		/// <param name="assetGroup">The Addressable asset group to remove.</param>
 		public void RemoveAssetGroupFromCatalog(AddressableAssetGroup assetGroup)
 		{
-			if (assetGroups.Exists(aag => aag == assetGroup))
+			if (!assetGroups.Exists(aag => aag == assetGroup))
 			{
-				Undo.RecordObject(this, nameof(RemoveAssetGroupFromCatalog));
-				assetGroups.RemoveAll(aag => aag == assetGroup);
-				EditorUtility.SetDirty(this);
+				return;
 			}
+
+			Undo.RecordObject(this, nameof(RemoveAssetGroupFromCatalog));
+			assetGroups.RemoveAll(aag => aag == assetGroup);
+			EditorUtility.SetDirty(this);
 		}
 
 		private void OnEnable()
