@@ -63,7 +63,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 return Size.ToString();
             if (colName == BuildReportUtility.DuplicatedAssetsContentViewSpaceSaved)
                 return SpaceSavedIfDeduplicated.ToString();
-            if (colName == BuildReportUtility.DuplicatedAssetsContentViewSpaceSaved)
+            if (colName == BuildReportUtility.DuplicatedAssetsContentViewDuplicationCount)
                 return DuplicationCount.ToString();
             return GetCellContent(colName);
         }
@@ -94,7 +94,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             Bundles = helperAsset.Bundles;
             AssetDepsOf = helperAsset.GUIDToReferencingAssets.Values.ToList();
             DepsOfCount = AssetDepsOf.Count;
-            DuplicationCount = helperAsset.GUIDToReferencingAssets.Count;
+            DuplicationCount = helperAsset.DuplicationCount;
             if (DuplicationCount > 1)
             {
                 SpaceSavedIfDeduplicated = (ulong) (DuplicationCount - 1) * Size;

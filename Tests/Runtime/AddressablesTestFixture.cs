@@ -55,7 +55,20 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
 #if ENABLE_CACHING
         Caching.ClearCache();
 #endif
-        Assert.IsNull(m_Addressables);
+        // Defensive: dispose if a prior setup/teardown path left an instance (e.g. teardown threw or aborted).
+        if (m_Addressables != null)
+        {
+            try
+            {
+                m_Addressables.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"AddressablesTestFixture: Dispose during UnitySetUp cleanup failed (continuing with fresh instance): {ex.Message}");
+            }
+            m_Addressables = null;
+        }
+
         m_Addressables = new AddressablesImpl(new DefaultAllocationStrategy());
         m_RuntimeSettingsPath = AddressablesImpl.ResolveInternalId(GetRuntimeAddressablesSettingsPath(m_UniqueTestName));
         yield return InitAddressables();
@@ -78,7 +91,16 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     [TearDown]
     public virtual void RuntimeTeardown()
     {
-        m_Addressables.Dispose();
+        if (m_Addressables == null)
+            return;
+        try
+        {
+            m_Addressables.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"AddressablesTestFixture: Dispose during TearDown failed: {ex.Message}");
+        }
         m_Addressables = null;
     }
 
@@ -95,6 +117,8 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         AddressableAssetSettings settings = CreateSettings("Settings", rootFolder);
 
         Setup(settings, rootFolder);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         RunBuilder(settings);
 
         if (activeScenePath != EditorSceneManager.GetActiveScene().path)
@@ -151,7 +175,12 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         else
 #endif
             b.BuildData<AddressableAssetBuildResult>(buildContext);
-        PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath + id, PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
+#if UNITY_EDITOR
+        SessionState.SetString(Addressables.kAddressablesRuntimeDataPath + id, SessionState.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
+#else
+        Assert.Fail("Should not be running the builder in play mode.");
+        return;
+#endif
     }
 
     static IDataBuilder GetBuilderOfType(AddressableAssetSettings settings, Type modeType)
@@ -189,7 +218,12 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
             return "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/settings" + id + ".json";
         else if (BuildScriptMode == TestBuildScriptMode.Fast)
         {
-            return PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath + id, "");
+#if UNITY_EDITOR
+            return SessionState.GetString(Addressables.kAddressablesRuntimeDataPath + id, "");
+#else
+            Assert.Fail("FastMode should only be used in the editor..");
+            return null;
+#endif
         }
         else
         {

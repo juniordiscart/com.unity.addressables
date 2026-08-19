@@ -641,6 +641,18 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         void OnUnloadOperationComplete(AsyncOperation op)
         {
             m_UnloadOperation = null;
+            if (!m_ProvideHandle.IsValid || m_Completed)
+                return;
+            // Do not start LoadFromFileAsync from inside UnloadAsync's completed callback: on Windows the
+            // file can still be unavailable briefly, which surfaces as "wrong version or build target".
+            // WaitForCompletionHandler waits the unload synchronously then calls BeginOperation inline, which avoids this.
+            DelayedActionManager.AddAction(new Action(BeginOperationDeferredAfterUnload), 0f);
+        }
+
+        void BeginOperationDeferredAfterUnload()
+        {
+            if (!m_ProvideHandle.IsValid || m_Completed)
+                return;
             BeginOperation();
         }
 
@@ -692,6 +704,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 m_UnloadOperation.completed -= OnUnloadOperationComplete;
                 m_UnloadOperation.WaitForCompletion();
                 m_UnloadOperation = null;
+                BeginOperation();
+            }
+            else if (m_RequestOperation == null && m_WebRequestQueueOperation == null && !m_Completed)
+            {
+                // Unload finished asynchronously and BeginOperation was deferred via DelayedActionManager
+                // (see OnUnloadOperationComplete). The synchronous wait blocks the main thread, so the deferred
+                // action will never fire. Drive the load forward inline.
                 BeginOperation();
             }
 
@@ -1197,7 +1216,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 				throw new ArgumentNullException("location");
 			if (asset == null)
 			{
-                if(!(location is DownloadOnlyLocation))
+                if (!(location is DownloadOnlyLocation))
 				Debug.LogWarningFormat("Releasing null asset bundle from location {0}.  This is an indication that the bundle failed to load.", location);
 				return;
 			}
@@ -1205,6 +1224,11 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			var bundle = asset as AssetBundleResource;
 			if (bundle != null)
 			{
+                if (!CanUnloadBundle(location))
+                {
+                    return;
+                }
+
                 if (bundle.Unload(out var unloadOp))
                 {
                     s_UnloadingBundles.Add(location.InternalId, unloadOp);
@@ -1212,6 +1236,35 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                 }
 			}
 		}
+
+        private static bool CanUnloadBundle(IResourceLocation location)
+        {
+            string internalId = location.InternalId;
+
+            // key does not exist in unloading bundles
+            if (!s_UnloadingBundles.TryGetValue(internalId, out var existingUnload))
+            {
+                return true;
+            }
+            // stored unload op is null, not expected
+            if (existingUnload == null)
+            {
+                Debug.LogWarning(
+                    $"Found unexpected null unload op for internal id '{internalId}' (primary key '{location.PrimaryKey}').");
+                return true;
+            }
+            // bundle is not done unloading, if we get here refcounting is probably not
+            // doing its job or a test is not doing proper cleanup
+            if (!existingUnload.isDone)
+            {
+                Debug.LogWarning(
+                    $"Release requested while unload already in progress for internal id '{internalId}' (primary key '{location.PrimaryKey}'). Skipping duplicate unload.");
+                return false;
+            }
+            // bundle is done unloading, remove stale entry from unloading bundles
+            s_UnloadingBundles.Remove(internalId);
+            return true;
+        }
 
         /// <summary>
         /// Determines if the web request can be retried based on its result info.

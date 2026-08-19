@@ -87,6 +87,13 @@ namespace UnityEditor.AddressableAssets.GUI
                 return;
             }
 
+            // Clear stale newGuid if it doesn't belong to this property (PropertyDrawers are reused).
+            if (!string.IsNullOrEmpty(newGuid) && newGuidPropertyPath != property.propertyPath)
+            {
+                newGuid = string.Empty;
+                newGuidPropertyPath = string.Empty;
+            }
+
             string labelText = label.text;
             m_ReferencesSame = true;
             m_AssetRefObject = property.GetActualObjectForSerializedProperty<AssetReference>(fieldInfo, ref labelText);

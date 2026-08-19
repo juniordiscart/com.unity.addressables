@@ -3,6 +3,10 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [3.1.0] - 2026-05-15
+- Revert breaking changes.
+- Fixed: Build Report now shows correct duplication count for embedded assets referenced in bundles.
+
 ## [3.0.0] - 2026-04-15
 - Fixed `PrefabPackedIdentifiers.SerializationIndexFromObjectIdentifier` so that when "Prefab Packed Header Size" is below 4, the leading bytes of the asset hash affect the **most significant** bits of the serialization index (little-endian safe), restoring contiguous bundle ordering without shrinking per-object entropy to 32 bits.
 - Added a configurable warning when loading Addressables outside of Play Mode to inform about the risks of resources being forcibly unloaded when the playmode state changes (Disable via Preferences or Addressables.WarnOnAddressablesUsageOutsidePlaymode).

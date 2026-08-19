@@ -132,6 +132,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         public BuildLayout.DataFromOtherAsset Asset;
 
+        public int DuplicationCount { get; private set; }
+
         public override SortedDictionary<string, BuildLayout.ExplicitAsset> GUIDToReferencingAssets { get; set; }
 
         public BuildReportHelperDuplicateImplicitAsset(BuildLayout.DataFromOtherAsset asset, BuildLayout.AssetDuplicationData assetDupData)
@@ -154,6 +156,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                     }
                 }
             }
+
+            DuplicationCount = Bundles.Select(b => b.Name).Distinct().Count();
         }
     }
 

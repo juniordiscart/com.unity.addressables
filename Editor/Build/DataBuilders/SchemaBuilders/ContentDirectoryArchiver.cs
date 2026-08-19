@@ -13,10 +13,18 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
 {
     internal static class ContentDirectoryArchiver
     {
-        internal static void ArchiveAndUpdateRegistry(string archiveOutputDirectory, long avgMaxSize, FileRegistry registry)
+        // Inflates a desired post-compression archive size into the raw bucket size needed
+        // to land near it. Update both this constant AND the compression call in
+        // ProcessArchiveWorkItems together when changing or extending compression support.
+        //   LZ4  : ~1.5x (typical Unity content compresses to ~60-75% of raw)
+        //   LZMA : ~3.0x (would apply if LZMA is added to ProcessArchiveWorkItems)
+        const double k_LZ4InflationFactor = 1.5;
+
+        internal static void ArchiveAndUpdateRegistry(string archiveOutputDirectory, long targetCompressedSize, FileRegistry registry)
         {
             var filteredFiles = FilterFiles(registry, out var totalSize);
-            var workItems = CreateArchiveWorkItems(archiveOutputDirectory, filteredFiles, totalSize, avgMaxSize);
+            long targetUncompressedSize = (long)(targetCompressedSize * k_LZ4InflationFactor);
+            var workItems = CreateArchiveWorkItems(archiveOutputDirectory, filteredFiles, totalSize, targetUncompressedSize);
             ProcessArchiveWorkItems(workItems);
             CleanupRegistry(registry, filteredFiles, workItems);
         }
@@ -56,10 +64,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
             return filteredFiles;
         }
 
-        internal static List<(string archivePath, List<ResourceFile> files)> CreateArchiveWorkItems(string archiveOutputDirectory, List<ResourceFile> filteredFiles, long totalSize, long avgMaxSize)
+        internal static List<(string archivePath, List<ResourceFile> files)> CreateArchiveWorkItems(string archiveOutputDirectory, List<ResourceFile> filteredFiles, long totalSize, long targetUncompressedSize)
         {
             var workItems = new List<(string archivePath, List<ResourceFile> files)>();
-            int numBuckets = (int)Math.Max(1, (totalSize + avgMaxSize) / avgMaxSize);
+            int numBuckets = (int)Math.Max(1, (totalSize + targetUncompressedSize) / targetUncompressedSize);
 
             var buckets = new List<ResourceFile>[numBuckets];
             for (int i = 0; i < numBuckets; i++)

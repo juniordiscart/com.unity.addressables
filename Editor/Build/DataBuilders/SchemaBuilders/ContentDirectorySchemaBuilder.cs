@@ -115,6 +115,16 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
         {
             if (m_CatalogIdToRootAssetMap.Count == 0)
                 return;
+
+            BuildTarget editorActiveBuildTarget = EditorUserBuildSettings.activeBuildTarget;
+            if (builderInput.Target != editorActiveBuildTarget)
+            {
+                string message =
+                    $"Content Directory build requires the Addressables build target ({builderInput.Target}) to match the Editor active build target ({editorActiveBuildTarget}). Switch the active platform in File > Build Settings, or run the Addressables build for the active platform.";
+                builderInput.Logger.AddEntry(LogLevel.Error, message);
+                throw new Exception(message);
+            }
+
             //This is just to make sure we don't call it multiple times if there's multiple catalogs
             //fwiw I don't love this and would like to change this later
             bool postProcessDirectoryCalled = false;
@@ -141,7 +151,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
                     var buildParams = new BuildContentDirectoryParameters();
                     buildParams.rootAssetPaths = rootAssetPaths;
                     buildParams.outputPath = aaSettings.buildSettings.contentDirectoryBuildPath;
-                    buildParams.targetPlatform = builderInput.Target;
 
                     ContentDirectoryParameters cdParams = new ContentDirectoryParameters(buildParams);
                     cdParams.Target = builderInput.Target;
@@ -307,11 +316,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
         /// Method to archive the content directory build files.
         /// </summary>
         /// <param name="archiveOutputDirectory">The output directory.</param>
-        /// <param name="avgMaxSize">Desired average max archive size.</param>
+        /// <param name="targetCompressedSize">Desired average archive size on disk after compression. The archiver inflates this internally to account for the compression algorithm in use.</param>
         /// <param name="registry">File registry to store results.  Files that are archived should be deleted and removed from the registry.  New archives should be added.</param>
-        public virtual void ArchiveContentDirectories(string archiveOutputDirectory, long avgMaxSize, FileRegistry registry)
+        public virtual void ArchiveContentDirectories(string archiveOutputDirectory, long targetCompressedSize, FileRegistry registry)
         {
-            ContentDirectoryArchiver.ArchiveAndUpdateRegistry(archiveOutputDirectory, avgMaxSize, registry);
+            ContentDirectoryArchiver.ArchiveAndUpdateRegistry(archiveOutputDirectory, targetCompressedSize, registry);
         }
 
         /// <summary>
@@ -731,7 +740,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
                 labels.Add($"{entryGuid}[{targetAsset.name}]");
             }
 
-            var loadableRef = LoadableObjectIdEditorUtility.CreateLoadableObjectId(targetAsset);
+            var loadableRef = LoadableObjectIdEditorUtility.CreateLoadableObjectId(targetAsset.GetEntityId());
             var loadableInfo = new LoadableInfo
             {
                 key = address,

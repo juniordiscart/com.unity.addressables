@@ -96,13 +96,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
             if (buildReport.DuplicatedAssets.Count > 0)
             {
-                ulong duplicatedSize = 0;
-                foreach (var dupeAsset in m_HelperConsumer.GUIDToDuplicateAssets.Values)
-                {
-                    int duplicationCount = dupeAsset.GUIDToReferencingAssets.Count;
-                    if (duplicationCount > 1)
-                        duplicatedSize += (ulong)(duplicationCount - 1) * (dupeAsset.Asset.SerializedSize + dupeAsset.Asset.StreamedSize);
-                }
+                ulong duplicatedSize = CalculateDuplicatedSize(m_HelperConsumer.GUIDToDuplicateAssets.Values);
 
                 SummaryRowBuilder duplicatedAssets = new SummaryRowBuilder("Potential Issues")
                     .With(new PotentialIssuesCard($"{buildReport.DuplicatedAssets.Count} Duplicate Assets were detected in the build.  \n\n" +
@@ -149,6 +143,17 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         {
             scrollbarElement.Clear();
             scrollbarElement.visible = false;
+        }
+
+        internal static ulong CalculateDuplicatedSize(IEnumerable<BuildReportHelperDuplicateImplicitAsset> duplicateAssets)
+        {
+            ulong duplicatedSize = 0;
+            foreach (var dupeAsset in duplicateAssets)
+            {
+                if (dupeAsset.DuplicationCount > 1)
+                    duplicatedSize += (ulong)(dupeAsset.DuplicationCount - 1) * (dupeAsset.Asset.SerializedSize + dupeAsset.Asset.StreamedSize);
+            }
+            return duplicatedSize;
         }
     }
 }

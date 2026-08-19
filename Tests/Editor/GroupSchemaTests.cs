@@ -191,6 +191,81 @@ namespace UnityEditor.AddressableAssets.Tests
             // Cleanup
             Assert.IsTrue(group.RemoveSchema<CustomTestSchema>());
         }
+
+        [Test]
+        public void SchemaCompare_BothNull_ReturnsZero()
+        {
+            Assert.AreEqual(0, AddressableAssetGroupSchema.Compare(null, null));
+        }
+
+        [Test]
+        public void SchemaCompare_FirstNull_ReturnsNegative()
+        {
+            var schema = ScriptableObject.CreateInstance<CustomTestSchema>();
+            try
+            {
+                Assert.AreEqual(-1, AddressableAssetGroupSchema.Compare(null, schema));
+            }
+            finally
+            {
+                ScriptableObject.DestroyImmediate(schema);
+            }
+        }
+
+        [Test]
+        public void SchemaCompare_SecondNull_ReturnsPositive()
+        {
+            var schema = ScriptableObject.CreateInstance<CustomTestSchema>();
+            try
+            {
+                Assert.AreEqual(1, AddressableAssetGroupSchema.Compare(schema, null));
+            }
+            finally
+            {
+                ScriptableObject.DestroyImmediate(schema);
+            }
+        }
+
+        [Test]
+        public void SchemaCompare_BothNonNull_ComparesByName()
+        {
+            var schemaA = ScriptableObject.CreateInstance<CustomTestSchema>();
+            var schemaB = ScriptableObject.CreateInstance<CustomTestSchema>();
+            try
+            {
+                schemaA.name = "Alpha";
+                schemaB.name = "Beta";
+
+                Assert.Less(AddressableAssetGroupSchema.Compare(schemaA, schemaB), 0);
+                Assert.Greater(AddressableAssetGroupSchema.Compare(schemaB, schemaA), 0);
+                Assert.AreEqual(0, AddressableAssetGroupSchema.Compare(schemaA, schemaA));
+            }
+            finally
+            {
+                ScriptableObject.DestroyImmediate(schemaA);
+                ScriptableObject.DestroyImmediate(schemaB);
+            }
+        }
+
+        [Test]
+        public void SchemaCompare_NonNullWithEmptyName_DoesNotThrow()
+        {
+            var schemaA = ScriptableObject.CreateInstance<CustomTestSchema>();
+            var schemaB = ScriptableObject.CreateInstance<CustomTestSchema>();
+            try
+            {
+                schemaA.name = "";
+                schemaB.name = "SomeName";
+
+                Assert.DoesNotThrow(() => AddressableAssetGroupSchema.Compare(schemaA, schemaB));
+                Assert.DoesNotThrow(() => AddressableAssetGroupSchema.Compare(schemaB, schemaA));
+            }
+            finally
+            {
+                ScriptableObject.DestroyImmediate(schemaA);
+                ScriptableObject.DestroyImmediate(schemaB);
+            }
+        }
     }
 
     class BundledAssetGroupSchemaTests : EditorAddressableAssetsTestFixture

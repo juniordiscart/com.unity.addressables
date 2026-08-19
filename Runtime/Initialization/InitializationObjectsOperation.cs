@@ -83,7 +83,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             }
 
 #if UNITY_EDITOR
-            string buildLogsPath = AddressablesImpl.ResolveInternalId(PlayerPrefs.GetString(Addressables.kAddressablesRuntimeBuildLogPath));
+            string buildLogsPath = AddressablesImpl.ResolveInternalId(UnityEditor.SessionState.GetString(Addressables.kAddressablesRuntimeBuildLogPath, string.Empty));
             if (LogRuntimeWarnings(buildLogsPath))
                 File.Delete(buildLogsPath);
 #endif

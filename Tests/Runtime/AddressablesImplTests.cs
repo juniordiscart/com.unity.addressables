@@ -23,6 +23,12 @@ namespace AddressableAssetsIntegrationTests
 
         protected virtual bool UseUnityWebRequestForLocalBundles { get { return false; } }
 
+        /// <summary>
+        /// Short type name passed to <see cref="AddressablesTestUtility.Setup"/> for the packed bundle prebuild phase
+        /// (default stock <c>BuildScriptPackedMode</c>; integration mirrors use <see cref="AllHooksLoggingPackedMode"/>).
+        /// </summary>
+        protected virtual string PackedBundleDataBuilderTypeName => "BuildScriptPackedMode";
+
         [SetUp]
         public void SetUp()
         {

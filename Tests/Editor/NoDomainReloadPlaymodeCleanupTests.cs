@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
@@ -21,6 +22,9 @@ namespace UnityEditor.AddressableAssets.Tests
 
         const string k_TempPath = "NoDomainReloadPlaymodeCleanupTests";
         const string k_AssetKey = "editmodeloaded";
+
+        // SessionState default when Addressables.kAddressablesRuntimeDataPath was never set.
+        const string k_NoSavedRuntimeDataPath = "__NoDomainReloadPlaymodeCleanupTests_NoSavedRuntimeDataPath__";
 
         bool m_SavedEnterPlayModeOptionsEnabled;
         EnterPlayModeOptions m_SavedEnterPlayModeOptions;
@@ -77,8 +81,9 @@ namespace UnityEditor.AddressableAssets.Tests
             m_WarnsOnEditorUsage = Addressables.WarnOnAddressablesUsageOutsidePlaymode;
 
             var settings = BuildTestBundle();
-            m_SavedRuntimeDataPath = PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, null);
-            PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, settings);
+            m_SavedRuntimeDataPath =
+                SessionState.GetString(Addressables.kAddressablesRuntimeDataPath, k_NoSavedRuntimeDataPath);
+            SessionState.SetString(Addressables.kAddressablesRuntimeDataPath, settings);
 
             PlayerSettings.insecureHttpOption = InsecureHttpOption.AlwaysAllowed;
             EditorSettings.enterPlayModeOptionsEnabled = true;
@@ -93,10 +98,10 @@ namespace UnityEditor.AddressableAssets.Tests
             EditorSettings.enterPlayModeOptionsEnabled = m_SavedEnterPlayModeOptionsEnabled;
             EditorSettings.enterPlayModeOptions = m_SavedEnterPlayModeOptions;
             PlayerSettings.insecureHttpOption = m_SavedHttpOption;
-            if (m_SavedRuntimeDataPath != null)
-                PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, m_SavedRuntimeDataPath);
+            if (m_SavedRuntimeDataPath == k_NoSavedRuntimeDataPath)
+                SessionState.EraseString(Addressables.kAddressablesRuntimeDataPath);
             else
-                PlayerPrefs.DeleteKey(Addressables.kAddressablesRuntimeDataPath);
+                SessionState.SetString(Addressables.kAddressablesRuntimeDataPath, m_SavedRuntimeDataPath);
             Addressables.WarnOnAddressablesUsageOutsidePlaymode = m_WarnsOnEditorUsage;
         }
 
@@ -127,8 +132,9 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Assert.IsTrue(
                 AssetBundleProvider.LoadingRemoteBundles.ContainsKey(k_RemoteUrl),
-                "LoadingRemoteBundles didn't load the request while in edit mode.");
-            Assert.AreEqual(1, WebRequestQueue.s_ActiveRequests.Count, "The UnityWebRequest didn't start.");
+                "Expected the remote URL to be listed in LoadingRemoteBundles while the bundle load runs in edit mode.");
+            Assert.AreEqual(1, WebRequestQueue.s_ActiveRequests.Count,
+                "Expected exactly one active web request after starting the remote bundle load in edit mode.");
 
             // Disabling the check on the log given other tests in the suite can make the log tracker unable to see it when entering playmode...
             LogAssert.Expect(LogType.Warning,
@@ -148,7 +154,8 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(0, WebRequestQueue.s_ActiveRequests.Count,
                 "Active web requests should be aborted when entering play mode.");
 
-            Assert.That(operation.Status, Is.EqualTo(AsyncOperationStatus.Failed));
+            Assert.That(operation.Status, Is.EqualTo(AsyncOperationStatus.Failed),
+                "Load operation should fail after play mode transition aborts the in-flight web request.");
 
             yield return new ExitPlayMode();
         }

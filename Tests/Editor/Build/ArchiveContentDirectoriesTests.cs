@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
+using UnityEditor; // explicitly imported for GUID backwards compatibility
+using UnityEngine; // explicitly imported for GUID backwards compatibility
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
 using UnityEditor.Build.Content;

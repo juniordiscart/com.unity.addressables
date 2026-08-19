@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
+using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
 using UnityEditor.AddressableAssets.Settings;
@@ -68,6 +68,74 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             return typeof(T).IsAssignableFrom(typeof(AddressablesPlayerBuildResult));
         }
+
+        /// <summary>
+        /// Returns a delegate bound to this instance's <see cref="BuildDataImplementation{TResult}"/> via virtual dispatch.
+        /// Used by <see cref="BuildScriptPackedMode"/> to invoke the protected hook from outside the class
+        /// hierarchy while still honoring overrides on derived types in any assembly.
+        /// Do not call from build-script overrides; override <see cref="BuildDataImplementation{TResult}"/> instead.
+        /// </summary>
+        /// <typeparam name="TResult">The type of <see cref="IDataBuilderResult"/> to produce.</typeparam>
+        /// <returns>A delegate that invokes <see cref="BuildDataImplementation{TResult}"/> on this instance.</returns>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public Func<AddressablesDataBuilderInput, TResult> GetBuildDataImplementationCallback<TResult>() where TResult : IDataBuilderResult
+            => BuildDataImplementation<TResult>;
+
+        /// <summary>
+        /// Returns a delegate bound to this instance's <see cref="ProcessAllGroups"/> via virtual dispatch.
+        /// Used by <see cref="BuildScriptPackedMode"/> to invoke the protected hook from outside the class
+        /// hierarchy while still honoring overrides on derived types in any assembly.
+        /// Do not call from build-script overrides; override <see cref="ProcessAllGroups"/> instead.
+        /// </summary>
+        /// <returns>A delegate that invokes <see cref="ProcessAllGroups"/> on this instance.</returns>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public Func<AddressableAssetsBuildContext, string> GetProcessAllGroupsCallback()
+            => ProcessAllGroups;
+
+        /// <summary>
+        /// Returns a delegate bound to this instance's <see cref="ProcessGroup"/> via virtual dispatch.
+        /// Used by <see cref="BuildScriptPackedMode"/> to invoke the protected hook from outside the class
+        /// hierarchy while still honoring overrides on derived types in any assembly.
+        /// Do not call from build-script overrides; override <see cref="ProcessGroup"/> instead.
+        /// </summary>
+        /// <returns>A delegate that invokes <see cref="ProcessGroup"/> on this instance.</returns>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public Func<AddressableAssetGroup, AddressableAssetsBuildContext, string> GetProcessGroupCallback()
+            => ProcessGroup;
+
+        /// <summary>
+        /// Returns a delegate bound to this instance's <see cref="ProcessGroupSchema"/> via virtual dispatch.
+        /// Used by <see cref="BuildScriptPackedMode"/> to invoke the protected hook from outside the class
+        /// hierarchy while still honoring overrides on derived types in any assembly.
+        /// Do not call from build-script overrides; override <see cref="ProcessGroupSchema"/> instead.
+        /// </summary>
+        /// <returns>A delegate that invokes <see cref="ProcessGroupSchema"/> on this instance.</returns>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public Func<AddressableAssetGroupSchema, AddressableAssetGroup, AddressableAssetsBuildContext, string> GetProcessGroupSchemaCallback()
+            => ProcessGroupSchema;
+
+        /// <summary>
+        /// Returns a delegate bound to this instance's <see cref="DoBuild{TResult}"/> via virtual dispatch.
+        /// Used by <see cref="BuildScriptPackedMode"/> to invoke the protected hook from outside the class
+        /// hierarchy while still honoring overrides on derived types in any assembly.
+        /// Do not call from build-script overrides; override <see cref="DoBuild{TResult}"/> instead.
+        /// </summary>
+        /// <typeparam name="TResult">The type of <see cref="IDataBuilderResult"/> to produce.</typeparam>
+        /// <returns>A delegate that invokes <see cref="DoBuild{TResult}"/> on this instance.</returns>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public virtual Func<AddressablesDataBuilderInput, AddressableAssetsBuildContext, TResult> GetDoBuildCallback<TResult>() where TResult : IDataBuilderResult
+            => DoBuild<TResult>;
+
+        /// <summary>
+        /// Returns a delegate bound to this instance's <see cref="ConstructAssetBundleName"/> via virtual dispatch.
+        /// Used by <see cref="BuildScriptPackedMode"/> to invoke the protected hook from outside the class
+        /// hierarchy while still honoring overrides on derived types in any assembly.
+        /// Do not call from build-script overrides; override <see cref="ConstructAssetBundleName"/> instead.
+        /// </summary>
+        /// <returns>A delegate that invokes <see cref="ConstructAssetBundleName"/> on this instance.</returns>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public Func<AddressableAssetGroup, BundledAssetGroupSchema, BundleDetails, string, string> GetConstructAssetBundleNameCallback()
+            => ConstructAssetBundleName;
 
         /// <inheritdoc />
         protected override TResult BuildDataImplementation<TResult>(AddressablesDataBuilderInput builderInput)
@@ -185,7 +253,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             AddInstanceAndSceneProvider(aaContext);
 
             var contentCatalogs = new List<ContentCatalogData>();
-            BuildContext buildContext = new BuildContext(aaContext, builderInput.Logger);
+            BuildContext buildContext = new BuildContext(aaContext, Log);
             foreach (ISchemaBuilder schemaBuilder in SchemaBuilders)
             {
                 schemaBuilder.Build(
@@ -280,7 +348,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             foreach (var schema in assetGroup.Schemas)
             {
                 string errorString = "";
-                if (schema is ICanBeEnabled canBeEnabled && canBeEnabled.IsEnabled)
+                if (schema.IsEnabled)
                 {
                     errorString = schema.CanEnableSchema();
                     if (!string.IsNullOrEmpty(errorString))
@@ -323,16 +391,16 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// </summary>
         List<AddressableAssetGroup> m_IncludedGroupsInBuild = new List<AddressableAssetGroup>();
 
-        // this is an entry point for BundledAssetSchemaBuilder so it can
-        // call ProcessBundledAssetSchema. It can be removed when we update the API
-        // to remove ProcessBundledAssetSchema
-        internal virtual string ProcessLegacyMethodBundledAssetSchema(
-            BundledAssetGroupSchema schema,
-            AddressableAssetGroup assetGroup,
-            AddressableAssetsBuildContext aaContext)
-        {
-            return ProcessBundledAssetSchema(schema, assetGroup, aaContext);
-        }
+        /// <summary>
+        /// Returns a delegate bound to this instance's <see cref="ProcessBundledAssetSchema"/> via virtual dispatch.
+        /// Used by <see cref="BundledAssetSchemaBuilder"/> to invoke the protected hook from outside the class
+        /// hierarchy while still honoring overrides on derived types in any assembly.
+        /// Do not call from build-script overrides; override <see cref="ProcessBundledAssetSchema"/> instead.
+        /// </summary>
+        /// <returns>A delegate that invokes <see cref="ProcessBundledAssetSchema"/> on this instance.</returns>
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public Func<BundledAssetGroupSchema, AddressableAssetGroup, AddressableAssetsBuildContext, string>
+            GetProcessBundledAssetSchemaCallback() => ProcessBundledAssetSchema;
 
         /// <summary>
         /// The processing of the bundled asset schema.  This is where the bundle(s) for a given group are actually setup.

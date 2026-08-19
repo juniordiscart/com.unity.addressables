@@ -34,6 +34,9 @@ namespace SceneTests
         const string prefabKey = "prefabKey";
         internal const string kEmbeddedSceneName = "embeddedassetscene";
 
+        /// <summary>Real-time cap while waiting for <see cref="AddressablesImpl.ActiveSceneInstances"/> to settle in tear-down (was previously ~60 frames).</summary>
+        const int kActiveSceneInstancesSettleTimeoutSeconds = 60;
+
         protected internal string GetPrefabKey()
         {
             return prefabKey;
@@ -87,10 +90,49 @@ namespace SceneTests
             m_StartingSceneCount = m_Addressables.ActiveSceneInstances;
         }
 
-        [TearDown]
-        public void TearDown()
+        /// <summary>
+        /// Scene unload removes Addressables scene handles when <see cref="SceneManager.sceneUnloaded"/> runs;
+        /// that can lag the unload operation by a frame on some platforms (e.g. Linux CI), which affects checks on active scene instance count.
+        /// Used from <see cref="UnityTearDown"/> (before dispose) so every test waits here once instead of duplicating yields.
+        /// </summary>
+        IEnumerator WaitUntilActiveSceneInstancesMatchSetup()
         {
+            if (m_Addressables == null)
+                yield break;
+            yield return new WaitUntil(
+                () => m_Addressables.ActiveSceneInstances == m_StartingSceneCount,
+                TimeSpan.FromSeconds(kActiveSceneInstancesSettleTimeoutSeconds),
+                () => Assert.Fail(
+                    "Timed out waiting for ActiveSceneInstances to match the starting count after unload (scene bookkeeping can lag a frame). " +
+                    $"Expected {m_StartingSceneCount}, still {m_Addressables.ActiveSceneInstances}."),
+                WaitTimeoutMode.Realtime);
+        }
+
+        /// <summary>
+        /// <see cref="AddressablesTestFixture.RuntimeTeardown"/> runs under NUnit <c>[TearDown]</c> before Unity <c>[UnityTearDown]</c>,
+        /// which would null <see cref="AddressablesTestFixture.m_Addressables"/> before we can wait on active scene instances.
+        /// Dispose is therefore performed here after the wait/assert; <see cref="RuntimeTeardown"/> is overridden to a no-op.
+        /// </summary>
+        [UnityTearDown]
+        public IEnumerator UnityTearDown()
+        {
+            if (m_Addressables == null)
+                yield break;
+            yield return WaitUntilActiveSceneInstancesMatchSetup();
             Assert.AreEqual(m_StartingSceneCount, m_Addressables.ActiveSceneInstances);
+            base.RuntimeTeardown();
+        }
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// Intentionally empty: NUnit <see cref="TearDownAttribute"/> runs before <see cref="UnityTearDownAttribute"/>,
+        /// so calling <see cref="AddressablesTestFixture.RuntimeTeardown"/> here would null <see cref="AddressablesTestFixture.m_Addressables"/>
+        /// before <see cref="UnityTearDown"/> can wait on <see cref="AddressablesImpl.ActiveSceneInstances"/>. Dispose runs from <see cref="UnityTearDown"/> instead.
+        /// </remarks>
+        [TearDown]
+        public override void RuntimeTeardown()
+        {
+            // See remarks: base.RuntimeTeardown() is invoked from UnityTearDown after scene-instance bookkeeping settles.
         }
 
         [UnityTest]
@@ -159,6 +201,7 @@ namespace SceneTests
                 if (op1.IsValid())
                     m_Addressables.UnloadSceneAsync(op1);
             }
+
         }
 
         [UnityTest]
@@ -209,6 +252,7 @@ namespace SceneTests
                 if (op1.IsValid())
                     m_Addressables.UnloadSceneAsync(op1);
             }
+
         }
 
         private static void LogActiceSceneNames()
@@ -521,6 +565,7 @@ namespace SceneTests
 
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsFalse(op.IsValid());
+
         }
 
         [UnityTest]
@@ -536,6 +581,7 @@ namespace SceneTests
 
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsFalse(op.IsValid());
+
         }
 
         [UnityTest]
@@ -553,6 +599,7 @@ namespace SceneTests
 
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsFalse(op.IsValid());
+
         }
 
         [UnityTest]
@@ -569,6 +616,7 @@ namespace SceneTests
 
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsFalse(op.IsValid());
+
         }
 
         [UnityTest]
@@ -594,6 +642,7 @@ namespace SceneTests
 
             // Cleanup
             yield return op;
+
         }
 
 
@@ -628,7 +677,6 @@ namespace SceneTests
 
             }
 
-            yield return null; //< `OnSceneUnloaded` needs to trigger for `m_Addressables.ActiveSceneInstances` teardown checks
         }
 
         [UnityTest]
@@ -636,7 +684,7 @@ namespace SceneTests
         {
             // Setup
             var opFirst = m_Addressables.LoadSceneAsync(sceneKeys[0], new LoadSceneParameters(LoadSceneMode.Additive));
-            var op = Addressables.ResourceManager.Acquire(opFirst);
+            var op = m_Addressables.ResourceManager.Acquire(opFirst);
 
             // Test
             bool wasLoadCompleted = false;
@@ -661,6 +709,7 @@ namespace SceneTests
             yield return op;
             Assert.IsFalse(SceneManager.GetSceneByName(sceneKeys[0]).isLoaded);
             Assert.IsFalse(op.IsValid());
+
         }
 
         [UnityTest]
@@ -670,7 +719,7 @@ namespace SceneTests
             yield return opFirst;
             Assert.AreEqual(AsyncOperationStatus.Succeeded, opFirst.Status);
             Assert.AreEqual(sceneKeys[0], SceneManager.GetSceneByName(sceneKeys[0]).name);
-            var op = Addressables.ResourceManager.Acquire(opFirst);
+            var op = m_Addressables.ResourceManager.Acquire(opFirst);
 
             opFirst.Release();
             yield return null;
@@ -681,6 +730,7 @@ namespace SceneTests
             // Cleanup
             op.Release();
             yield return null;
+
         }
 
         [UnityTest]
@@ -781,7 +831,7 @@ namespace SceneTests
             yield return activeScene;
 
             Assert.AreEqual(AsyncOperationStatus.Succeeded, activeScene.Status);
-            Addressables.ResourceManager.Acquire(activeScene);
+            m_Addressables.ResourceManager.Acquire(activeScene);
             Assert.AreEqual(activeScene.ReferenceCount, 2);
             SceneManager.SetActiveScene(activeScene.Result.Scene);
             Assert.AreEqual(sceneKeys[1], SceneManager.GetActiveScene().name);

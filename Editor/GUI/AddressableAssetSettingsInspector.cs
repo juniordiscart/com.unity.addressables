@@ -187,7 +187,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
         GUIContent m_TargetArchiveSizeInMB =
             new GUIContent("Target Archive Size (MB)",
-                "Target size per archive in MB. Files are distributed across archives using hash-based bucketing, so individual archives may be larger or smaller than this value.");
+                "Target size per archive in MB. Files are distributed across archives using hash-based bucketing and the actual compression ratio depends on content, so individual archives may be larger or smaller than this value.");
 #endif
 
         GUIContent m_RemoteCatBuildandLoadPaths =

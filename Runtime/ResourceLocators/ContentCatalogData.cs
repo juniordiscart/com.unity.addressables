@@ -180,6 +180,10 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
         internal void CleanData()
         {
             m_LocatorId = null;
+            // Don't Dispose the Reader: ResourceLocator instances created from this catalog
+            // share the same Reader instance for lazy reads. Disposing mutates that shared
+            // instance and NREs every locator. The Reader's finalizer frees the GCHandle pin
+            // once nothing references it.
             m_Reader = null;
         }
 
@@ -1244,27 +1248,35 @@ namespace UnityEngine.AddressableAssets.ResourceLocators
                     locations = null;
                     return false;
                 }
-
-                sharedContext.type = type;
-                var count = reader.ProcessObjectArray<ResourceLocation, LocateProcContext>(
-                    locationSetOffset, out var sizeRead,
-                    sharedContext, ProcFunc);
-                locations = sharedContext.locations;
-                sharedContext.locations = null;
-                sharedContext.type = null;
-
-                if (providerSuffix != null && locations != null)
+                try
                 {
-                    foreach (var l in locations)
+                    sharedContext.type = type;
+                    var count = reader.ProcessObjectArray<ResourceLocation, LocateProcContext>(
+                        locationSetOffset, out var sizeRead,
+                        sharedContext, ProcFunc);
+                    locations = sharedContext.locations;
+                    sharedContext.locations = null;
+                    sharedContext.type = null;
+
+                    if (providerSuffix != null && locations != null)
                     {
-                        if (!l.ProviderId.EndsWith(providerSuffix))
+                        foreach (var l in locations)
                         {
-                            (l as ResourceLocation).ProviderId = l.ProviderId + providerSuffix;
+                            if (!l.ProviderId.EndsWith(providerSuffix))
+                            {
+                                (l as ResourceLocation).ProviderId = l.ProviderId + providerSuffix;
+                            }
                         }
                     }
-                }
 
-                return locations != null;
+                    return locations != null;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                    locations = null;
+                    return false;
+                }
             }
         }
 

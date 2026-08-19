@@ -15,9 +15,11 @@ using NUnit.Framework;
 
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.AddressableAssets.Tests;
 using UnityEditor.U2D;
 #endif
 
@@ -189,6 +191,8 @@ public static class AddressablesTestUtility
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
+        ReplaceStockPackedModeWithAllHooksIfRequested(settings, testType);
+
         RunBuilder(settings, testType, suffix);
         LogAssert.ignoreFailingMessages = currentIgnoreState;
 
@@ -274,6 +278,32 @@ public static class AddressablesTestUtility
 #else
             ".json";
 #endif
+
+    /// <summary>
+    /// When integration tests request <see cref="AllHooksLoggingPackedMode"/> by short type name, replace the
+    /// template <see cref="BuildScriptPackedMode"/> asset (exact type match) so <see cref="RunBuilder"/> finds the subclass.
+    /// </summary>
+    static void ReplaceStockPackedModeWithAllHooksIfRequested(AddressableAssetSettings settings, string testType)
+    {
+        if (testType != typeof(AllHooksLoggingPackedMode).Name)
+            return;
+
+        AllHooksLoggingPackedMode.ClearInvocationRecord();
+
+        for (int i = 0; i < settings.DataBuilders.Count; i++)
+        {
+            var so = settings.DataBuilders[i];
+            if (so != null && so.GetType() == typeof(BuildScriptPackedMode))
+            {
+                var old = so;
+                var replacement = ScriptableObject.CreateInstance<AllHooksLoggingPackedMode>();
+                settings.SetDataBuilderAtIndex(i, replacement, postEvent: false);
+                UnityEngine.Object.DestroyImmediate(old, true);
+                break;
+            }
+        }
+    }
+
     static void RunBuilder(AddressableAssetSettings settings, string testType, string suffix)
     {
         var buildContext = new AddressablesDataBuilderInput(settings);
@@ -287,7 +317,7 @@ public static class AddressablesTestUtility
 
             buildContext.PathSuffix = "_TEST_" + suffix;
             b.BuildData<AddressableAssetBuildResult>(buildContext);
-            PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath + testType, PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
+            SessionState.SetString(Addressables.kAddressablesRuntimeDataPath + testType, SessionState.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
         }
     }
 

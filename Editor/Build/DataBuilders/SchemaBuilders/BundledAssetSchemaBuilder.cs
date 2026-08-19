@@ -27,19 +27,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
     /// </summary>
     public class BundledAssetSchemaBuilder : ISchemaBuilder
     {
-        /// <summary>
-        /// The extension to use for type tree data files when type tree data extraction is enabled.
-        /// </summary>
-        public const string kTypeTreeDataExtension = ".typetreedata";
-        /// <summary>
-        /// The file name to use for type tree data when type tree data extraction is enabled.
-        /// This file will be moved to the catalog build path with a hash as the file name during the build.
-        /// </summary>
-        public const string kTypeTreeDataFileName = "AssetBundle" + kTypeTreeDataExtension;
-
         private bool m_BuiltData;
 
         BuildScriptSchemaDriven m_DataBuilder;
+        Func<BundledAssetGroupSchema, AddressableAssetGroup, AddressableAssetsBuildContext, string> m_ProcessSchemaCallback;
 
         List<AssetBundleBuild> m_AllBundleInputDefs;
         HashSet<string> m_CreatedProviderIds;
@@ -118,6 +109,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
             m_BuiltData = false;
 
             m_DataBuilder = dataBuilder as BuildScriptSchemaDriven;
+            m_ProcessSchemaCallback = m_DataBuilder?.GetProcessBundledAssetSchemaCallback();
 
             m_AllBundleInputDefs = new List<AssetBundleBuild>();
             m_CreatedProviderIds = new HashSet<string>();
@@ -244,7 +236,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
                 if (aaContext.Settings.ExtractTypeTreeData)
                 {
                     buildParams.ContentBuildFlags |= UnityEditor.Build.Content.ContentBuildFlags.ExtractTypeTree;
-                    typeTreeDataBuildPath = Path.Combine(aaContext.Settings.buildSettings.bundleBuildPath, kTypeTreeDataFileName);
+                    typeTreeDataBuildPath = Path.Combine(aaContext.Settings.buildSettings.bundleBuildPath, BuildScriptPackedMode.kTypeTreeDataFileName);
                 }
 #endif
 
@@ -267,7 +259,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
 
 #if UNITY_6000_5_OR_NEWER
                 if (aaContext.Settings.ExtractTypeTreeData && File.Exists(typeTreeDataBuildPath))
-                    MoveFileToDestinationWithTimestampIfDifferent(typeTreeDataBuildPath, Path.Combine(Addressables.BuildPath, kTypeTreeDataFileName), builderInput.Logger);
+                    MoveFileToDestinationWithTimestampIfDifferent(typeTreeDataBuildPath, Path.Combine(Addressables.BuildPath, BuildScriptPackedMode.kTypeTreeDataFileName), builderInput.Logger);
 #endif
 
                 var groups = new List<AddressableAssetGroup>(aaContext.Settings.groups.Count);
@@ -427,8 +419,7 @@ IBundleWriteData writeData, Dictionary<string, ContentCatalogDataEntry> location
             AddressableAssetGroup assetGroup,
             AddressableAssetsBuildContext aaContext)
         {
-            // we have to do this to keep support for protected methods
-            return m_DataBuilder.ProcessLegacyMethodBundledAssetSchema(schema as BundledAssetGroupSchema, assetGroup, aaContext);
+            return m_ProcessSchemaCallback(schema as BundledAssetGroupSchema, assetGroup, aaContext);
         }
 
         /// <summary>
@@ -943,7 +934,7 @@ FileRegistry registry)
 
 #if UNITY_6000_5_OR_NEWER
             // this variable is always reset when Init is called at the start of a build when we initialize the build context.
-            m_BuiltTypeTreeDataPath = Path.Combine(Addressables.BuildPath, kTypeTreeDataFileName);
+            m_BuiltTypeTreeDataPath = Path.Combine(Addressables.BuildPath, BuildScriptPackedMode.kTypeTreeDataFileName);
             if (aaContext.Settings.ExtractTypeTreeData)
             {
                 aaContext.providerTypes.Add(typeof(CachedFileProvider));
@@ -956,7 +947,7 @@ FileRegistry registry)
                         strippedPath = m_BuiltTypeTreeDataPath;
 
                     var hashStr = Hash128.Compute(File.ReadAllBytes(strippedPath)).ToString();
-                    var newPath = $"{aaContext.Settings.RemoteCatalogBuildPath.GetValue(aaContext.Settings)}/{hashStr}{kTypeTreeDataExtension}";
+                    var newPath = $"{aaContext.Settings.RemoteCatalogBuildPath.GetValue(aaContext.Settings)}/{hashStr}{BuildScriptPackedMode.kTypeTreeDataExtension}";
                     if (!Directory.Exists(Path.GetDirectoryName(newPath)))
                         Directory.CreateDirectory(Path.GetDirectoryName(newPath));
                     if(File.Exists(newPath))
@@ -964,7 +955,7 @@ FileRegistry registry)
                     File.Move(strippedPath, newPath);
                     builderInput.Registry.AddFile(newPath);
 
-                    string remoteURL = $"{aaContext.Settings.RemoteCatalogLoadPath.GetValue(aaContext.Settings)}/{hashStr}{kTypeTreeDataExtension}";
+                    string remoteURL = $"{aaContext.Settings.RemoteCatalogLoadPath.GetValue(aaContext.Settings)}/{hashStr}{BuildScriptPackedMode.kTypeTreeDataExtension}";
                     aaContext.locations.Add(new ContentCatalogDataEntry(typeof(string),
                         remoteURL,  //for remote content, the url
                         typeof(CachedFileProvider).FullName,
@@ -980,7 +971,7 @@ FileRegistry registry)
                 if (builderInput.PreviousContentState == null || (builderInput.PreviousContentState.typeTreeHashes != null && builderInput.PreviousContentState.typeTreeHashes.Length > 0))
                 {
                     aaContext.locations.Add(new ContentCatalogDataEntry(typeof(string),
-                    "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + kTypeTreeDataFileName,
+                    "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + BuildScriptPackedMode.kTypeTreeDataFileName,
                     typeof(CachedFileProvider).FullName,
                     new string[] { ResourceManagerRuntimeData.kTypeTreeDataAddress }));
                 }

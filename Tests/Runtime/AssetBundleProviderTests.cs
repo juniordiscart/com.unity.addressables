@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 #if UNITY_EDITOR
+using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 #endif
@@ -74,9 +75,23 @@ namespace AddressableTests.SyncAddressables
             Caching.ClearCache();
 #endif
             MonoBehaviourCallbackHooks.DestroySingleton();
+            AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
             AssetBundle.UnloadAllAssetBundles(true);
             if (m_Addressables != null)
                 m_Addressables.WebRequestOverride = null;
+        }
+
+        [TearDown]
+        public void TearDown_AssertNoLeakedAssetBundles()
+        {
+            AssetBundleProvider.WaitForAllUnloadingBundlesToComplete();
+            var names = new List<string>();
+            foreach (AssetBundle b in AssetBundle.GetAllLoadedAssetBundles())
+                names.Add(b.name);
+            if (names.Count == 0)
+                return;
+            var desc = string.Join(", ", names);
+            Assert.Fail($"Test left {names.Count} loaded AssetBundle(s) still in memory. Unload in the test or via Addressables. Still loaded: {desc}");
         }
 
 #if !UNITY_PS5
@@ -179,6 +194,9 @@ namespace AddressableTests.SyncAddressables
 
             abr.AddBeginWebRequestHandler(queueOp);
             yield return abr.m_ProvideHandle;
+            // ProviderOperation.Destroy calls BundledAssetProvider.Release, which is a no-op.
+            if (abr.Unload(out var unloadOp) && unloadOp != null)
+                yield return unloadOp;
             op.Release();
         }
 #endif
@@ -218,7 +236,7 @@ namespace AddressableTests.SyncAddressables
                 retries++;
             };
 
-            var nonExistingPath = "https://127.0.0.1/non-existing-bundle";
+            var nonExistingPath = "http://127.0.0.1/non-existing-bundle";
             var loc = new ResourceLocationBase(nonExistingPath, nonExistingPath, typeof(AssetBundleProvider).FullName, typeof(AssetBundleResource));
             var d = new AssetBundleRequestOptions();
             d.BundleName = "non-existing-bundle";

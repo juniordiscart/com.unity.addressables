@@ -431,7 +431,17 @@ namespace UnityEngine.AddressableAssets
         /// </summary>
         public AssetReference()
         {
+            // we cannot remove the finalize as its a breaking change, but we don't want this
+            // placed in the finalization queue
+            GC.SuppressFinalize(this);
         }
+
+#if UNITY_EDITOR
+        ~AssetReference()
+        {
+            // NOOP see comment in the constructor
+        }
+#endif
 
         /// <summary>
         /// Construct a new AssetReference object.

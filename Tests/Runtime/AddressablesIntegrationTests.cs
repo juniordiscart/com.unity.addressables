@@ -14,6 +14,7 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 #if UNITY_EDITOR
+using UnityEditor;
 using UnityEditor.TestTools;
 #endif
 
@@ -239,7 +240,12 @@ namespace AddressableAssetsIntegrationTests
 
         protected override string GetRuntimePath(string testType, string suffix)
         {
-            return PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath + TypeName, "");
+#if UNITY_EDITOR
+            return SessionState.GetString(Addressables.kAddressablesRuntimeDataPath + TypeName, "");
+#else
+            Assert.Fail("FastMode is editor only");
+            return null;
+#endif
         }
     }
 
@@ -257,13 +263,13 @@ namespace AddressableAssetsIntegrationTests
 
         public override void Setup()
         {
-            AddressablesTestUtility.Setup("BuildScriptPackedMode", PathFormat, "BASE", UseUnityWebRequestForLocalBundles);
+            AddressablesTestUtility.Setup(PackedBundleDataBuilderTypeName, PathFormat, "BASE", UseUnityWebRequestForLocalBundles);
             AddressablesTestUtility.Setup(TypeName, PathFormat, "BASE", UseUnityWebRequestForLocalBundles);
         }
 
         public override void DeleteTempFiles()
         {
-            AddressablesTestUtility.TearDown("BuildScriptPackedMode", PathFormat, "BASE");
+            AddressablesTestUtility.TearDown(PackedBundleDataBuilderTypeName, PathFormat, "BASE");
             AddressablesTestUtility.TearDown(TypeName, PathFormat, "BASE");
         }
 
@@ -286,6 +292,30 @@ namespace AddressableAssetsIntegrationTests
         {
             return GetDownloadSize_WithList_CalculatesCorrectSize_WhenAssetsReferenceSameBundleInternal();
         }
+    }
+
+    abstract class AddressablesIntegrationTestsAllHooksPackedPlayMode : AddressablesIntegrationTestsPackedPlayMode
+    {
+        protected override string PackedBundleDataBuilderTypeName =>
+            typeof(UnityEditor.AddressableAssets.Tests.AllHooksLoggingPackedMode).Name;
+    }
+
+    [RequirePlatformSupport(UnityEditor.BuildTarget.StandaloneWindows64)]
+    class AddressablesIntegrationTestsAllHooksPackedPlayModeWindowsUseUwr : AddressablesIntegrationTestsAllHooksPackedPlayMode
+    {
+        protected override bool UseUnityWebRequestForLocalBundles { get { return true; } }
+    }
+
+    [RequirePlatformSupport(UnityEditor.BuildTarget.StandaloneOSX)]
+    class AddressablesIntegrationTestsAllHooksPackedPlayModeOSXUseUwr : AddressablesIntegrationTestsAllHooksPackedPlayMode
+    {
+        protected override bool UseUnityWebRequestForLocalBundles { get { return true; } }
+    }
+
+    [RequirePlatformSupport(UnityEditor.BuildTarget.StandaloneLinux64)]
+    class AddressablesIntegrationTestsAllHooksPackedPlayModeLinuxUseUwr : AddressablesIntegrationTestsAllHooksPackedPlayMode
+    {
+        protected override bool UseUnityWebRequestForLocalBundles { get { return true; } }
     }
 #endif
 
@@ -348,13 +378,13 @@ namespace AddressableAssetsIntegrationTests
 
         public override void Setup()
         {
-            AddressablesTestUtility.Setup("BuildScriptPackedMode", PathFormat, "BASE", UseUnityWebRequestForLocalBundles);
+            AddressablesTestUtility.Setup(PackedBundleDataBuilderTypeName, PathFormat, "BASE", UseUnityWebRequestForLocalBundles);
             AddressablesTestUtility.Setup(TypeName, PathFormat, "BASE", UseUnityWebRequestForLocalBundles);
         }
 
         public override void DeleteTempFiles()
         {
-            AddressablesTestUtility.TearDown("BuildScriptPackedMode", PathFormat, "BASE");
+            AddressablesTestUtility.TearDown(PackedBundleDataBuilderTypeName, PathFormat, "BASE");
             AddressablesTestUtility.TearDown(TypeName, PathFormat, "BASE");
         }
 
@@ -394,5 +424,31 @@ namespace AddressableAssetsIntegrationTests
             return GetDownloadSize_WithList_CalculatesCorrectSize_WhenAssetsReferenceSameBundleInternal();
         }
     }
+
+#if UNITY_EDITOR
+    abstract class AddressablesIntegrationTestsAllHooksPlayer : AddressablesIntegrationPlayer
+    {
+        protected override string PackedBundleDataBuilderTypeName =>
+            typeof(UnityEditor.AddressableAssets.Tests.AllHooksLoggingPackedMode).Name;
+    }
+
+    [RequirePlatformSupport(UnityEditor.BuildTarget.StandaloneWindows64)]
+    class AddressablesIntegrationTestsAllHooksPlayerWindowsUseUwr : AddressablesIntegrationTestsAllHooksPlayer
+    {
+        protected override bool UseUnityWebRequestForLocalBundles { get { return true; } }
+    }
+
+    [RequirePlatformSupport(UnityEditor.BuildTarget.StandaloneOSX)]
+    class AddressablesIntegrationTestsAllHooksPlayerOSXUseUwr : AddressablesIntegrationTestsAllHooksPlayer
+    {
+        protected override bool UseUnityWebRequestForLocalBundles { get { return true; } }
+    }
+
+    [RequirePlatformSupport(UnityEditor.BuildTarget.StandaloneLinux64)]
+    class AddressablesIntegrationTestsAllHooksPlayerLinuxUseUwr : AddressablesIntegrationTestsAllHooksPlayer
+    {
+        protected override bool UseUnityWebRequestForLocalBundles { get { return true; } }
+    }
+#endif
 }
 

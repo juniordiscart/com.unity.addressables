@@ -466,7 +466,7 @@ namespace UnityEngine.AddressableAssets
         {
             var settingsPath =
 #if UNITY_EDITOR
-                PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, RuntimePath + "/settings.json");
+                UnityEditor.SessionState.GetString(Addressables.kAddressablesRuntimeDataPath, RuntimePath + "/settings.json");
 #else
                 RuntimePath + "/settings.json";
 #endif
@@ -478,7 +478,7 @@ namespace UnityEngine.AddressableAssets
         {
             var settingsPath =
 #if UNITY_EDITOR
-                PlayerPrefs.GetString(Addressables.kAddressablesRuntimeDataPath, RuntimePath + "/settings.json");
+                UnityEditor.SessionState.GetString(Addressables.kAddressablesRuntimeDataPath, RuntimePath + "/settings.json");
 #else
                 RuntimePath + "/settings.json";
 #endif

@@ -68,6 +68,7 @@ public class VerifyPublicBuildScripts
         "Editor/Build/DataBuilders/BuildScriptFastMode.cs",
         "Editor/Build/DataBuilders/BuildScriptPackedMode.cs",
         "Editor/Build/DataBuilders/BuildScriptPackedPlayMode.cs",
+        "Editor/Build/DataBuilders/BuildScriptSchemaDriven.cs",
         "Samples/CustomBuildAndPlaymodeScripts/Editor/CustomBuildScript.cs",
         "Samples/CustomBuildAndPlaymodeScripts/Editor/CustomPlayModeScript.cs",
     };

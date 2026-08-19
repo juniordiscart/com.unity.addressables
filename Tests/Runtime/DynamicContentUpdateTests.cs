@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -14,6 +15,7 @@ using UnityEngine.ResourceManagement.Util;
 using UnityEngine.TestTools;
 
 #if UNITY_EDITOR
+using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 #endif
 
@@ -136,7 +138,9 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         public IEnumerator CheckForUpdates_Initializes_Addressables()
         {
             m_Addressables.hasStartedInitialization = false;
-            PlayerPrefs.SetString(Addressables.kAddressablesRuntimeDataPath, m_RuntimeSettingsPath);
+#if UNITY_EDITOR
+            SessionState.SetString(Addressables.kAddressablesRuntimeDataPath, m_RuntimeSettingsPath);
+#endif
             yield return m_Addressables.CheckForCatalogUpdates();
             Assert.IsTrue(m_Addressables.hasStartedInitialization);
         }

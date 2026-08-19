@@ -34,7 +34,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             {
                 if (m_Settings == null)
                 {
-                    var path = Path.Combine(TempPath, "Settings", "/AddressableAssetSettings.Tests.asset");
+                    var path = Path.Combine(m_TestAssetsRoot, "Settings", "AddressableAssetSettings.Tests.asset");
                     m_Settings = AssetDatabase.LoadAssetAtPath<AddressableAssetSettings>(path);
                 }
 
@@ -42,22 +42,18 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             }
         }
 
-        static string kTempPath = "Assets/BuildLayoutGenerationTaskTestsData";
-        static string TempPath;
-        static int ExecCount;
+        const string kTempPathPrefix = "Assets/BuildLayoutGenerationTaskTestsData";
+        /// <summary>
+        /// Per-fixture root so Windows / OSX / Linux test fixtures never share static paths (parallel or overlapping runs).
+        /// </summary>
+        string m_TestAssetsRoot;
         bool m_PrevGenerateBuildLayout;
         ProjectConfigData.ReportFileFormat m_PrevFileFormat;
-
-        [OneTimeSetUp]
-        public void OneTimeSetup()
-        {
-            ExecCount = 0;
-        }
 
         [SetUp]
         public void Setup()
         {
-            TempPath = kTempPath + (ExecCount++).ToString();
+            m_TestAssetsRoot = $"{kTempPathPrefix}_{Guid.NewGuid():N}";
             foreach (var fileFormat in Enum.GetValues(typeof(ProjectConfigData.ReportFileFormat)))
             {
                 string layoutFile = BuildLayoutGenerationTask.GetLayoutFilePathForFormat((ProjectConfigData.ReportFileFormat)fileFormat);
@@ -69,11 +65,11 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             m_PrevFileFormat = ProjectConfigData.BuildLayoutReportFileFormat;
             BundledAssetSchemaBuilder.s_SkipCompilePlayerScripts = true;
             ProjectConfigData.GenerateBuildLayout = true;
-            if (Directory.Exists(TempPath))
-                Directory.Delete(TempPath, true);
-            Directory.CreateDirectory(TempPath);
+            if (Directory.Exists(m_TestAssetsRoot))
+                Directory.Delete(m_TestAssetsRoot, true);
+            Directory.CreateDirectory(m_TestAssetsRoot);
 
-            m_Settings = AddressableAssetSettings.Create(Path.Combine(TempPath, "Settings"), "AddressableAssetSettings.Tests", false, true);
+            m_Settings = AddressableAssetSettings.Create(Path.Combine(m_TestAssetsRoot, "Settings"), "AddressableAssetSettings.Tests", false, true);
         }
 
         [TearDown]
@@ -86,8 +82,8 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(Settings));
             Resources.UnloadAsset(Settings);
 
-            FileUtil.DeleteFileOrDirectory(TempPath);
-            FileUtil.DeleteFileOrDirectory(TempPath + ".meta");
+            FileUtil.DeleteFileOrDirectory(m_TestAssetsRoot);
+            FileUtil.DeleteFileOrDirectory(m_TestAssetsRoot + ".meta");
 
             AssetDatabase.Refresh();
         }
@@ -102,12 +98,12 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
         // Prefab asset emthods
 
-        static string CreatePrefabAsset(string name)
+        string CreatePrefabAsset(string name)
         {
-            return CreatePrefabAsset($"{TempPath}/{name}.prefab", name);
+            return CreatePrefabAsset($"{m_TestAssetsRoot}/{name}.prefab", name);
         }
 
-        static string CreatePrefabAsset(string assetPath, string objectName)
+        string CreatePrefabAsset(string assetPath, string objectName)
         {
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             go.name = objectName;
@@ -118,7 +114,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             return AssetDatabase.AssetPathToGUID(assetPath);
         }
 
-        static string CreateScriptableObjectAsset(string assetPath, string objectName)
+        string CreateScriptableObjectAsset(string assetPath, string objectName)
         {
             TestObject.Create(objectName, assetPath);
             return AssetDatabase.AssetPathToGUID(assetPath);
@@ -126,33 +122,33 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
         string CreateAddressablePrefab(string name, AddressableAssetGroup group)
         {
-            string guid = CreatePrefabAsset($"{TempPath}/{name}.prefab", name);
+            string guid = CreatePrefabAsset($"{m_TestAssetsRoot}/{name}.prefab", name);
             return MakeAddressable(group, guid);
         }
 
         string CreateAddressableScriptableObject(string name, AddressableAssetGroup group)
         {
-            string guid = CreateScriptableObjectAsset($"{TempPath}/{name}.asset", name);
+            string guid = CreateScriptableObjectAsset($"{m_TestAssetsRoot}/{name}.asset", name);
             return MakeAddressable(group, guid);
         }
 
         bool DeletePrefab(string name)
         {
-            string path = $"{TempPath}/{name}.prefab";
+            string path = $"{m_TestAssetsRoot}/{name}.prefab";
             return AssetDatabase.DeleteAsset(path);
         }
 
         bool DeleteScriptableObject(string name)
         {
-            string path = $"{TempPath}/{name}.asset";
+            string path = $"{m_TestAssetsRoot}/{name}.asset";
             return AssetDatabase.DeleteAsset(path);
         }
 
         // Texture asset creation
 
-        static string CreateTexture(string name, int size = 32)
+        string CreateTexture(string name, int size = 32)
         {
-            string assetPath = $"{TempPath}/{name}.png";
+            string assetPath = $"{m_TestAssetsRoot}/{name}.png";
             var texture = new Texture2D(size, size);
             var data = ImageConversion.EncodeToPNG(texture);
             UnityEngine.Object.DestroyImmediate(texture);
@@ -170,12 +166,12 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             return MakeAddressable(group, guid);
         }
 
-        static string CreateSpriteAtlas(string name, string guidTargetTexture)
+        string CreateSpriteAtlas(string name, string guidTargetTexture)
         {
             var sa = new SpriteAtlas();
             var targetObjects = new UnityEngine.Object[] { AssetDatabase.LoadAssetAtPath<Texture>(AssetDatabase.GUIDToAssetPath(guidTargetTexture)) };
             sa.Add(targetObjects);
-            string saPath = $"{TempPath}/{name}.spriteAtlas";
+            string saPath = $"{m_TestAssetsRoot}/{name}.spriteAtlas";
             AssetDatabase.CreateAsset(sa, saPath);
             AssetDatabase.Refresh();
             return AssetDatabase.AssetPathToGUID(saPath);
@@ -183,11 +179,11 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
         bool DeleteSpriteAtlas(string name)
         {
-            string assetPath = $"{TempPath}/{name}.spriteAtlas";
+            string assetPath = $"{m_TestAssetsRoot}/{name}.spriteAtlas";
             return AssetDatabase.DeleteAsset(assetPath);
         }
 
-        static string CreateSpriteTexture(string name, int size, bool includesSource)
+        string CreateSpriteTexture(string name, int size, bool includesSource)
         {
             string guid = CreateTexture(name, size);
             string texturePath = AssetDatabase.GUIDToAssetPath(guid);
@@ -200,7 +196,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
         bool DeleteTexture(string name)
         {
-            string assetPath = $"{TempPath}/{name}.png";
+            string assetPath = $"{m_TestAssetsRoot}/{name}.png";
             return AssetDatabase.DeleteAsset(assetPath);
         }
 
@@ -397,7 +393,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
         public void WhenBundleContainsMultipleFiles_FilesAndSizesMatchArchiveContent()
         {
             string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
-            string scenePath = $"{TempPath}/scene.unity";
+            string scenePath = $"{m_TestAssetsRoot}/scene.unity";
             AddressableAssetGroup groupScenes = null;
             AddressableAssetGroup textureGroup = null;
 
@@ -583,7 +579,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
         {
             string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
             AddressableAssetGroup group = null;
-            string assetPath = $"{TempPath}/testpreset.preset";
+            string assetPath = $"{m_TestAssetsRoot}/testpreset.preset";
 
             try
             {

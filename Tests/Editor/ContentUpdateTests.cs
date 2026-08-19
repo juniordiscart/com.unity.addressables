@@ -56,7 +56,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
 			Assert.IsTrue(string.IsNullOrEmpty(op.Error), op.Error);
                 ContentStatePath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + PlatformMappingService.GetPlatformPathSubFolder() + "/addressables_content_state.bin";
-                TypeTreeDataPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + "/aa/" + PlatformMappingService.GetPlatformPathSubFolder() + "/" + BundledAssetSchemaBuilder.kTypeTreeDataFileName;
+                TypeTreeDataPath = Path.GetDirectoryName(Application.dataPath) + "/" + Addressables.LibraryPath + "/aa/" + PlatformMappingService.GetPlatformPathSubFolder() + "/" + BuildScriptPackedMode.kTypeTreeDataFileName;
             }
 
             public void Dispose()

@@ -11,6 +11,7 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.SceneManagement;
@@ -36,9 +37,17 @@ namespace UnityEditor.AddressableAssets.Tests
         List<string> m_CreatedAssetPaths = new List<string>();
         List<string> m_CreatedAssetGuids = new List<string>();
 
+        SpritePackerMode m_SavedSpritePackingMode;
+
+        /// <summary>Texture / sprite atlas platform row for in-Editor packing (NamedBuildTarget.Editor on newer Unity).</summary>
+        const string kEditorTexturePlatformName = "Editor";
+
         [SetUp]
         public void Setup()
         {
+            m_SavedSpritePackingMode = EditorSettings.spritePackerMode;
+            EditorSettings.spritePackerMode = SpritePackerMode.SpriteAtlasV2;
+
             schemaBuilder = new ContentDirectorySchemaBuilder();
             aaContext = new AddressableAssetsBuildContext();
             aaContext.Settings = Settings;
@@ -78,6 +87,8 @@ namespace UnityEditor.AddressableAssets.Tests
 
             m_CreatedAssetGuids.Clear();
             m_CreatedAssetPaths.Clear();
+
+            EditorSettings.spritePackerMode = m_SavedSpritePackingMode;
         }
 
 #if ENABLE_JSON_CATALOG
@@ -311,56 +322,67 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void ProcessGroupSchema_SpriteAtlas_CreatesLoadableInfoForAtlasSprites()
         {
-            // Setup - create a sprite atlas with sprites
-            string atlasPath = CreateSpriteAtlasWithSprites("testAtlas");
-            string atlasGuid = AssetDatabase.AssetPathToGUID(atlasPath);
-            m_CreatedAssetGuids.Add(atlasGuid);
-
-            // Create group and add the atlas as addressable
-            AddressableAssetGroup group = ScriptableObject.CreateInstance<AddressableAssetGroup>();
-            group.Initialize(Settings, "SpriteAtlasTestGroup", GUID.Generate().ToString(), false);
-
-            var mainEntry = Settings.CreateOrMoveEntry(atlasGuid, group, false, false);
-            mainEntry.address = "testAtlas";
-
-            // Gather all entries including subassets
-            var allEntries = new List<AddressableAssetEntry>();
-            mainEntry.GatherAllAssets(allEntries, true, true, true);
-
-            // Verify we have subasset entries for the atlas sprites
-            var subAssetEntries = allEntries.Where(e => e.IsSubAsset).ToList();
-            Assert.IsTrue(subAssetEntries.Count >= 1, $"Expected at least 1 sprite subasset from atlas, but found {subAssetEntries.Count}");
-
-            // Verify each subasset entry references a sprite
-            foreach (var subEntry in subAssetEntries)
+            // macOS trunk may emit Assert "[Assert] Image invalid format!" during atlas pack/import or later asset
+            // refresh while formats are still valid; Edit Mode treats unexpected logs as failures (see LogAssert).
+            bool prevIgnoreFailing = LogAssert.ignoreFailingMessages;
+            LogAssert.ignoreFailingMessages = true;
+            try
             {
-                Assert.IsNotNull(subEntry.TargetAsset, $"TargetAsset should not be null for atlas sprite entry {subEntry.address}");
-                Assert.IsInstanceOf<Sprite>(subEntry.TargetAsset, $"TargetAsset for atlas sprite should be a Sprite, not {subEntry.TargetAsset?.GetType().Name}");
+                // Setup - create a sprite atlas with sprites
+                string atlasPath = CreateSpriteAtlasWithSprites("testAtlas");
+                string atlasGuid = AssetDatabase.AssetPathToGUID(atlasPath);
+                m_CreatedAssetGuids.Add(atlasGuid);
+
+                // Create group and add the atlas as addressable
+                AddressableAssetGroup group = ScriptableObject.CreateInstance<AddressableAssetGroup>();
+                group.Initialize(Settings, "SpriteAtlasTestGroup", GUID.Generate().ToString(), false);
+
+                var mainEntry = Settings.CreateOrMoveEntry(atlasGuid, group, false, false);
+                mainEntry.address = "testAtlas";
+
+                // Gather all entries including subassets
+                var allEntries = new List<AddressableAssetEntry>();
+                mainEntry.GatherAllAssets(allEntries, true, true, true);
+
+                // Verify we have subasset entries for the atlas sprites
+                var subAssetEntries = allEntries.Where(e => e.IsSubAsset).ToList();
+                Assert.IsTrue(subAssetEntries.Count >= 1, $"Expected at least 1 sprite subasset from atlas, but found {subAssetEntries.Count}");
+
+                // Verify each subasset entry references a sprite
+                foreach (var subEntry in subAssetEntries)
+                {
+                    Assert.IsNotNull(subEntry.TargetAsset, $"TargetAsset should not be null for atlas sprite entry {subEntry.address}");
+                    Assert.IsInstanceOf<Sprite>(subEntry.TargetAsset, $"TargetAsset for atlas sprite should be a Sprite, not {subEntry.TargetAsset?.GetType().Name}");
+                }
+
+                // Process with schema builder
+                ContentDirectoryGroupSchema schema = CreateSchema();
+                group.AddSchema(schema);
+
+                schemaBuilder.Init(null, null);
+                string result = schemaBuilder.ProcessGroupSchema(schema, group, aaContext);
+                Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
+
+                // Load the generated GroupRootAsset
+                var rootAssetFiles = Directory.GetFiles(schemaBuilder.RootAssetBuildPath, "*.asset");
+                Assert.AreEqual(1, rootAssetFiles.Length, "Expected one root asset file");
+
+                var rootAsset = AssetDatabase.LoadAssetAtPath<GroupRootAsset>(rootAssetFiles[0]);
+                Assert.IsNotNull(rootAsset, "Failed to load GroupRootAsset");
+
+                // Verify the main atlas entry exists and references the correct asset
+                var atlasLoadableInfo = rootAsset.GetLoadableInfo("testAtlas", typeof(SpriteAtlas));
+                Assert.IsNotNull(atlasLoadableInfo, "LoadableInfo not found for SpriteAtlas");
+
+                // Verify the loadable actually references the SpriteAtlas
+                var loadedAtlas = atlasLoadableInfo.loadable.Load();
+                Assert.IsInstanceOf<SpriteAtlas>(loadedAtlas,
+                    $"Loadable should reference the SpriteAtlas, not {loadedAtlas?.GetType().Name}");
             }
-
-            // Process with schema builder
-            ContentDirectoryGroupSchema schema = CreateSchema();
-            group.AddSchema(schema);
-
-            schemaBuilder.Init(null, null);
-            string result = schemaBuilder.ProcessGroupSchema(schema, group, aaContext);
-            Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
-
-            // Load the generated GroupRootAsset
-            var rootAssetFiles = Directory.GetFiles(schemaBuilder.RootAssetBuildPath, "*.asset");
-            Assert.AreEqual(1, rootAssetFiles.Length, "Expected one root asset file");
-
-            var rootAsset = AssetDatabase.LoadAssetAtPath<GroupRootAsset>(rootAssetFiles[0]);
-            Assert.IsNotNull(rootAsset, "Failed to load GroupRootAsset");
-
-            // Verify the main atlas entry exists and references the correct asset
-            var atlasLoadableInfo = rootAsset.GetLoadableInfo("testAtlas", typeof(SpriteAtlas));
-            Assert.IsNotNull(atlasLoadableInfo, "LoadableInfo not found for SpriteAtlas");
-
-            // Verify the loadable actually references the SpriteAtlas
-            var loadedAtlas = atlasLoadableInfo.loadable.Load();
-            Assert.IsInstanceOf<SpriteAtlas>(loadedAtlas,
-                $"Loadable should reference the SpriteAtlas, not {loadedAtlas?.GetType().Name}");
+            finally
+            {
+                LogAssert.ignoreFailingMessages = prevIgnoreFailing;
+            }
         }
 
         string CreateTextureWithMultipleSprites(string name)
@@ -399,14 +421,99 @@ namespace UnityEditor.AddressableAssets.Tests
             return texturePath;
         }
 
+        /// <summary>
+        /// Native packing resolves the atlas pixel format via SpriteAtlas::DetermineFormatFromTextureCompression; if no
+        /// overridden row applies for the active BuildTargetPlatform (and fallbacks), finalFormat can stay kTexFormatNone
+        /// and Image-based packing aborts (Linux Editor/batch). Editor + Default + active player rows must all be
+        /// explicit uncompressed RGBA; ignorePlatformSupport avoids rare platform-support substitution edge cases.
+        /// </summary>
+        static void ConfigureSpriteAtlasPlatformRowForPacking(SpriteAtlas spriteAtlas, string serializedBuildTarget)
+        {
+            var ps = spriteAtlas.GetPlatformSettings(serializedBuildTarget);
+            ps.overridden = true;
+            ps.maxTextureSize = 2048;
+            ps.textureCompression = TextureImporterCompression.Uncompressed;
+            ps.format = TextureImporterFormat.RGBA32;
+            ps.crunchedCompression = false;
+            ps.allowsAlphaSplitting = false;
+            ps.ignorePlatformSupport = true;
+            spriteAtlas.SetPlatformSettings(ps);
+        }
+
+        static void ConfigureTextureImporterPlatformRowForAtlasSource(TextureImporter importer, string serializedBuildTarget)
+        {
+            var ps = importer.GetPlatformTextureSettings(serializedBuildTarget);
+            ps.overridden = true;
+            ps.maxTextureSize = 2048;
+            ps.textureCompression = TextureImporterCompression.Uncompressed;
+            ps.format = TextureImporterFormat.RGBA32;
+            ps.crunchedCompression = false;
+            ps.allowsAlphaSplitting = false;
+            ps.ignorePlatformSupport = true;
+            importer.SetPlatformTextureSettings(ps);
+        }
+
         string CreateSpriteAtlasWithSprites(string name)
         {
-            // Use the same source texture and import settings as AddressableAssetReferenceTests / AddressableAssetEntryTests.
-            // A custom 32x32 texture with TextureImporterCompression.Uncompressed has been observed to trip "Image
-            // invalid format!" in PackSpriteAtlases and crash the Editor (native stack in CreateBufferForEachAtlas).
-            // Linux Editor: PackAtlases can still crash even with EncodeToPNG(whiteTexture); see ProcessGroupSchema_SpriteAtlas test platform filter.
-            string texturePath = GetAssetPath($"{name}_sourceTexture.png");
-            byte[] data = Texture2D.whiteTexture.EncodeToPNG();
+            // PackAtlases uses Image-based CPU packing; the atlas texture format must resolve to an uncompressed format
+            // (see SpriteAtlas::DetermineFormatFromTextureCompression). Linux CI also needs a real sprite source: a 1x1
+            // whiteTexture PNG can fail sprite texture extraction ("Image invalid format!") and leave finalFormat invalid
+            // (TextureFormat -1 / GraphicsFormat None), which then aborts the Editor during packing or shutdown.
+            string texturePath = CreateAtlasSourceSpriteTexture($"{name}_sourceTexture");
+            string atlasPath = GetAssetPath($"{name}.spriteatlas");
+            var spriteAtlas = new SpriteAtlas();
+            AssetDatabase.CreateAsset(spriteAtlas, atlasPath);
+            m_CreatedAssetPaths.Add(atlasPath);
+
+            // Prefer the Sprite sub-asset so packing uses the same object path as typical authoring (texture-only can
+            // behave differently during shared texture extraction on some targets).
+            UnityEngine.Object packable = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
+            foreach (var sub in AssetDatabase.LoadAllAssetRepresentationsAtPath(texturePath))
+            {
+                if (sub is Sprite)
+                {
+                    packable = sub;
+                    break;
+                }
+            }
+
+            SpriteAtlasExtensions.Add(spriteAtlas, new[] { packable });
+
+            const string defaultTexturePlatform = "DefaultTexturePlatform";
+            ConfigureSpriteAtlasPlatformRowForPacking(spriteAtlas, defaultTexturePlatform);
+            ConfigureSpriteAtlasPlatformRowForPacking(spriteAtlas, Application.platform.ToString());
+
+            var atlasTextureSettings = spriteAtlas.GetTextureSettings();
+            atlasTextureSettings.readable = false;
+            atlasTextureSettings.generateMipMaps = false;
+            atlasTextureSettings.sRGB = true;
+            spriteAtlas.SetTextureSettings(atlasTextureSettings);
+
+            EditorUtility.SetDirty(spriteAtlas);
+            AssetDatabase.SaveAssets();
+
+            SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { spriteAtlas }, EditorUserBuildSettings.activeBuildTarget, false);
+            SpriteAtlasUtility.CleanupAtlasPacking();
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(atlasPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+            return atlasPath;
+        }
+
+        string CreateAtlasSourceSpriteTexture(string baseName)
+        {
+            var texture = new Texture2D(32, 32);
+            for (int x = 0; x < 32; x++)
+                for (int y = 0; y < 32; y++)
+                    texture.SetPixel(x, y, Color.white);
+            texture.Apply();
+
+            byte[] data = texture.EncodeToPNG();
+            UnityEngine.Object.DestroyImmediate(texture);
+
+            string texturePath = GetAssetPath($"{baseName}.png");
             File.WriteAllBytes(texturePath, data);
             AssetDatabase.ImportAsset(texturePath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             m_CreatedAssetPaths.Add(texturePath);
@@ -414,45 +521,16 @@ namespace UnityEditor.AddressableAssets.Tests
             var importer = (TextureImporter)AssetImporter.GetAtPath(texturePath);
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            // Default / shared settings
+            importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
-            // Per-platform override (matches what many Unity tests do)
-            var platformName = NamedBuildTarget
-                .FromBuildTargetGroup(BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget))
-                .TargetName;
-            var ps = importer.GetPlatformTextureSettings(platformName);
-            ps.overridden = true;
-            ps.textureCompression = TextureImporterCompression.Uncompressed;
-            ps.format = TextureImporterFormat.RGBA32;
-            importer.SetPlatformTextureSettings(ps);
+
+            ConfigureTextureImporterPlatformRowForAtlasSource(importer, "DefaultTexturePlatform");
+            ConfigureTextureImporterPlatformRowForAtlasSource(importer, Application.platform.ToString());
+
             importer.SaveAndReimport();
-
-            string atlasPath = GetAssetPath($"{name}.spriteatlas");
-            var spriteAtlas = new SpriteAtlas();
-            AssetDatabase.CreateAsset(spriteAtlas, atlasPath);
-            m_CreatedAssetPaths.Add(atlasPath);
-
-            var textureAsset = AssetDatabase.LoadAssetAtPath<Texture>(texturePath);
-            SpriteAtlasExtensions.Add(spriteAtlas, new[] { textureAsset });
-            EditorUtility.SetDirty(spriteAtlas);
-            AssetDatabase.SaveAssetIfDirty(spriteAtlas);
-
-            var previousIgnoreFailing = LogAssert.ignoreFailingMessages;
-            try
-            {
-                LogAssert.ignoreFailingMessages = true;
-                SpriteAtlasUtility.PackAtlases(new SpriteAtlas[] { spriteAtlas }, EditorUserBuildSettings.activeBuildTarget, false);
-            }
-            finally
-            {
-                LogAssert.ignoreFailingMessages = previousIgnoreFailing;
-            }
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.ImportAsset(atlasPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
-            return atlasPath;
+            return texturePath;
         }
 
         [Test]

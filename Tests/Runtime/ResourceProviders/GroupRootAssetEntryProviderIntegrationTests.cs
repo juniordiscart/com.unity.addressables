@@ -23,6 +23,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
     /// <summary>
     /// Integration tests for GroupRootAssetEntryProvider that validate end-to-end behavior
     /// including building Content Directory groups and loading assets at runtime.
+    ///
+    /// Subclass this fixture to run the same suite against an alternate provider (see
+    /// NativeContentAssetEntryProviderIntegrationTests). The build always stamps
+    /// GroupRootAssetEntryProvider in the catalog; subclasses are expected to swap the
+    /// provider instance in the ResourceManager at runtime.
     /// </summary>
     public class GroupRootAssetEntryProviderIntegrationTests : AddressablesTestFixture
     {
@@ -61,11 +66,36 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
                 false, false, false, null,
                 typeof(ContentDirectoryGroupSchema));
 
-            // Configure the schema
+            // Configure the schema. CatalogId, schema BuildPath/LoadPath, and the temp
+            // staging path all must be unique per fixture so derived fixtures (e.g.
+            // NativeContentAssetEntryProviderIntegrationTests) don't share the same
+            // global Library/com.unity.addressables/aa/<Platform> destination - the
+            // second build's content/manifest hashes would otherwise replace the first
+            // build's, and the runtime CAH lookup would miss for one of the fixtures.
+            settings.profileSettings.SetValue(settings.activeProfileId, AddressableAssetSettings.kLocalBuildPath,
+                $"{AddressableAssetSettings.kLocalBuildPathValue}/{m_UniqueTestName}");
+            settings.profileSettings.SetValue(settings.activeProfileId, AddressableAssetSettings.kLocalLoadPath,
+                $"{AddressableAssetSettings.kLocalLoadPathValue}/{m_UniqueTestName}");
+            settings.buildSettings.contentDirectoryBuildPath = $"Temp/com.unity.addressables/ContentDirectories_{m_UniqueTestName}";
+
+            // Wipe stale outputs from prior runs. ContentDirectorySchemaBuilder.PostProcessDirectory
+            // only copies a file when the destination doesn't already exist, so a stale
+            // BuildManifestHash.txt at the Library destination would survive an archive
+            // regeneration and the runtime CAH lookup would miss for the new content.
+            string tempBuildDir = settings.buildSettings.contentDirectoryBuildPath;
+            if (Directory.Exists(tempBuildDir))
+                Directory.Delete(tempBuildDir, recursive: true);
+            string fixtureLibraryDir = Path.Combine(
+                Addressables.BuildPath,
+                EditorUserBuildSettings.activeBuildTarget.ToString(),
+                m_UniqueTestName);
+            if (Directory.Exists(fixtureLibraryDir))
+                Directory.Delete(fixtureLibraryDir, recursive: true);
+
             var schema = cdGroup.GetSchema<ContentDirectoryGroupSchema>();
             schema.BuildPath.SetVariableByName(settings, AddressableAssetSettings.kLocalBuildPath);
             schema.LoadPath.SetVariableByName(settings, AddressableAssetSettings.kLocalLoadPath);
-            schema.CatalogId = "test_integration_catalog";
+            schema.CatalogId = $"test_integration_catalog_{m_UniqueTestName}";
 
             // Create test prefab
             string prefabPath = CreateAssetPath(tempAssetFolder, k_PrefabKey, ".prefab");

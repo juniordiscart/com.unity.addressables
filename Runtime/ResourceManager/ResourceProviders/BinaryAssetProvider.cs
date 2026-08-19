@@ -19,6 +19,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <returns>Returns the converted object.</returns>
         public override object Convert(Type type, byte[] data)
         {
+            // Do not dispose the Reader here: ContentCatalogData stashes it for lazy reads
+            // (Locate, ResourceLocation field reads, GetBytes). Lifetime is owned by
+            // ContentCatalogData.CleanData, which Disposes on release.
             return new BinaryStorageBuffer.Reader(data, 1024, 0, new TAdapter()).ReadObject(type, 0, out _, false);
         }
     }

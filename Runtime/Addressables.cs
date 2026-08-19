@@ -770,14 +770,14 @@ namespace UnityEngine.AddressableAssets
         }
 
         /// <summary>
-        /// The name of the PlayerPrefs value used to set the path to load the addressables runtime data file.
+        /// Key for Unity Editor SessionState (play mode) used to set the path to load the addressables runtime data file.
         /// </summary>
         public const string kAddressablesRuntimeDataPath = "AddressablesRuntimeDataPath";
 
         const string k_AddressablesLogConditional = "ADDRESSABLES_LOG_ALL";
 
         /// <summary>
-        /// The name of the PlayerPrefs value used to set the path to check for build logs that need to be shown in the runtime.
+        /// Key for Unity Editor SessionState (play mode) used to set the path to check for build logs that need to be shown in the runtime.
         /// </summary>
         public const string kAddressablesRuntimeBuildLogPath = "AddressablesRuntimeBuildLog";
 

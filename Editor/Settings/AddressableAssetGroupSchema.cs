@@ -242,12 +242,14 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (x == null && y == null)
                 return 0;
-            if (x == null || x.SchemaSerializedObject == null || x.SchemaSerializedObject.targetObject == null)
+            if (x == null)
                 return -1;
-            if (y == null || y.SchemaSerializedObject == null || y.SchemaSerializedObject.targetObject == null)
+            if (y == null)
                 return 1;
             // you can only have one schema of a given type in a set so using the name should be ok.
-            return string.CompareOrdinal(x.SchemaSerializedObject.targetObject.name, y.SchemaSerializedObject.targetObject.name);
+            // Use direct name property instead of SchemaSerializedObject.targetObject.name to avoid
+            // creating GC handles that can become invalid during domain reload
+            return string.CompareOrdinal(x.name, y.name);
         }
 
         internal void SetPathVariable(AddressableAssetSettings addressableAssetSettings, ref ProfileValueReference path, string newPathName, string oldPathName, List<string> variableNames)

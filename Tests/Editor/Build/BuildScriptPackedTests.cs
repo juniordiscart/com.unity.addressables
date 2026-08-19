@@ -73,8 +73,8 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 m_BuilderInput = new AddressablesDataBuilderInput(Settings);
                 m_BuildScript = ScriptableObject.CreateInstance<BuildScriptPackedMode>();
-                m_BuildScript.InitializeBuildContext(m_BuilderInput, out m_BuildContext);
-                m_SchemaBuilder = m_BuildScript.SchemaBuilders.OfType<BundledAssetSchemaBuilder>().First();
+                m_BuildScript.SchemaDrivenBuildScriptInstance.InitializeBuildContext(m_BuilderInput, out m_BuildContext);
+                m_SchemaBuilder = m_BuildScript.SchemaDrivenBuildScriptInstance.SchemaBuilders.OfType<BundledAssetSchemaBuilder>().First();
                 m_RuntimeData = m_BuildContext.runtimeData;
             }
         }
@@ -247,7 +247,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.MaxConcurrentWebRequests = 23;
             var builderInput = new AddressablesDataBuilderInput(Settings);
             var buildScript = ScriptableObject.CreateInstance<BuildScriptPackedMode>();
-            buildScript.InitializeBuildContext(builderInput, out var buildContext);
+            buildScript.SchemaDrivenBuildScriptInstance.InitializeBuildContext(builderInput, out var buildContext);
             Assert.AreEqual(Settings.MaxConcurrentWebRequests, buildContext.runtimeData.MaxConcurrentWebRequests);
         }
 
@@ -257,7 +257,7 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.CatalogRequestsTimeout = 23;
             var builderInput = new AddressablesDataBuilderInput(Settings);
             var buildScript = ScriptableObject.CreateInstance<BuildScriptPackedMode>();
-            buildScript.InitializeBuildContext(builderInput, out var buildContext);
+            buildScript.SchemaDrivenBuildScriptInstance.InitializeBuildContext(builderInput, out var buildContext);
             Assert.AreEqual(Settings.CatalogRequestsTimeout, buildContext.runtimeData.CatalogRequestsTimeout);
         }
 
@@ -489,7 +489,7 @@ namespace UnityEditor.AddressableAssets.Tests
             ContentCatalogDataEntry dataEntry = new ContentCatalogDataEntry(typeof(ContentCatalogData), targetBundleInternalIdHashed, typeof(BundledAssetProvider).FullName, new List<object>());
             FileRegistry registry = new FileRegistry();
             registry.AddFile(targetBundlePathHashed);
-            foreach (var schemaBuilder in m_BuildScript.SchemaBuilders)
+            foreach (var schemaBuilder in m_BuildScript.SchemaDrivenBuildScriptInstance.SchemaBuilders)
             {
                 if (schemaBuilder is BundledAssetSchemaBuilder assetBundleBundler)
                 {
@@ -526,7 +526,7 @@ namespace UnityEditor.AddressableAssets.Tests
             ContentCatalogDataEntry dataEntry = new ContentCatalogDataEntry(typeof(ContentCatalogData), targetBundleInternalId, typeof(BundledAssetProvider).FullName, new List<object>());
             FileRegistry registry = new FileRegistry();
             registry.AddFile(targetBundlePathHashed);
-            foreach (var schemaBuilder in m_BuildScript.SchemaBuilders)
+            foreach (var schemaBuilder in m_BuildScript.SchemaDrivenBuildScriptInstance.SchemaBuilders)
             {
                 if (schemaBuilder is BundledAssetSchemaBuilder assetBundleBundler)
                 {
@@ -910,9 +910,9 @@ namespace UnityEditor.AddressableAssets.Tests
             var group = m_Settings.CreateGroup(nameof(CalculateGroupHash_WithGroupGuidMode_GeneratesStableBundleNameWhenEntriesChange), false, false, false, null, typeof(BundledAssetGroupSchema));
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             var expected = group.Guid;
-            Assert.AreEqual(expected, BuildScriptPackedMode.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuid, group, group.entries));
+            Assert.AreEqual(expected, BuildScriptSchemaDriven.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuid, group, group.entries));
             group.AddAssetEntry(new AddressableAssetEntry("test", "test", group, true));
-            Assert.AreEqual(expected, BuildScriptPackedMode.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuid, group, group.entries));
+            Assert.AreEqual(expected, BuildScriptSchemaDriven.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuid, group, group.entries));
             m_Settings.RemoveGroupInternal(group, true, false);
         }
 
@@ -923,9 +923,9 @@ namespace UnityEditor.AddressableAssets.Tests
                 typeof(BundledAssetGroupSchema));
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             var expected = HashingMethods.Calculate(group.Guid, Application.cloudProjectId).ToString();
-            Assert.AreEqual(expected, BuildScriptPackedMode.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdHash, group, group.entries));
+            Assert.AreEqual(expected, BuildScriptSchemaDriven.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdHash, group, group.entries));
             group.AddAssetEntry(new AddressableAssetEntry("test", "test", group, true));
-            Assert.AreEqual(expected, BuildScriptPackedMode.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdHash, group, group.entries));
+            Assert.AreEqual(expected, BuildScriptSchemaDriven.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdHash, group, group.entries));
             m_Settings.RemoveGroupInternal(group, true, false);
         }
 
@@ -936,9 +936,9 @@ namespace UnityEditor.AddressableAssets.Tests
                 typeof(BundledAssetGroupSchema));
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             var expected = HashingMethods.Calculate(group.Guid, Application.cloudProjectId, new HashSet<string>(group.entries.Select(e => e.guid))).ToString();
-            Assert.AreEqual(expected, BuildScriptPackedMode.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdEntriesHash, group, group.entries));
+            Assert.AreEqual(expected, BuildScriptSchemaDriven.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdEntriesHash, group, group.entries));
             group.AddAssetEntry(new AddressableAssetEntry("test", "test", group, true));
-            Assert.AreNotEqual(expected, BuildScriptPackedMode.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdEntriesHash, group, group.entries));
+            Assert.AreNotEqual(expected, BuildScriptSchemaDriven.CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdEntriesHash, group, group.entries));
             m_Settings.RemoveGroupInternal(group, true, false);
         }
 
@@ -965,19 +965,19 @@ namespace UnityEditor.AddressableAssets.Tests
 
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             schema.InternalIdNamingMode = BundledAssetGroupSchema.AssetNamingMode.FullPath;
-            var bundleBuild = BuildScriptPackedMode.GenerateBuildInputDefinition(entries, "bundle");
+            var bundleBuild = BuildScriptSchemaDriven.GenerateBuildInputDefinition(entries, "bundle");
             Assert.AreEqual("Assets/DummyPath0.asset", bundleBuild.addressableNames[0]);
 
             schema.InternalIdNamingMode = BundledAssetGroupSchema.AssetNamingMode.Filename;
-            bundleBuild = BuildScriptPackedMode.GenerateBuildInputDefinition(entries, "bundle");
+            bundleBuild = BuildScriptSchemaDriven.GenerateBuildInputDefinition(entries, "bundle");
             Assert.AreEqual("DummyPath0.asset", bundleBuild.addressableNames[0]);
 
             schema.InternalIdNamingMode = BundledAssetGroupSchema.AssetNamingMode.GUID;
-            bundleBuild = BuildScriptPackedMode.GenerateBuildInputDefinition(entries, "bundle");
+            bundleBuild = BuildScriptSchemaDriven.GenerateBuildInputDefinition(entries, "bundle");
             Assert.AreEqual("abcde", bundleBuild.addressableNames[0]);
 
             schema.InternalIdNamingMode = BundledAssetGroupSchema.AssetNamingMode.Dynamic;
-            bundleBuild = BuildScriptPackedMode.GenerateBuildInputDefinition(entries, "bundle");
+            bundleBuild = BuildScriptSchemaDriven.GenerateBuildInputDefinition(entries, "bundle");
             Assert.AreEqual("a", bundleBuild.addressableNames[0]);
             Assert.AreEqual("ab", bundleBuild.addressableNames[1]);
             Assert.AreEqual("abc", bundleBuild.addressableNames[2]);
