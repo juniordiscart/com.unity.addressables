@@ -120,8 +120,8 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
             }
 
             // Path needs to be resolved at runtime.
-            var runtimeCatalogFilename = AddExtensionToCatalogFilename(catalogPaths.RuntimeCatalogFilename);
-            string localLoadPath = $"{DirectoryUtility.EnsureTrailingSlash(catalogPaths.LoadPath)}{runtimeCatalogFilename}";
+            string runtimeCatalogFilename = AddExtensionToCatalogFilename(catalogPaths.RuntimeCatalogFilename);
+            string localLoadPath = AddExtensionToCatalogFilename(catalogPaths.LoadPath);
             string catalogBuildPath = Path.Combine(catalogPaths.BuildPath, runtimeCatalogFilename);
 
             if (catalogBundleConfig != null)

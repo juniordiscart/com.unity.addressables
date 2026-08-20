@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
     /// Schema builder that processes BundledAssetGroupSchema to build AssetBundles from Addressable groups.
     /// Handles bundle packing, naming, post-processing, and catalog generation for bundled assets.
     /// </summary>
-    public class BundledAssetSchemaBuilder : ISchemaBuilder
+    public partial class BundledAssetSchemaBuilder : ISchemaBuilder
     {
         private bool m_BuiltData;
 
@@ -984,35 +984,9 @@ FileRegistry registry)
         }
 
         /// <inheritdoc/>
-        public virtual List<ContentCatalogData> GenerateCatalogs(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, AddressablesPlayerBuildResult addrResult)
+        public virtual Dictionary<string, List<ContentCatalogDataEntry>> GenerateCatalogLocations(AddressableAssetsBuildContext aaContext,
+            AddressablesPlayerBuildResult addrResult)
         {
-            // save off the catalog build path for IsDataBuilt checks
-            m_CatalogBuildPath = Path.Combine(Addressables.BuildPath, builderInput.RuntimeCatalogFilename);
-
-            var aaSettings = aaContext.Settings;
-            var loadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + builderInput.RuntimeCatalogFilename;
-            var versionedFileName = aaSettings.profileSettings.EvaluateString(aaSettings.activeProfileId, "/catalog_" + builderInput.PlayerVersion);
-            var remoteBuildPath = aaSettings.RemoteCatalogBuildPath.Id != "" ? aaSettings.RemoteCatalogBuildPath.GetValue(aaSettings) : "";
-            var remoteLoadPath = aaSettings.RemoteCatalogLoadPath.Id != "" ?  aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings) : "";
-            var catalogPathConfig = new CatalogPathConfig()
-        {
-                BuildPath = Addressables.BuildPath,
-                LoadPath = loadPath,
-                RemoteBuildPath = remoteBuildPath,
-                RemoteLoadPath = remoteLoadPath,
-                RuntimeCatalogFilename = builderInput.RuntimeCatalogFilename,
-                VersionedCatalogFileName = versionedFileName,
-            };
-
-            string buildResultHash = null;
-            if (addrResult != null)
-            {
-                object[] hashingObjects = new object[addrResult.AssetBundleBuildResults.Count];
-                for (int i = 0; i < addrResult.AssetBundleBuildResults.Count; ++i)
-                    hashingObjects[i] = addrResult.AssetBundleBuildResults[i].Hash;
-                buildResultHash = HashingMethods.Calculate(hashingObjects).ToString();
-            }
-
 #if UNITY_6000_5_OR_NEWER
             // this variable is always reset when Init is called at the start of a build when we initialize the build context.
             m_BuiltTypeTreeDataPath = Path.Combine(Addressables.BuildPath, BuildScriptPackedMode.kTypeTreeDataFileName);

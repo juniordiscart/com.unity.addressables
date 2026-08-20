@@ -3319,17 +3319,7 @@ namespace UnityEditor.AddressableAssets.Settings
 
 		internal AddressablesPlayerBuildResult BuildPlayerContentImpl(AddressablesDataBuilderInput buildContext = null, bool buildAndRelease = false)
 		{
-			if (Directory.Exists(Addressables.BuildPath))
-			{
-				try
-				{
-					Directory.Delete(Addressables.BuildPath, true);
-				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
-				}
-			}
+			ActivePlayerDataBuilder.ClearCachedData();
 
 			if (buildContext == null)
 				buildContext = new AddressablesDataBuilderInput(this);

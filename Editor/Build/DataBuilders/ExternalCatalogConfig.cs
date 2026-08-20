@@ -22,6 +22,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 		private ProfileValueReference runtimeLoadPath = new ProfileValueReference();
 		[SerializeField, Tooltip("Catalog name. This will also be the name of the exported catalog file.")]
 		private string catalogName = string.Empty;
+		[SerializeField, Tooltip("Catalog identifier. This is the internal identifier for the catalog during build. It should be unique value amond the catalogs being built.")]
+		private string catalogId = string.Empty;
+		[SerializeField, Tooltip("Register this catalog during build for startup so that it is loaded upon startup.")]
+		private bool registerForStartup = false;
 
 		/// <summary>
 		/// Name of the catalog. This will also be the name of the exported catalog file.
@@ -30,6 +34,24 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 		{
 			get => catalogName;
 			set => catalogName = value;
+		}
+
+		/// <summary>
+		/// Catalog identifier. This is the internal identifier for the catalog during build. It should be unique value amond the catalogs being built.
+		/// </summary>
+		public string CatalogId
+		{
+			get => catalogId;
+			set => catalogId = value;
+		}
+
+		/// <summary>
+		/// Register this catalog during build for startup so that it is loaded upon startup.
+		/// </summary>
+		public bool RegisterForStartup
+		{
+			get => registerForStartup;
+			set => registerForStartup = value;
 		}
 
 		/// <summary>

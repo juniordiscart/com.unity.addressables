@@ -171,7 +171,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         bool m_IncludeAddressesForFolderChildren = true;
 
         [SerializeField]
-        bool mIncludeInEditorAssetDatabaseMode = true;
+        bool m_IncludeInEditorAssetDatabaseMode = true;
 
         /// <summary>
         /// If enabled, addresses are included in the content catalog.  This is required if assets are to be loaded via their main address.
@@ -226,12 +226,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         /// </summary>
         public bool IncludeInEditorAssetDatabaseMode
         {
-            get => mIncludeInEditorAssetDatabaseMode;
+            get => m_IncludeInEditorAssetDatabaseMode;
             set
             {
-                if (mIncludeInEditorAssetDatabaseMode != value)
+                if (m_IncludeInEditorAssetDatabaseMode != value)
                 {
-                    mIncludeInEditorAssetDatabaseMode = value;
+                    m_IncludeInEditorAssetDatabaseMode = value;
                     SetDirty(true);
                 }
             }
@@ -1285,7 +1285,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             GUILayout.Space(m_PostBlockContentSpace);
 
 
-            EditorGUILayout.PropertyField(so.FindProperty(nameof(mIncludeInEditorAssetDatabaseMode)), m_IncludeInEditorFastModeContent, true);
+            EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeInEditorAssetDatabaseMode)), m_IncludeInEditorFastModeContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeAddressInCatalog)), m_IncludeAddressInCatalogContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeGUIDInCatalog)), m_IncludeGUIDInCatalogContent, true);
             EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeLabelsInCatalog)), m_IncludeLabelsInCatalogContent, true);
@@ -1388,8 +1388,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             ShowSelectedPropertyDefaultSettingsMulti(so, otherSchemas, ref queuedChanges);
             GUILayout.Space(m_PostBlockContentSpace);
 
-            ShowSelectedPropertyMulti(so, nameof(mIncludeInEditorAssetDatabaseMode), m_IncludeInEditorFastModeContent, otherSchemas, ref queuedChanges,
-                (src, dst) => dst.IncludeInEditorAssetDatabaseMode = src.IncludeInEditorAssetDatabaseMode, ref mIncludeInEditorAssetDatabaseMode);
+            ShowSelectedPropertyMulti(so, nameof(m_IncludeInEditorAssetDatabaseMode), m_IncludeInEditorFastModeContent, otherSchemas, ref queuedChanges,
+                (src, dst) => dst.IncludeInEditorAssetDatabaseMode = src.IncludeInEditorAssetDatabaseMode, ref m_IncludeInEditorAssetDatabaseMode);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeAddressInCatalog), m_IncludeAddressInCatalogContent, otherSchemas, ref queuedChanges,
                 (src, dst) => dst.IncludeAddressInCatalog = src.IncludeAddressInCatalog, ref m_IncludeAddressInCatalog);
             ShowSelectedPropertyMulti(so, nameof(m_IncludeGUIDInCatalog), m_IncludeGUIDInCatalogContent, otherSchemas, ref queuedChanges,

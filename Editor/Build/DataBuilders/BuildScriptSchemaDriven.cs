@@ -388,7 +388,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         string.Compare(a.InternalId, b.InternalId, StringComparison.Ordinal));
 
                     var catalogPathConfig = CreateCatalogPathConfig(aaContext.Settings, catalogId, builderInput.PlayerVersion, builderInput.RuntimeCatalogFilename);
-                    var buildResultHash = ComputeCatalogBuildHash(catalogId, addrResult);
+                    var buildResultHash = ComputeCatalogBuildHash(catalogId, addrResult, catalogEntries);
 
                     var catalogBuilder = CreateCatalogBuilder(aaContext.Settings);
                     CatalogBundleConfig catalogBundleConfig = null;
@@ -480,7 +480,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// runtime catalog filename and versioned filename from the builder input; additional catalog
         /// ids use the id itself as both filename and load-path suffix.
         /// </summary>
-        internal CatalogPathConfig CreateCatalogPathConfig(AddressableAssetSettings aaSettings, string catalogId, string playerVersion, string runtimeCatalogFilename)
+        internal virtual CatalogPathConfig CreateCatalogPathConfig(AddressableAssetSettings aaSettings, string catalogId, string playerVersion, string runtimeCatalogFilename)
         {
             var remoteBuildPath = aaSettings.RemoteCatalogBuildPath.Id != "" ? aaSettings.RemoteCatalogBuildPath.GetValue(aaSettings) : "";
             var remoteLoadPath = aaSettings.RemoteCatalogLoadPath.Id != "" ? aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings) : "";
@@ -512,7 +512,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// (when <c>ENABLE_CONTENT_DIRECTORIES</c> is set) matching the catalog id are also included.
         /// A bundled-only build produces a byte-identical hash to the previous implementation.
         /// </summary>
-        private string ComputeCatalogBuildHash(string catalogId, AddressablesPlayerBuildResult addrResult)
+        internal virtual string ComputeCatalogBuildHash(string catalogId, AddressablesPlayerBuildResult addrResult, List<ContentCatalogDataEntry> catalogEntries)
         {
             if (addrResult == null)
                 return null;
@@ -538,7 +538,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <param name="aaContext">The Addressables build context containing runtime data.</param>
         /// <param name="builderInput">The build input containing settings and registry.</param>
         /// <returns>The path to the generated settings file.</returns>
-        private string GenerateRuntimeSettingsFile(AddressableAssetsBuildContext aaContext, AddressablesDataBuilderInput builderInput)
+        internal virtual string GenerateRuntimeSettingsFile(AddressableAssetsBuildContext aaContext, AddressablesDataBuilderInput builderInput)
         {
             using (Log.ScopedStep(LogLevel.Info, "Generate Settings"))
             {
