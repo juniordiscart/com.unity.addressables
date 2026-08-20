@@ -67,8 +67,8 @@ namespace UnityEditor.AddressableAssets.GUI
             m_Tree.GetFixToolbarLabel(out var fixToolbarText, out var fixToolbarTooltip);
             m_FixToolbarContent.text = fixToolbarText;
             m_FixToolbarContent.tooltip = fixToolbarTooltip;
-            var canFixToolbar = m_Tree.SelectionContainsFixableSelectedResults
-                || (m_Tree.SelectionContainsRuleContainer && m_Tree.SelectionContainsFixableRule && m_Tree.SelectionContainsErrors);
+            var canFixToolbar = m_Tree.SelectionContainsAutoFixSelectedResults
+                || (m_Tree.SelectionContainsRuleContainer && m_Tree.SelectionContainsAutoFixRule && m_Tree.SelectionContainsErrors);
             EditorGUI.BeginDisabledGroup(!canFixToolbar);
             if (UnityEngine.GUI.Button(fixRect, m_FixToolbarContent, EditorStyles.toolbarButton))
             {
@@ -76,7 +76,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 EditorApplication.delayCall += () =>
                 {
                     m_Tree.UpdateSelections(selectionSnapshot);
-                    if (m_Tree.SelectionContainsFixableSelectedResults)
+                    if (m_Tree.SelectionContainsAutoFixSelectedResults)
                         m_Tree.FixSelectedResultsFromCurrentSelection(selectionSnapshot);
                     else
                         m_Tree.FixAllSelectedRules(selectionSnapshot);

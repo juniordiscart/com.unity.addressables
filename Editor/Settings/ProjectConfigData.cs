@@ -303,10 +303,12 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <summary>
         /// Removes the build report at index from the list of build reports shown in the Build Reports window
         /// </summary>
-        /// <param name="index">The index of the build report to be removed</param>
+        /// <param name="index">The index of the build report to be removed. Out of range indices are ignored.</param>
         public static void RemoveBuildReportFilePathAtIndex(int index)
         {
             ValidateData();
+            if (index < 0 || index >= s_Data.buildReports.Count)
+                return;
             s_Data.buildReports.RemoveAt(index);
             SaveData();
         }

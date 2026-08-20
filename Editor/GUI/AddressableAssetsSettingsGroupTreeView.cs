@@ -574,7 +574,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
 
                 // if the count is the same and all of the guids are in the state's sortOrder skip sorting
-                if (m_Editor.settings.groups.Count == s.sortOrderList.Count && !missingGuid)
+                if (newSortOrder.Count == s.sortOrderList.Count && !missingGuid)
                 {
                     return;
                 }

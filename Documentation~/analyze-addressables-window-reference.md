@@ -2,28 +2,28 @@
 
 Use the **Addressables Analyze** window to analyze the layout of the Addressables assets in your project. To open the window go to **Window** > **Asset Management** > **Addressables** > **Analyze**.
 
-![The Addressables Analyze window displaying expanded lists of fixable and unfixable rules.](images/addressables-analyze-window-data.png)*The Addressables Analyze window with some data loaded.*
+![The Addressables Analyze window displaying expanded lists of auto fix and manual fix required rules.](images/addressables-analyze-window-data.png)*The Addressables Analyze window with some data loaded.*
 
 ## Toolbar
 
 |**Operation**|**Description**|
 |---|---|
 |**Analyze Selected Rules**| Starts the analysis for any selected rules or their children.|
-|**Fix Selected Rules**| Performs the fix action for any selected rules or their children (must be a Fixable rule).|
+|**Fix Selected Rules**| Performs the fix action for any selected rules or their children (must be an Auto Fix rule).|
 |**Clear**| Opens the clear options to clear the results for any selected rules or their children.|
 |**Options** (gear icon)| Opens the options to import a saved analysis result or export results to disk.|
 
-## Fixable rules
+## Auto Fix rules
 
-Fixable rules are rules that Unity can automatically fix with the **Fix Selected Rules** operation.
+Auto Fix rules are rules that Unity can automatically fix with the **Fix Selected Rules** operation.
 
 |**Rule**|**Description**|
 |---|---|
 |**Check Duplicate Bundle Dependencies**|Checks for duplicated assets by scanning all groups with [BundledAssetGroupSchemas](GroupSchemas.md) and projecting the asset group layout. This requires triggering a full build, so this check is time-consuming and performance-intensive.|
 
-## Unfixable rules
+## Manual Fix Required rules
 
-Unfixable rules are those that are informational and have no appropriate action to fix them.
+Manual Fix Required rules are those that are informational and have no appropriate action for Unity to fix them automatically. Resolve the reported issues yourself.
 
 |**Rule**|**Description**|
 |---|---|

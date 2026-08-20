@@ -15,7 +15,7 @@ To use the Addressables Analyze window, open it in one of the following ways:
 
 The Analyze window displays a list of Analyze rules, along with the following operations:
 
-![The Addressables Analyze window displaying expanded lists of fixable and unfixable rules.](images/addressables-analyze-window-data.png)*The Addressables Analyze window with some data loaded.*
+![The Addressables Analyze window displaying expanded lists of auto fix and manual fix required rules.](images/addressables-analyze-window-data.png)*The Addressables Analyze window with some data loaded.*
 
 The **Analyze Selected Rules** operation gathers the information needed by the rule. To run the operation:
 
@@ -24,7 +24,7 @@ The **Analyze Selected Rules** operation gathers the information needed by the r
 
 Unity then displays any data it finds related to the rules in the window. The data is represented as a list of [`AnalyzeResult`](xref:UnityEditor.AddressableAssets.Build.AnalyzeRules.AnalyzeRule.AnalyzeResult) objects.
 
-If any issues are a **Fixable Rule**, you can use the **Fix Selected Rules** operation to automatically fix the issues Unity found.
+If any issues are under **Auto Fix Rules**, you can use the **Fix Selected Rules** operation to automatically fix the issues Unity found. Issues under **Manual Fix Required Rules** are informational and you must resolve them yourself.
 
 ### Fixing a rule
 

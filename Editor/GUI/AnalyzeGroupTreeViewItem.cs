@@ -1,7 +1,7 @@
 namespace UnityEditor.AddressableAssets.GUI
 {
     /// <summary>
-    /// Grouping row only (for example "Analyze Rules", "Fixable Rules").
+    /// Grouping row only (for example "Analyze Rules", "Auto Fix Rules").
     /// Not registered in <see cref="UnityEditor.AddressableAssets.Build.AnalyzeSystem.Rules"/>.
     /// </summary>
     class AnalyzeGroupTreeViewItem : AnalyzeTreeViewItemBase

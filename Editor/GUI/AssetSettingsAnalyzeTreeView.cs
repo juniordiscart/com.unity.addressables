@@ -250,7 +250,7 @@ namespace UnityEditor.AddressableAssets.GUI
             UpdateSelections(GetSelection());
         }
 
-        public bool SelectionContainsFixableRule { get; private set; }
+        public bool SelectionContainsAutoFixRule { get; private set; }
 
         /// <summary>
         /// True when the selection includes at least one <see cref="AnalyzeGroupTreeViewItem"/> or <see cref="AnalyzeRuleTreeViewItem"/> row.
@@ -269,7 +269,7 @@ namespace UnityEditor.AddressableAssets.GUI
         /// True when the selection is only analyze result rows, includes at least one error-level issue,
         /// and every distinct owning rule supports partial fix (<see cref="AnalyzeRule.SupportsFixSelectedResults"/> / <see cref="AnalyzeRule.CanFix"/>).
         /// </summary>
-        public bool SelectionContainsFixableSelectedResults { get; private set; }
+        public bool SelectionContainsAutoFixSelectedResults { get; private set; }
 
         /// <summary>
         /// Toolbar label for Fix: always <c>Fix Selected Rule(s) (n)</c> with <c>n</c> = number of selected tree rows (matches <see cref="AnalyzeRuleGUI"/> enable logic).
@@ -282,8 +282,8 @@ namespace UnityEditor.AddressableAssets.GUI
             const string tooltipText =
                 "Apply fixes for the selected analyze rows (Addressables groups with errors).";
 
-            var canFixToolbar = SelectionContainsFixableSelectedResults
-                || (SelectionContainsRuleContainer && SelectionContainsFixableRule && SelectionContainsErrors);
+            var canFixToolbar = SelectionContainsAutoFixSelectedResults
+                || (SelectionContainsRuleContainer && SelectionContainsAutoFixRule && SelectionContainsErrors);
 
             if (canFixToolbar)
                 text = FormatFixSelectedRulesLabel(n);
@@ -416,26 +416,26 @@ namespace UnityEditor.AddressableAssets.GUI
             AddRangeUnique(allRuleRows, rawRuleRows, seenRuleRows);
 
             SelectionContainsErrors = false;
-            SelectionContainsFixableRule = false;
+            SelectionContainsAutoFixRule = false;
             foreach (var ruleRow in allRuleRows)
             {
-                // short circuit if we have errors and fixable rules
-                if (SelectionContainsErrors && SelectionContainsFixableRule)
+                // short circuit if we have errors and auto fix rules
+                if (SelectionContainsErrors && SelectionContainsAutoFixRule)
                     break;
 
                 if (!SelectionContainsErrors && DirectChildHasErrorResult(ruleRow))
                 {
                     SelectionContainsErrors = true;
                 }
-                if (!SelectionContainsFixableRule && ruleRow.analyzeRule.CanFix)
+                if (!SelectionContainsAutoFixRule && ruleRow.analyzeRule.CanFix)
                 {
-                    SelectionContainsFixableRule = true;
+                    SelectionContainsAutoFixRule = true;
                 }
             }
 
             SelectionContainsRuleContainer = SelectionIncludesGroupOrRuleRow(selectedIds);
 
-            SelectionContainsFixableSelectedResults = false;
+            SelectionContainsAutoFixSelectedResults = false;
             if (selectedIds.Count > 0)
             {
                 if (TryCollectOnlyResultItems(selectedIds, out var resultItems))
@@ -443,7 +443,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     SelectionContainsOnlyAnalyzeResults = resultItems.Count > 0;
 
                     if (resultItems.Count > 0)
-                        SelectionContainsFixableSelectedResults =
+                        SelectionContainsAutoFixSelectedResults =
                             GetFixSelectedResultsMenuState(resultItems) == FixMenuState.Enabled;
                 }
             }
@@ -470,7 +470,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 menu.AddItem(new GUIContent("Clear Analyze Results"), false, () => ClearAllSelectedRules());
 
                 var ruleFixMenuLabel = FormatFixSelectedRulesLabel(selectedIds?.Count ?? 0);
-                if (SelectionContainsFixableRule && SelectionContainsErrors)
+                if (SelectionContainsAutoFixRule && SelectionContainsErrors)
                     menu.AddItem(new GUIContent(ruleFixMenuLabel), false, () => FixAllSelectedRules());
                 else
                     menu.AddDisabledItem(new GUIContent(ruleFixMenuLabel));
@@ -668,8 +668,8 @@ namespace UnityEditor.AddressableAssets.GUI
             root.children = TreeViewItemAdapter.EmptyList();
 
             string baseName = "Analyze Rules";
-            string fixableRules = "Fixable Rules";
-            string unfixableRules = "Unfixable Rules";
+            string autoFixRules = "Auto Fix Rules";
+            string manualFixRules = "Manual Fix Required Rules";
 
             AnalyzeSystem.TreeView = this;
 
@@ -680,34 +680,34 @@ namespace UnityEditor.AddressableAssets.GUI
 
             m_CurrentDepth++;
 
-            var fixable = new AnalyzeGroupTreeViewItem(fixableRules.GetHashCode(), m_CurrentDepth, fixableRules);
-            var unfixable = new AnalyzeGroupTreeViewItem(unfixableRules.GetHashCode(), m_CurrentDepth, unfixableRules);
+            var autoFix = new AnalyzeGroupTreeViewItem(autoFixRules.GetHashCode(), m_CurrentDepth, autoFixRules);
+            var manualFix = new AnalyzeGroupTreeViewItem(manualFixRules.GetHashCode(), m_CurrentDepth, manualFixRules);
 
-            baseViewItem.AddChild(fixable);
-            baseViewItem.AddChild(unfixable);
+            baseViewItem.AddChild(autoFix);
+            baseViewItem.AddChild(manualFix);
 
             m_CurrentDepth++;
 
-            var fixableRuleList = new List<AnalyzeRule>();
-            var unfixableRuleList = new List<AnalyzeRule>();
+            var autoFixRuleList = new List<AnalyzeRule>();
+            var manualFixRuleList = new List<AnalyzeRule>();
             foreach (var rule in AnalyzeSystem.Rules)
             {
                 if (rule.CanFix)
-                    fixableRuleList.Add(rule);
+                    autoFixRuleList.Add(rule);
                 else
-                    unfixableRuleList.Add(rule);
+                    manualFixRuleList.Add(rule);
             }
 
-            fixableRuleList.Sort((a, b) =>
+            autoFixRuleList.Sort((a, b) =>
                 string.Compare(a.ruleName, b.ruleName, StringComparison.OrdinalIgnoreCase));
-            unfixableRuleList.Sort((a, b) =>
+            manualFixRuleList.Sort((a, b) =>
                 string.Compare(a.ruleName, b.ruleName, StringComparison.OrdinalIgnoreCase));
 
-            foreach (var rule in fixableRuleList)
-                fixable.AddChild(new AnalyzeRuleTreeViewItem(rule.ruleName.GetHashCode(), m_CurrentDepth, rule));
+            foreach (var rule in autoFixRuleList)
+                autoFix.AddChild(new AnalyzeRuleTreeViewItem(rule.ruleName.GetHashCode(), m_CurrentDepth, rule));
 
-            foreach (var rule in unfixableRuleList)
-                unfixable.AddChild(new AnalyzeRuleTreeViewItem(rule.ruleName.GetHashCode(), m_CurrentDepth, rule));
+            foreach (var rule in manualFixRuleList)
+                manualFix.AddChild(new AnalyzeRuleTreeViewItem(rule.ruleName.GetHashCode(), m_CurrentDepth, rule));
 
             m_CurrentDepth++;
 

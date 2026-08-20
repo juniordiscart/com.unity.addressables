@@ -11,10 +11,9 @@ you require a specific version.
 
 ## Notes before you begin
 
-1. This multi-catalog version of Addressables **does not support catalog and group updates for subsequent content
-   builds!** If your project requires content to be updated regularly and downloaded by your users without a new player
-   build, then this package will not work for you. If you do require it, please consider implementing this feature in a
-   fork from this repository.
+1. The multi-catalog version of Addressables does not explicitly support the built-in content update pipeline and remote
+   catalogs. This feature may work, as the multi-catalog system attempts to be the least intrusive it can be, but
+   compatibility is not guaranteed.
 2. This repository does not track every available version of the _vanilla_ Addressables package. It's only kept
    up-to-date sporadically.
 3. For additional features found in this fork of Addressables, check the [Additional features](#additional-features)
@@ -26,6 +25,9 @@ When upgrading from Addressables version `1.21.2` to `1.21.9` or later, please r
 for [migration help](#from-1212-to-1219-and-later) with breaking changes.
 
 When upgrading to Addressables version `3.0.0` and beyond, please read the [migration help](#from-2111-to-300-and-later)
+with breaking changes.
+
+When upgrading to Addressables version `4.0.0` and beyond, please read the [migration help](#from-310-to-400-and-later)
 with breaking changes.
 
 ## Why does this exist?
@@ -222,3 +224,12 @@ Addressables has been removed and now requires explicit action by the person set
   external catalog they belong to.
 * Renamed the `ExternalCatalogSetup` class to `ExternalCatalogConfig`.
 * Renamed the `BuildScriptPackedMultiCatalogMode` class to `BuildScriptMultiCatalogPackedMode`.
+
+### From 3.1.0 to 4.0.0 and later
+
+Addressables 4.0 again overhauled the build system significantly, which prompts to also partially rewire the
+multi-catalog scripts. The following will require your attention:
+
+* Each `ExternalCatalogConfig` object now expects a unique `Catalog Id` value to be set. This is internally used during
+  the build process to identify which catalog a data entry belongs to. This can be the name of your catalog, if it is
+  unique. Note that the internal `Catalog Id` of the main catalog is `AddressablesMainContentCatalog`.

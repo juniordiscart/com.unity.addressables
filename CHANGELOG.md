@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-07-23
+- Fixed a bug where the Groups window would throw an error if null groups were present after upgrading.
+
 ## [4.0.0] - 2026-07-17
 - Fixed binary catalog serialization embedding runtime-specific core library names (mscorlib / System.Private.CoreLib) in generic type arguments, which could fail to resolve when the catalog was loaded on a different .NET runtime than it was built on.
 - Fixed an exception ("Attempting to use an invalid operation handle") thrown from `AddressablesImpl.Dispose()` when stopping Play Mode after loading an Addressable scene.

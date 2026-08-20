@@ -41,7 +41,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             int counter = 0;
 
-            retVal[counter].headerContent = new GUIContent(EditorGUIUtility.FindTexture("_Help@2x"), "Notifications");
+            retVal[counter].headerContent = new GUIContent(string.Empty, "Notifications");
             retVal[counter].minWidth = 25;
             retVal[counter].width = 25;
             retVal[counter].maxWidth = 25;
@@ -59,10 +59,10 @@ namespace UnityEditor.AddressableAssets.GUI
             retVal[counter].autoResize = true;
             counter++;
 
-            retVal[counter].headerContent = new GUIContent(EditorGUIUtility.FindTexture("FilterByType"), "Asset type");
-            retVal[counter].minWidth = 25;
-            retVal[counter].width = 25;
-            retVal[counter].maxWidth = 25;
+            retVal[counter].headerContent = new GUIContent("Type", "Asset type");
+            retVal[counter].minWidth = 40;
+            retVal[counter].width = 40;
+            retVal[counter].maxWidth = 10000;
             retVal[counter].headerTextAlignment = TextAlignment.Left;
             retVal[counter].canSort = false;
             retVal[counter].autoResize = true;
@@ -92,10 +92,18 @@ namespace UnityEditor.AddressableAssets.GUI
         internal void LoadEditorPrefs()
         {
             var guid = AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(m_Settings));
-            string columnHeaderState = EditorPrefs.GetString(GetEditorPreferenceKey(kTreeViewPrefPrefixHeaders, guid), "");
-            if (!string.IsNullOrEmpty(columnHeaderState))
+            string columnHeaderJson = EditorPrefs.GetString(GetEditorPreferenceKey(kTreeViewPrefPrefixHeaders, guid), "");
+            if (!string.IsNullOrEmpty(columnHeaderJson))
             {
-                JsonUtility.FromJsonOverwrite(columnHeaderState, state);
+                var savedState = (MultiColumnHeaderState) JsonUtility.FromJson(columnHeaderJson, typeof(MultiColumnHeaderState));
+                // check if serialized state is compatible with current header
+                if (MultiColumnHeaderState.CanOverwriteSerializedFields(savedState, state))
+                {
+                    MultiColumnHeaderState.OverwriteSerializedFields(savedState, state);
+                    foreach (var column in state.columns)
+                        column.width = Mathf.Clamp(column.width, column.minWidth, column.maxWidth);
+                    return;
+                }
             }
         }
 
@@ -113,7 +121,5 @@ namespace UnityEditor.AddressableAssets.GUI
         {
             EditorPrefs.SetString(GetEditorPreferenceKey(kTreeViewPrefPrefixHeaders, guid), JsonUtility.ToJson(s));
         }
-
-
     }
 }

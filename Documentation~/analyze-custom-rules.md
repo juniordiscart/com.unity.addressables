@@ -6,7 +6,7 @@ You can create custom rules for the [**Addressables Analyze** window](analyze-ad
 
 To create a custom rule, create a new child class of the [`AnalyzeRule`](xref:UnityEditor.AddressableAssets.Build.AnalyzeRules.AnalyzeRule) class, and override the following properties:
 
-* [`CanFix`](xref:UnityEditor.AddressableAssets.Build.AnalyzeRules.AnalyzeRule.CanFix): Set whether the rule is fixable or not.
+* [`CanFix`](xref:UnityEditor.AddressableAssets.Build.AnalyzeRules.AnalyzeRule.CanFix): Set whether the rule can automatically fix the issues it reports. Rules that can are listed under **Auto Fix Rules** in the **Addressables Analyze** window, and the rest under **Manual Fix Required Rules**.
 * [`ruleName`](xref:UnityEditor.AddressableAssets.Build.AnalyzeRules.AnalyzeRule.ruleName): Set the display name of the rule, which is displayed in the **Addressables Analyze** window.
 
 You'll also need to override the following methods:

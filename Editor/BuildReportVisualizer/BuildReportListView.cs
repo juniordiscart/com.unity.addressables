@@ -22,6 +22,8 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         static Dictionary<BuildTarget, string> s_PlatformIconClasses = new Dictionary<BuildTarget, string>();
 
+        internal List<BuildReportListItem> BuildReportItems => m_BuildReportItems;
+
         [Serializable]
         internal class BuildReportListItem
         {
@@ -45,20 +47,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         public void CreateGUI(VisualElement rootVisualElement)
         {
-            m_BuildReportItems.Clear();
-
-            for (int i = 0; i < ProjectConfigData.BuildReportFilePaths.Count; i++)
-            {
-                BuildLayout layout = null;
-                string path = ProjectConfigData.BuildReportFilePaths[i];
-                if (File.Exists(path))
-                {
-                    layout = BuildLayout.Open(path);
-                }
-
-                m_BuildReportItems.Insert(0, new BuildReportListItem(i, path, layout));
-            }
-
+            RefreshItemsFromProjectConfig();
 
             UQueryBuilder<ListView> listQuery = rootVisualElement.Query<ListView>(name: BuildReportUtility.ReportsList);
             m_ListView = listQuery.First();
@@ -69,12 +58,38 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 item.Q<VisualElement>(BuildReportUtility.ReportsListItemContainerLefthandElements).style.marginTop = new StyleLength(new Length(2f, LengthUnit.Pixel));
                 item.Q<VisualElement>(BuildReportUtility.ReportsListItemContainerRighthandElements).style.marginTop = new StyleLength(new Length(2f, LengthUnit.Pixel));
                 item.style.unityTextAlign = TextAnchor.MiddleCenter;
+
+                item.AddManipulator(new ContextualMenuManipulator((evt) =>
+                {
+                    evt.menu.AppendAction("Remove Report", RemoveReport, DropdownMenuAction.AlwaysEnabled, item.userData);
+                    evt.menu.AppendAction("Remove All Reports", RemoveAllReports, DropdownMenuAction.AlwaysEnabled);
+                }));
+
                 return item;
             };
             m_ListView.bindItem = (e, i) => CreateItem(e, i);
+            m_ListView.unbindItem = (e, i) => e.userData = null;
             m_ListView.itemsSource = m_BuildReportItems;
-            m_ListView.selectionChanged -= items => OnItemSelected(items);
-            m_ListView.selectionChanged += items => OnItemSelected(items);
+            m_ListView.selectionChanged -= OnItemSelected;
+            m_ListView.selectionChanged += OnItemSelected;
+        }
+
+        internal void RefreshItemsFromProjectConfig()
+        {
+            m_BuildReportItems.Clear();
+
+            List<string> filePaths = ProjectConfigData.BuildReportFilePaths;
+            for (int i = 0; i < filePaths.Count; i++)
+            {
+                BuildLayout layout = null;
+                string path = filePaths[i];
+                if (File.Exists(path))
+                {
+                    layout = BuildLayout.Open(path);
+                }
+
+                m_BuildReportItems.Insert(0, new BuildReportListItem(i, path, layout));
+            }
         }
 
         static BuildLayout LoadLayout(string filePath)
@@ -96,7 +111,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         void CreateItem(VisualElement element, int index)
         {
+            if (index < 0 || index >= m_BuildReportItems.Count)
+                return;
+
             BuildReportListItem reportListItem = m_BuildReportItems[index];
+            element.userData = reportListItem;
             var buildStatusImage = element.Q<Image>(BuildReportUtility.ReportsListItemBuildStatus);
             var buildPlatformImage = element.Q<Image>(BuildReportUtility.ReportsListItemBuildPlatform);
             var buildTimeStampLabel = element.Q<Label>(BuildReportUtility.ReportsListItemBuildTimestamp);
@@ -118,12 +137,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 buildTimeStampLabel.text = BuildReportUtility.TimeAgo.GetString(reportListItem.Layout.BuildStart);
                 buildDurationLabel.text = TimeSpan.FromSeconds(reportListItem.Layout.Duration).ToString("g");
             }
-
-            element.AddManipulator(new ContextualMenuManipulator((evt) =>
-            {
-                evt.menu.AppendAction("Remove Report", (x) => RemoveReport(x), DropdownMenuAction.AlwaysEnabled, index);
-                evt.menu.AppendAction("Remove All Reports", (x) => RemoveAllReports(x), DropdownMenuAction.AlwaysEnabled);
-            }));
         }
 
         static string GetPlatformIconClass(BuildTarget target)
@@ -133,19 +146,20 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             return s_PlatformIconClasses[target];
         }
 
-        void OnItemSelected(IEnumerable<object> items)
+        internal void OnItemSelected(IEnumerable<object> items)
         {
-            var item = items.First() as BuildReportListItem;
-            int index = m_BuildReportItems.IndexOf(item);
+            var item = items?.FirstOrDefault() as BuildReportListItem;
+            if (item == null || !m_BuildReportItems.Contains(item))
+                return;
 
-            if (m_BuildReportItems[index].Layout == null)
+            if (item.Layout == null)
             {
-                Debug.LogError($"Unable to read '{m_BuildReportItems[index].FilePath}'");
-                m_Window.ClearViews();
+                Debug.LogError($"Unable to read '{item.FilePath}'");
+                m_Window?.ClearViews();
             }
             else
             {
-                m_Window.Consume(LoadLayout(m_BuildReportItems[index].FilePath));
+                m_Window?.Consume(LoadLayout(item.FilePath));
             }
         }
 
@@ -166,7 +180,7 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         internal void AddReport(string filePath, BuildLayout layout)
         {
-            BuildReportListItem item = m_BuildReportItems.Find(x => x.FilePath == filePath);
+            BuildReportListItem item = m_BuildReportItems.Find(x => ArePathsEqual(x.FilePath, filePath));
             if (item == null)
                 m_BuildReportItems.Insert(0, new BuildReportListItem(m_BuildReportItems.Count, filePath, layout));
             else
@@ -222,13 +236,13 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
         void AddReportFromFile(string filePath, ListView listView, bool logWarning, bool shouldRebuild)
         {
             string parsedFilePath = filePath.Replace("\\", "/");
-            if (!ProjectConfigData.BuildReportFilePaths.Contains(parsedFilePath))
+            if (IndexOfFilePathInProjectConfig(parsedFilePath) < 0)
             {
                 var layout = LoadLayout(filePath); // can consider adding error logs when file fails to load
                 if (layout != null && BuildLayoutIsValid(layout))
                 {
                     ProjectConfigData.AddBuildReportFilePath(parsedFilePath);
-                    m_BuildReportItems.Insert(0, new BuildReportListItem(m_BuildReportItems.Count, filePath, layout));
+                    m_BuildReportItems.Insert(0, new BuildReportListItem(m_BuildReportItems.Count, parsedFilePath, layout));
 
                     if (listView != null && shouldRebuild)
                         listView.Rebuild();
@@ -261,12 +275,26 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
 
         internal void RemoveReport(DropdownMenuAction action)
         {
-            int index = (int)action.userData;
-            ProjectConfigData.RemoveBuildReportFilePathAtIndex(index);
+            RemoveReport(action?.userData as BuildReportListItem);
+        }
+
+        internal void RemoveReport(BuildReportListItem reportListItem)
+        {
+            if (reportListItem == null)
+                return;
+
+            int index = m_BuildReportItems.IndexOf(reportListItem);
+            if (index < 0)
+                return;
+
             m_BuildReportItems.RemoveAt(index);
 
-            m_Window.ClearViews();
-            m_ListView.Rebuild();
+            int configIndex = IndexOfFilePathInProjectConfig(reportListItem.FilePath);
+            if (configIndex >= 0)
+                ProjectConfigData.RemoveBuildReportFilePathAtIndex(configIndex);
+
+            m_Window?.ClearViews();
+            m_ListView?.Rebuild();
         }
 
         internal void RemoveAllReports(DropdownMenuAction action)
@@ -274,8 +302,31 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             ProjectConfigData.ClearBuildReportFilePaths();
             m_BuildReportItems.Clear();
 
-            m_Window.ClearViews();
-            m_ListView.Rebuild();
+            m_Window?.ClearViews();
+            m_ListView?.Rebuild();
+        }
+
+        static int IndexOfFilePathInProjectConfig(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath))
+                return -1;
+
+            List<string> filePaths = ProjectConfigData.BuildReportFilePaths;
+            for (int i = 0; i < filePaths.Count; i++)
+            {
+                if (ArePathsEqual(filePaths[i], filePath))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        static bool ArePathsEqual(string lhs, string rhs)
+        {
+            if (string.IsNullOrEmpty(lhs) || string.IsNullOrEmpty(rhs))
+                return string.IsNullOrEmpty(lhs) && string.IsNullOrEmpty(rhs);
+
+            return string.Equals(lhs.Replace('\\', '/'), rhs.Replace('\\', '/'), StringComparison.Ordinal);
         }
     }
 }

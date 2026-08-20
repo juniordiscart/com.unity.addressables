@@ -189,7 +189,7 @@ namespace UnityEditor.AddressableAssets.Tests.AnalyzeRules
         [Test]
         public void AssetSettingsAnalyzeTreeView_CanMultiSelect_True_ForAnalyzeGroupTreeViewItem()
         {
-            var folder = new AnalyzeGroupTreeViewItem(95001, 1, "Fixable Rules");
+            var folder = new AnalyzeGroupTreeViewItem(95001, 1, "Auto Fix Rules");
             var tree = new TestableAssetSettingsAnalyzeTreeView(new TreeViewStateAdapter());
             Assert.IsTrue(tree.CanMultiSelectForTest(folder));
         }
