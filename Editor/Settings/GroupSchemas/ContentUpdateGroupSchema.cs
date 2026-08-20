@@ -11,6 +11,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
     /// </summary>
     //  [CreateAssetMenu(fileName = "ContentUpdateGroupSchema.asset", menuName = "Addressables/Group Schemas/Content Update")]
     [DisplayName("Content Update Restriction")]
+    [AddressablesHelpURL("content-update-build-settings.html")]
     public class ContentUpdateGroupSchema : AddressableAssetGroupSchema
     {
         [FormerlySerializedAs("m_staticContent")]

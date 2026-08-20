@@ -23,11 +23,35 @@ Addressables.LoadAssetAsync\<GameObject\>("Resources_moved/tank.prefab");.
 
 You might have to implement some functionality of the `Resources` class differently after modifying your project to use the Addressables system.
 
-For example, consider the [`Resources.LoadAll`](https://docs.unity3d.com/ScriptReference/Resources.LoadAll.html) method. Previously, if you had assets in a folder named `Resources/MyPrefabs/`, and ran `Resources.LoadAll\<SampleType\>("MyPrefabs");`, Unity loads all the assets in `Resources/MyPrefabs/` matching type `SampleType`. The Addressables system doesn't support this exact functionality, but you can achieve similar results using [Addressable labels](xref:addressables-labels).
+### Replace Resources.LoadAll
+
+Previously, if you had assets in a folder named `Resources/MyPrefabs/`, you could run [`Resources.LoadAll\<SampleType\>("MyPrefabs")`](https://docs.unity3d.com/ScriptReference/Resources.LoadAll.html) to load every asset of type `SampleType` in that folder. To get the same result with Addressables:
+
+1. Rename or move the `Resources/MyPrefabs` folder out of any `Resources` folder (Addressables ignores assets that remain under a `Resources` folder path) &mdash; for example to `Assets/MyPrefabs`.
+2. In the Project window enable the __Addressable__ checkbox on the folder itself (not each file individually). This makes every asset under the folder Addressable, addressed as `<folder address>/<relative path>`.
+3. Update any keys used for loading. If you move Resources/MyPrefabs/ into Assets, you'll need to change the loading key to Assets/MyPrefabs. It should exeactly match what is listed in the Addressables Group window.
+3. Confirm __Include Folder Keys in Catalog__ is enabled on the group's [Content Packing & Loading schema](ContentPackingAndLoadingSchema.md) (enabled by default). This makes the folder's own address load every asset inside it.
+4. Replace the load call:
+
+   ```csharp
+   // Before
+   var prefabs = Resources.LoadAll<SampleType>("MyPrefabs");
+
+   // After
+   var handle = Addressables.LoadAssetsAsync<SampleType>("Assets/MyPrefabs", prefab => { /* use prefab */ });
+   await handle.Task;
+   // or, to get the list of locations first:
+   var locations = await Addressables.LoadResourceLocationsAsync("Assets/MyPrefabs", typeof(SampleType)).Task;
+   ```
+
+5. Release the handle when the assets are no longer needed. Refer to [Unloading Addressable assets](UnloadingAddressableAssets.md).
+
+If you need finer-grained grouping than "everything in one folder" (for example, a subset of files scattered across folders), use [Addressable labels](xref:addressables-labels) instead. A label behaves the same way (one key, many assets) but isn't tied to folder structure.
 
 ## Additional resources
 
 * [Load asset references](LoadingAssetReferences.md)
 * [Labelling assets](Labels.md)
 * [Organize assets into groups](groups-intro.md)
+* [Content Packing & Loading schema](ContentPackingAndLoadingSchema.md)
 * [Resources system](xref:um-loading-resources-at-runtime)

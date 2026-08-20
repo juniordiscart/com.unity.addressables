@@ -144,7 +144,13 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             {
                 try
                 {
-                    return m_Provider.Convert(m_PI.Type, text);
+                    // When the operation type is abstract the provider cannot instantiate it
+                    // (e.g. JsonUtility.FromJson returns null for abstract classes). Fall back
+                    // to the location's declared concrete resource type in that case.
+                    var type = (m_PI.Type != null && m_PI.Type.IsAbstract && m_PI.Location?.ResourceType != null)
+                        ? m_PI.Location.ResourceType
+                        : m_PI.Type;
+                    return m_Provider.Convert(type, text);
                 }
                 catch (Exception e)
                 {

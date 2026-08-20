@@ -844,7 +844,8 @@ namespace UnityEditor.AddressableAssets.Build
                 if (g == null)
                     return false;
 
-                if (!g.HasSchema<BundledAssetGroupSchema>())
+                var bundledAssetGroupSchema = g.GetSchema<BundledAssetGroupSchema>();
+                if (bundledAssetGroupSchema == null || !bundledAssetGroupSchema.IsEnabled || !g.IncludeInBuild)
                 {
                     noBundledAssetGroupSchema.Add(g.Name);
                     return false;
@@ -1013,7 +1014,7 @@ namespace UnityEditor.AddressableAssets.Build
                 if (staticSchema == null || !staticSchema.IsEnabled)
                     continue;
                 var bundleSchema = group.GetSchema<BundledAssetGroupSchema>();
-                if (bundleSchema == null || !bundleSchema.IsEnabled)
+                if (bundleSchema == null || !bundleSchema.IsEnabled || !group.IncludeInBuild)
                     continue;
 
                 if (staticSchema.StaticContent)
@@ -1061,7 +1062,7 @@ namespace UnityEditor.AddressableAssets.Build
                     continue;
 
                 var schema = group.GetSchema<BundledAssetGroupSchema>();
-                if (schema == null || !schema.IsEnabled)
+                if (schema == null || !schema.IsEnabled || !group.IncludeInBuild)
                     continue;
                 List<AssetBundleBuild> bundleInputDefinitions = new List<AssetBundleBuild>();
 
@@ -1234,7 +1235,7 @@ namespace UnityEditor.AddressableAssets.Build
             if (!g.HasSchema<ContentUpdateGroupSchema>() || contentUpdateSchema == null || !contentUpdateSchema.IsEnabled || !contentUpdateSchema.StaticContent)
                 return false;
             var bundleSchema = g.GetSchema<BundledAssetGroupSchema>();
-            if (!g.HasSchema<BundledAssetGroupSchema>() || bundleSchema == null || !bundleSchema.IsEnabled || !bundleSchema.IncludeInBuild)
+            if (!g.HasSchema<BundledAssetGroupSchema>() || bundleSchema == null || !bundleSchema.IsEnabled || !g.IncludeInBuild)
                 return false;
             return true;
         }

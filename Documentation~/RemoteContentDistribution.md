@@ -4,6 +4,9 @@ uid: addressables-remote-content-distribution
 
 # Distribute and update remote content
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 Information on how to distribute content remotely to reduce download sizes.
 
 |**Topic**|**Description**|

@@ -126,6 +126,32 @@ namespace UnityEngine.ResourceManagement.ResourceLocations
         }
 
         /// <summary>
+        /// Construct a new ResourceLocationBase.
+        /// </summary>
+        /// <param name="name">The name of the location.  This is usually set to the primary key, or "address" of the location.</param>
+        /// <param name="id">The internal id of the location.  This is used by the IResourceProvider to identify the object to provide.  For example this may contain the file path or url of an asset.</param>
+        /// <param name="providerId">The provider id.  This is set to the FullName of the type of the provder class.</param>
+        /// <param name="t">The type of the object to provide.</param>
+        /// <param name="Data">Data that is intended for the provider.  Objects can be serialized during the build process to be used by the provider.</param>
+        /// <param name="dependencies">Locations for the dependencies of this location.</param>
+        public ResourceLocationBase(string name, string id, string providerId, Type t, object Data, params IResourceLocation[] dependencies)
+        {
+            if (string.IsNullOrEmpty(id))
+                throw new ArgumentNullException(nameof(id));
+            if (string.IsNullOrEmpty(providerId))
+                throw new ArgumentNullException(nameof(providerId));
+            m_PrimaryKey = name;
+            m_HashCode = (name.GetHashCode() * 31 + id.GetHashCode()) * 31 + providerId.GetHashCode();
+            m_Name = name;
+            m_Id = id;
+            m_ProviderId = providerId;
+            m_Dependencies = new List<IResourceLocation>(dependencies);
+            m_Type = t == null ? typeof(object) : t;
+            m_Data = Data;
+            ComputeDependencyHash();
+        }
+
+        /// <summary>
         /// Compute the dependency hash for this location
         /// </summary>
         public void ComputeDependencyHash() // TODO: dependency hash is no longer just objects

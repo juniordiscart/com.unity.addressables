@@ -28,6 +28,26 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
         Exception OperationException { get; }
         bool IsDone { get; }
+
+        /// <summary>
+        /// True if a <see cref="AsyncOperationHandle.Completed"/> listener is registered but hasn't fired yet.
+        /// Used to detect an operation that completed synchronously before a tracking listener could run.
+        /// </summary>
+        bool CompletedEventHasListeners { get; }
+
+        /// <summary>
+        /// True once something has registered a listener that releases this operation's own reference on
+        /// completion (see <see cref="AsyncOperationHandle.ReleaseHandleOnCompletion"/> and
+        /// <c>AddressablesImpl.AutoReleaseHandleOnTypelessCompletion</c>). Used by <c>ToAwaitable</c> to avoid
+        /// releasing the same reference a second time on failure.
+        /// </summary>
+        bool HasReleaseOnCompletionRegistered { get; }
+
+        /// <summary>
+        /// Marks that a listener releasing this operation's own reference on completion has been registered.
+        /// </summary>
+        void MarkReleaseOnCompletionRegistered();
+
         Action<IAsyncOperation> OnDestroy { set; }
         void GetDependencies(List<AsyncOperationHandle> deps);
         bool IsRunning { get; }
@@ -110,6 +130,10 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
         internal bool CompletedEventHasListeners => m_CompletedActionT != null && m_CompletedActionT.Count > 0;
         internal bool DestroyedEventHasListeners => m_DestroyedAction != null && m_DestroyedAction.Count > 0;
+
+        bool m_HasReleaseOnCompletionRegistered;
+        internal bool HasReleaseOnCompletionRegistered => m_HasReleaseOnCompletionRegistered;
+        internal void MarkReleaseOnCompletionRegistered() => m_HasReleaseOnCompletionRegistered = true;
 
         Action<IAsyncOperation> m_OnDestroyAction;
 
@@ -227,6 +251,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
                 m_Error = null;
                 m_Version++;
                 m_RM = null;
+                m_HasReleaseOnCompletionRegistered = false;
 
                 if (m_OnDestroyAction != null)
                 {
@@ -546,6 +571,12 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         Exception IAsyncOperation.OperationException => OperationException;
 
         bool IAsyncOperation.IsDone => IsDone;
+
+        bool IAsyncOperation.CompletedEventHasListeners => CompletedEventHasListeners;
+
+        bool IAsyncOperation.HasReleaseOnCompletionRegistered => HasReleaseOnCompletionRegistered;
+
+        void IAsyncOperation.MarkReleaseOnCompletionRegistered() => MarkReleaseOnCompletionRegistered();
 
         AsyncOperationHandle IAsyncOperation.Handle => Handle;
 

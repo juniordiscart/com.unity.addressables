@@ -11,6 +11,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
     /// </summary>
     //[CreateAssetMenu(fileName = "PlayerDataGroupSchema.asset", menuName = "Addressables/Group Schemas/Player Data")]
     [DisplayName("Resources and Built In Scenes")]
+    [AddressablesHelpURL("GroupSchemas.html")]
     public class PlayerDataGroupSchema : AddressableAssetGroupSchema
     {
         [Tooltip("Assets in resources folders will have addresses generated during the build")]

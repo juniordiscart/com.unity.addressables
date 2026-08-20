@@ -13,8 +13,10 @@ When you call one of the asset loading methods, the Addressables system begins a
 
 1. Looks up the resource locations for the specified keys, except `IResourceLocation` keys.
 1. Gathers the list of dependencies.
-1. Downloads any remote AssetBundles that are required.
-1. Loads the AssetBundles into memory.
+1. If using the content directory system, registers any required content directories if not already registered.
+1. If using the AssetBundle system, performs the following steps:
+    1. Downloads any remote AssetBundles that are required.
+    1. Loads the AssetBundles into memory.
 1. Sets the [`Result`](xref:UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle.Result) object of the operation to the loaded objects.
 1. Updates the [`Status`](xref:UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle.Status) of the operation and calls any [`Completed`](xref:UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle.Completed) event listeners.
 

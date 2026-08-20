@@ -66,11 +66,11 @@ GameObject components and subassets have the following loading restrictions:
 
 You can safely edit loaded assets in the following situations:
 
-* The asset is loaded from an AssetBundle.
+* The asset is loaded from an AssetBundle or content directory.
 * The application is running in a Player, not in the Editor.
 * When you enable the **Use Existing Build (requires built groups)** option in [Play Mode Scripts](GroupsWindow.md#play-mode-script).
 
-In these cases, the assets exist as a copy in active memory. Changes made to these copied assets don't affect the saved AssetBundle on disk and any changes don't persist between sessions.
+In these cases, the assets exist as a copy in active memory. Changes made to these copied assets don't affect the saved AssetBundle or content directory on disk and any changes don't persist between sessions.
 
 For other situations, including when you enable the **Use Asset Database (fastest)** property in the Play mode settings, Unity loads the assets directly from the project files. This means that Unity saves any modifications to the asset during runtime to the project asset file and that those changes persist between different sessions.
 

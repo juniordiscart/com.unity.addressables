@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.Initialization;
+using UnityEditor.AddressableAssets.Settings;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -11,6 +12,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// Uses data built by BuildScriptPacked class.  This script just sets up the correct variables and runs.
     /// </summary>
     [CreateAssetMenu(fileName = "BuildScriptPackedPlayMode.asset", menuName = "Addressables/Content Builders/Use Existing Build (requires built groups)")]
+    [AddressablesHelpURL("Builds.html")]
     public class BuildScriptPackedPlayMode : BuildScriptBase
     {
         /// <inheritdoc />

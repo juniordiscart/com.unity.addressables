@@ -22,6 +22,7 @@ namespace UnityEditor.AddressableAssets.Tests
             TestSubObject n = ScriptableObject.CreateInstance<TestSubObject>();
             n.name = "testSubObject";
             AssetDatabase.AddObjectToAsset(n, this);
+            AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(this), ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         }
     }

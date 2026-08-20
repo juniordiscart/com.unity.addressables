@@ -2,6 +2,9 @@
 
 You can use the Addressables [Profiler](xref:um-profiler) module to inspect what content Addressables loaded. To open the Profiler, go to __Window__ > __Analysis__ > __Profiler__.
 
+>[!IMPORTANT]
+>The Addressables Profiler module doesn't include data about groups that use the [Content Directory schema](GroupSchemas).
+
 ## Prerequisites
 
 * [Build Reports](BuildLayoutReport.md) must be enabled and the runtime being profiled requires a build report. To enable build reports, go to the Editor preferences, select [Addressables preferences](addressables-preferences.md), then enable **Debug Build Layout**.

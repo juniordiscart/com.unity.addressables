@@ -4,6 +4,9 @@ uid: addressables-ccd
 
 # Use Addressables with Cloud Content Delivery
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 You can use Addressables with [Unity Cloud Content Delivery](https://docs.unity.com/ccd/UnityCCD.html) (CCD) to distribute Addressables content.
 
 |**Topic**|**Description**|

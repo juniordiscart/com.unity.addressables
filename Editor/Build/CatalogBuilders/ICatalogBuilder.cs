@@ -12,6 +12,23 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
     public interface ICatalogBuilder
     {
         /// <summary>
+        /// The runtime <see cref="ContentCatalogProvider"/> type that loads catalogs produced by this builder.
+        /// Used by <see cref="BaseCatalogBuilder.CreateForProvider"/> to map provider selection to a builder.
+        /// </summary>
+        Type CatalogProviderType { get; }
+
+        /// <summary>
+        /// The file extension (without leading dot) used for catalog files produced by this builder.
+        /// </summary>
+        string CatalogExtension { get; }
+
+        /// <summary>
+        /// Whether this catalog format supports bundling the local catalog into an AssetBundle
+        /// (the "Compress Local Catalog" feature). Binary catalogs do not support this.
+        /// </summary>
+        bool SupportsLocalCatalogBundling { get; }
+
+        /// <summary>
         /// Generates a content catalog from the provided build data.
         /// </summary>
         /// <param name="logger">The build logger for recording build steps.</param>

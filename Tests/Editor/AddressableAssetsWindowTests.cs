@@ -1,10 +1,13 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using UnityEditor.AddressableAssets.GUI;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using TreeView = UnityEngine.UIElements.TreeView;
 
@@ -168,8 +171,6 @@ namespace UnityEditor.AddressableAssets.Tests
             }
         }
 
-//I think there's a bug in AssetDatabase in 2023.1 that's preventing the test from passing when creating a new Settings Scriptable Object.
-#if UNITY_2023_3_OR_NEWER
         [Test]
         public void AddressableAssetWindow_GroupWindow_DeleteGroupUpdatesSortSettings()
         {
@@ -202,7 +203,6 @@ namespace UnityEditor.AddressableAssets.Tests
                 Settings.OnModification -= aaWindow.m_GroupEditor.OnSettingsModification;
             }
         }
-#endif
 
         [Test]
         public void AddressableAssetWindow_CanSelectGroupTreeViewByAddressableAssetEntries()
@@ -255,6 +255,230 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.IsTrue(Settings.RemoveAssetEntry(e1, false), "Failed to cleanup AssetEntry \"test 1.prefab\" from test settings.");
             Assert.IsTrue(Settings.RemoveAssetEntry(e2, false), "Failed to cleanup AssetEntry \"test 2.prefab\" from test settings.");
             Object.DestroyImmediate(aaWindow);
+        }
+
+        static List<AssetEntryTreeViewItem> GroupNodes(params AddressableAssetGroup[] groups)
+        {
+            var nodes = new List<AssetEntryTreeViewItem>();
+            foreach (var g in groups)
+                nodes.Add(new AssetEntryTreeViewItem(g, 1));
+            return nodes;
+        }
+
+        // CBD-2230: Converting to Content Directory should disable (not remove) the AssetBundle schema.
+        [Test]
+        public void AddressableAssetWindow_ConvertToContentDirectory_DisablesBundledSchemaAndEnablesContentDirectory()
+        {
+            var group = Settings.CreateGroup("ConvertToCD_Local", false, false, false, null, typeof(BundledAssetGroupSchema));
+            try
+            {
+                var bundled = group.GetSchema<BundledAssetGroupSchema>();
+                bundled.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+                Assert.IsTrue(bundled.IsEnabled, "BundledAssetGroupSchema should start enabled.");
+
+                var treeView = new AddressableAssetEntryTreeView(Settings);
+                treeView.ConvertToContentDirectoryImpl(GroupNodes(group), skipConfirmation: true);
+
+                Assert.IsTrue(group.HasSchema<BundledAssetGroupSchema>(), "BundledAssetGroupSchema should be kept, not removed.");
+                Assert.IsFalse(group.GetSchema<BundledAssetGroupSchema>().IsEnabled, "BundledAssetGroupSchema should be disabled after conversion.");
+                Assert.IsTrue(group.HasSchema<ContentDirectoryGroupSchema>(), "ContentDirectoryGroupSchema should be added.");
+                Assert.IsTrue(group.GetSchema<ContentDirectoryGroupSchema>().IsEnabled, "ContentDirectoryGroupSchema should be enabled after conversion.");
+            }
+            finally
+            {
+                Settings.RemoveGroup(group);
+            }
+        }
+
+        // CBD-2228: Converting to Content Directory with remote content should warn and add the schema disabled.
+        [Test]
+        public void AddressableAssetWindow_ConvertToContentDirectory_RemoteContent_AddsDisabledSchemaAndWarns()
+        {
+            var group = Settings.CreateGroup("ConvertToCD_Remote", false, false, false, null, typeof(BundledAssetGroupSchema));
+            string originalRemoteLoadPath = Settings.profileSettings.GetValueById(Settings.activeProfileId,
+                Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteLoadPath).Id);
+            try
+            {
+                Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, "http://fakeremotepath/");
+                var bundled = group.GetSchema<BundledAssetGroupSchema>();
+                bundled.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kRemoteLoadPath);
+
+                LogAssert.Expect(LogType.Warning, new Regex("remote location"));
+
+                var treeView = new AddressableAssetEntryTreeView(Settings);
+                treeView.ConvertToContentDirectoryImpl(GroupNodes(group), skipConfirmation: true);
+
+                Assert.IsTrue(group.HasSchema<ContentDirectoryGroupSchema>(), "ContentDirectoryGroupSchema should be added even for remote content.");
+                Assert.IsFalse(group.GetSchema<ContentDirectoryGroupSchema>().IsEnabled, "ContentDirectoryGroupSchema should be disabled for remote content.");
+                Assert.IsTrue(group.HasSchema<BundledAssetGroupSchema>(), "BundledAssetGroupSchema should be kept.");
+                Assert.IsTrue(group.GetSchema<BundledAssetGroupSchema>().IsEnabled, "BundledAssetGroupSchema should remain enabled for remote content.");
+            }
+            finally
+            {
+                Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, originalRemoteLoadPath);
+                Settings.RemoveGroup(group);
+            }
+        }
+
+        // CBD-2229: Add "Convert to AssetBundles" as the reverse of "Convert to Content Directory".
+        [Test]
+        public void AddressableAssetWindow_ConvertToAssetBundles_DisablesContentDirectoryAndEnablesBundled()
+        {
+            var group = Settings.CreateGroup("ConvertToAB", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            try
+            {
+                Assert.IsTrue(group.GetSchema<ContentDirectoryGroupSchema>().IsEnabled, "ContentDirectoryGroupSchema should start enabled.");
+
+                var treeView = new AddressableAssetEntryTreeView(Settings);
+                treeView.ConvertToAssetBundlesImpl(GroupNodes(group));
+
+                Assert.IsTrue(group.HasSchema<ContentDirectoryGroupSchema>(), "ContentDirectoryGroupSchema should be kept, not removed.");
+                Assert.IsFalse(group.GetSchema<ContentDirectoryGroupSchema>().IsEnabled, "ContentDirectoryGroupSchema should be disabled after conversion.");
+                Assert.IsTrue(group.HasSchema<BundledAssetGroupSchema>(), "BundledAssetGroupSchema should be added.");
+                Assert.IsTrue(group.GetSchema<BundledAssetGroupSchema>().IsEnabled, "BundledAssetGroupSchema should be enabled after conversion.");
+            }
+            finally
+            {
+                Settings.RemoveGroup(group);
+            }
+        }
+
+        // CBD-2229/2230: Converting to Content Directory and back should restore the AssetBundle build state.
+        [Test]
+        public void AddressableAssetWindow_ConvertRoundTrip_RestoresAssetBundleState()
+        {
+            var group = Settings.CreateGroup("ConvertRoundTrip", false, false, false, null, typeof(BundledAssetGroupSchema));
+            try
+            {
+                var bundled = group.GetSchema<BundledAssetGroupSchema>();
+                bundled.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+
+                var treeView = new AddressableAssetEntryTreeView(Settings);
+                treeView.ConvertToContentDirectoryImpl(GroupNodes(group), skipConfirmation: true);
+                Assert.IsTrue(group.GetSchema<ContentDirectoryGroupSchema>().IsEnabled);
+                Assert.IsFalse(group.GetSchema<BundledAssetGroupSchema>().IsEnabled);
+
+                treeView.ConvertToAssetBundlesImpl(GroupNodes(group));
+                Assert.IsTrue(group.GetSchema<BundledAssetGroupSchema>().IsEnabled, "AssetBundle schema should be re-enabled after round trip.");
+                Assert.IsFalse(group.GetSchema<ContentDirectoryGroupSchema>().IsEnabled, "Content Directory schema should be disabled after round trip.");
+            }
+            finally
+            {
+                Settings.RemoveGroup(group);
+            }
+        }
+
+        // CBD-2229/2230: Path edits made after a conversion must carry over when converting back.
+        [Test]
+        public void AddressableAssetWindow_ConvertBack_InheritsEditedPaths()
+        {
+            var group = Settings.CreateGroup("ConvertPathInherit", false, false, false, null, typeof(BundledAssetGroupSchema));
+            try
+            {
+                var bundled = group.GetSchema<BundledAssetGroupSchema>();
+                bundled.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+
+                var treeView = new AddressableAssetEntryTreeView(Settings);
+                treeView.ConvertToContentDirectoryImpl(GroupNodes(group), skipConfirmation: true);
+
+                // Simulate the user editing the Content Directory paths after the first conversion.
+                var contentDir = group.GetSchema<ContentDirectoryGroupSchema>();
+                contentDir.BuildPath.SetVariableByName(Settings, AddressableAssetSettings.kRemoteBuildPath);
+                contentDir.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kRemoteLoadPath);
+                string editedBuildPathId = contentDir.BuildPath.Id;
+                string editedLoadPathId = contentDir.LoadPath.Id;
+
+                // Converting back re-enables the existing bundled schema, which must pick up the edited paths.
+                treeView.ConvertToAssetBundlesImpl(GroupNodes(group));
+
+                Assert.AreEqual(editedBuildPathId, group.GetSchema<BundledAssetGroupSchema>().BuildPath.Id,
+                    "AssetBundle build path should inherit the edited Content Directory build path, not a stale value.");
+                Assert.AreEqual(editedLoadPathId, group.GetSchema<BundledAssetGroupSchema>().LoadPath.Id,
+                    "AssetBundle load path should inherit the edited Content Directory load path, not a stale value.");
+            }
+            finally
+            {
+                Settings.RemoveGroup(group);
+            }
+        }
+
+        // CBD-2228: A remote group's build path is still inherited by the disabled Content Directory schema; only the
+        // invalid remote load path is dropped.
+        [Test]
+        public void AddressableAssetWindow_ConvertToContentDirectory_RemoteContent_InheritsBuildPathButNotLoadPath()
+        {
+            var group = Settings.CreateGroup("ConvertToCD_RemoteBuildPath", false, false, false, null, typeof(BundledAssetGroupSchema));
+            string originalRemoteLoadPath = Settings.profileSettings.GetValueById(Settings.activeProfileId,
+                Settings.profileSettings.GetProfileDataByName(AddressableAssetSettings.kRemoteLoadPath).Id);
+            try
+            {
+                Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, "http://fakeremotepath/");
+                var bundled = group.GetSchema<BundledAssetGroupSchema>();
+                bundled.BuildPath.SetVariableByName(Settings, AddressableAssetSettings.kRemoteBuildPath);
+                bundled.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kRemoteLoadPath);
+                string bundledBuildPathId = bundled.BuildPath.Id;
+                string remoteLoadPathId = bundled.LoadPath.Id;
+
+                LogAssert.Expect(LogType.Warning, new Regex("remote location"));
+
+                var treeView = new AddressableAssetEntryTreeView(Settings);
+                treeView.ConvertToContentDirectoryImpl(GroupNodes(group), skipConfirmation: true);
+
+                var contentDir = group.GetSchema<ContentDirectoryGroupSchema>();
+                Assert.IsFalse(contentDir.IsEnabled, "Content Directory schema should be disabled for remote content.");
+                Assert.AreEqual(bundledBuildPathId, contentDir.BuildPath.Id, "Build path should be inherited even for remote content.");
+                Assert.AreNotEqual(remoteLoadPathId, contentDir.LoadPath.Id, "The invalid remote load path should not be inherited.");
+            }
+            finally
+            {
+                Settings.profileSettings.SetValue(Settings.activeProfileId, AddressableAssetSettings.kRemoteLoadPath, originalRemoteLoadPath);
+                Settings.RemoveGroup(group);
+            }
+        }
+
+        // CBD-2228: GetGroupIconType must not evaluate (and warn about) an unassigned Content Directory load path.
+        [Test]
+        public void AddressableAssetWindow_GetGroupIconType_EmptyContentDirectoryLoadPath_DoesNotWarn()
+        {
+            var group = Settings.CreateGroup("EmptyCDLoadPath", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            try
+            {
+                var contentDirSchema = group.GetSchema<ContentDirectoryGroupSchema>();
+                Assert.IsTrue(contentDirSchema.IsEnabled);
+                // Simulate the mid-Validate state where the load path id has not yet been assigned.
+                contentDirSchema.m_LoadPath = new ProfileValueReference();
+
+                var iconType = AddressableAssetEntryTreeView.GetGroupIconType(group);
+
+                LogAssert.NoUnexpectedReceived();
+                Assert.AreEqual(GroupIconType.ContentDirectory, iconType, "An unassigned load path should not be treated as remote/error.");
+            }
+            finally
+            {
+                Settings.RemoveGroup(group);
+            }
+        }
+
+        // CBD-2229: Only one buildable schema should ever be enabled after a conversion.
+        [Test]
+        public void AddressableAssetWindow_Convert_LeavesExactlyOneBuildableSchemaEnabled()
+        {
+            var group = Settings.CreateGroup("ConvertSingleEnabled", false, false, false, null, typeof(BundledAssetGroupSchema));
+            try
+            {
+                group.GetSchema<BundledAssetGroupSchema>().LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+
+                var treeView = new AddressableAssetEntryTreeView(Settings);
+                treeView.ConvertToContentDirectoryImpl(GroupNodes(group), skipConfirmation: true);
+
+                bool bundledEnabled = group.GetSchema<BundledAssetGroupSchema>().IsEnabled;
+                bool contentDirEnabled = group.GetSchema<ContentDirectoryGroupSchema>().IsEnabled;
+                Assert.IsTrue(bundledEnabled ^ contentDirEnabled, "Exactly one buildable schema should be enabled after conversion.");
+            }
+            finally
+            {
+                Settings.RemoveGroup(group);
+            }
         }
     }
 }

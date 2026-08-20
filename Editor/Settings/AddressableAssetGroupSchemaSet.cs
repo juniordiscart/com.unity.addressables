@@ -18,6 +18,9 @@ namespace UnityEditor.AddressableAssets.Settings
         [SerializeField]
         List<AddressableAssetGroupSchema> m_Schemas = new List<AddressableAssetGroupSchema>();
 
+        [SerializeField]
+        List<string> m_SchemaDisplayOrder = new List<string>();
+
         /// <summary>
         /// List of schemas for this group.
         /// </summary>
@@ -65,6 +68,7 @@ namespace UnityEditor.AddressableAssets.Settings
             if (pathFunc == null)
             {
                 m_Schemas.Add(schema);
+                m_SchemaDisplayOrder.Add(schema.name);
                 return schema;
             }
 
@@ -74,6 +78,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarningFormat("Schema asset already exists at path {0}, relinking.", assetName);
                 var existingSchema = AssetDatabase.LoadAssetAtPath(assetName, type) as AddressableAssetGroupSchema;
                 m_Schemas.Add(existingSchema);
+                m_SchemaDisplayOrder.Add(existingSchema.name);
                 return existingSchema;
             }
 
@@ -87,6 +92,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             m_Schemas.Add(newSchema);
+            m_SchemaDisplayOrder.Add(newSchema.name);
             return newSchema;
         }
 
@@ -123,6 +129,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 Debug.LogWarningFormat("Schema asset already exists at path {0}, relinking.", assetName);
                 var existingSchema = AssetDatabase.LoadAssetAtPath(assetName, type) as AddressableAssetGroupSchema;
                 m_Schemas.Add(existingSchema);
+                m_SchemaDisplayOrder.Add(existingSchema.name);
                 return existingSchema;
             }
 
@@ -136,6 +143,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
 
             m_Schemas.Add(schema);
+            m_SchemaDisplayOrder.Add(schema.name);
             return schema;
         }
 
@@ -151,7 +159,9 @@ namespace UnityEditor.AddressableAssets.Settings
                 var s = m_Schemas[i];
                 if (s.GetType() == type)
                 {
+                    string schemaName = s.name;
                     m_Schemas.RemoveAt(i);
+                    m_SchemaDisplayOrder.Remove(schemaName);
                     string guid;
                     long lfid;
                     if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(s, out guid, out lfid))
@@ -216,8 +226,13 @@ namespace UnityEditor.AddressableAssets.Settings
         internal bool RenameSchemaAssets(Func<Type, string> pathFunc)
         {
             bool result = true;
-            foreach (var schema in m_Schemas)
+            // Iterate over a copy to avoid InvalidOperationException if AssetDatabase.MoveAsset triggers callbacks that modify m_Schemas
+            foreach (var schema in new List<AddressableAssetGroupSchema>(m_Schemas))
             {
+                // Verify schema is still in the collection in case callbacks removed it
+                if (!m_Schemas.Contains(schema))
+                    continue;
+
                 string guid;
                 if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(schema, out guid, out long lfid))
                     continue;
@@ -247,10 +262,61 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Implementation of ISerializationCallbackReceiver. Does nothing.
+        /// Implementation of ISerializationCallbackReceiver. Sets flag for lazy validation.
         /// </summary>
         public void OnAfterDeserialize()
         {
+            m_DisplayOrderNeedsValidation = true;
+        }
+
+        [NonSerialized]
+        private bool m_DisplayOrderNeedsValidation = true;
+
+        void ValidateDisplayOrderIfNeeded()
+        {
+            if (!m_DisplayOrderNeedsValidation)
+                return;
+            m_DisplayOrderNeedsValidation = false;
+
+            var currentSchemaNames = new HashSet<string>();
+            foreach (var schema in m_Schemas)
+            {
+                if (schema != null)
+                    currentSchemaNames.Add(schema.name);
+            }
+
+            m_SchemaDisplayOrder.RemoveAll(name => !currentSchemaNames.Contains(name));
+
+            foreach (var schema in m_Schemas)
+            {
+                if (schema != null && !m_SchemaDisplayOrder.Contains(schema.name))
+                    m_SchemaDisplayOrder.Add(schema.name);
+            }
+        }
+
+        internal List<string> SchemaDisplayOrder
+        {
+            get
+            {
+                ValidateDisplayOrderIfNeeded();
+                return m_SchemaDisplayOrder;
+            }
+        }
+
+        internal AddressableAssetGroupSchema GetSchemaByDisplayIndex(int displayIndex)
+        {
+            var displayOrder = SchemaDisplayOrder;
+            if (displayIndex < 0 || displayIndex >= displayOrder.Count)
+                return null;
+
+            string schemaName = displayOrder[displayIndex];
+            return m_Schemas.Find(s => s != null && s.name == schemaName);
+        }
+
+        internal int GetActualIndexFromDisplayIndex(int displayIndex)
+        {
+            var schema = GetSchemaByDisplayIndex(displayIndex);
+            return schema == null ? -1 : m_Schemas.IndexOf(schema);
         }
     }
 }

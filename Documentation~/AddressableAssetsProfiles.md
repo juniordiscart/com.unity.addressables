@@ -4,7 +4,7 @@ uid: addressables-profiles
 
 # Define how to build Addressables
 
-Use profiles to define how Unity should build the assets in your project. A profile contains a set of variables that the Addressables build scripts uses. You can manage profiles with the Addressables Profiles window.
+Use profiles to define how Unity builds the assets in your project. A profile contains a set of variables that the Addressables build scripts use. You can manage profiles with the **Addressables Profiles** window.
 
 |**Topic**|**Description**|
 |---|---|

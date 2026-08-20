@@ -6,7 +6,10 @@ uid: addressables-unloading
 
 The Addressables system uses reference counting to check whether an asset is in use. This means that you must release every asset that you load or instantiate when you're finished with it. Refer to [Memory management](MemoryManagement.md) for more information.
 
-When you unload a scene, the AssetBundle it belongs to is unloaded. This unloads assets associated with the scene, including any GameObjects moved from the original scene to a different scene.
+The unloading behavior of a scene depends on the [content build system](content-build-systems.md) you use:
+
+* **AssetBundles**: When you unload a scene, the AssetBundle it belongs to is unloaded. This unloads assets associated with the scene, including any GameObjects moved from the original scene to a different scene.
+* **Content directories**: When you unload a scene, the scene and its associated assets are released but the content directory remains registered.
 
 Unity automatically calls [`UnloadUnusedAssets`](xref:UnityEngine.Resources.UnloadUnusedAssets) when it loads a scene using the [`LoadSceneMode.Single`](xref:UnityEngine.SceneManagement.LoadSceneMode.Single) mode. To prevent the scene and its assets from being unloaded, keep a reference to the scene load operation handle until you want to unload the scene manually. To do this, use [`ResourceManager.Acquire`](xref:UnityEngine.ResourceManagement.ResourceManager.Acquire(UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle)) on the load operation handle.
 

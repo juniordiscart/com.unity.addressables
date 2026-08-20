@@ -61,10 +61,24 @@ namespace UnityEditor.AddressableAssets.Settings
             return false;
         }
 
+        [NonSerialized]
+        private bool? m_IsFolder;
+
         /// <summary>
         /// Flag indicating if an AssetEntry is a folder or not.
         /// </summary>
-        public bool IsFolder { get; set; }
+        public bool IsFolder
+        {
+            get
+            {
+                // this field is only set during the gather phase so
+                // providing a fallback prevents bugs
+                if (!m_IsFolder.HasValue)
+                    m_IsFolder = AssetDatabase.IsValidFolder(AssetPath);
+                return m_IsFolder.Value;
+            }
+            set => m_IsFolder = value;
+        }
 
         /// <summary>
         /// List of AddressableAssetEntries that are considered sub-assets of a main Asset.  Typically used for Folder entires.
@@ -149,6 +163,27 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Stores a reference to the parent entry. Only used if the asset is a sub asset.
         /// </summary>
         public AddressableAssetEntry ParentEntry { get; set; }
+
+        /// <summary>
+        /// Address of the addressable folder this entry was gathered from, or null if this
+        /// entry is not a folder sub-asset. Walks the ParentEntry chain to its root, so only
+        /// the originally-marked folder's address is returned, even when this entry sits
+        /// several subfolders deep.
+        /// </summary>
+        public string ParentFolderAddress
+        {
+            get
+            {
+                var e = ParentEntry;
+                if (e == null)
+                    return null;
+                while (e.ParentEntry != null)
+                    e = e.ParentEntry;
+                if (!e.IsFolder)
+                    return null;
+                return e.address;
+            }
+        }
 
         bool m_CheckedIsScene;
         bool m_IsScene;
@@ -243,17 +278,20 @@ namespace UnityEditor.AddressableAssets.Settings
         /// Creates a list of keys that can be used to load this entry.
         /// </summary>
         /// <returns>The list of keys.  This will contain the address, the guid as a Hash128 if valid, all assigned labels, and the scene index if applicable.</returns>
-        public List<object> CreateKeyList() => CreateKeyList(true, true, true);
+        public List<object> CreateKeyList() => CreateKeyList(true, true, true, true);
 
         /// <summary>
         /// Creates a list of keys that can be used to load this entry.
         /// </summary>
         /// <returns>The list of keys.  This will contain the address, the guid as a Hash128 if valid, all assigned labels, and the scene index if applicable.</returns>
-        internal List<object> CreateKeyList(bool includeAddress, bool includeGUID, bool includeLabels)
+        internal List<object> CreateKeyList(bool includeAddress, bool includeGUID, bool includeLabels, bool includeFolderKey = true, bool includeAddressesForFolderChildren = true)
         {
             var keys = new List<object>();
-            //the address must be the first key
-            if (includeAddress)
+            string folderKey = includeFolderKey ? ParentFolderAddress : null;
+            bool isFolderChild = !string.IsNullOrEmpty(folderKey) && folderKey != address;
+
+            //the address is normally the first key, unless disabled for folder children
+            if (includeAddress && (includeAddressesForFolderChildren || !isFolderChild))
                 keys.Add(address);
             if (includeGUID && !string.IsNullOrEmpty(guid))
                 keys.Add(guid);
@@ -273,6 +311,9 @@ namespace UnityEditor.AddressableAssets.Settings
                 foreach (var l in labelsToRemove)
                     RemoveLabel(l);
             }
+
+            if (isFolderChild)
+                keys.Add(folderKey);
 
             return keys;
         }
@@ -320,6 +361,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 m_cachedAssetPath = newCachedPath;
                 m_MainAsset = null;
                 m_TargetAsset = null;
+                m_IsFolder = null;
             }
         }
 
@@ -697,7 +739,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="providerTypes">Any unknown provider types are added to this set in order to ensure they are not stripped.</param>
         public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, bool isBundled, string providerType, IEnumerable<object> dependencies, object extraData, HashSet<Type> providerTypes)
         {
-            CreateCatalogEntries(entries, isBundled, providerType, dependencies, extraData, null, providerTypes, true, true, true, null);
+            CreateCatalogEntries(entries, isBundled, providerType, dependencies, extraData, null, providerTypes, true, true, true, null, true);
         }
 
         /// <summary>
@@ -714,14 +756,17 @@ namespace UnityEditor.AddressableAssets.Settings
         /// <param name="includeGUID">Flag indicating if guid locations should be included</param>
         /// <param name="includeLabels">Flag indicating if label locations should be included</param>
         /// <param name="assetsInBundle">The internal ids of the asset, typically shortened versions of the asset's GUID.</param>
+        /// <param name="includeFolderKeys">Flag indicating if the address of a parent folder entry should be included as a key for assets inside that folder</param>
+        /// <param name="includeAddressesForFolderChildren">Flag indicating if the individual address of each asset inside a folder entry should be included as a key</param>
         public void CreateCatalogEntries(List<ContentCatalogDataEntry> entries, bool isBundled, string providerType, IEnumerable<object> dependencies, object extraData,
-            Dictionary<GUID, AssetLoadInfo> depInfo, HashSet<Type> providerTypes, bool includeAddress, bool includeGUID, bool includeLabels, HashSet<string> assetsInBundle)
+            Dictionary<GUID, AssetLoadInfo> depInfo, HashSet<Type> providerTypes, bool includeAddress, bool includeGUID, bool includeLabels, HashSet<string> assetsInBundle,
+            bool includeFolderKeys = true, bool includeAddressesForFolderChildren = true)
         {
             if (string.IsNullOrEmpty(AssetPath))
                 return;
 
             string assetPath = GetAssetLoadPath(isBundled, assetsInBundle);
-            List<object> keyList = CreateKeyList(includeAddress, includeGUID, includeLabels);
+            List<object> keyList = CreateKeyList(includeAddress, includeGUID, includeLabels, includeFolderKeys, includeAddressesForFolderChildren);
             if (keyList.Count == 0)
                 return;
 
@@ -762,7 +807,7 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             if (ids.Length > 0)
             {
-                Type[] typesForObjs = ContentBuildInterface.GetTypeForObjects(ids);
+                Type[] typesForObjs = BuildCacheUtility.GetSortedUniqueTypesForObjects(ids);
                 HashSet<Type> typesSeen = new HashSet<Type>();
                 foreach (var objType in typesForObjs)
                 {

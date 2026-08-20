@@ -43,7 +43,7 @@ The code variables used in the default Profile variable settings include:
 * `[UnityEngine.AddressableAssets.Addressables.BuildPath]`
 * `[UnityEngine.AddressableAssets.Addressables.RuntimePath]`
 
-For example, a load path of `{MyNamespace.MyClass.MyURL}/content/[BuildTarget]` is set on a group that creates an AssetBundle called `trees.bundle`. During the build, the catalog registers the load path for that bundle as `{MyNamespace.MyClass.MyURL}/content/Android/trees.bundle`, evaluates `[BuildTarget]` as `Android`, and adds the AssetBundle name to the path. At runtime as the Addressables system processes the catalog it evaluates `{MyNamespace.MyClass.MyURL}` to produce the final load path, `http://example.com/content/Android/trees.bundle`.
+For example, a load path of `{MyNamespace.MyClass.MyURL}/content/[BuildTarget]` is set on a group that creates an AssetBundle called `trees.bundle`. During the build, the catalog registers the load path for that AssetBundle as `{MyNamespace.MyClass.MyURL}/content/Android/trees.bundle`, evaluates `[BuildTarget]` as `Android`, and adds the AssetBundle name to the path. At runtime as the Addressables system processes the catalog it evaluates `{MyNamespace.MyClass.MyURL}` to produce the final load path, `http://example.com/content/Android/trees.bundle`.
 
 > [!NOTE]
 > Referencing a runtime variable in a Profile string doesn't prevent Unity from stripping that variable from your application's runtime libraries during the build optimization phase if nothing else in your code references the same variable.

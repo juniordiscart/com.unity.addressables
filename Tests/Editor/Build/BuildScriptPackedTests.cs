@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -96,7 +97,7 @@ namespace UnityEditor.AddressableAssets.Tests
             return new CatalogPathConfig()
             {
                 BuildPath = UnityEngine.AddressableAssets.Addressables.BuildPath,
-                LoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}",
+                LoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + m_BuilderInput.RuntimeCatalogFilename,
                 RemoteBuildPath = Settings.RemoteCatalogBuildPath.GetValue(Settings),
                 RemoteLoadPath = Settings.RemoteCatalogLoadPath.GetValue(Settings),
                 RuntimeCatalogFilename = m_BuilderInput.RuntimeCatalogFilename,
@@ -493,7 +494,10 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 if (schemaBuilder is BundledAssetSchemaBuilder assetBundleBundler)
                 {
-                    assetBundleBundler.AddPostCatalogUpdatesInternal(group, callbacks, dataEntry, targetBundlePathHashed, registry);
+                    var schema = group.GetSchema<BundledAssetGroupSchema>();
+                    Assert.IsNotNull(schema);
+                    Assert.IsTrue(schema.IsEnabled);
+                    assetBundleBundler.AddPostCatalogUpdatesInternal(schema, callbacks, dataEntry, targetBundlePathHashed, registry);
                     break;
                 }
             }
@@ -530,7 +534,10 @@ namespace UnityEditor.AddressableAssets.Tests
             {
                 if (schemaBuilder is BundledAssetSchemaBuilder assetBundleBundler)
                 {
-                    assetBundleBundler.AddPostCatalogUpdatesInternal(group, callbacks, dataEntry, targetBundlePathHashed, registry);
+                    var schema = group.GetSchema<BundledAssetGroupSchema>();
+                    Assert.IsNotNull(schema);
+                    Assert.IsTrue(schema.IsEnabled);
+                    assetBundleBundler.AddPostCatalogUpdatesInternal(schema, callbacks, dataEntry, targetBundlePathHashed, registry);
                     break;
                 }
             }
@@ -609,9 +616,152 @@ namespace UnityEditor.AddressableAssets.Tests
             LogAssert.Expect(LogType.Warning, $"Bundle compression is set to LZMA, but group {group.Name} uses local content.");
         }
 
-#if !ENABLE_JSON_CATALOG
-        //TODO: add binary versions of these tests....
-#else
+        [Test]
+        public void PreProcessContentDirectoryGroups_ReturnsError_WhenBuildPathsDiffer()
+        {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
+            var groupA = Settings.CreateGroup("ContentDirBuildPathA", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schemaA = groupA.GetSchema<ContentDirectoryGroupSchema>();
+            schemaA.BuildPath.Id = "BuildPathA";
+            schemaA.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+
+            var groupB = Settings.CreateGroup("ContentDirBuildPathB", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schemaB = groupB.GetSchema<ContentDirectoryGroupSchema>();
+            schemaB.BuildPath.Id = "BuildPathB";
+            schemaB.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+
+            var errorStr = BuildScriptBase.PreProcessContentDirectoryGroups(aaContext);
+            Assert.AreEqual("Currently, all Content Directory Groups must share the same Build Path. Group 'ContentDirBuildPathB' has a different Build Path.", errorStr);
+
+            Settings.RemoveGroup(groupA);
+            Settings.RemoveGroup(groupB);
+        }
+
+        [Test]
+        public void PreProcessContentDirectoryGroups_ReturnsEmpty_WhenBuildPathsMatch()
+        {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
+            var groupA = Settings.CreateGroup("ContentDirSharedBuildPathA", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schemaA = groupA.GetSchema<ContentDirectoryGroupSchema>();
+            schemaA.BuildPath.Id = "SharedBuildPath";
+            schemaA.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+
+            var groupB = Settings.CreateGroup("ContentDirSharedBuildPathB", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schemaB = groupB.GetSchema<ContentDirectoryGroupSchema>();
+            schemaB.BuildPath.Id = "SharedBuildPath";
+            schemaB.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+
+            var errorStr = BuildScriptBase.PreProcessContentDirectoryGroups(aaContext);
+            Assert.IsTrue(string.IsNullOrEmpty(errorStr));
+
+            Settings.RemoveGroup(groupA);
+            Settings.RemoveGroup(groupB);
+        }
+
+        [Test]
+        public void PreProcessContentDirectoryGroups_ReturnsError_WhenLoadPathIsRemote()
+        {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
+            var group = Settings.CreateGroup("ContentDirRemoteLoadPath", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schema.LoadPath.Id = "https://example.com/content/";
+
+            var errorStr = BuildScriptBase.PreProcessContentDirectoryGroups(aaContext);
+            Assert.AreEqual("Currently, all Content Directory Groups only support local content. Change the Load Path of Group 'ContentDirRemoteLoadPath' to resolve.", errorStr);
+
+            Settings.RemoveGroup(group);
+        }
+
+        [Test]
+        public void PreProcessContentDirectoryGroups_ReturnsEmpty_WhenLoadPathIsLocal()
+        {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
+            var group = Settings.CreateGroup("ContentDirLocalLoadPath", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schema.LoadPath.SetVariableByName(Settings, AddressableAssetSettings.kLocalLoadPath);
+
+            var errorStr = BuildScriptBase.PreProcessContentDirectoryGroups(aaContext);
+            Assert.IsTrue(string.IsNullOrEmpty(errorStr));
+
+            Settings.RemoveGroup(group);
+        }
+
+        [Test]
+        public void PreProcessContentDirectoryGroups_ReturnsEmpty_WhenLoadPathIsRemoteAndSchemaIsDisabled()
+        {
+            var aaContext = new AddressableAssetsBuildContext();
+            aaContext.Settings = Settings;
+
+            var group = Settings.CreateGroup("ContentDirDisabledRemoteLoadPath", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schema.LoadPath.Id = "https://example.com/content/";
+            schema.IsEnabled = false;
+
+            var errorStr = BuildScriptBase.PreProcessContentDirectoryGroups(aaContext);
+            Assert.IsTrue(string.IsNullOrEmpty(errorStr));
+
+            Settings.RemoveGroup(group);
+        }
+
+        // UUM-140548: After a domain reload (Play Mode enter/exit), [NonSerialized] BuildProfile.m_ProfileParent
+        // is wiped and Awake() is not re-called. AddressableAssetSettings.OnEnable() must re-wire it so
+        // GetValueById can walk the profile inheritance chain and resolve paths correctly.
+        // m_UseCustomPaths (no [SerializeField]) also resets to false, routing through GetValueById.
+        [Test]
+        public void GetCustomOrDefaultPath_ResolvesCustomPathAfterDomainReload()
+        {
+            const string customInlinePath = "[BuildPath]/";
+            string savedProfileId = Settings.activeProfileId;
+            string newProfileId = Settings.profileSettings.CreateDefaultProfile();
+            Settings.activeProfileId = newProfileId;
+
+            // Simulate the post-domain-reload state: [NonSerialized] m_ProfileParent is wiped.
+            // Awake() is not called again after a domain reload, only OnEnable().
+            var activeProfile = Settings.profileSettings.GetDefaultProfile();
+            var savedProfileParent = activeProfile.m_ProfileParent;
+
+            // try starts here so that every mutation from this point is covered by finally.
+            AddressableAssetGroup group = null;
+            try
+            {
+                activeProfile.m_ProfileParent = null;
+
+                // Simulate OnEnable() firing (as Unity does after domain reload) to re-wire m_ProfileParent.
+                typeof(AddressableAssetSettings)
+                    .GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(Settings, null);
+
+                group = Settings.CreateGroup("UUM140548_Stale", false, false, false, null, typeof(BundledAssetGroupSchema));
+                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                // Custom inline paths store the raw path string as the Id (not a GUID).
+                schema.BuildPath.Id = customInlinePath;
+                // m_UseCustomPaths has no [SerializeField] so it resets to false on domain reload,
+                // routing through profileSettings.GetValueById instead of ProfileValueReference.GetValue.
+                schema.m_UseCustomPaths = false;
+
+                var resolved = BuildScriptBase.GetCustomOrDefaultPath(
+                    Settings, schema.BuildPath, schema.m_UseCustomPaths);
+                Assert.AreEqual(customInlinePath, resolved,
+                    "Custom inline path must resolve correctly after domain reload rewires m_ProfileParent (UUM-140548)");
+            }
+            finally
+            {
+                activeProfile.m_ProfileParent = savedProfileParent;
+                if (group != null)
+                    Settings.RemoveGroup(group);
+                Settings.profileSettings.RemoveProfile(newProfileId);
+                Settings.activeProfileId = savedProfileId;
+            }
+        }
+
         [Test]
         public void CreateCatalogFiles_NullArgs_ShouldFail()
         {
@@ -696,6 +846,117 @@ namespace UnityEditor.AddressableAssets.Tests
 
             foreach (var catalogLoc in catalogLocations)
                 Assert.IsNotNull(catalogLoc.Data);
+        }
+
+        [Test]
+        public void CreateCatalogPathConfig_MainCatalog_LoadPathUsesRuntimeCatalogFilename()
+        {
+            var buildScript = m_BuildScript.SchemaDrivenBuildScriptInstance;
+            var playerVersion = m_BuilderInput.PlayerVersion;
+
+            var config = buildScript.CreateCatalogPathConfig(
+                Settings,
+                ResourceManagerRuntimeData.kCatalogAddress,
+                playerVersion,
+                m_BuilderInput.RuntimeCatalogFilename);
+
+            // LoadPath must end with the runtime catalog filename, not kCatalogAddress
+            Assert.IsTrue(config.LoadPath.EndsWith("/" + m_BuilderInput.RuntimeCatalogFilename),
+                $"Expected LoadPath to end with '/{m_BuilderInput.RuntimeCatalogFilename}' but was '{config.LoadPath}'");
+            Assert.IsFalse(config.LoadPath.EndsWith(ResourceManagerRuntimeData.kCatalogAddress),
+                $"LoadPath must not end with kCatalogAddress '{ResourceManagerRuntimeData.kCatalogAddress}' but was '{config.LoadPath}'");
+            Assert.AreEqual(m_BuilderInput.RuntimeCatalogFilename, config.RuntimeCatalogFilename);
+        }
+
+        [Test]
+        public void CreateCatalogPathConfig_ExtraCatalogId_LoadPathUsesId()
+        {
+            const string extraCatalogId = "MyExtraCatalog";
+            var buildScript = m_BuildScript.SchemaDrivenBuildScriptInstance;
+            var playerVersion = m_BuilderInput.PlayerVersion;
+
+            var config = buildScript.CreateCatalogPathConfig(
+                Settings,
+                extraCatalogId,
+                playerVersion,
+                m_BuilderInput.RuntimeCatalogFilename);
+
+            Assert.IsTrue(config.LoadPath.EndsWith("/" + extraCatalogId),
+                $"Expected LoadPath to end with '/{extraCatalogId}' but was '{config.LoadPath}'");
+            Assert.AreEqual(extraCatalogId, config.RuntimeCatalogFilename);
+        }
+
+        [Test]
+        public void CreateCatalogPathConfig_VersionedCatalogFileName_HasNoLeadingSlash()
+        {
+            var buildScript = m_BuildScript.SchemaDrivenBuildScriptInstance;
+            var playerVersion = m_BuilderInput.PlayerVersion;
+
+            var config = buildScript.CreateCatalogPathConfig(
+                Settings,
+                ResourceManagerRuntimeData.kCatalogAddress,
+                playerVersion,
+                m_BuilderInput.RuntimeCatalogFilename);
+
+            Assert.IsFalse(config.VersionedCatalogFileName.StartsWith("/"),
+                $"VersionedCatalogFileName must not begin with a leading slash but was '{config.VersionedCatalogFileName}'");
+        }
+
+        [Test]
+        public void CreateCatalogFiles_BuildRemoteCatalog_RemoteHashLoadPathHasNoDoubleSlash()
+        {
+            const string remoteLoadPath = "https://example.com/foo/BuildTarget";
+
+            Settings.BuildRemoteCatalog = true;
+            Settings.RemoteCatalogBuildPath = new ProfileValueReference();
+            Settings.RemoteCatalogBuildPath.SetVariableByName(Settings, AddressableAssetSettings.kRemoteBuildPath);
+            Settings.RemoteCatalogLoadPath = new ProfileValueReference();
+            Settings.RemoteCatalogLoadPath.Id = remoteLoadPath;
+
+            var buildScript = m_BuildScript.SchemaDrivenBuildScriptInstance;
+            var catalogPathConfig = buildScript.CreateCatalogPathConfig(
+                Settings,
+                ResourceManagerRuntimeData.kCatalogAddress,
+                m_BuilderInput.PlayerVersion,
+                m_BuilderInput.RuntimeCatalogFilename);
+
+            var catalogBuilder = new JsonCatalogBuilder();
+            var catalogDataEntries = new List<ContentCatalogDataEntry> { CreateTestCatalogEntry() };
+            var catalogLocations = new List<ResourceLocationData>();
+            var providerTypes = new HashSet<Type> { typeof(AssetBundleProvider) };
+
+            var result = catalogBuilder.GenerateCatalog(
+                m_BuilderInput.Logger,
+                catalogPathConfig,
+                ResourceManagerRuntimeData.kCatalogAddress,
+                catalogDataEntries,
+                catalogLocations,
+                providerTypes,
+                m_BuilderInput.Registry,
+                "test_hash",
+                true, // buildRemoteCatalog
+                0);
+
+            Assert.IsNotNull(result);
+
+            var remoteHashLocation = catalogLocations.FirstOrDefault(l => l.InternalId.StartsWith(remoteLoadPath));
+            Assert.IsNotNull(remoteHashLocation,
+                "Expected a remote hash load location that uses the configured remote load path.");
+
+            var pathAfterScheme = remoteHashLocation.InternalId.Substring("https://".Length);
+            Assert.IsFalse(pathAfterScheme.Contains("//"),
+                $"Remote hash load path should not contain a double slash but was '{remoteHashLocation.InternalId}'");
+            Assert.IsTrue(remoteHashLocation.InternalId.StartsWith(remoteLoadPath + "/"),
+                $"Remote hash load path should join the load path with a single slash but was '{remoteHashLocation.InternalId}'");
+            Assert.IsTrue(remoteHashLocation.InternalId.EndsWith(".hash"),
+                $"Remote hash load path should end with '.hash' but was '{remoteHashLocation.InternalId}'");
+
+            var remoteBuildFolder = Settings.RemoteCatalogBuildPath.GetValue(Settings);
+            foreach (var path in m_BuilderInput.Registry.GetFilePaths().Where(p => p.Contains(remoteBuildFolder)))
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
         }
 
         [Test]
@@ -842,10 +1103,11 @@ namespace UnityEditor.AddressableAssets.Tests
             // Assert file paths
             var remoteBuildFolder = Settings.RemoteCatalogBuildPath.GetValue(Settings);
             var registryPaths = m_BuilderInput.Registry.GetFilePaths().ToList();
-            Assert.AreEqual(3, registryPaths.Count);
+            Assert.AreEqual(4, registryPaths.Count);
             Assert.AreEqual(1, registryPaths.Count(p => p.EndsWith(bundleFileName)));
             Assert.AreEqual(1, registryPaths.Count(p => p.Contains(remoteBuildFolder) && p.EndsWith(".json")));
             Assert.AreEqual(1, registryPaths.Count(p => p.Contains(remoteBuildFolder) && p.EndsWith(".hash")));
+            Assert.AreEqual(1, registryPaths.Count(p => !p.Contains(remoteBuildFolder) && p.EndsWith(".hash")));
 
             var registryBundlePath = registryPaths.First(p => p.EndsWith(bundleFileName));
             var registryRemoteCatalogPath = registryPaths.First(p => p.Contains(remoteBuildFolder) && p.EndsWith(".json"));
@@ -870,8 +1132,6 @@ namespace UnityEditor.AddressableAssets.Tests
             File.Delete(registryRemoteCatalogPath);
             File.Delete(registryRemoteHashPath);
         }
-
-#endif
 
         [Test]
         public void BuildData_WithDevelopmentBuildAndExtraDefines_BuildSucceeds()

@@ -1,10 +1,11 @@
 # Player artifacts
 
-During a player build, the Addressables system copies the following files from the `Library/com.unity.addressables/aa/<AddressablesPlatform>` folder to the [StreamingAssets](xref:um-streaming-assets) folder:
+During a Player build, the Addressables system copies the following files from the `Library/com.unity.addressables/aa/<AddressablesPlatform>` folder to the [StreamingAssets](xref:um-streaming-assets) folder:
 
 |**File**|**Description**|
 |---|---|
-|Local AssetBundles| `.bundle` files according to [group](GroupSchemas.md), [profile](profiles-create.md), and platform settings. By default, these files are located in the [`BuildTarget`](xref:UnityEditor.EditorUserBuildSettings.activeBuildTarget) subfolder. To change the build location of the AssetBundle files produced by a group, modify the [Build & Load Paths](AddressableAssetSettings.md#catalog) setting.|
+|Local content directories (if using the [Content Directory schema](GroupSchemas.md))|`.cf` or `.archive` files according to [group](GroupSchemas.md), [profile](profiles-create.md), and platform settings. By default, these files are located in the [`BuildTarget`](xref:UnityEditor.EditorUserBuildSettings.activeBuildTarget) subfolder. To change the build location of the files produced by a group, modify the [Build & Load Paths](AddressableAssetSettings.md#catalog) setting. |
+|Local AssetBundles (if using the [Content Packing & Loading schema](GroupSchemas.md)) | `.bundle` files according to [group](GroupSchemas.md), [profile](profiles-create.md), and platform settings. By default, these files are located in the [`BuildTarget`](xref:UnityEditor.EditorUserBuildSettings.activeBuildTarget) subfolder. To change the build location of the files produced by a group, modify the [Build & Load Paths](AddressableAssetSettings.md#catalog) setting.|
 |`settings.json`| Contains Addressables configuration data used at runtime.|
 |`catalog.bin`| The content catalog used to locate and load assets at runtime if no new catalog is available. For more information about catalogs, refer to [Content catalogs](build-content-catalogs.md).|
 |`catalog.hash`|Contains a hash of the content catalog used to locate and load assets at runtime if no new remote catalog is available.|
@@ -12,11 +13,14 @@ During a player build, the Addressables system copies the following files from t
 
 For a full list of platform names, refer to [`AddressablesPlatform`](xref:UnityEngine.AddressableAssets.AddressablesPlatform).
 
-## Artifacts not included in the player
+## Artifacts not included in the Player
 
-The following artifacts aren't included in a built player.
+The following artifacts aren't included in a built Player.
 
 ### Remote content
+
+>[!IMPORTANT]
+>Remote content workflows are only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
 
 Upload files used for remote content to a hosting server. By default these files are located in the `ServerData` folder.
 
@@ -33,7 +37,7 @@ The `addressables_content_state.bin` file is used to make a [content update buil
 By default this file is located in `Assets/AddressableAssetsData/<AddressablesPlatform>`. Refer to [`AddressablesPlatform`](xref:UnityEngine.AddressableAssets.AddressablesPlatform) for all platform names. To change the build location of the file specify the value of the __Content State Build Path__ in [Catalog settings](AddressableAssetSettings.md#catalog).
 
 > [!NOTE]
-> Check this file into version control and create a new branch each time a player build is released.
+> Check this file into version control and create a new branch each time a Player build is released.
 
 ### Diagnostic data
 
@@ -41,7 +45,8 @@ Additional files can be created to collect data about the content build.
 
 The files are:
 * `Library/com.unity.addressables/AddressablesBuildTEP.json`: build performance data. Refer to [Build profiling](BuildProfileLog.md) for more information.
-* `Library/com.unity.addressables/buildlayoutreport`: information about AssetBundles produced by the build. Refer to [Build layout report](BuildLayoutReport.md) for more information.
+* `Library/com.unity.addressables/buildlayoutreport`: information about the AssetBundles produced by the build. Refer to [Build layout report](BuildLayoutReport.md) for more information.
+* A [build report](xref:um-build-history) for content directory and Player builds.
 
 ## Additional resources
 

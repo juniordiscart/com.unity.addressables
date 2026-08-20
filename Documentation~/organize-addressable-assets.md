@@ -1,13 +1,13 @@
 # Introduction to creating and organizing Addressable assets
 
-Understand how to make assets Addressable and organize them using groups, profiles, and the Addressable Asset Settings window.
+Understand how to make assets Addressable and organize them using groups, profiles, and the **Addressable Asset Settings** Inspector.
 
 To create and organize Addressable assets, you must do the following:
 
-* [Assign an asset as addressable](#assign-an-asset-as-addressable).
+* [Assign an asset as Addressable](#assign-an-asset-as-addressable).
 * [Organize Addressable assets with groups](#manage-addressable-groups), which determine where Unity loads assets from and builds them to, and how the content is compressed.
 
-Once you make an asset Addressable, the Addressables system adds it to a default group, unless you place it in a specific group. When you make a [content build](xref:addressables-builds), Unity packs assets in a group into [AssetBundles](xref:AssetBundlesIntro) according to the group's settings. You can load these assets using the [Addressables API](xref:addressables-api-load-asset-async).
+Once you make an asset Addressable, the Addressables system adds it to a default group, unless you place it in a specific group. When you make a [content build](Builds.md), Unity packs assets in a group into [content directories](xref:um-content-directories) or [AssetBundles](xref:um-asset-bundles) according to the group's settings. You can load these assets using the [Addressables API](LoadingAddressableAssets.md).
 
 You can optionally use [profiles](AddressableAssetsProfiles.md) to create variables for the build process, and use [labels](Labels.md) to determine how to group Addressable assets together.
 
@@ -44,7 +44,14 @@ For more information, refer to [Referencing Addressable assets in code](AssetRef
 
 ## Strategies for organizing assets
 
-Typical strategies for organizing assets include:
+The way that you organize groups in your project depends on whether you're using the content directory or AssetBundle system. You can determine this when you [create a group](groups-create.md). If you use the AssetBundle system, then it's important to organize assets into groups effectively, because Unity builds each group into a separate AssetBundle during the build process. However, if you use content directories, Unity builds all groups into one content directory during the build process, so you can organize assets into groups however you like.
+
+> [!TIP]
+> For new projects that don't need to serve content remotely, use the **Content Directories** schema.
+
+### AssetBundle organization strategies
+
+If you use the AssetBundle system, then typical strategies for organizing assets include:
 
 * **Concurrent usage**: Group assets that you load at the same time together, such as all the assets for a given level. This strategy is often the most effective in the long term and can help reduce peak memory use in a project.
 * **Logical entity**: Group assets belonging to the same logical entity together. For example, UI layout assets, textures, sound effects, character models, and animations.
@@ -58,6 +65,7 @@ For more information on organizing assets, refer to [Organizing assets into Asse
 
 ## Additional resources
 
+* [Addressables: Planning and best practices](https://unity.com/blog/engine-platform/addressables-planning-and-best-practices)
 * [Addressable asset groups](groups-intro.md)
 * [Referencing Addressable assets in code](AssetReferences.md)
 * [Building Addressable assets](Builds.md)

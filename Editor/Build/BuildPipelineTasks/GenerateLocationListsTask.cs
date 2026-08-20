@@ -308,7 +308,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                         {
                             int indexAddedStart = locations.Count;
                             entry.CreateCatalogEntries(locations, true, assetProvider, bEntry.ExpandedDependencies.Select(x => x.BundleName), null, input.AssetToAssetInfo, providerTypes,
-                                schema.IncludeAddressInCatalog, schema.IncludeGUIDInCatalog, schema.IncludeLabelsInCatalog, bEntry.AssetInternalIds);
+                                schema.IncludeAddressInCatalog, schema.IncludeGUIDInCatalog, schema.IncludeLabelsInCatalog, bEntry.AssetInternalIds,
+                                schema.IncludeFolderKeysInCatalog, schema.IncludeAddressesForFolderChildren);
                             if (indexAddedStart < locations.Count)
                                 guidToLocation.Add(assetGUID, locations.GetRange(indexAddedStart, locations.Count - indexAddedStart));
                         }
@@ -325,9 +326,23 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             output.GuidToLocation = guidToLocation;
             output.ProviderTypes = providerTypes;
             output.AssetGroupToBundles = assetGroupToBundles;
-            output.BundleToImmediateBundleDependencies = bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.Dependencies.Select(y => y.BundleName).ToList());
-            output.BundleToExpandedBundleDependencies =
-                bundleToEntry.Values.ToDictionary(x => x.BundleName, x => x.ExpandedDependencies.Where(y => !x.Dependencies.Contains(y)).Select(y => y.BundleName).ToList());
+            var immediateDeps = new Dictionary<string, List<string>>(bundleToEntry.Count);
+            var expandedDeps = new Dictionary<string, List<string>>(bundleToEntry.Count);
+            foreach (BundleEntry bEntry in bundleToEntry.Values)
+            {
+                var immediate = new List<string>(bEntry.Dependencies.Count);
+                foreach (BundleEntry dep in bEntry.Dependencies)
+                    immediate.Add(dep.BundleName);
+                immediateDeps[bEntry.BundleName] = immediate;
+
+                var expanded = new List<string>(bEntry.ExpandedDependencies.Count);
+                foreach (BundleEntry dep in bEntry.ExpandedDependencies)
+                    if (!bEntry.Dependencies.Contains(dep))
+                        expanded.Add(dep.BundleName);
+                expandedDeps[bEntry.BundleName] = expanded;
+            }
+            output.BundleToImmediateBundleDependencies = immediateDeps;
+            output.BundleToExpandedBundleDependencies = expandedDeps;
             return output;
         }
 

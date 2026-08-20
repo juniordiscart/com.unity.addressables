@@ -10,10 +10,14 @@ namespace UnityEditor.AddressableAssets.Settings
     /// Used to create template groups to make it easier for the user to create new groups.
     /// </summary>
     [CreateAssetMenu(fileName = "AddressableAssetGroupTemplate.asset", menuName = "Addressables/Group Templates/Blank Group Template")]
+    [AddressablesHelpURL("GroupTemplates.html")]
     public class AddressableAssetGroupTemplate : ScriptableObject, IGroupTemplate, ISerializationCallbackReceiver
     {
         [SerializeField]
         private List<AddressableAssetGroupSchema> m_SchemaObjects = new List<AddressableAssetGroupSchema>();
+
+        [SerializeField]
+        private List<string> m_SchemaDisplayOrder = new List<string>();
 
         [SerializeField]
         private string m_Description;
@@ -150,6 +154,7 @@ namespace UnityEditor.AddressableAssets.Settings
                 }
 
                 m_SchemaObjects.Add(schemaInstance);
+                m_SchemaDisplayOrder.Add(schemaInstance.name);
 
                 SetDirty(AddressableAssetSettings.ModificationEvent.GroupTemplateSchemaAdded, this, postEvent);
                 AssetDatabase.SaveAssets();
@@ -198,9 +203,11 @@ namespace UnityEditor.AddressableAssets.Settings
             if (index == -1)
                 return false;
 
+            string schemaName = m_SchemaObjects[index].name;
             AssetDatabase.RemoveObjectFromAsset(m_SchemaObjects[index]);
             DestroyImmediate(m_SchemaObjects[index]);
             m_SchemaObjects.RemoveAt(index);
+            m_SchemaDisplayOrder.Remove(schemaName);
 
             SetDirty(AddressableAssetSettings.ModificationEvent.GroupTemplateSchemaRemoved, this, postEvent);
             AssetDatabase.SaveAssets();
@@ -282,10 +289,61 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
-        /// Implementation of ISerializationCallbackReceiver. Does nothing.
+        /// Implementation of ISerializationCallbackReceiver. Sets flag for lazy validation.
         /// </summary>
         public void OnAfterDeserialize()
         {
+            m_DisplayOrderNeedsValidation = true;
+        }
+
+        [NonSerialized]
+        private bool m_DisplayOrderNeedsValidation = true;
+
+        void ValidateDisplayOrderIfNeeded()
+        {
+            if (!m_DisplayOrderNeedsValidation)
+                return;
+            m_DisplayOrderNeedsValidation = false;
+
+            var currentSchemaNames = new HashSet<string>();
+            foreach (var schema in m_SchemaObjects)
+            {
+                if (schema != null)
+                    currentSchemaNames.Add(schema.name);
+            }
+
+            m_SchemaDisplayOrder.RemoveAll(name => !currentSchemaNames.Contains(name));
+
+            foreach (var schema in m_SchemaObjects)
+            {
+                if (schema != null && !m_SchemaDisplayOrder.Contains(schema.name))
+                    m_SchemaDisplayOrder.Add(schema.name);
+            }
+        }
+
+        internal List<string> SchemaDisplayOrder
+        {
+            get
+            {
+                ValidateDisplayOrderIfNeeded();
+                return m_SchemaDisplayOrder;
+            }
+        }
+
+        internal AddressableAssetGroupSchema GetSchemaByDisplayIndex(int displayIndex)
+        {
+            var displayOrder = SchemaDisplayOrder;
+            if (displayIndex < 0 || displayIndex >= displayOrder.Count)
+                return null;
+
+            string schemaName = displayOrder[displayIndex];
+            return m_SchemaObjects.Find(s => s != null && s.name == schemaName);
+        }
+
+        internal int GetActualIndexFromDisplayIndex(int displayIndex)
+        {
+            var schema = GetSchemaByDisplayIndex(displayIndex);
+            return schema == null ? -1 : m_SchemaObjects.IndexOf(schema);
         }
     }
 }

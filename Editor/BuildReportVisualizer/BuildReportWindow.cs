@@ -109,6 +109,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             BuildLayoutGenerationTask.s_LayoutCompleteCallback = (path, layout) => m_ReportListView.AddReport(path, layout);
         }
 
+        void OnDisable()
+        {
+            BuildLayoutGenerationTask.s_LayoutCompleteCallback = null;
+        }
+
         [MenuItem("Window/Asset Management/Addressables/Addressables Report", priority = 2051)]
         public static void ShowWindow()
         {

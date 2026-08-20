@@ -5,6 +5,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.ResourceManagement;
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -73,7 +74,7 @@ public static class AddressablesTestUtility
     public const int kPrefabCount = 10;
     public const int kMaxWebRequestCount = 5;
 
-    public static void Setup(string testType, string pathFormat, string suffix, bool useUnityWebRequestForLocalBundles)
+    public static void Setup(string testType, string pathFormat, string suffix, bool useUnityWebRequestForLocalBundles, bool useJsonCatalog = false)
     {
 #if UNITY_EDITOR
         bool currentIgnoreState = LogAssert.ignoreFailingMessages;
@@ -88,6 +89,7 @@ public static class AddressablesTestUtility
         AddressablesTestUtility.CreateAsset(RootFolder + "/nonaddressable0" + suffix + ".prefab", "nonAddressable0");
 
         var settings = AddressableAssetSettings.Create(RootFolder + "/Settings", "AddressableAssetSettings.Tests", false, true);
+        settings.EnableJsonCatalog = useJsonCatalog;
         settings.MaxConcurrentWebRequests = kMaxWebRequestCount;
         var group = settings.FindGroup("TestStuff" + suffix);
 
@@ -145,6 +147,7 @@ public static class AddressablesTestUtility
         AssetDatabase.CreateAsset(so, RootFolder + "/assetWithSubObjects.asset");
         AssetDatabase.AddObjectToAsset(sub, RootFolder + "/assetWithSubObjects.asset");
         AssetDatabase.AddObjectToAsset(sub2, RootFolder + "/assetWithSubObjects.asset");
+        AssetDatabase.SaveAssets();
         AssetDatabase.ImportAsset(RootFolder + "/assetWithSubObjects.asset", ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         var assetWithSubObjectsGUID = AssetDatabase.AssetPathToGUID(RootFolder + "/assetWithSubObjects.asset");
         string assetRefGuid = CreateAsset(RootFolder + "/testIsReference.prefab", "IsReference");
@@ -172,6 +175,7 @@ public static class AddressablesTestUtility
         Mesh mesh = new Mesh();
         AssetDatabase.AddObjectToAsset(mat, assetWithDifferentTypedSubAssets);
         AssetDatabase.AddObjectToAsset(mesh, assetWithDifferentTypedSubAssets);
+        AssetDatabase.SaveAssets();
 
         AssetDatabase.ImportAsset($"{RootFolder}/assetWithDifferentTypedSubAssets.asset", ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         var assetWithDifferentTypedSubObjectsGUID = AssetDatabase.AssetPathToGUID($"{RootFolder}/assetWithDifferentTypedSubAssets.asset");
@@ -193,10 +197,17 @@ public static class AddressablesTestUtility
 
         ReplaceStockPackedModeWithAllHooksIfRequested(settings, testType);
 
-        RunBuilder(settings, testType, suffix);
+        RunBuilder(settings, testType, suffix, useJsonCatalog);
         LogAssert.ignoreFailingMessages = currentIgnoreState;
 
 #endif
+    }
+
+    internal static ContentCatalogData CreateCatalogData(bool useJsonCatalog, string id = null)
+    {
+        if (useJsonCatalog)
+            return id != null ? new JsonContentCatalogData(id) : new JsonContentCatalogData();
+        return id != null ? new BinaryContentCatalogData(id) : new BinaryContentCatalogData();
     }
 
 #if UNITY_EDITOR
@@ -272,13 +283,6 @@ public static class AddressablesTestUtility
         UnityEngine.Object.DestroyImmediate(go, false);
         return AssetDatabase.AssetPathToGUID(assetPath);
     }
-    const string kCatalogExt =
-#if !ENABLE_JSON_CATALOG
-            ".bin";
-#else
-            ".json";
-#endif
-
     /// <summary>
     /// When integration tests request <see cref="AllHooksLoggingPackedMode"/> by short type name, replace the
     /// template <see cref="BuildScriptPackedMode"/> asset (exact type match) so <see cref="RunBuilder"/> finds the subclass.
@@ -304,11 +308,11 @@ public static class AddressablesTestUtility
         }
     }
 
-    static void RunBuilder(AddressableAssetSettings settings, string testType, string suffix)
+    static void RunBuilder(AddressableAssetSettings settings, string testType, string suffix, bool useJsonCatalog)
     {
         var buildContext = new AddressablesDataBuilderInput(settings);
         buildContext.RuntimeSettingsFilename = "settings" + suffix + ".json";
-        buildContext.RuntimeCatalogFilename = "catalog" + suffix + kCatalogExt;
+        buildContext.RuntimeCatalogFilename = "catalog" + suffix + (useJsonCatalog ? ".json" : ".bin");
         foreach (var db in settings.DataBuilders)
         {
             var b = db as IDataBuilder;
@@ -317,7 +321,7 @@ public static class AddressablesTestUtility
 
             buildContext.PathSuffix = "_TEST_" + suffix;
             b.BuildData<AddressableAssetBuildResult>(buildContext);
-            SessionState.SetString(Addressables.kAddressablesRuntimeDataPath + testType, SessionState.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
+            SessionState.SetString(Addressables.kAddressablesRuntimeDataPath + testType + "_" + suffix, SessionState.GetString(Addressables.kAddressablesRuntimeDataPath, ""));
         }
     }
 

@@ -2,14 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
-using UnityEditor.AddressableAssets.Build.CatalogBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
-using UnityEditor.Build.Pipeline.Tasks;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -18,52 +15,19 @@ using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.AddressableAssets.ResourceProviders;
 using Unity.Loading;
 using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.ResourceManagement.Util;
 using UnityEngine.U2D;
-using Object = UnityEngine.Object;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
 {
     /// <summary>
-    /// Data used during the Content Directory build process.
-    /// </summary>
-    public class ContentDirectoryParameters : BuildParameters
-    {
-        /// <summary>
-        /// The Editor's version of the build parameters.
-        /// </summary>
-        public BuildContentDirectoryParameters Parameters;
-
-        /// <summary>
-        /// Constructor for ContentDirectoryParameters.
-        /// </summary>
-        /// <param name="parameters">The Editor buidl content directory parameters object.</param>
-        public ContentDirectoryParameters(BuildContentDirectoryParameters parameters)
-        {
-            Parameters = parameters;
-            OutputFolder = parameters.outputPath;
-        }
-
-        /// <summary>
-        /// Gets the parameters for building content directories used by the Editor build process.
-        /// </summary>
-        /// <returns>The Editor's build content directory parameters object stored by this wrapper which Scriptable Build Pipeline uses.</returns>
-        public override BuildContentDirectoryParameters GetContentDirectoryParameters()
-        {
-            return Parameters;
-        }
-    }
-
-    /// <summary>
     /// The builder used for Addressable Groups which have the Content Directory schema.
     /// </summary>
-    public class ContentDirectorySchemaBuilder : ISchemaBuilder
+    public partial class ContentDirectorySchemaBuilder : ISchemaBuilder
     {
-        private bool m_BuiltData = false;
-
         string m_CatalogBuildPath;
-        string m_MetadataDirectoryPath;
+        string m_BuildReportDirectory;
 
-        public const string kContentDirectoryPathVariable = "[ContentDirectoryPath]";
         internal string RootAssetBuildPath
         {
             get => "Library/BuildInstructions/ContentDirectoryRootAssets";
@@ -74,12 +38,47 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
         /// </summary>
         public string Name => "Content Directories";
 
-        Dictionary<string, List<Object>> m_CatalogIdToRootAssetMap = new Dictionary<string, List<Object>>();
-        Dictionary<string, List<string>> m_CatalogIdToRootAssetsPathMap = new Dictionary<string, List<string>>();
-        Dictionary<Object, AddressableAssetGroup> m_RootAssetToGroupMap = new Dictionary<Object, AddressableAssetGroup>();
-        Dictionary<Object, string> m_RootAssetToAssetPathMap = new Dictionary<Object, string>();
+        /// <summary>
+        /// Holds build-time entry data for catalog generation.
+        /// </summary>
+        struct BuildEntryData
+        {
+            public string key;
+            public string guid;
+            public List<string> labels;
+            public Type type;
+            public bool isScene;
+            public int id; // AssetId for regular assets, SceneId for scenes
+            public bool includeAddressKey; // false if this entry's own address should not become a catalog key
+        }
+
+        Dictionary<string, List<BuildEntryData>> m_CatalogIdToEntriesMap = new Dictionary<string, List<BuildEntryData>>();
+        Dictionary<string, string> m_CatalogIdToBuildPathMap = new Dictionary<string, string>();
         Dictionary<string, string> m_CatalogIdToLoadPathMap = new Dictionary<string, string>();
+        Dictionary<string, AddressableAssetGroup> m_CatalogIdToFirstGroupMap = new Dictionary<string, AddressableAssetGroup>();
+        Dictionary<string, List<string>> m_CatalogIdToGroupGuidsMap = new Dictionary<string, List<string>>();
         List<string> m_ContentDirectoryFilePaths = new List<string>();
+        Dictionary<string, int> m_keyToAssetIdMap = new Dictionary<string, int>();
+
+        Dictionary<string, int> m_keyToSceneIdMap = new Dictionary<string, int>();
+
+        // Tracks sub-asset IDs and element types per parent-key pattern (e.g. "multi_sprite_texture[").
+        // Populated by EvaluateIsSubObject; consumed by AddAssetCatalogEntry to emit per-type list
+        // locations, mirroring standard Addressables' multi-type expansion.
+        class SubAssetInfo
+        {
+            public List<int> Ids = new List<int>();
+            public HashSet<Type> ElementTypes = new HashSet<Type>();
+        }
+
+        Dictionary<string, SubAssetInfo> m_parentKeyToSubAssetInfo = new Dictionary<string, SubAssetInfo>();
+
+        AddressableRootAsset m_GlobalRootAsset;
+        string m_GlobalRootAssetPath;
+
+        private IBuildLogger m_Logger;
+        private FileRegistry m_FileRegistry;
+        private BuildTarget m_BuildTarget;
 
         static bool IsEditorTypeOrNull(Type convertedType)
         {
@@ -104,223 +103,170 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
         /// <summary>
         /// Builds content directories for the specified catalogs and processes the associated assets.
         /// </summary>
-        /// <param name="buildContext">The context for the build process, containing shared state and configuration.</param>
-        /// <param name="builderInput">The input parameters for the Addressables data builder.</param>
         /// <param name="aaContext">The context for Addressable Assets, used to manage build-related data and state.</param>
-        /// <param name="extractData">A task responsible for extracting data during the build process.</param>
-        /// <param name="carryOverCachedState">A list of cached asset states to carry over into the build process.</param>
+        /// <param name="cachedState">A list of cached asset states to carry over into the build process.</param>
         /// <param name="addrResult">The result object to store information about the content directory build process.</param>
         /// <exception cref="Exception">Thrown if the content directory build for any catalog fails.</exception>
-        public void Build(BuildContext buildContext, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, ExtractDataTask extractData, List<CachedAssetState> carryOverCachedState, AddressablesPlayerBuildResult addrResult)
+        public void Build(AddressableAssetsBuildContext aaContext, AddressablesPlayerBuildResult addrResult)
         {
-            if (m_CatalogIdToRootAssetMap.Count == 0)
+            if (m_CatalogIdToEntriesMap.Count == 0)
                 return;
 
+            if (aaContext.Settings.DisableWriteTypeTree && aaContext.Settings.StripUnityVersion)
+                throw new InvalidOperationException(
+                    "Cannot build Content Directory groups when both DisableWriteTypeTree and " +
+                    "StripUnityVersionFromBundleBuild are enabled. Content Directories require version metadata when " +
+                    "type trees are stripped. Please either enable writing type trees, or uncheck Strip Unity Version From Build in the AddressableAssetSettingsObject.");
+
+            if (aaContext.Settings.ExtractTypeTreeData)
+                Debug.LogWarning(
+                    "AddressableAssetSettings.ExtractTypeTreeData is enabled but Content Directory groups " +
+                    "do not support TypeTree extraction in this Unity version. The setting will affect " +
+                    "AssetBundle groups only. Content Directories will default to type trees being enabled.");
+
+
             BuildTarget editorActiveBuildTarget = EditorUserBuildSettings.activeBuildTarget;
-            if (builderInput.Target != editorActiveBuildTarget)
+            if (m_BuildTarget != editorActiveBuildTarget)
             {
                 string message =
-                    $"Content Directory build requires the Addressables build target ({builderInput.Target}) to match the Editor active build target ({editorActiveBuildTarget}). Switch the active platform in File > Build Settings, or run the Addressables build for the active platform.";
-                builderInput.Logger.AddEntry(LogLevel.Error, message);
+                    $"Content Directory build requires the Addressables build target ({m_BuildTarget}) to match the Editor active build target ({editorActiveBuildTarget}). Switch the active platform in File > Build Settings, or run the Addressables build for the active platform.";
+                m_Logger.AddEntry(LogLevel.Error, message);
                 throw new Exception(message);
             }
 
-            //This is just to make sure we don't call it multiple times if there's multiple catalogs
-            //fwiw I don't love this and would like to change this later
-            bool postProcessDirectoryCalled = false;
-
             // webGL needs a list of all content directory filepaths so it can populate its preload manifest
             // on all other platforms, this list is not used.
-
             aaContext.ContainsContentDirectoryData = true;
-            foreach (var entry in m_CatalogIdToRootAssetMap)
+
+
+            // Flush the in-memory AddressableRootAsset to disk before building.
+            // ProcessGroupSchema populates m_GlobalRootAsset (marking it dirty) but
+            // BuildPipeline.BuildContentDirectory reads from the on-disk path; without
+            // this save the content directory would embed the empty asset created in Init.
+            using (m_Logger.ScopedStep(LogLevel.Verbose, $"Save Root Asset"))
             {
-                var aaSettings = builderInput.AddressableSettings;
-                using (builderInput.Logger.ScopedStep(LogLevel.Info, $"Building content directory {entry.Key}"))
+                AssetDatabase.SaveAssetIfDirty(AssetDatabase.GUIDFromAssetPath(m_GlobalRootAssetPath));
+            }
+
+            // Use single global AddressableRootAsset for all catalogs
+            var globalRootAssetPaths = new string[] { m_GlobalRootAssetPath };
+
+            foreach (var catalogId in m_CatalogIdToEntriesMap.Keys)
+            {
+                var aaSettings = aaContext.Settings;
+                using (m_Logger.ScopedStep(LogLevel.Info, $"Building content directory {catalogId}"))
                 {
-                    var sourceAssetGroups = new List<AddressableAssetGroup>(entry.Value.Count);
-                    var rootAssetPaths = new string[entry.Value.Count];
-                    for (int i = 0; i < entry.Value.Count; i++)
-                    {
-                        rootAssetPaths[i] = m_RootAssetToAssetPathMap[entry.Value[i]];
-                        sourceAssetGroups.Add(m_RootAssetToGroupMap[entry.Value[i]]);
-                    }
-
-                    var catalogName = entry.Key;
-                    // add logger scope here
+                    bool hasContentDirectoryGroup = m_CatalogIdToFirstGroupMap.TryGetValue(catalogId, out var firstGroup);
+                    var catalogName = catalogId;
                     var buildParams = new BuildContentDirectoryParameters();
-                    buildParams.rootAssetPaths = rootAssetPaths;
-                    buildParams.outputPath = aaSettings.buildSettings.contentDirectoryBuildPath;
+                    buildParams.rootAssetPaths = globalRootAssetPaths;
+                    buildParams.outputPath = m_CatalogIdToBuildPathMap[catalogId];
+                    if (!Directory.Exists(buildParams.outputPath))
+                        Directory.CreateDirectory(buildParams.outputPath);
+                    if (aaContext.Settings.ArchiveContentDirectories)
+                        buildParams.options |= BuildContentOptions.SkipExportToOutputPath;
+                    if (aaSettings.DisableWriteTypeTree)
+                        buildParams.options |= UnityEditor.BuildContentOptions.DisableWriteTypeTree
+                                               | UnityEditor.BuildContentOptions.SerializeUnityVersion;
+                    else if (!aaSettings.StripUnityVersion)
+                        buildParams.options |= UnityEditor.BuildContentOptions.SerializeUnityVersion;
 
-                    ContentDirectoryParameters cdParams = new ContentDirectoryParameters(buildParams);
-                    cdParams.Target = builderInput.Target;
-                    cdParams.Group = builderInput.TargetGroup;
-                    IBuildResults results = new BundleBuildResults();
-
-                    List<IBuildTask> tasks = new List<IBuildTask>();
-                    tasks.Add(new BuildContentDirectoriesTask());
-                    tasks.Add(extractData);
-
-                    var buildStatus = ContentPipeline.BuildContentDirectories(buildContext, cdParams, out results, tasks, aaContext);
-                    if (buildStatus < ReturnCode.Success || extractData.BuildReportContext == null || extractData.BuildReportContext.Report == null)
-                        throw new Exception($"Content Directory build for catalog {catalogName} failed with status {buildStatus}");
-
-                    var result = extractData.BuildReportContext.Report;
-
-                    if (BuildHistory.TryGetMetadataPath(result.summary.buildSessionGuid, out string metadataLocation))
+                    BuildReport report;
+                    using (m_Logger.ScopedStep(LogLevel.Info, "BuildPipeline.BuildContentDirectory"))
                     {
-                        m_MetadataDirectoryPath = metadataLocation;
+                        report = BuildPipeline.BuildContentDirectory(buildParams);
                     }
 
-                    if (result.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                    using (m_Logger.ScopedStep(LogLevel.Info, "Post-Build"))
                     {
-                        builderInput.Logger.AddEntry(LogLevel.Error, result.SummarizeErrors());
-                        throw new Exception($"Content Directory build for catalog {catalogName} failed with status {result.summary.result}");
-                    }
 
-                    var contentDirectoryResultInfo = new AddressablesPlayerBuildResult.ContentDirectoryBuildResult
-                    {
-                        ContentDirectoryMetaDataPath = m_MetadataDirectoryPath,
-                        CatalogName = catalogName,
-                        ContentDirectoryPath = buildParams.outputPath,
-                        Hash = result.summary.buildManifestHash.ToString(),
-                        BuildSessionGUID = result.summary.buildSessionGuid,
-                        GroupGuids = new List<string>(),
-                    };
-
-                    foreach (var rootAsset in buildParams.rootAssetPaths)
-                    {
-                        if (aaContext.Settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(rootAsset)) is AddressableAssetEntry assetEntry)
+                        if (BuildHistory.TryGetBuildReportDirectory(report.summary.buildSessionGuid, out string buildReportDirectory))
                         {
-                            contentDirectoryResultInfo.GroupGuids.Add(assetEntry.parentGroup.Guid);
+                            m_BuildReportDirectory = buildReportDirectory;
                         }
-                        else if (AssetDatabase.LoadAssetAtPath<GroupRootAsset>(rootAsset) is GroupRootAsset addrCD)
-                        {
-                            contentDirectoryResultInfo.GroupGuids.Add(addrCD.Key);
-                        }
-                        else
-                        {
-                            Debug.LogError($"{rootAsset} is neither an {nameof(AddressableAssetEntry)} nor an {nameof(GroupRootAsset)}, but it has been passed into the build as a RootAsset. " +
-                                $"The asset at this path needs to either be marked as Addressable or converted to a {nameof(GroupRootAsset)}");
-                        }
-                    }
 
-                    addrResult.ContentDirectoryBuildResults.Add(contentDirectoryResultInfo);
-
-                    if (!postProcessDirectoryCalled)
-                    {
-                        using (var progressTracker = new ProgressTracker())
+                        if (BuildHistory.TryGetFilePath(report.summary.buildSessionGuid, "BuildContentTEP.json", out string tepPath))
                         {
-                            if (entry.Value.Count > 0)
+                            if (m_Logger is ILogTEP tepLogger)
+                                tepLogger.ImportExternalTEP(tepPath);
+                        }
+
+                        if (report.summary.result != BuildResult.Succeeded)
+                        {
+                            m_Logger.AddEntry(LogLevel.Error, report.SummarizeErrors());
+                            throw new Exception($"Content Directory build for catalog {catalogName} failed with status {report.summary.result}");
+                        }
+
+                        var contentDirectoryResultInfo = new AddressablesPlayerBuildResult.ContentDirectoryBuildResult
+                        {
+                            BuildReportDirectory = m_BuildReportDirectory,
+                            CatalogName = catalogName,
+                            ContentDirectoryPath = buildParams.outputPath,
+                            Hash = report.summary.buildManifestHash.ToString(),
+                            BuildSessionGUID = report.summary.buildSessionGuid,
+                            GroupGuids = m_CatalogIdToGroupGuidsMap.TryGetValue(catalogId, out var guids) ? guids : new List<string>(),
+                        };
+
+                        addrResult.ContentDirectoryBuildResults.Add(contentDirectoryResultInfo);
+
+                        if (hasContentDirectoryGroup)
+                        {
+                            string outputPath = buildParams.outputPath;
+                            if (aaContext.Settings.ArchiveContentDirectories)
                             {
-                                var rootAsset = entry.Value[0]; //This also only needs to be called once
-                                var assetGroup = m_RootAssetToGroupMap[rootAsset];
-                                using (builderInput.Logger.ScopedStep(LogLevel.Info, assetGroup.name))
+                                var contentLayout = LoadContentLayout();
+                                using (m_Logger.ScopedStep(LogLevel.Info, "Archiving Content Directories"))
                                 {
-                                    progressTracker.UpdateTask("Post Processing Content Directories");
-                                    var outputPath = PostProcessDirectory(assetGroup, result, addrResult,
-                                        builderInput.Registry, aaContext, builderInput.Target, builderInput.Logger);
+                                    var createdFiles = ContentDirectoryArchiver.ArchiveFromUDS(contentLayout, outputPath,
+                                        (long)(aaContext.Settings.TargetArchiveSizeInMB * 1024 * 1024), m_Logger);
+                                    foreach (var file in createdFiles)
+                                        m_FileRegistry.AddFile(file);
 
-                                    if (aaContext.Settings.ArchiveContentDirectories)
-                                    {
-                                        progressTracker.UpdateTask("Archiving Content Directories");
-                                        ArchiveContentDirectories(outputPath, (long)(aaContext.Settings.TargetArchiveSizeInMB * 1024 * 1024), builderInput.Registry);
-                                        if (builderInput.Target == BuildTarget.WebGL)
-                                            m_ContentDirectoryFilePaths.AddRange(Directory.GetFiles(outputPath, "content*.archive"));
-                                    }
-
-                                    postProcessDirectoryCalled = true;
+                                    if (m_BuildTarget == BuildTarget.WebGL)
+                                        m_ContentDirectoryFilePaths.AddRange(createdFiles);
                                 }
+                            }
+                            else if (m_BuildTarget == BuildTarget.WebGL)
+                            {
+                                var contentLayout = LoadContentLayout();
+                                PopulateContentDirectoryFilePathsFromLayout(outputPath, contentLayout);
                             }
                         }
                     }
-
                 }
             }
 
-            if (builderInput.Target == BuildTarget.WebGL)
+            if (m_BuildTarget == BuildTarget.WebGL)
             {
-                using (builderInput.Logger.ScopedStep(LogLevel.Info, $"Building WebGL file manifest"))
+                using (m_Logger.ScopedStep(LogLevel.Info, $"Building WebGL file manifest"))
                 {
                     WebGLContentDirectoryManifest.WriteManifest(m_ContentDirectoryFilePaths);
                 }
             }
-
-            m_BuiltData = true;
         }
 
-
-        string PostProcessDirectory(AddressableAssetGroup assetGroup, BuildReport buildResult, AddressablesPlayerBuildResult addrResult,
-            FileRegistry registry, AddressableAssetsBuildContext aaContext, BuildTarget target, IBuildLogger logger)
+        ContentLayout LoadContentLayout()
         {
-            var schema = assetGroup.GetSchema<ContentDirectoryGroupSchema>();
-            if (schema == null || !schema.IsEnabled)
-                return null;
-
-            var path = schema.BuildPath.GetValue(assetGroup.Settings);
-            if (string.IsNullOrEmpty(path))
-                return null;
-
-            if (!Directory.Exists(path))
-                Directory.CreateDirectory(path);
-
-            var outputPath = buildResult.summary.outputPath;
-            if (string.IsNullOrEmpty(outputPath))
-                throw new InvalidOperationException("Content Directory build has no output path in the build report summary.");
-            if (!Directory.Exists(outputPath))
-                throw new InvalidOperationException(
-                    $"Content Directory build output path does not exist: {outputPath}");
-
-            var outputFullPath = Path.GetFullPath(outputPath);
-            var buildReportPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var file in buildResult.GetFiles())
+            using (m_Logger.ScopedStep(LogLevel.Info, "Loading Content Layout"))
             {
-                buildReportPaths.Add(file.path);
-                // for WebGL, also save paths to later put into preload manifest
-                if (target == BuildTarget.WebGL)
-                {
-                    m_ContentDirectoryFilePaths.Add(Path.Combine(path, Path.GetFileName(file.path)));
-                }
+                return ContentLayout.Load(m_BuildReportDirectory);
             }
-
-            foreach (var sourcePath in Directory.EnumerateFiles(outputPath, "*", SearchOption.AllDirectories))
-            {
-                var sourceFullPath = Path.GetFullPath(sourcePath);
-                var relativePath = Path.GetRelativePath(outputFullPath, sourceFullPath);
-
-                if (!buildReportPaths.Contains(relativePath))
-                {
-                    logger?.AddEntry(LogLevel.Warning,
-                        $"Unexpected file in content directory build output (not listed in build report): {relativePath}");
-                }
-
-                var targetPath = Path.Combine(path, relativePath);
-                var parentDir = Path.GetDirectoryName(targetPath);
-                if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
-                    Directory.CreateDirectory(parentDir);
-                if (File.Exists(targetPath))
-                {
-                    logger?.AddEntry(LogLevel.Warning,
-                        $"Content Directory post-process expected to copy a file, but the target already exists: {targetPath}");
-                }
-                else
-                    FileUtil.CopyFileOrDirectory(sourcePath, targetPath);
-                registry.AddFile(targetPath);
-            }
-
-            return path;
         }
 
-        /// <summary>
-        /// Method to archive the content directory build files.
-        /// </summary>
-        /// <param name="archiveOutputDirectory">The output directory.</param>
-        /// <param name="targetCompressedSize">Desired average archive size on disk after compression. The archiver inflates this internally to account for the compression algorithm in use.</param>
-        /// <param name="registry">File registry to store results.  Files that are archived should be deleted and removed from the registry.  New archives should be added.</param>
-        public virtual void ArchiveContentDirectories(string archiveOutputDirectory, long targetCompressedSize, FileRegistry registry)
+        void PopulateContentDirectoryFilePathsFromLayout(string outputPath, ContentLayout contentLayout)
         {
-            ContentDirectoryArchiver.ArchiveAndUpdateRegistry(archiveOutputDirectory, targetCompressedSize, registry);
+            foreach (var artifact in contentLayout.BinaryArtifacts)
+                m_ContentDirectoryFilePaths.Add(Path.Combine(outputPath, artifact.ContentHash + GetExtension(artifact)));
+            m_ContentDirectoryFilePaths.Add(Path.Combine(outputPath, ContentDirectoryArchiver.kBuildManifestHashFileName));
+        }
+
+        string GetExtension(ContentLayout.BinaryArtifact artifact)
+        {
+            if (artifact.Category == ContentDirectoryFileCategory.ContentFile)
+                return ".cf";
+            if (artifact.Category == ContentDirectoryFileCategory.Manifest)
+                return ".json";
+            return String.Empty;
         }
 
         /// <summary>
@@ -334,6 +280,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
             return schema is ContentDirectoryGroupSchema;
         }
 
+        /// <inheritdoc/>
         /// <summary>
         /// Collects provider types from the first ContentDirectoryGroupSchema instance found.
         /// Since AddressableAssetSettings updates all groups to have the same provider types,
@@ -349,228 +296,82 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
                 var schema = group.GetSchema<ContentDirectoryGroupSchema>();
                 if (schema != null && schema.IsEnabled)
                 {
-                    if (schema.ContentDirectoryProviderType.Value != null)
-                        providerTypes.Add(schema.ContentDirectoryProviderType.Value);
-                    if (schema.GroupRootAssetProviderType.Value != null)
-                        providerTypes.Add(schema.GroupRootAssetProviderType.Value);
-                    if (schema.GroupRootAssetEntryProviderType.Value != null)
-                        providerTypes.Add(schema.GroupRootAssetEntryProviderType.Value);
+                    if (schema.GroupAssetEntryProviderType.Value != null)
+                        providerTypes.Add(schema.GroupAssetEntryProviderType.Value);
                     break; // Short-circuit after finding first schema since all groups have the same values
                 }
             }
         }
 
         /// <summary>
-        /// Generates a collection of content catalogs based on the provided build input, build context, and build
-        /// results.
+        /// Generates catalog locations for each distinct catalog id collected from content-directory
+        /// group schemas. Returns a dictionary mapping catalog id to the list of
+        /// <see cref="ContentCatalogDataEntry"/> locations; the build script writes the actual
+        /// catalog files.
         /// </summary>
-        /// <param name="builderInput">The input data for the Addressables build process, including configuration and settings.</param>
         /// <param name="aaContext">The build context containing information about the Addressables assets and providers.</param>
         /// <param name="addrResult">The result of the Addressables player build, including content directory build results.</param>
-        /// <returns>A list of <see cref="ContentCatalogData"/> objects representing the generated content catalogs.</returns>
-
-        public List<ContentCatalogData> GenerateCatalogs(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, AddressablesPlayerBuildResult addrResult)
+        /// <returns>A dictionary of catalog id to catalog locations generated by the schema.</returns>
+        public Dictionary<string, List<ContentCatalogDataEntry>> GenerateCatalogLocations(AddressableAssetsBuildContext aaContext, AddressablesPlayerBuildResult addrResult)
         {
             CollectContentDirectoryProviderTypes(aaContext.Settings, aaContext.providerTypes);
             aaContext.providerTypes.Add(typeof(AtlasSpriteProvider));
+            aaContext.providerTypes.Add(typeof(NativeContentAssetListProvider));
 
-            List<ContentCatalogData> catalogs = new List<ContentCatalogData>();
-            foreach (var catalogId in m_CatalogIdToRootAssetMap.Keys)
-            {
-                var hashingObjects = new List<string>();
-                for (int i = 0; i < addrResult.ContentDirectoryBuildResults.Count; ++i)
-                    if (addrResult.ContentDirectoryBuildResults[i].CatalogName == catalogId)
-                        hashingObjects.Add(addrResult.ContentDirectoryBuildResults[i].Hash);
-                var buildResultHash = HashingMethods.Calculate(hashingObjects.ToArray()).ToString();
+            var result = new Dictionary<string, List<ContentCatalogDataEntry>>();
+            foreach (var catalogId in m_CatalogIdToEntriesMap.Keys)
+                result[catalogId] = GenerateCatalogEntries(catalogId, aaContext);
 
-                catalogs.Add(GenerateCatalogEntries(catalogId, aaContext, builderInput, buildResultHash));
-            }
-
-            return catalogs;
+            return result;
         }
 
-        Type GetContentDirectoryProviderType(string catalogId)
+        List<ContentCatalogDataEntry> GenerateCatalogEntries(string catalogId,
+            AddressableAssetsBuildContext aaContext)
         {
-            Type contentDirectoryProviderType = typeof(ContentDirectoryProvider);
-            if (!m_CatalogIdToRootAssetMap.TryGetValue(catalogId, out var rootAssets) || rootAssets.Count <= 0)
-            {
-                throw new Exception("No root assets found for catalog " + catalogId);
-            }
-            // Get provider type from first group with this catalogId (all groups with same catalogId should have same provider types)
-            var firstRootAsset = rootAssets[0];
-            if (m_RootAssetToGroupMap.TryGetValue(firstRootAsset, out var firstGroup))
-            {
-                var firstSchema = firstGroup.GetSchema<ContentDirectoryGroupSchema>();
-                if (firstSchema != null && firstSchema.IsEnabled && firstSchema.ContentDirectoryProviderType.Value != null)
-                    contentDirectoryProviderType = firstSchema.ContentDirectoryProviderType.Value;
-            }
-            return contentDirectoryProviderType;
-        }
-
-        ContentCatalogData GenerateCatalogEntries(string catalogId,
-            AddressableAssetsBuildContext aaContext,
-            AddressablesDataBuilderInput builderInput,
-            string buildHash)
-        {
-            ICatalogBuilder catalogBuilder;
             List<ContentCatalogDataEntry> catalogEntries = new List<ContentCatalogDataEntry>();
-            using (builderInput.Logger.ScopedStep(LogLevel.Info, $"Generating catalog for {catalogId}"))
+            using (m_Logger.ScopedStep(LogLevel.Info, $"Generating catalog for {catalogId}"))
             {
-                Type contentDirectoryProviderType = GetContentDirectoryProviderType(catalogId);
+                // The Content Directory load path is embedded in each entry's
+                // ContentDirectoryAssetData (see AddAssetCatalogEntry) and the asset/scene
+                // providers mount the directory from it at runtime. No standalone
+                // ContentDirectory location is emitted.
+                var loadPath = m_CatalogIdToLoadPathMap[catalogId];
+                var entries = m_CatalogIdToEntriesMap[catalogId];
 
-                //The ContentDirectory location that an asset needs.
-                ContentCatalogDataEntry contentDirectoryEntry = new ContentCatalogDataEntry(
-                typeof(ContentDirectoryHandle),
-                m_CatalogIdToLoadPathMap[catalogId],
-                contentDirectoryProviderType.FullName,
-                new List<string>() { m_CatalogIdToLoadPathMap[catalogId] }
-            );
-                catalogEntries.Add(contentDirectoryEntry);
-
-                List<Object> rootAssets = m_CatalogIdToRootAssetMap[catalogId];
-                List<string> rootAssetPaths = m_CatalogIdToRootAssetsPathMap[catalogId];
-
-                for (int i = 0; i < rootAssets.Count; i++)
+                using (m_Logger.ScopedStep(LogLevel.Info, $"Generating {entries.Count} entries for {catalogId}"))
                 {
-                    var rootAssetObj = rootAssets[i];
-
-                    //Not sure that I love the hard reliance on this type here, but not sure of a better way right now.
-                    GroupRootAsset rootAsset = rootAssetObj as GroupRootAsset;
-                    if (rootAsset == null)
+                    foreach (var entry in entries)
                     {
-                        //the rootAsset has been unloaded somehow, let's see if we can reload it
-                        rootAsset = AssetDatabase.LoadAssetAtPath<GroupRootAsset>(rootAssetPaths[i]);
-
-                        if (rootAsset == null)
-                            continue;
-                    }
-
-                    var group = m_RootAssetToGroupMap[rootAsset];
-                    var schema = group.GetSchema<ContentDirectoryGroupSchema>();
-                    if (schema == null || !schema.IsEnabled)
-                        continue;
-                    var loadPath = schema.LoadPath.GetValue(group.Settings);
-
-                    // Get provider type from schema, fallback to default if null
-                    Type groupRootAssetProviderType = schema.GroupRootAssetProviderType.Value ?? typeof(GroupRootAssetProvider);
-
-                    //The AddressableContentDirectory location that contains the Loadable entries.
-                    ContentCatalogDataEntry addressableContentDirectory = new ContentCatalogDataEntry(
-                        typeof(GroupRootAsset),
-                        rootAsset.name,
-                        groupRootAssetProviderType.FullName,
-                        new List<string>() { rootAsset.name },
-                        new List<string>() { loadPath }
-                    );
-                    catalogEntries.Add(addressableContentDirectory);
-
-                    using (builderInput.Logger.ScopedStep(LogLevel.Info, $"Generating entries for {rootAsset.name}"))
-                    {
-                        //The individual Loadable entries.
-                        foreach (var asset in rootAsset.Assets)
-                        {
-                            var convertedType = AddressableAssetUtility.MapEditorTypeToRuntimeType(asset.type, false);
-                            if (IsEditorTypeOrNull(convertedType))
-                            {
-                                LogEditorTypeStrippedWarning(asset.type, asset.key, isAssetPath: false);
-                                continue;
-                            }
-                            if (asset.type == typeof(SpriteAtlas))
-                            {
-                                if (m_SpriteAtlasKeyToSprites.TryGetValue(asset.key, out var spritesEntries))
-                                {
-                                    foreach (var spriteEntry in spritesEntries)
-                                    {
-                                        ContentCatalogDataEntry spriteAddressableEntry = new ContentCatalogDataEntry(
-                                            typeof(Sprite),
-                                            spriteEntry.address,
-                                            typeof(AtlasSpriteProvider).FullName,
-                                            new List<string>() { spriteEntry.address },
-                                            new List<string>() { asset.key }  // Dependency on parent atlas
-                                        );
-                                        catalogEntries.Add(spriteAddressableEntry);
-                                    }
-                                }
-                            }
-
-                            // Get provider type from schema, fallback to default if null
-                            Type groupRootAssetEntryProviderType = schema.GroupRootAssetEntryProviderType.Value ?? typeof(GroupRootAssetEntryProvider);
-
-                            ContentCatalogDataEntry addressableEntry = new ContentCatalogDataEntry(
-                                convertedType, //make sure we convert our editor types to runtime types
-                                asset.key,
-                                groupRootAssetEntryProviderType.FullName,
-                                new List<string>() { asset.key, asset.guid },
-                                new List<string>() { rootAsset.name }
-                            );
-
-                            addressableEntry.Keys.AddRange(asset.labels);
-                            catalogEntries.Add(addressableEntry);
-                        }
+                        AddSpriteAtlasEntries(entry, catalogEntries);
+                        AddAssetCatalogEntry(entry, loadPath, catalogEntries);
                     }
                 }
             }
 
-            string catalogName = catalogId;
-
-            var aaSettings = aaContext.Settings;
-            string localLoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + catalogId;
-            string localBuildPath = Addressables.BuildPath;
-            var remoteBuildPath = aaSettings.RemoteCatalogBuildPath.GetValue(aaSettings);
-            var remoteLoadPath = aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings);
-            var catalogPathConfig = new CatalogPathConfig()
-            {
-                BuildPath = localBuildPath,
-                LoadPath = localLoadPath,
-                RemoteBuildPath = remoteBuildPath, //should be empty for now
-                RemoteLoadPath = remoteLoadPath, //should be empty for now
-                RuntimeCatalogFilename = catalogName,
-                VersionedCatalogFileName = catalogName,
-            };
-
-#if ENABLE_JSON_CATALOG
-            catalogBuilder = new JsonCatalogBuilder();
-#else
-            catalogBuilder = new BinaryCatalogBuilder();
-#endif
-            ContentCatalogData catalogData = catalogBuilder.GenerateCatalog(
-                                    builderInput.Logger,
-                                    catalogPathConfig,
-                                    catalogId,
-                                    catalogEntries,
-                                    aaContext.runtimeData.CatalogLocations,
-                                    aaContext.providerTypes,
-                                    builderInput.Registry,
-                                    buildHash,
-                                    aaContext.Settings.BuildRemoteCatalog,
-                                    aaContext.Settings.CatalogRequestsTimeout);
-            return catalogData;
+            return catalogEntries;
         }
 
         /// <summary>
-        /// Generates a content update for Addressable assets based on the provided input and context.
+        /// Generates a content update for Addressable assets based on the provided context.
         /// </summary>
-        /// <param name="builderInput">The input parameters for the Addressables data builder, including build settings and options.</param>
         /// <param name="aaContext">The build context containing information about the Addressable assets and their dependencies.</param>
-        /// <param name="extractData">The task responsible for extracting data required for the content update process.</param>
         /// <param name="cachedState">A list of cached asset states representing the previous build's asset information.</param>
         /// <param name="addrResult">The result object that will store the outcome of the Addressables player build process.</param>
-        public void GenerateContentUpdate(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, ExtractDataTask extractData, List<CachedAssetState> cachedState, AddressablesPlayerBuildResult addrResult)
+        public void GenerateContentUpdate(AddressableAssetsBuildContext aaContext, AddressablesPlayerBuildResult addrResult)
         {
         }
 
         /// <summary>
         /// Relocates the metadata hash file to a known location for player build type stripping purposes
         /// </summary>
-        /// <param name="builderInput">The input parameters for the Addressables data builder, including build settings and options.</param>
         /// <param name="aaContext">The build context containing information about the Addressable assets and their dependencies.</param>
         /// <param name="contentCatalog">Content catalog data of the build.</param>
-        public void GenerateTypeStrippingInfo(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext, ContentCatalogData contentCatalog)
+        public void GenerateTypeStrippingInfo(AddressableAssetsBuildContext aaContext, ContentCatalogData contentCatalog)
         {
-            if (!Directory.Exists(m_MetadataDirectoryPath))
+            if (!Directory.Exists(m_BuildReportDirectory))
                 return;
 
-            string scriptsOnlyCacheMetadataPath = Path.Combine(m_MetadataDirectoryPath, "ScriptsOnlyCache.yaml");
+            string scriptsOnlyCacheMetadataPath = Path.Combine(m_BuildReportDirectory, "ScriptsOnlyCache.yaml");
             string platformSpecificCachePath = aaContext.Settings.GetContentStateBuildPath();
             string scriptsOnlyCacheBuildPath = Path.Combine(platformSpecificCachePath, "ScriptsOnlyCache.yaml");
             if (File.Exists(scriptsOnlyCacheBuildPath))
@@ -579,178 +380,387 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
             FileUtil.CopyFileOrDirectory(scriptsOnlyCacheMetadataPath, scriptsOnlyCacheBuildPath);
-            builderInput.Registry.AddFile(scriptsOnlyCacheBuildPath);
+            m_FileRegistry.AddFile(scriptsOnlyCacheBuildPath);
         }
 
         /// <summary>
         /// Initializes the build context and prepares internal data structures for processing.
         /// </summary>
         /// <param name="aaContext">The <see cref="AddressableAssetsBuildContext"/> containing the build context information.</param>
+        /// <param name="builderInput">The input parameters for the Addressables data builder.</param>
+        /// <param name="buildContext">The Scriptable Build Pipeline build context.</param>
         /// <param name="dataBuilder">The <see cref="IDataBuilder"/> responsible for managing the data building process.</param>
-        public void Init(AddressableAssetsBuildContext aaContext, IDataBuilder dataBuilder)
+        public void Init(AddressableAssetsBuildContext aaContext,
+            AddressablesDataBuilderInput builderInput,
+            BuildContext buildContext,
+            IDataBuilder dataBuilder)
         {
-            m_BuiltData = false;
-            m_CatalogIdToRootAssetMap.Clear();
-            m_RootAssetToGroupMap.Clear();
-            m_RootAssetToAssetPathMap.Clear();
+            m_Logger = builderInput.Logger;
+            m_FileRegistry = builderInput.Registry;
+            m_BuildTarget = builderInput.Target;
+
+            m_CatalogIdToEntriesMap.Clear();
+            m_CatalogIdToBuildPathMap.Clear();
             m_CatalogIdToLoadPathMap.Clear();
+            m_CatalogIdToFirstGroupMap.Clear();
+            m_CatalogIdToGroupGuidsMap.Clear();
             m_SpriteAtlasKeyToSprites.Clear();
             m_ContentDirectoryFilePaths.Clear();
+            m_keyToAssetIdMap.Clear();
+            m_keyToSceneIdMap.Clear();
+            m_parentKeyToSubAssetInfo.Clear();
+            m_GlobalRootAsset = null;
+            m_GlobalRootAssetPath = null;
             WebGLContentDirectoryManifest.ClearManifest();
 
             CreateContentDirectoryBuildFolder();
-            m_CatalogIdToRootAssetMap.Clear();
-            m_RootAssetToGroupMap.Clear();
-            m_RootAssetToAssetPathMap.Clear();
-            m_CatalogIdToLoadPathMap.Clear();
+            CreateGlobalAddressableRootAsset();
         }
 
-        /// <summary>
-        /// Determines whether the data has been successfully built and is available for use.
-        /// </summary>
-        /// <returns><see langword="true"/> if the data is considered built and the catalog file exists; otherwise, <see
-        /// langword="false"/>.</returns>
-        public bool IsDataBuilt()
+        void CreateGlobalAddressableRootAsset()
         {
-            if (!m_BuiltData)
+            using (m_Logger.ScopedStep(LogLevel.Verbose, "CreateGlobalAddressableRootAsset"))
             {
-                return true;
+                m_GlobalRootAsset = ScriptableObject.CreateInstance<AddressableRootAsset>();
+                m_GlobalRootAssetPath = $"{RootAssetBuildPath}/AddressableRootAsset.asset";
+                AssetDatabase.CreateAsset(m_GlobalRootAsset, m_GlobalRootAssetPath);
             }
-            return !string.IsNullOrEmpty(m_CatalogBuildPath) && File.Exists(m_CatalogBuildPath);
         }
 
-        Dictionary<string, List<AddressableAssetEntry>> m_SpriteAtlasKeyToSprites = new Dictionary<string, List<AddressableAssetEntry>>();
+        struct SpriteChildEntryData
+        {
+            public string address;
+            public List<string> labels; // folder key, when the sprite is a folder child
+            public bool includeAddressKey; // false if the sprite's own address should not become a catalog key
+        }
+
+        Dictionary<string, List<SpriteChildEntryData>> m_SpriteAtlasKeyToSprites = new Dictionary<string, List<SpriteChildEntryData>>();
 
         /// <summary>
         /// Processes the specified group schema.
         /// </summary>
-        /// <param name="schema">The schema to process. Must be of type <see cref="ContentDirectoryGroupSchema"/>.</param>
-        /// <param name="assetGroup">The Addressable Asset Group associated with the schema.</param>
+        /// <param name="schema">The schema to process. Must be of type <see cref="ContentDirectoryGroupSchema"/>. Use <c>schema.Group</c> to access the owning group.</param>
         /// <param name="aaContext">The build context containing settings and other relevant data for the Addressable system.</param>
         /// <returns>An empty string if no error was encountered, otherwise it returns the error.</returns>
-        public string ProcessGroupSchema(AddressableAssetGroupSchema schema, AddressableAssetGroup assetGroup, AddressableAssetsBuildContext aaContext)
+        public string ProcessGroupSchema(AddressableAssetsBuildContext aaContext, AddressableAssetGroupSchema schema)
         {
-            if (schema is not ContentDirectoryGroupSchema contentDirectoryGroupSchema || !contentDirectoryGroupSchema.IncludeInBuild || !contentDirectoryGroupSchema.IsEnabled)
+            if (schema is not ContentDirectoryGroupSchema contentDirectoryGroupSchema || !contentDirectoryGroupSchema.Group.IncludeInBuild || !contentDirectoryGroupSchema.IsEnabled)
                 return "";
 
-            GroupRootAsset directoryAsset = ScriptableObject.CreateInstance<GroupRootAsset>();
-            directoryAsset.Key = assetGroup.Guid;
-
-            string assetPath = $"{RootAssetBuildPath}/{assetGroup.Name}_RootAsset.asset";
             string catalogId = schema.CatalogId;
-
-            if (!m_CatalogIdToRootAssetMap.ContainsKey(catalogId))
+            using (m_Logger.ScopedStep(LogLevel.Verbose, "ContentDirectorySchema.ProcessGroupSchema",
+                       ("Catalog", catalogId)))
             {
-                m_CatalogIdToRootAssetMap[catalogId] = new List<Object>();
-                m_CatalogIdToRootAssetsPathMap[catalogId] = new List<string>();
-            }
 
-            // Gather all assets including subassets and sprites for sprite atlas
-            var allEntries = new List<AddressableAssetEntry>();
-            foreach (var entry in assetGroup.entries)
-            {
-                entry.GatherAllAssets(allEntries, includeSelf: true, recurseAll: true, includeSubObjects: true);
-            }
-
-            foreach (var entry in allEntries)
-            {
-                var targetAsset = entry.TargetAsset;
-                if (targetAsset == null)
-                    continue;
-
-                if (entry.ParentEntry != null && entry.ParentEntry.TargetAsset.GetType() == typeof(SpriteAtlas))
+                if (!m_CatalogIdToEntriesMap.ContainsKey(catalogId))
                 {
-                    var parentKey = entry.ParentEntry.address;
-                    if (m_SpriteAtlasKeyToSprites.ContainsKey(parentKey))
+                    m_CatalogIdToEntriesMap[catalogId] = new List<BuildEntryData>();
+                    m_CatalogIdToGroupGuidsMap[catalogId] = new List<string>();
+                }
+
+                // Track first group for PostProcessDirectory and all group GUIDs for build results
+                if (!m_CatalogIdToFirstGroupMap.ContainsKey(catalogId))
+                    m_CatalogIdToFirstGroupMap[catalogId] = schema.Group;
+                m_CatalogIdToGroupGuidsMap[catalogId].Add(schema.Group.Guid);
+
+                // Gather all assets including subassets and sprites for sprite atlas
+                var allEntries = new List<AddressableAssetEntry>();
+                using (m_Logger.ScopedStep(LogLevel.Verbose, "GatherAllAssets", true))
+                {
+                    foreach (var entry in schema.Group.entries)
                     {
-                        m_SpriteAtlasKeyToSprites[parentKey].Add(entry);
+                        using (m_Logger.ScopedStep(LogLevel.Verbose, "GatherAssets",
+                                   ("Address", entry.address),
+                                   ("Path", entry.AssetPath),
+                                   ("Guid", entry.guid)))
+                        {
+                            entry.GatherAllAssets(allEntries, includeSelf: true, recurseAll: true, includeSubObjects: true);
+                        }
                     }
-                    else
+                }
+
+                foreach (var entry in allEntries)
+                {
+                    var targetAsset = entry.TargetAsset;
+                    if (targetAsset == null)
                     {
-                        m_SpriteAtlasKeyToSprites.Add(parentKey, new List<AddressableAssetEntry> { entry });
+                        Debug.LogWarning($"Skipping entry with null TargetAsset: {entry.address}");
+                        continue;
                     }
-                    continue;
+                    using (m_Logger.ScopedStep(LogLevel.Verbose, "GatherSpriteAtlases",
+                               ("Address", entry.address),
+                               ("Path", entry.AssetPath),
+                               ("Guid", entry.guid)))
+                    {
+                        if (entry.ParentEntry != null && entry.ParentEntry.TargetAsset.GetType() == typeof(SpriteAtlas))
+                        {
+                            var parentKey = entry.ParentEntry.address;
+
+                            var spriteLabels = new List<string>();
+                            if (contentDirectoryGroupSchema.IncludeLabelsInCatalog)
+                                spriteLabels.AddRange(entry.labels);
+                            string spriteFolderKey = contentDirectoryGroupSchema.IncludeFolderKeysInCatalog ? entry.ParentFolderAddress : null;
+                            bool isSpriteFolderChild = !string.IsNullOrEmpty(spriteFolderKey) && spriteFolderKey != entry.address;
+                            if (isSpriteFolderChild)
+                                spriteLabels.Add(spriteFolderKey);
+
+                            var spriteChildData = new SpriteChildEntryData
+                            {
+                                address = entry.address,
+                                labels = spriteLabels,
+                                includeAddressKey = contentDirectoryGroupSchema.IncludeAddressesForFolderChildren || !isSpriteFolderChild
+                            };
+
+                            if (m_SpriteAtlasKeyToSprites.ContainsKey(parentKey))
+                                m_SpriteAtlasKeyToSprites[parentKey].Add(spriteChildData);
+                            else
+                                m_SpriteAtlasKeyToSprites.Add(parentKey, new List<SpriteChildEntryData> { spriteChildData });
+                            continue;
+                        }
+                    }
+
+                    string entryGuid = entry.guid;
+                    Type convertedType;
+                    using (m_Logger.ScopedStep(LogLevel.Verbose, "GatherSubassets",
+                               ("Address", entry.address),
+                               ("Path", entry.AssetPath),
+                               ("Guid", entry.guid)))
+                    {
+                        // For subassets, use parent's GUID since subassets don't have their own GUID
+                        if (string.IsNullOrEmpty(entryGuid) && entry.IsSubAsset && entry.ParentEntry != null)
+                            entryGuid = entry.ParentEntry.guid;
+
+                        // For subassets, use the actual subasset type (e.g., Sprite) rather than MainAssetType
+                        // (e.g., Texture2D). This ensures type filtering works correctly when loading by GUID-based keys.
+                        Type assetType = (entry.IsSubAsset && entry.TargetAsset != null)
+                            ? entry.TargetAsset.GetType()
+                            : entry.MainAssetType;
+                        convertedType = AddressableAssetUtility.MapEditorTypeToRuntimeType(assetType, false);
+                        if (IsEditorTypeOrNull(convertedType))
+                        {
+                            LogEditorTypeStrippedWarning(entry.MainAssetType, entry.AssetPath, isAssetPath: true);
+                            continue;
+                        }
+                    }
+
+                    // Add to AddressableRootAsset and track the ID
+                    int id;
+                    bool isScene = entry.IsScene;
+                    using (m_Logger.ScopedStep(LogLevel.Verbose, "CreateLoadable",
+                               ("IsScene", isScene.ToString()),
+                               ("Address", entry.address),
+                               ("Path", entry.AssetPath),
+                               ("Guid", entry.guid)))
+                    {
+
+                        if (isScene)
+                        {
+                            var sceneId = LoadableSceneIdEditorUtility.CreateLoadableSceneId(entry.AssetPath);
+                            id = m_GlobalRootAsset.AddScene(sceneId);
+                            m_keyToSceneIdMap[entry.address] = id;
+                        }
+                        else
+                        {
+                            var loadableObjId = LoadableObjectIdEditorUtility.CreateLoadableObjectId(targetAsset.GetEntityId());
+                            id = m_GlobalRootAsset.AddAsset(loadableObjId);
+                            m_keyToAssetIdMap[entry.address] = id;
+                        }
+                    }
+
+                    // Build labels list
+                    var labels = new List<string>();
+                    if (contentDirectoryGroupSchema.IncludeLabelsInCatalog)
+                        labels.AddRange(entry.labels);
+                    string folderKey = contentDirectoryGroupSchema.IncludeFolderKeysInCatalog ? entry.ParentFolderAddress : null;
+                    bool isFolderChild = !string.IsNullOrEmpty(folderKey) && folderKey != entry.address;
+                    if (isFolderChild)
+                        labels.Add(folderKey);
+                    if (entry.MainAsset != entry.TargetAsset && entry.MainAssetType != typeof(SpriteAtlas))
+                    {
+                        string guidBasedKey = $"{entryGuid}[{targetAsset.name}]";
+                        labels.Add(guidBasedKey);
+                    }
+
+                    // Store entry data for catalog generation
+                    var buildEntry = new BuildEntryData
+                    {
+                        key = entry.address,
+                        guid = entryGuid,
+                        labels = labels,
+                        type = convertedType,
+                        isScene = isScene,
+                        id = id,
+                        includeAddressKey = contentDirectoryGroupSchema.IncludeAddressesForFolderChildren || !isFolderChild
+                    };
+                    m_CatalogIdToEntriesMap[catalogId].Add(buildEntry);
+
+                    EvaluateIsSubObject(buildEntry);
                 }
 
-                // For subassets, use parent's GUID since subassets don't have their own GUID
-                string entryGuid = entry.guid;
-                if (string.IsNullOrEmpty(entryGuid) && entry.IsSubAsset && entry.ParentEntry != null)
-                {
-                    entryGuid = entry.ParentEntry.guid;
-                }
-                var convertedType = AddressableAssetUtility.MapEditorTypeToRuntimeType(entry.MainAssetType, false);
-                if (IsEditorTypeOrNull(convertedType))
-                {
-                    LogEditorTypeStrippedWarning(entry.MainAssetType, entry.AssetPath, isAssetPath: true);
-                    continue;
-                }
+                EditorUtility.SetDirty(m_GlobalRootAsset);
 
-                if (entry.IsScene)
-                    directoryAsset.Assets.Add(CreateLoadableSceneInfo(entry, entryGuid, convertedType));
-                else
-                    directoryAsset.Assets.Add(CreateLoadableInfo(entry, entryGuid, convertedType));
+                if (!m_CatalogIdToBuildPathMap.ContainsKey(catalogId))
+                    m_CatalogIdToBuildPathMap[catalogId] = contentDirectoryGroupSchema.BuildPath.GetValue(aaContext.Settings);
+                m_CatalogIdToLoadPathMap[catalogId] = contentDirectoryGroupSchema.LoadPath.GetValue(aaContext.Settings);
             }
-
-            AssetDatabase.CreateAsset(directoryAsset, assetPath);
-
-            m_CatalogIdToRootAssetMap[catalogId].Add(directoryAsset);
-            m_CatalogIdToRootAssetsPathMap[catalogId].Add(assetPath);
-
-            m_RootAssetToGroupMap[directoryAsset] = assetGroup;
-            m_RootAssetToAssetPathMap[directoryAsset] = assetPath;
-
-            m_CatalogIdToLoadPathMap[catalogId] = contentDirectoryGroupSchema.LoadPath.GetValue(aaContext.Settings);
 
             return string.Empty;
         }
 
+        void EvaluateIsSubObject(BuildEntryData buildEntry)
+        {
+            if (buildEntry.isScene)
+                return;
+
+            using (m_Logger.ScopedStep(LogLevel.Verbose, "EvaluateIsSubObject",
+                       ("Id", buildEntry.id.ToString()),
+                        ("Guid", buildEntry.guid)))
+            {
+                int bracketIdx = buildEntry.key.IndexOf('[');
+                if (bracketIdx > 0)
+                {
+                    string parentKey = buildEntry.key.Substring(0, bracketIdx + 1);
+                    if (!m_parentKeyToSubAssetInfo.TryGetValue(parentKey, out var info))
+                    {
+                        info = new SubAssetInfo();
+                        m_parentKeyToSubAssetInfo[parentKey] = info;
+                    }
+
+                    info.Ids.Add(buildEntry.id);
+                    info.ElementTypes.Add(buildEntry.type);
+                }
+            }
+        }
+
         void CreateContentDirectoryBuildFolder()
         {
-            if (Directory.Exists(RootAssetBuildPath))
-                Directory.Delete(RootAssetBuildPath, true);
-            Directory.CreateDirectory(RootAssetBuildPath);
-            AssetDatabase.ImportAsset(RootAssetBuildPath, ImportAssetOptions.ForceSynchronousImport);
+            using (m_Logger.ScopedStep(LogLevel.Verbose, "CreateContentDirectoryBuildFolder"))
+            {
+
+                if (Directory.Exists(RootAssetBuildPath))
+                    Directory.Delete(RootAssetBuildPath, true);
+                Directory.CreateDirectory(RootAssetBuildPath);
+                AssetDatabase.ImportAsset(RootAssetBuildPath, ImportAssetOptions.ForceSynchronousImport);
+            }
         }
 
-        LoadableInfo CreateLoadableSceneInfo(AddressableAssetEntry entry, string entryGuid, Type convertedType)
+        string GetParentKeyPattern(string key)
         {
-            var labels = new List<string>(entry.labels);
-            var loadableInfo = new LoadableInfo
-            {
-                key = entry.address,
-                guid = entryGuid,
-                labels = labels,
-                type = convertedType,
-                loadable = null,
-                scene = LoadableSceneIdEditorUtility.CreateLoadableSceneId(entry.AssetPath)
-            };
-            return loadableInfo;
+            int idx = key.IndexOf('[');
+            return idx >= 0 ? key.Substring(0, idx + 1) : key + "[";
         }
 
-        LoadableInfo CreateLoadableInfo(AddressableAssetEntry entry, string entryGuid, Type convertedType)
+        void AddSpriteAtlasEntries(BuildEntryData entry, List<ContentCatalogDataEntry> catalogEntries)
         {
-            // Use TargetAsset instead of MainAsset to properly reference subassets (e.g., Sprites from a Texture2D)
-            // MainAsset returns the parent asset, while TargetAsset returns the actual subasset
-            var labels = new List<string>(entry.labels);
+            if (entry.type != typeof(SpriteAtlas))
+                return;
 
-            var address = entry.address;
-            var targetAsset = entry.TargetAsset ?? entry.MainAsset;
-            if (entry.MainAsset != entry.TargetAsset && entry.MainAssetType != typeof(SpriteAtlas))
+            if (!m_SpriteAtlasKeyToSprites.TryGetValue(entry.key, out var spritesEntries))
+                return;
+
+            foreach (var spriteEntry in spritesEntries)
             {
-                labels.Add($"{entryGuid}[{targetAsset.name}]");
+                var keys = new List<string>();
+                if (spriteEntry.includeAddressKey)
+                    keys.Add(spriteEntry.address);
+                keys.AddRange(spriteEntry.labels);
+
+                ContentCatalogDataEntry spriteAddressableEntry = new ContentCatalogDataEntry(
+                    typeof(Sprite),
+                    spriteEntry.address,
+                    typeof(AtlasSpriteProvider).FullName,
+                    keys,
+                    new List<string>() { entry.key } // Dependency on parent atlas
+                );
+                catalogEntries.Add(spriteAddressableEntry);
+            }
+        }
+
+        /// <summary>
+        /// When a non-sub-asset entry (e.g. a multi-sprite Texture2D) has precomputed
+        /// sub-asset IDs whose element type differs from the parent type, emits an extra
+        /// catalog location typed as the sub-asset element type (e.g. Sprite). This
+        /// mirrors the standard Addressables multi-type expansion and allows
+        /// <c>LoadAssetAsync&lt;IList&lt;Sprite&gt;&gt;(bareKey)</c> to resolve through the catalog
+        /// type filter so <see cref="NativeContentAssetEntryProvider.HandleListRequest"/>
+        /// can execute.
+        /// </summary>
+        /// <summary>
+        /// For each sub-asset element type that differs from the parent entry's type, emits an
+        /// additional catalog location at the same bare key so that
+        /// <c>LoadAssetAsync&lt;IList&lt;T&gt;&gt;(bareKey)</c> resolves through the catalog type filter
+        /// and <see cref="NativeContentAssetEntryProvider.HandleListRequest"/> can execute.
+        /// Mirrors standard Addressables' multi-type expansion (one catalog entry per serialized type).
+        /// </summary>
+        void AddSubAssetListCatalogEntry(BuildEntryData entry, SubAssetInfo subAssetInfo, string loadPath,
+            List<string> keys, ContentDirectoryAssetData assetData, List<ContentCatalogDataEntry> catalogEntries)
+        {
+            if (subAssetInfo == null)
+                return;
+
+            foreach (var subAssetElementType in subAssetInfo.ElementTypes)
+            {
+                if (subAssetElementType == entry.type)
+                    continue;
+
+                var listEntry = new ContentCatalogDataEntry(
+                    subAssetElementType,
+                    entry.key,
+                    typeof(NativeContentAssetListProvider).FullName,
+                    keys,
+                    null,
+                    assetData
+                );
+
+                listEntry.Keys.AddRange(entry.labels);
+                catalogEntries.Add(listEntry);
+            }
+        }
+
+        void AddAssetCatalogEntry(BuildEntryData entry, string loadPath, List<ContentCatalogDataEntry> catalogEntries)
+        {
+            string providerTypeName = typeof(NativeContentAssetEntryProvider).FullName;
+
+            int[] subAssetIds = null;
+            SubAssetInfo subAssetInfo = null;
+            List<string> keys = new List<string>();
+            if (entry.includeAddressKey)
+                keys.Add(entry.key);
+
+            if (!ResourceManagerConfig.ExtractKeyAndSubKey(entry.key, out string mainKey, out string subKey))
+            {
+                keys.Add(entry.guid);
+
+                if (!entry.isScene)
+                {
+                    string parentPattern = GetParentKeyPattern(entry.key);
+                    m_parentKeyToSubAssetInfo.TryGetValue(parentPattern, out subAssetInfo);
+                    if (subAssetInfo != null)
+                        subAssetIds = subAssetInfo.Ids.ToArray();
+                }
             }
 
-            var loadableRef = LoadableObjectIdEditorUtility.CreateLoadableObjectId(targetAsset.GetEntityId());
-            var loadableInfo = new LoadableInfo
+            var assetData = new ContentDirectoryAssetData
             {
-                key = address,
-                guid = entryGuid,
-                labels = labels,
-                type = convertedType,
-                loadable = new Loadable<Object>(loadableRef),
-                scene = default
+                AssetId = entry.isScene ? ContentDirectoryAssetData.kInvalidId : entry.id,
+                SceneId = entry.isScene ? entry.id : ContentDirectoryAssetData.kInvalidId,
+                SubAssetIds = subAssetIds,
+                LoadPath = loadPath
             };
-            return loadableInfo;
+
+            var addressableEntry = new ContentCatalogDataEntry(
+                entry.type,
+                entry.key,
+                providerTypeName,
+                keys,
+                null,
+                assetData
+            );
+
+            addressableEntry.Keys.AddRange(entry.labels);
+            catalogEntries.Add(addressableEntry);
+
+            AddSubAssetListCatalogEntry(entry, subAssetInfo, loadPath, keys, assetData, catalogEntries);
         }
     }
 }

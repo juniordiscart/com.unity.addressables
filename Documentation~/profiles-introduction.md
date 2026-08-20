@@ -11,21 +11,24 @@ You can set up different profiles for the different phases or tasks in your deve
 
 ## Profile examples
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 Consider the following example, which demonstrates the local development phase of your content:
 
-![Content with local and remote bundles stored locally for development.](images/profiles-example-local.png)<br/>
+![Content with local and remote AssetBundles stored locally for development.](images/profiles-example-local.png)<br/>
 
-While in development, you have both your local and remote bundles using local paths:
+While in development, you have both local and remote AssetBundles using local paths:
 
 ![The Addressable Profiles window displays paths set for local development.](images/profiles-example-local-paths.png)<br/>*The Addressable Profiles window displays paths set for local development.*
 
 In this example, the local and remote paths are both local, which makes it unnecessary to set up a remote server just for local development.
 
-Once the content is ready for production, you can move the remote bundles to a server:
+Once the content is ready for production, you can move the remote AssetBundles to a server:
 
-![Content with the remote bundles moved to a server for production.](images/profiles-example-remote.png)<br/>*Content with the remote bundles moved to a server for production.*
+![Content with the remote AssetBundles moved to a server for production.](images/profiles-example-remote.png)<br/>*Content with the remote AssetBundles moved to a server for production.*
 
-In this case, if you use profiles, you can change the remote load path for `Production` to that server. Without having to change any asset groups, you can change all remote bundles to remote.
+In this case, if you use profiles, you can change the remote load path for `Production` to that server. Without having to change any asset groups, you can change all remote AssetBundles to remote.
 
 ![The Addressable Profiles window displays paths set for hosting remote content.](images/profiles-example-remote-paths.png)<br/>*The Addressable Profiles window displays paths set for hosting remote content.*
 

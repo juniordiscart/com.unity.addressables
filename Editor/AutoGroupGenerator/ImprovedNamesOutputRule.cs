@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEditor.AddressableAssets.Settings;
 
 namespace AutoGroupGenerator
 {
@@ -10,6 +11,7 @@ namespace AutoGroupGenerator
     /// Output rule that renames group layouts using simple heuristics.
     /// </summary>
     [CreateAssetMenu(menuName = Constants.ContextMenus.OutputRulesMenu + nameof(ImprovedNamesOutputRule))]
+    [AddressablesHelpURL("groups-auto-group-generator-reference.html")]
     public class ImprovedNamesOutputRule : OutputRule
     {
         #region Methods

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;

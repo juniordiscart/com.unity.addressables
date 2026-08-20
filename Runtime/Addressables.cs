@@ -247,35 +247,46 @@ namespace UnityEngine.AddressableAssets
             switch (format)
             {
                 case Format.StandardMessage:
-                    return string.Format(BaseInvalidKeyMessageFormat, base.Message, Key.ToString(), Type.FullName);
+                    return string.Format(BaseInvalidKeyMessageFormat, base.Message, FormatKey(Key), Type.FullName);
 
                 case Format.MultipleTypesRequested:
-                    var e = Key as IEnumerable;
-                    string types = null;
-                    foreach (var o in e)
-                    {
-                        if (types == null)
-                            types = o.ToString();
-                        else
-                            types += ", " + o.ToString();
-                    }
-                    return string.Format(MultipleTypesMessageFormat, base.Message, types);
+                    return string.Format(MultipleTypesMessageFormat, base.Message, FormatKey(Key));
                 case Format.NoLocation:
 #if UNITY_EDITOR
                     string assetPath = AssetDatabase.GUIDToAssetPath(Key.ToString());
                     if (!string.IsNullOrEmpty(assetPath))
                     {
-                        return string.Format(EditorNoLocationMessageFormat, base.Message, Key.ToString(), assetPath);
+                        return string.Format(EditorNoLocationMessageFormat, base.Message, FormatKey(Key), assetPath);
                     }
 #endif
-                    return string.Format(NoLocationMessageFormat, base.Message, Key.ToString());// $"{base.Message} No Location found for Key={keyString}";
+                    return string.Format(NoLocationMessageFormat, base.Message, FormatKey(Key));// $"{base.Message} No Location found for Key={keyString}";
                 case Format.TypeMismatch:
-                    return string.Format(TypeMismatchMessageFormat, base.Message, Key.ToString(), Type.FullName, foundWithTypeString);
+                    return string.Format(TypeMismatchMessageFormat, base.Message, FormatKey(Key), Type.FullName, foundWithTypeString);
                 case Format.MultipleTypeMismatch:
-                    return string.Format(MultipleTypeMismatchMessageFormat, base.Message, Key.ToString(), Type.FullName, foundWithTypeString);
+                    return string.Format(MultipleTypeMismatchMessageFormat, base.Message, FormatKey(Key), Type.FullName, foundWithTypeString);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(format), format, null);
             }
+        }
+
+        internal string FormatKey(object key)
+        {
+            if (key is string keyString)
+                return keyString;
+            if (key is IEnumerable e)
+            {
+                var output = new StringBuilder();
+                foreach(var i in e)
+                {
+                    if (output.Length > 0)
+                    {
+                        output.Append(", ");
+                    }
+                    output.Append(i);
+                }
+                return output.ToString();
+            }
+            return key.ToString();
         }
 
         internal string FormatMergeModeMessage(Format format, string keysAvailable = null, string keysUnavailable = null, string typeString = null)

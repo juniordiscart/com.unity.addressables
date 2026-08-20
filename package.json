@@ -1,7 +1,7 @@
 {
   "name": "com.unity.addressables",
   "displayName": "Addressables",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "unity": "6000.0",
   "description": "The Addressable Asset System allows the developer to ask for an asset via its address. Once an asset (e.g. a prefab) is marked \"addressable\", it generates an address which can be called from anywhere. Wherever the asset resides (local or remote), the system will locate it and its dependencies, then return it.\n\nUse 'Window->Asset Management->Addressables' to begin working with the system.\n\nAddressables use asynchronous loading to support loading from any location with any collection of dependencies. Whether you have been using direct references, traditional asset bundles, or Resource folders, addressables provide a simpler way to make your game more dynamic. Addressables simultaneously opens up the world of asset bundles while managing all the complexity.\n\nFor usage samples, see github.com/Unity-Technologies/Addressables-Sample",
   "keywords": [
@@ -12,7 +12,7 @@
     "assetbundles"
   ],
   "dependencies": {
-    "com.unity.scriptablebuildpipeline": "3.1.1",
+    "com.unity.scriptablebuildpipeline": "4.0.0",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
@@ -59,15 +59,15 @@
     }
   ],
   "_upm": {
-    "changelog": "- Revert breaking changes.\n- Fixed: Build Report now shows correct duplication count for embedded assets referenced in bundles."
+    "changelog": "- Fixed binary catalog serialization embedding runtime-specific core library names (mscorlib / System.Private.CoreLib) in generic type arguments, which could fail to resolve when the catalog was loaded on a different .NET runtime than it was built on.\n- Fixed an exception (\"Attempting to use an invalid operation handle\") thrown from `AddressablesImpl.Dispose()` when stopping Play Mode after loading an Addressable scene.\n- Added support for awaiting an `AsyncOperationHandle`/`AsyncOperationHandle<T>` directly (`await handle`), throwing an `AsyncOperationHandleException` on failure instead of resolving to `default` like `.Task` does.\n- Added `AsyncOperationHandle.ToAwaitable(CancellationToken)` and `ToAwaitable(MonoBehaviour)` overloads: canceling the token releases the handle and cancels the pending await, so a lifetime-scoped token (for example `destroyCancellationToken`) can replace a manual release call.\n- Fixed an issue where an in-flight remote AssetBundle load would never fail when entering play mode without a domain reload, leaving its `AsyncOperationHandle` stuck at `AsyncOperationStatus.None`.\n- Fixed blurry Active Profile checkmark icon on high-DPI displays\n- Added 64-character limit for Profile and Variable names to prevent UI breakage\n- Fixed Addressables section overlap in Inspector on narrow windows\n- Fixed Move Up/Move Down schema reordering in AddressableAssetGroupTemplate Inspector\n- Added hover state visual feedback to Remote/Local dropdown menu items in Profiles window\n- Fixed Prepare for Content Update so groups with a disabled BundledAssetGroupSchema are skipped instead of processed.\n- Exposed `ReferenceCount` as a public read-only property on `AsyncOperationHandle` and `AsyncOperationHandle<TObject>` so memory/leak tracking tools can read the handle's reference count without using reflection. Returns 0 when the handle is not valid.\n- Updating Scriptable Build Pipeline reference.\n- Fixed remote catalog URLs being generated with a double slash between the remote load path and the catalog file name when \"Build Remote Catalog\" is enabled.\n- Fixed UI issue where Bundle Pack Mode was using the incorrect label in the inspector\n- Optimized Content Directory builds with archiving enabled to eliminate writing artifacts to disk before archiving (now archives directly from UDS)\n- Fixed the Content Directory promotion banner being unreadable in the editor's Light mode and its text appearing as a clickable link on hover.\n- Added build check when a Content Directory uses a remote load path. Skip uploading Content Directory files to Cloud Content Delivery.\n- Fixed an issue where Select Addressable Group window opens outside Editor bounds.\n- Fixed Inspector help (?) button on Addressables ScriptableObjects (e.g. AddressableAssetSettings) opening a missing documentation page (UUM-125928).\n- Made AsyncOperationHandle Reference Count available as a readonly public property\n- Converting a group to Content Directories now disables the AssetBundle schema instead of removing it, so the change can be reversed.\n- Added a \"Convert schema(s) to AssetBundles\" option to the group context menu to convert Content Directory groups back to AssetBundles.\n- Converting a group with remote content to Content Directories now logs a warning and adds the Content Directory schema in a disabled state instead of producing an invalid configuration.\n- Added the option to load every asset in an addressable folder with a single call (e.g. `Addressables.LoadAssetsAsync<T>(folderAddress, ...)`), similar to `Resources.LoadAll`. Enable via the new **Include Folder Keys in Catalog** group schema property (enabled by default).\n- Added an **Exclude Individual Addresses for Folder Assets** group schema property (disabled by default) to further reduce catalog size when a folder's assets are only ever loaded via the folder key.\n- Added a missing **Include Labels in Catalog** toggle to the Content Directory group schema (`ENABLE_CONTENT_DIRECTORIES`).\n- Fixed a bug where a sprite from a directly-marked `SpriteAtlas`, or a sub-object of a directly-marked main"
   },
   "upmCi": {
-    "footprint": "865f5462f3378cef006a0dab8ca2f53cfa112d5f"
+    "footprint": "a8d9d1f972de3afc13da04ef6e6f9b1fe53352f5"
   },
-  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@3.1/manual/index.html",
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.addressables@4.0/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/Addressables.git",
     "type": "git",
-    "revision": "72cf54e59880f71effc99cd19103294e6c86b8c6"
+    "revision": "104866e2ad8909f543d39b9bfeb358d8fbb2c44a"
   }
 }

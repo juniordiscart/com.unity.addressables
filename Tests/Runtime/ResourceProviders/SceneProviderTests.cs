@@ -19,7 +19,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders.Tests
         [TestCase(typeof(CustomDependencyTypeProvider), typeof(Texture2D))]
         [TestCase(typeof(CustomNonBaseProvider), typeof(IAssetBundleResource))]
 #if ENABLE_CONTENT_DIRECTORIES
-        [TestCase(typeof(GroupRootAssetEntryProvider), typeof(Object))]
+        [TestCase(typeof(NativeContentAssetEntryProvider), typeof(Object))]
 #endif
         public void DependencyResourceType_ResourceProviderBase_DefaultsToIAssetBundleResource(Type resourceProviderType, Type expectedDepType)
         {

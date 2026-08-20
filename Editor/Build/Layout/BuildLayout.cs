@@ -196,6 +196,11 @@ namespace UnityEditor.AddressableAssets.Build.Layout
         /// </summary>
         public string BuildError;
 
+        // Number of entries in DuplicatedAssets, mirrored into the header so analytics can read the
+        // count without parsing the full report body. Kept in sync in BuildLayoutGenerationTask.
+        [SerializeField]
+        internal int DuplicatedAssetCount;
+
         #endregion // End of header values
 
         /// <summary>
@@ -291,6 +296,7 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             public double Duration;
             public string BuildError;
             public GUID BuildSessionGUID;
+            public int DuplicatedAssetCount;
         }
 
         /// <summary>
@@ -344,7 +350,8 @@ namespace UnityEditor.AddressableAssets.Build.Layout
                     BuildStartTime = this.BuildStartTime,
                     Duration = this.Duration,
                     BuildError = this.BuildError,
-                    BuildSessionGUID = this.AddressablesBuildSessionGUID
+                    BuildSessionGUID = this.AddressablesBuildSessionGUID,
+                    DuplicatedAssetCount = this.DuplicatedAssetCount
                 };
                 headerJson = JsonUtility.ToJson(header, false);
                 headerJson = headerJson.Remove(headerJson.Length - 1, 1) + ',';
@@ -553,6 +560,12 @@ namespace UnityEditor.AddressableAssets.Build.Layout
             /// Addressables setting value set for if the use wants to Disable Binary Catalogs and use Json Catalogs
             /// </summary>
             public bool EnableJsonCatalog;
+
+            /// <summary>
+            /// The full type name of the runtime ContentCatalogProvider used by this build (e.g.
+            /// "UnityEngine.AddressableAssets.ResourceProviders.BinaryCatalogProvider").
+            /// </summary>
+            public string CatalogProviderType;
 
             /// <summary>
             /// Addressables setting value set for if the build used non recursive dependency calculation

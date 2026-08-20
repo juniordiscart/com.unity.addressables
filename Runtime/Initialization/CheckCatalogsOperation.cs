@@ -34,7 +34,7 @@ namespace UnityEngine.AddressableAssets
             }
 
             ContentCatalogProvider ccp = m_Addressables.ResourceManager.ResourceProviders
-                .FirstOrDefault(rp => rp.GetType() == typeof(ContentCatalogProvider)) as ContentCatalogProvider;
+                .FirstOrDefault(rp => rp is ContentCatalogProvider) as ContentCatalogProvider;
             if (ccp != null)
                 ccp.DisableCatalogUpdateOnStart = false;
 

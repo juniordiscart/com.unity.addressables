@@ -1,5 +1,8 @@
 # Introduction to update builds
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 When you distribute content remotely, you can make content changes without needing to rebuild and republish your entire application. When the Addressables system initializes at runtime, it checks for an updated content catalog and downloads it. When Addressables loads assets it then downloads any AssetBundles with newer versions.
 
 If you rebuild all the content in your project with a new [content catalog](build-content-catalogs.md), installed Players must download all the remote AssetBundles again, whether the assets in them have changed or not. If your application contains a large amount of content, then downloading everything again can take a significant amount of time. To make this process more efficient, the Addressables package provides tools that you can run to identify changed assets and to produce a content update build.

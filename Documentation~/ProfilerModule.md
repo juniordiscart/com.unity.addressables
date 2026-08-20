@@ -6,6 +6,9 @@ uid: addressables-profiler-module
 
 Reference for the Addressables Profiler module. To open the Profiler, go to __Window__ > __Analysis__ > __Profiler__.
 
+>[!IMPORTANT]
+>The Addressables Profiler module doesn't include data about groups that use the [Content Directory schema](GroupSchemas).
+
 ## View
 
 To change what content is displayed, select the detail pane toolbar dropdown button **View**.

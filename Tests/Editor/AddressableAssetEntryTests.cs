@@ -522,9 +522,9 @@ namespace UnityEditor.AddressableAssets.Tests
                 List<AddressableAssetEntry> entries = new List<AddressableAssetEntry>();
                 addrFolderEntry.GatherFolderEntries(entries, true, includeSubObjects, null);
                 if (includeSubObjects)
-                    Assert.AreEqual(entries.Count, 2, "GatherFolder entries was expected to return the Asset added and its subObject");
+                    Assert.AreEqual(2, entries.Count, "GatherFolder entries was expected to return the Asset added and its subObject");
                 else
-                    Assert.AreEqual(entries.Count, 1, "GatherFolder entries was expected to only return the Asset added and not its subObject");
+                    Assert.AreEqual(1, entries.Count, "GatherFolder entries was expected to only return the Asset added and not its subObject");
             }
             finally
             {

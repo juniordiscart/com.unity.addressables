@@ -6,17 +6,16 @@ using System.IO;
 using System.Linq;
 using Unity.Loading;
 using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEditor;
-using UnityEditor.Build;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEditor.SceneManagement;
 using UnityEditor.U2D;
+using UnityEditor.VersionControl;
 using UnityEngine;
+using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -30,8 +29,6 @@ namespace UnityEditor.AddressableAssets.Tests
     {
         ContentDirectorySchemaBuilder schemaBuilder;
         AddressablesDataBuilderInput input;
-        ExtractDataTask extractData = new ExtractDataTask();
-        List<CachedAssetState> carryOverCachedState = new List<CachedAssetState>();
         AddressableAssetsBuildContext aaContext = new AddressableAssetsBuildContext();
         AddressablesPlayerBuildResult addressablesBuildResult;
         List<string> m_CreatedAssetPaths = new List<string>();
@@ -60,8 +57,6 @@ namespace UnityEditor.AddressableAssets.Tests
             input.Logger = new BuildLog();
             input.SetAllValues(Settings, EditorUserBuildSettings.selectedBuildTargetGroup, EditorUserBuildSettings.activeBuildTarget, "1.0", false, new string[0]);
 
-            extractData = new ExtractDataTask();
-            carryOverCachedState.Clear();
             addressablesBuildResult = new AddressablesPlayerBuildResult();
             m_CreatedAssetPaths.Clear();
             m_CreatedAssetGuids.Clear();
@@ -91,12 +86,9 @@ namespace UnityEditor.AddressableAssets.Tests
             EditorSettings.spritePackerMode = m_SavedSpritePackingMode;
         }
 
-#if ENABLE_JSON_CATALOG
         [Test]
-        public void ContentDirectorySchemaBuilder_GeneratesContentCatalogWithCorrectLocations()
+        public void ContentDirectorySchemaBuilder_GeneratesLocationsWithCorrectEntries()
         {
-            ContentDirectoryGroupSchema contentDirectoryGroupSchema = CreateSchema();
-
             string groupName = "GenerateCatalogTestGroup";
             string buildPath = Path.Combine(TestFolder, "ContentDirectories");
             Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
@@ -104,59 +96,64 @@ namespace UnityEditor.AddressableAssets.Tests
             Directory.CreateDirectory(buildPath);
 
             AddressableAssetGroup group = GetGroupWithEntry(groupName);
-            schemaBuilder.Init(null, null);
-            schemaBuilder.ProcessGroupSchema(contentDirectoryGroupSchema, group, aaContext);
-            group.AddSchema(contentDirectoryGroupSchema);
+            group.AddSchema(CreateSchema());
+            var contentDirectoryGroupSchema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schemaBuilder.Init(null, input, null, null);
+            schemaBuilder.ProcessGroupSchema(aaContext, contentDirectoryGroupSchema);
 
             StubBuildManifest(buildPath);
 
-            var catalogs = schemaBuilder.GenerateCatalogs(input, aaContext, addressablesBuildResult);
+            var locations = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
 
-            Assert.AreEqual(1, catalogs[0].InternalIds.Where(id => id == "test").Count(), "The loadable address didn't make it into the catalog locations.");
-            Assert.AreEqual(1, catalogs[0].InternalIds.Where(id => id == $"{groupName}_RootAsset").Count(), "The Addressables root asset didn't make it into the catalog.");
-            Assert.AreEqual(1, catalogs[0].InternalIds.Where(id => id == buildPath).Count(), "The content directory key didn't make it into the catalog.");
+            Assert.AreEqual(1, locations.Count, "Expected exactly one catalog id.");
+            Assert.IsTrue(locations.ContainsKey(contentDirectoryGroupSchema.CatalogId),
+                $"Expected catalog id '{contentDirectoryGroupSchema.CatalogId}' in the returned map.");
+            var entries = locations[contentDirectoryGroupSchema.CatalogId];
+            Assert.AreEqual(1, entries.Count(e => e.InternalId == "test"),
+                "The loadable address didn't make it into the catalog locations.");
+            // The standalone ContentDirectory location is no longer emitted; the load path now
+            // travels inside each entry's ContentDirectoryAssetData instead.
+            Assert.AreEqual(0, entries.Count(e => e.InternalId == buildPath),
+                "A standalone content directory location should no longer be emitted.");
 
-            Assert.AreEqual(1, catalogs.Count);
-            Assert.AreEqual(contentDirectoryGroupSchema.CatalogId, catalogs[0].ProviderId);
+            var assetData = entries[0].Data as ContentDirectoryAssetData;
+            Assert.IsNotNull(assetData, "Entry data should be ContentDirectoryAssetData.");
+            Assert.AreEqual(buildPath, assetData.LoadPath, "The content directory load path should be embedded in the entry data.");
 
             Directory.Delete(buildPath, true);
             File.Delete(buildPath + ".meta");
         }
-#endif
 
         [Test]
         public void ContentDirectorySchemaBuilder_CanGenerateMultipleCatalogs()
         {
-            ContentDirectoryGroupSchema contentDirectoryGroupSchema = CreateSchema();
-            ContentDirectoryGroupSchema contentDirectoryGroupSchema2 = CreateSchema();
 
             string buildPath = Path.Combine(TestFolder, "ContentDirectories");
             Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
-
-            contentDirectoryGroupSchema2.CatalogId = "SecondCatalogId";
-
             Directory.CreateDirectory(buildPath);
 
-            AddressableAssetGroup group = GetGroupWithEntry();
-            AddressableAssetGroup group2 = GetGroupWithEntry();
+            AddressableAssetGroup group = GetGroupWithEntry("GroupInDefaultCatalog");
+            group.AddSchema(CreateSchema());
+            AddressableAssetGroup group2 = GetGroupWithEntry("GroupInSecondCatalog");
+            group2.AddSchema(CreateSchema());
 
-            schemaBuilder.Init(null, null);
-            schemaBuilder.ProcessGroupSchema(contentDirectoryGroupSchema, group, aaContext);
-            group.AddSchema(contentDirectoryGroupSchema);
-            schemaBuilder.ProcessGroupSchema(contentDirectoryGroupSchema2, group2, aaContext);
-            group2.AddSchema(contentDirectoryGroupSchema2);
+            var contentDirectoryGroupSchema = group.GetSchema<ContentDirectoryGroupSchema>();
+            var contentDirectoryGroupSchema2 = group2.GetSchema<ContentDirectoryGroupSchema>();
+            contentDirectoryGroupSchema2.CatalogId = "SecondCatalogId";
+
+            schemaBuilder.Init(null, input, null, null);
+            schemaBuilder.ProcessGroupSchema(aaContext, contentDirectoryGroupSchema);
+            schemaBuilder.ProcessGroupSchema(aaContext, contentDirectoryGroupSchema2);
 
             StubBuildManifest(buildPath);
 
-            var catalogs = schemaBuilder.GenerateCatalogs(input, aaContext, addressablesBuildResult);
+            var locations = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
 
-            Assert.AreEqual(2, catalogs.Count);
-
-            // sort so we get the same values back each time, this is done internall in SchemaDriverBuildScript
-            aaContext.runtimeData.CatalogLocations.Sort((a, b) => string.Compare(a.InternalId, b.InternalId, StringComparison.Ordinal));
-
-            Assert.AreEqual(contentDirectoryGroupSchema.CatalogId, catalogs[0].ProviderId);
-            Assert.AreEqual(contentDirectoryGroupSchema2.CatalogId, catalogs[1].ProviderId);
+            Assert.AreEqual(2, locations.Count, "Expected two distinct catalog ids.");
+            Assert.IsTrue(locations.ContainsKey(contentDirectoryGroupSchema.CatalogId),
+                $"Expected catalog id '{contentDirectoryGroupSchema.CatalogId}' in the returned map.");
+            Assert.IsTrue(locations.ContainsKey(contentDirectoryGroupSchema2.CatalogId),
+                $"Expected catalog id '{contentDirectoryGroupSchema2.CatalogId}' in the returned map.");
 
             Directory.Delete(buildPath, true);
             File.Delete(buildPath + ".meta");
@@ -165,36 +162,37 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void ContentDirectorySchemaBuilder_AddsMultipleCatalogsToAAContextRuntimeData()
         {
-            ContentDirectoryGroupSchema contentDirectoryGroupSchema = CreateSchema();
-            ContentDirectoryGroupSchema contentDirectoryGroupSchema2 = CreateSchema();
 
             string buildPath = Path.Combine(TestFolder, "ContentDirectories");
+            Directory.CreateDirectory(buildPath);
+
+            AddressableAssetGroup group = GetGroupWithEntry("GroupInDefaultCatalog");
+            group.AddSchema(CreateSchema());
+            AddressableAssetGroup group2 = GetGroupWithEntry("GroupInSecondCatalog");
+            group2.AddSchema(CreateSchema());
+
+            var contentDirectoryGroupSchema = group.GetSchema<ContentDirectoryGroupSchema>();
+            var contentDirectoryGroupSchema2 = group2.GetSchema<ContentDirectoryGroupSchema>();
+
             Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
             contentDirectoryGroupSchema2.CatalogId = "SecondCatalogId";
 
-            Directory.CreateDirectory(buildPath);
-
-            AddressableAssetGroup group = GetGroupWithEntry();
-            group.AddSchema(contentDirectoryGroupSchema);
-            AddressableAssetGroup group2 = GetGroupWithEntry();
-            group2.AddSchema(contentDirectoryGroupSchema2);
-
-            schemaBuilder.Init(null, null);
-            Assert.IsEmpty(schemaBuilder.ProcessGroupSchema(contentDirectoryGroupSchema, group, aaContext), "Unable to process first schema.");
-            Assert.IsEmpty(schemaBuilder.ProcessGroupSchema(contentDirectoryGroupSchema2, group2, aaContext), "Unable to process second schema.");
+            schemaBuilder.Init(null, input, null, null);
+            Assert.IsEmpty(schemaBuilder.ProcessGroupSchema(aaContext, contentDirectoryGroupSchema), "Unable to process first schema.");
+            Assert.IsEmpty(schemaBuilder.ProcessGroupSchema(aaContext, contentDirectoryGroupSchema2), "Unable to process second schema.");
 
             StubBuildManifest(buildPath);
 
-            var catalogs = schemaBuilder.GenerateCatalogs(input, aaContext, addressablesBuildResult);
+            var locations = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
 
-            int catalogCount = aaContext.runtimeData.CatalogLocations.Count;
-            Assert.AreEqual(2, catalogCount, $"We're expecting 2 catalogs to be in the runtimeData, but there were {catalogCount}");
-
-            // sort so we get the same values back each time, this is done internall in SchemaDriverBuildScript
-            aaContext.runtimeData.CatalogLocations.Sort((a, b) => string.Compare(a.InternalId, b.InternalId, StringComparison.Ordinal));
-
-            Assert.AreEqual(contentDirectoryGroupSchema.CatalogId, aaContext.runtimeData.CatalogLocations[0].Keys[0]);
-            Assert.AreEqual(contentDirectoryGroupSchema2.CatalogId, aaContext.runtimeData.CatalogLocations[1].Keys[0]);
+            // The builder returns one map entry per distinct catalog id; catalog file writing
+            // (and thus CatalogLocations population) now happens in BuildScriptSchemaDriven.
+            Assert.AreEqual(2, locations.Count,
+                "Expected 2 distinct catalog ids in the returned map.");
+            Assert.IsTrue(locations.ContainsKey(contentDirectoryGroupSchema.CatalogId),
+                $"Expected catalog id '{contentDirectoryGroupSchema.CatalogId}' in the returned map.");
+            Assert.IsTrue(locations.ContainsKey(contentDirectoryGroupSchema2.CatalogId),
+                $"Expected catalog id '{contentDirectoryGroupSchema2.CatalogId}' in the returned map.");
 
             Directory.Delete(buildPath, true);
             File.Delete(buildPath + ".meta");
@@ -203,19 +201,24 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void ContentDirectorySchemaBuilder_ProcessGroupSchema_CreatesRootAssetScriptableObjects()
         {
-            ContentDirectoryGroupSchema contentDirectoryGroupSchema = CreateSchema();
-            ContentDirectoryGroupSchema contentDirectoryGroupSchema2 = CreateSchema();
-
             string buildPath = Path.Combine(TestFolder, "ContentDirectories");
             Directory.CreateDirectory(buildPath);
 
-            AddressableAssetGroup group = GetGroupWithEntry();
+            AddressableAssetGroup group = GetGroupWithEntry("TestGroup");
+            group.AddSchema(CreateSchema());
+            var contentDirectoryGroupSchema = group.GetSchema<ContentDirectoryGroupSchema>();
 
-            schemaBuilder.Init(null, null);
-            schemaBuilder.ProcessGroupSchema(contentDirectoryGroupSchema, group, aaContext);
+            schemaBuilder.Init(null, input, null, null);
+            schemaBuilder.ProcessGroupSchema(aaContext, contentDirectoryGroupSchema);
 
-            //2 files because it should be the scriptable object and the meta file
+            // RootAssetBuildPath: AddressableRootAsset.asset + meta = 2 files
             Assert.AreEqual(2, Directory.GetFiles(schemaBuilder.RootAssetBuildPath).Count());
+
+            // Verify the root asset is an AddressableRootAsset
+            var rootAssetFiles = Directory.GetFiles(schemaBuilder.RootAssetBuildPath, "*.asset");
+            Assert.AreEqual(1, rootAssetFiles.Length, "Expected one root asset file");
+            var rootAsset = AssetDatabase.LoadAssetAtPath<AddressableRootAsset>(rootAssetFiles[0]);
+            Assert.IsNotNull(rootAsset, "Failed to load AddressableRootAsset");
 
             Directory.Delete(buildPath, true);
             File.Delete(buildPath + ".meta");
@@ -242,14 +245,14 @@ namespace UnityEditor.AddressableAssets.Tests
             ContentCatalogDataEntry entry = new ContentCatalogDataEntry(
                 typeof(Loadable<GameObject>),
                 "test",
-                typeof(GroupRootAssetProvider).FullName,
+                typeof(NativeContentAssetEntryProvider).FullName,
                 new List<string>() { "test" });
 
             aaContext.locations = new List<ContentCatalogDataEntry>();
             aaContext.locations.Add(entry);
 
             AddressableAssetGroup group = ScriptableObject.CreateInstance<AddressableAssetGroup>();
-            var guid = new GUID();
+            var guid = GUID.Generate();
             group.Initialize(Settings, groupName, guid.ToString(), false);
             AddressableAssetEntry addressableEntry = new AddressableAssetEntry("dummy", "test", null, false);
             addressableEntry.SetCachedPath(TestFolder + "/test.prefab");
@@ -258,7 +261,196 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        public void ProcessGroupSchema_TextureWithMultipleSprites_CreatesLoadableInfoForSubassets()
+        public void ProcessGroupSchema_WhenIncludeFolderKeysIsTrue_ChildrenGetFolderAddressAsKey()
+        {
+            // Use a build path unique to this test (rather than the "ContentDirectories" path
+            // shared by other tests in this file) so cleanup here can't race with, or be raced
+            // by, unrelated tests writing/deleting that shared folder.
+            string buildPath = Path.Combine(TestFolder, "ContentDirectories_FolderKeyTrue");
+            Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
+            Directory.CreateDirectory(buildPath);
+
+            string folderPath = GetAssetPath("FolderKeyCDTest1");
+            Directory.CreateDirectory(folderPath);
+            CreateAsset(folderPath + "/child1.prefab", "child1");
+            CreateAsset(folderPath + "/child2.prefab", "child2");
+            AssetDatabase.ImportAsset(folderPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+            // Folder gathering (AddressablesFileEnumeration.EnumerateAddressableFolder) needs the
+            // group to be registered with Settings.groups, unlike plain file entries -- so use
+            // Settings.CreateGroup rather than a raw unregistered ScriptableObject instance.
+            AddressableAssetGroup group = Settings.CreateGroup("FolderKeyCDGroup1", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schema.IncludeFolderKeysInCatalog = true;
+
+            var folderGuid = AssetDatabase.AssetPathToGUID(folderPath);
+            var folderEntry = Settings.CreateOrMoveEntry(folderGuid, group, false, false);
+            folderEntry.address = "FolderKeyCDTest1";
+
+            try
+            {
+                schemaBuilder.Init(null, input, null, null);
+                string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
+                Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
+
+                StubBuildManifest(buildPath);
+                var locationsMap = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
+                var entries = locationsMap[schema.CatalogId];
+
+                Assert.AreEqual(2, entries.Count, "Expected exactly one catalog entry per child prefab.");
+                foreach (var e in entries)
+                    CollectionAssert.Contains(e.Keys, "FolderKeyCDTest1", $"Folder key missing for entry '{e.InternalId}'");
+            }
+            finally
+            {
+                Settings.RemoveAssetEntry(folderPath);
+                AssetDatabase.DeleteAsset(folderPath);
+                Settings.RemoveGroup(group);
+                if (Directory.Exists(buildPath))
+                    AssetDatabase.DeleteAsset(buildPath);
+            }
+        }
+
+        [Test]
+        public void ProcessGroupSchema_WhenIncludeAddressesForFolderChildrenIsFalse_ChildLosesOwnAddressButKeepsGuidAndFolderKey()
+        {
+            string buildPath = Path.Combine(TestFolder, "ContentDirectories_ExcludeAddress");
+            Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
+            Directory.CreateDirectory(buildPath);
+
+            string folderPath = GetAssetPath("FolderKeyCDTest3");
+            Directory.CreateDirectory(folderPath);
+            var childGuid = CreateAsset(folderPath + "/child1.prefab", "child1");
+            AssetDatabase.ImportAsset(folderPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+            AddressableAssetGroup group = Settings.CreateGroup("FolderKeyCDGroup3", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schema.IncludeFolderKeysInCatalog = true;
+            schema.IncludeAddressesForFolderChildren = false;
+
+            var folderGuid = AssetDatabase.AssetPathToGUID(folderPath);
+            var folderEntry = Settings.CreateOrMoveEntry(folderGuid, group, false, false);
+            folderEntry.address = "FolderKeyCDTest3";
+
+            try
+            {
+                schemaBuilder.Init(null, input, null, null);
+                string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
+                Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
+
+                StubBuildManifest(buildPath);
+                var locationsMap = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
+                var entries = locationsMap[schema.CatalogId];
+
+                Assert.AreEqual(1, entries.Count);
+                var entry = entries[0];
+                CollectionAssert.DoesNotContain(entry.Keys, "FolderKeyCDTest3/child1.prefab", "Child's own address should have been excluded.");
+                CollectionAssert.Contains(entry.Keys, childGuid, "GUID should still be present -- only the address is excluded.");
+                CollectionAssert.Contains(entry.Keys, "FolderKeyCDTest3", "Folder key should still be present.");
+            }
+            finally
+            {
+                Settings.RemoveAssetEntry(folderPath);
+                AssetDatabase.DeleteAsset(folderPath);
+                Settings.RemoveGroup(group);
+                if (Directory.Exists(buildPath))
+                    AssetDatabase.DeleteAsset(buildPath);
+            }
+        }
+
+        [Test]
+        public void ProcessGroupSchema_WhenIncludeFolderKeysIsFalse_ChildrenDoNotGetFolderAddressAsKey()
+        {
+            string buildPath = Path.Combine(TestFolder, "ContentDirectories_FolderKeyFalse");
+            Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
+            Directory.CreateDirectory(buildPath);
+
+            string folderPath = GetAssetPath("FolderKeyCDTest2");
+            Directory.CreateDirectory(folderPath);
+            CreateAsset(folderPath + "/child1.prefab", "child1");
+            AssetDatabase.ImportAsset(folderPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+            AddressableAssetGroup group = Settings.CreateGroup("FolderKeyCDGroup2", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schema.IncludeFolderKeysInCatalog = false;
+
+            var folderGuid = AssetDatabase.AssetPathToGUID(folderPath);
+            var folderEntry = Settings.CreateOrMoveEntry(folderGuid, group, false, false);
+            folderEntry.address = "FolderKeyCDTest2";
+
+            try
+            {
+                schemaBuilder.Init(null, input, null, null);
+                string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
+                Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
+
+                StubBuildManifest(buildPath);
+                var locationsMap = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
+                var entries = locationsMap[schema.CatalogId];
+
+                Assert.AreEqual(1, entries.Count);
+                CollectionAssert.DoesNotContain(entries[0].Keys, "FolderKeyCDTest2");
+            }
+            finally
+            {
+                Settings.RemoveAssetEntry(folderPath);
+                AssetDatabase.DeleteAsset(folderPath);
+                Settings.RemoveGroup(group);
+                if (Directory.Exists(buildPath))
+                    AssetDatabase.DeleteAsset(buildPath);
+            }
+        }
+
+        [Test]
+        public void ProcessGroupSchema_WhenIncludeLabelsInCatalogIsFalse_LabelsAreExcludedFromKeys()
+        {
+            // ContentDirectoryGroupSchema previously had no IncludeLabelsInCatalog toggle at all
+            // (labels were always included); this proves the newly-added toggle actually gates them.
+            string buildPath = Path.Combine(TestFolder, "ContentDirectories_LabelToggle");
+            Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
+            Directory.CreateDirectory(buildPath);
+
+            string assetPath = GetAssetPath("labelledAsset.prefab");
+            var guid = CreateAsset(assetPath, "labelledAsset");
+
+            AddressableAssetGroup group = ScriptableObject.CreateInstance<AddressableAssetGroup>();
+            group.Initialize(Settings, "LabelToggleGroup", GUID.Generate().ToString(), false);
+            group.AddSchema(CreateSchema());
+            var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schema.IncludeLabelsInCatalog = false;
+
+            var entry = Settings.CreateOrMoveEntry(guid, group, false, false);
+            entry.address = "labelledAsset";
+            entry.SetLabel("myLabel", true, true, true);
+
+            try
+            {
+                schemaBuilder.Init(null, input, null, null);
+                string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
+                Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
+
+                StubBuildManifest(buildPath);
+                var locationsMap = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
+                var entries = locationsMap[schema.CatalogId];
+
+                Assert.AreEqual(1, entries.Count);
+                CollectionAssert.DoesNotContain(entries[0].Keys, "myLabel");
+            }
+            finally
+            {
+                Settings.RemoveLabel("myLabel");
+                Settings.RemoveAssetEntry(guid);
+                AssetDatabase.DeleteAsset(assetPath);
+                if (Directory.Exists(buildPath))
+                    AssetDatabase.DeleteAsset(buildPath);
+            }
+        }
+
+        [Test]
+        public void ProcessGroupSchema_TextureWithMultipleSprites_CreatesEntriesForSubassets()
         {
             // Setup - create a texture with multiple sprites
             string texturePath = CreateTextureWithMultipleSprites("testMultiSprite");
@@ -289,38 +481,35 @@ namespace UnityEditor.AddressableAssets.Tests
             }
 
             // Process with schema builder
-            ContentDirectoryGroupSchema schema = CreateSchema();
-            group.AddSchema(schema);
+            group.AddSchema(CreateSchema());
+            var schema = group.GetSchema<ContentDirectoryGroupSchema>();
 
-            schemaBuilder.Init(null, null);
-            string result = schemaBuilder.ProcessGroupSchema(schema, group, aaContext);
+            schemaBuilder.Init(null, input, null, null);
+            string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
             Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
 
-            // Load the generated GroupRootAsset and verify it contains entries for the sprites
+            // Load the generated AddressableRootAsset and verify it was created
             var rootAssetFiles = Directory.GetFiles(schemaBuilder.RootAssetBuildPath, "*.asset");
             Assert.AreEqual(1, rootAssetFiles.Length, "Expected one root asset file");
 
-            var rootAsset = AssetDatabase.LoadAssetAtPath<GroupRootAsset>(rootAssetFiles[0]);
-            Assert.IsNotNull(rootAsset, "Failed to load GroupRootAsset");
+            var rootAsset = AssetDatabase.LoadAssetAtPath<AddressableRootAsset>(rootAssetFiles[0]);
+            Assert.IsNotNull(rootAsset, "Failed to load AddressableRootAsset");
 
-            // Verify sprite entries exist in the root asset and reference the correct subasset
-            foreach (var subEntry in subAssetEntries)
+            // Verify the root asset has entries by checking that we can retrieve LoadableObjectIds
+            // for non-zero IDs (IDs are assigned starting from 1 in the current implementation)
+            int validIdCount = 0;
+            for (int i = 0; i <= 10; i++)
             {
-                var loadableInfo = rootAsset.GetLoadableInfo(subEntry.address, typeof(Sprite));
-                Assert.IsNotNull(loadableInfo, $"LoadableInfo not found for sprite subasset {subEntry.address}");
-                Assert.AreEqual(typeof(Sprite), loadableInfo.type, $"LoadableInfo type should be Sprite for {subEntry.address}");
-
-                // Verify the loadable actually references the sprite subasset, not the parent texture
-                var loadedAsset = loadableInfo.loadable.Load();
-                Assert.IsInstanceOf<Sprite>(loadedAsset,
-                    $"Loadable should reference the Sprite subasset, not {loadedAsset?.GetType().Name}");
-                Assert.AreEqual(subEntry.TargetAsset, loadedAsset,
-                    $"Loadable should reference the exact sprite subasset '{subEntry.address}'");
+                var loadableObjId = rootAsset.GetLoadableObjectId(i);
+                if (loadableObjId != default)
+                    validIdCount++;
             }
+            // We should have at least main + 2 subassets = 3 entries
+            Assert.GreaterOrEqual(validIdCount, 3, $"Expected at least 3 valid LoadableObjectIds (main + 2 sprites), found {validIdCount}");
         }
 
         [Test]
-        public void ProcessGroupSchema_SpriteAtlas_CreatesLoadableInfoForAtlasSprites()
+        public void ProcessGroupSchema_SpriteAtlas_CreatesEntriesForAtlasSprites()
         {
             // macOS trunk may emit Assert "[Assert] Image invalid format!" during atlas pack/import or later asset
             // refresh while formats are still valid; Edit Mode treats unexpected logs as failures (see LogAssert).
@@ -356,32 +545,137 @@ namespace UnityEditor.AddressableAssets.Tests
                 }
 
                 // Process with schema builder
-                ContentDirectoryGroupSchema schema = CreateSchema();
-                group.AddSchema(schema);
+                group.AddSchema(CreateSchema());
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
 
-                schemaBuilder.Init(null, null);
-                string result = schemaBuilder.ProcessGroupSchema(schema, group, aaContext);
+                schemaBuilder.Init(null, input, null, null);
+                string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
                 Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
 
-                // Load the generated GroupRootAsset
+                // Load the generated AddressableRootAsset
                 var rootAssetFiles = Directory.GetFiles(schemaBuilder.RootAssetBuildPath, "*.asset");
                 Assert.AreEqual(1, rootAssetFiles.Length, "Expected one root asset file");
 
-                var rootAsset = AssetDatabase.LoadAssetAtPath<GroupRootAsset>(rootAssetFiles[0]);
-                Assert.IsNotNull(rootAsset, "Failed to load GroupRootAsset");
+                var rootAsset = AssetDatabase.LoadAssetAtPath<AddressableRootAsset>(rootAssetFiles[0]);
+                Assert.IsNotNull(rootAsset, "Failed to load AddressableRootAsset");
 
-                // Verify the main atlas entry exists and references the correct asset
-                var atlasLoadableInfo = rootAsset.GetLoadableInfo("testAtlas", typeof(SpriteAtlas));
-                Assert.IsNotNull(atlasLoadableInfo, "LoadableInfo not found for SpriteAtlas");
-
-                // Verify the loadable actually references the SpriteAtlas
-                var loadedAtlas = atlasLoadableInfo.loadable.Load();
-                Assert.IsInstanceOf<SpriteAtlas>(loadedAtlas,
-                    $"Loadable should reference the SpriteAtlas, not {loadedAtlas?.GetType().Name}");
+                // Verify the root asset has at least one valid entry
+                var loadableObjId = rootAsset.GetLoadableObjectId(0);
+                Assert.AreNotEqual(default(LoadableObjectId), loadableObjId, "Expected at least one valid LoadableObjectId for the atlas");
             }
             finally
             {
                 LogAssert.ignoreFailingMessages = prevIgnoreFailing;
+            }
+        }
+
+
+        [Test]
+        public void ProcessGroupSchema_SpriteAtlasInFolder_SpritesGetFolderAddressAsKey()
+        {
+            bool prevIgnoreFailing = LogAssert.ignoreFailingMessages;
+            LogAssert.ignoreFailingMessages = true;
+            string buildPath = Path.Combine(TestFolder, "ContentDirectories_AtlasFolderKey");
+            AddressableAssetGroup group = null;
+            string folderPath = GetAssetPath("FolderKeyCDAtlasTest1");
+            try
+            {
+                Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
+                Directory.CreateDirectory(buildPath);
+
+                Directory.CreateDirectory(folderPath);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+                CreateSpriteAtlasWithSprites("FolderKeyCDAtlasTest1/testAtlas");
+
+                group = Settings.CreateGroup("FolderKeyCDAtlasGroup1", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+                schema.IncludeFolderKeysInCatalog = true;
+
+                var folderGuid = AssetDatabase.AssetPathToGUID(folderPath);
+                var folderEntry = Settings.CreateOrMoveEntry(folderGuid, group, false, false);
+                folderEntry.address = "FolderKeyCDAtlasTest1";
+
+                schemaBuilder.Init(null, input, null, null);
+                string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
+                Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
+
+                StubBuildManifest(buildPath);
+                var locationsMap = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
+                var entries = locationsMap[schema.CatalogId];
+
+                var spriteEntries = entries.Where(e => e.ResourceType == typeof(Sprite)).ToList();
+                Assert.IsNotEmpty(spriteEntries, "Expected catalog entries for the atlas's sprites.");
+                foreach (var e in spriteEntries)
+                {
+                    CollectionAssert.Contains(e.Keys, "FolderKeyCDAtlasTest1", $"Folder key missing for atlas sprite '{e.InternalId}'");
+                    CollectionAssert.Contains(e.Keys, e.InternalId, $"Sprite's own address should still be a key by default for '{e.InternalId}'");
+                }
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = prevIgnoreFailing;
+                Settings.RemoveAssetEntry(folderPath);
+                AssetDatabase.DeleteAsset(folderPath);
+                if (group != null)
+                    Settings.RemoveGroup(group);
+                if (Directory.Exists(buildPath))
+                    AssetDatabase.DeleteAsset(buildPath);
+            }
+        }
+
+        [Test]
+        public void ProcessGroupSchema_SpriteAtlasInFolder_WhenIncludeAddressesForFolderChildrenIsFalse_SpriteLosesOwnAddressButKeepsFolderKey()
+        {
+            bool prevIgnoreFailing = LogAssert.ignoreFailingMessages;
+            LogAssert.ignoreFailingMessages = true;
+            string buildPath = Path.Combine(TestFolder, "ContentDirectories_AtlasExcludeAddress");
+            AddressableAssetGroup group = null;
+            string folderPath = GetAssetPath("FolderKeyCDAtlasTest2");
+            try
+            {
+                Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
+                Directory.CreateDirectory(buildPath);
+
+                Directory.CreateDirectory(folderPath);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+                CreateSpriteAtlasWithSprites("FolderKeyCDAtlasTest2/testAtlas");
+
+                group = Settings.CreateGroup("FolderKeyCDAtlasGroup2", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+                schema.IncludeFolderKeysInCatalog = true;
+                schema.IncludeAddressesForFolderChildren = false;
+
+                var folderGuid = AssetDatabase.AssetPathToGUID(folderPath);
+                var folderEntry = Settings.CreateOrMoveEntry(folderGuid, group, false, false);
+                folderEntry.address = "FolderKeyCDAtlasTest2";
+
+                schemaBuilder.Init(null, input, null, null);
+                string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
+                Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
+
+                StubBuildManifest(buildPath);
+                var locationsMap = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
+                var entries = locationsMap[schema.CatalogId];
+
+                var spriteEntries = entries.Where(e => e.ResourceType == typeof(Sprite)).ToList();
+                Assert.IsNotEmpty(spriteEntries, "Expected catalog entries for the atlas's sprites.");
+                foreach (var e in spriteEntries)
+                {
+                    CollectionAssert.DoesNotContain(e.Keys, e.InternalId, $"Sprite's own address should have been excluded for '{e.InternalId}'");
+                    CollectionAssert.Contains(e.Keys, "FolderKeyCDAtlasTest2", $"Folder key should still be present for atlas sprite '{e.InternalId}'");
+                }
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = prevIgnoreFailing;
+                Settings.RemoveAssetEntry(folderPath);
+                AssetDatabase.DeleteAsset(folderPath);
+                if (group != null)
+                    Settings.RemoveGroup(group);
+                if (Directory.Exists(buildPath))
+                    AssetDatabase.DeleteAsset(buildPath);
             }
         }
 
@@ -534,83 +828,150 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        public void ProcessGroupSchema_LabelsAreSortedAlphabetically_ForMultipleEntries()
+        public void Build_ThrowsWhenDisableWriteTypeTreeAndStripUnityVersionBothEnabled()
         {
+            string buildPath = Path.Combine(TestFolder, "ContentDirectories");
+            Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
+            Directory.CreateDirectory(buildPath);
+
+            AddressableAssetGroup group = GetGroupWithEntry();
+            group.AddSchema(CreateSchema());
+            ContentDirectoryGroupSchema contentDirectoryGroupSchema = group.GetSchema<ContentDirectoryGroupSchema>();
+            schemaBuilder.Init(aaContext, input, null, null);
+            schemaBuilder.ProcessGroupSchema(aaContext, contentDirectoryGroupSchema);
+            group.AddSchema(contentDirectoryGroupSchema);
+
+            bool originalDisable = Settings.DisableWriteTypeTree;
+            bool originalStrip = Settings.StripUnityVersion;
+            try
+            {
+                Settings.DisableWriteTypeTree = true;
+                Settings.StripUnityVersion = true;
+
+                var ex = Assert.Throws<InvalidOperationException>(() => schemaBuilder.Build(aaContext, addressablesBuildResult));
+                StringAssert.Contains("DisableWriteTypeTree", ex.Message);
+                StringAssert.Contains("StripUnityVersionFromBundleBuild", ex.Message);
+                StringAssert.Contains("Content Directory", ex.Message);
+            }
+            finally
+            {
+                Settings.DisableWriteTypeTree = originalDisable;
+                Settings.StripUnityVersion = originalStrip;
+
+                if (Directory.Exists(buildPath))
+                    Directory.Delete(buildPath, true);
+                if (File.Exists(buildPath + ".meta"))
+                    File.Delete(buildPath + ".meta");
+            }
+        }
+
+        [Test]
+        public void ProcessGroupSchema_ProcessesAssetsAndScenes()
+        {
+            // Use a build path unique to this test so cleanup here can't race with, or be
+            // raced by, unrelated tests writing/deleting the shared "ContentDirectories" folder.
+            string buildPath = Path.Combine(TestFolder, "ContentDirectories_AssetsAndScenes");
+            Settings.profileSettings.SetValue(Settings.activeProfileId, "Local.LoadPath", buildPath);
+            Directory.CreateDirectory(buildPath);
+
             // Create group and schema
-            AddressableAssetGroup group = Settings.CreateGroup("LabelSortTestGroup", false, false, false, null, typeof(ContentDirectoryGroupSchema));
-            group.Initialize(Settings, "LabelSortTestGroup", GUID.Generate().ToString(), false);
+            AddressableAssetGroup group = Settings.CreateGroup("ProcessTestGroup", false, false, false, null, typeof(ContentDirectoryGroupSchema));
+            group.Initialize(Settings, "ProcessTestGroup", GUID.Generate().ToString(), false);
             ContentDirectoryGroupSchema schema = group.GetSchema<ContentDirectoryGroupSchema>();
 
-            var sortedAssetLabels = new List<string> { "apple", "middle", "zebra" };
-            var sortedSceneLabels = new List<string> { "scene-a", "scene-m", "scene-z" };
-
-            // Register labels (in Settings) first, in non-alphabetical order
-            foreach(var label in sortedAssetLabels)
-                Settings.AddLabel(label);
-            foreach(var label in sortedSceneLabels)
-                Settings.AddLabel(label);
-
-            // Create prefab asset with labels in non-alphabetical order
+            // Create prefab asset
             string prefabPath = CreateAsset(GetAssetPath("testPrefab.prefab"), "testPrefab");
             m_CreatedAssetGuids.Add(prefabPath);
             var prefabEntry = Settings.CreateOrMoveEntry(prefabPath, group, false, false);
             prefabEntry.address = "testPrefab";
-            prefabEntry.SetLabel(sortedAssetLabels[2], true);
-            prefabEntry.SetLabel(sortedAssetLabels[0], true);
-            prefabEntry.SetLabel(sortedAssetLabels[1], true);
 
-            // Create texture asset with labels in different non-alphabetical order
+            // Create texture asset
             string texturePath = CreateTextureWithMultipleSprites("testTexture");
             string textureGuid = AssetDatabase.AssetPathToGUID(texturePath);
             m_CreatedAssetGuids.Add(textureGuid);
             var textureEntry = Settings.CreateOrMoveEntry(textureGuid, group, false, false);
             textureEntry.address = "testTexture";
-            textureEntry.SetLabel(sortedAssetLabels[1], true);
-            textureEntry.SetLabel(sortedAssetLabels[2], true);
-            textureEntry.SetLabel(sortedAssetLabels[0], true);
 
-            // Create scene asset with labels in yet another non-alphabetical order
-            string scenePath = GetAssetPath("testScene.unity");
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
-            EditorSceneManager.SaveScene(scene, scenePath);
-            m_CreatedAssetPaths.Add(scenePath);
+            // Create two scenes
+            string scenePathA = GetAssetPath("testSceneA.unity");
+            Scene sceneA = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+            EditorSceneManager.SaveScene(sceneA, scenePathA);
+            m_CreatedAssetPaths.Add(scenePathA);
+            string sceneGuidA = AssetDatabase.AssetPathToGUID(scenePathA);
+            m_CreatedAssetGuids.Add(sceneGuidA);
+            var sceneEntryA = Settings.CreateOrMoveEntry(sceneGuidA, group, false, false);
+            sceneEntryA.address = "testSceneA";
 
-            string sceneGuid = AssetDatabase.AssetPathToGUID(scenePath);
-            m_CreatedAssetGuids.Add(sceneGuid);
-            var sceneEntry = Settings.CreateOrMoveEntry(sceneGuid, group, false, false);
-            sceneEntry.address = "testScene";
-            sceneEntry.SetLabel(sortedSceneLabels[2], true);
-            sceneEntry.SetLabel(sortedSceneLabels[0], true);
-            sceneEntry.SetLabel(sortedSceneLabels[1], true);
+            string scenePathB = GetAssetPath("testSceneB.unity");
+            Scene sceneB = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+            EditorSceneManager.SaveScene(sceneB, scenePathB);
+            m_CreatedAssetPaths.Add(scenePathB);
+            string sceneGuidB = AssetDatabase.AssetPathToGUID(scenePathB);
+            m_CreatedAssetGuids.Add(sceneGuidB);
+            var sceneEntryB = Settings.CreateOrMoveEntry(sceneGuidB, group, false, false);
+            sceneEntryB.address = "testSceneB";
 
             // Process with schema builder
-            schemaBuilder.Init(null, null);
-            string result = schemaBuilder.ProcessGroupSchema(schema, group, aaContext);
+            schemaBuilder.Init(null, input, null, null);
+            string result = schemaBuilder.ProcessGroupSchema(aaContext, schema);
             Assert.IsEmpty(result, $"ProcessGroupSchema failed: {result}");
 
-            // Load the generated GroupRootAsset
+            // Load the generated AddressableRootAsset
             var rootAssetFiles = Directory.GetFiles(schemaBuilder.RootAssetBuildPath, "*.asset");
             Assert.AreEqual(1, rootAssetFiles.Length, "Expected one root asset file");
-            var rootAsset = AssetDatabase.LoadAssetAtPath<GroupRootAsset>(rootAssetFiles[0]);
-            Assert.IsNotNull(rootAsset, "Failed to load GroupRootAsset");
+            var rootAsset = AssetDatabase.LoadAssetAtPath<AddressableRootAsset>(rootAssetFiles[0]);
+            Assert.IsNotNull(rootAsset, "Failed to load AddressableRootAsset");
 
-            // Verify labels are sorted for prefab
-            var prefabLoadableInfo = rootAsset.GetLoadableInfo("testPrefab", typeof(GameObject));
-            Assert.IsNotNull(prefabLoadableInfo, "LoadableInfo not found for prefab");
-            CollectionAssert.AreEqual(sortedAssetLabels, prefabLoadableInfo.labels,
-                "Prefab labels should be sorted alphabetically");
+            // Verify the root asset has entries by counting valid LoadableObjectIds
+            // (assets including texture subassets)
+            int validAssetIdCount = 0;
+            for (int i = 0; i <= 20; i++)
+            {
+                var loadableObjId = rootAsset.GetLoadableObjectId(i);
+                if (loadableObjId != default)
+                    validAssetIdCount++;
+            }
 
-            // Verify labels are sorted for texture
-            var textureLoadableInfo = rootAsset.GetLoadableInfo("testTexture", typeof(Texture2D));
-            Assert.IsNotNull(textureLoadableInfo, "LoadableInfo not found for texture");
-            CollectionAssert.AreEqual(sortedAssetLabels, textureLoadableInfo.labels,
-                "Texture labels should be sorted alphabetically");
+            // We should have at least prefab + texture + 2 sprite subassets = 4 entries
+            Assert.GreaterOrEqual(validAssetIdCount, 4, $"Expected at least 4 valid LoadableObjectIds, found {validAssetIdCount}");
 
-            // Verify labels are sorted for scene
-            var sceneLoadableInfo = rootAsset.GetLoadableInfo("testScene", typeof(SceneInstance));
-            Assert.IsNotNull(sceneLoadableInfo, "LoadableInfo not found for scene");
-            CollectionAssert.AreEqual(sortedSceneLabels, sceneLoadableInfo.labels,
-                "Scene labels should be sorted alphabetically");
+            // Verify the root asset has scene entries
+            int validSceneIdCount = 0;
+            for (int i = 0; i <= 10; i++)
+            {
+                var loadableSceneId = rootAsset.GetLoadableSceneId(i);
+                if (loadableSceneId != default)
+                    validSceneIdCount++;
+            }
+            Assert.GreaterOrEqual(validSceneIdCount, 2, $"Expected at least 2 valid LoadableSceneIds, found {validSceneIdCount}");
+
+            // Verify each catalog entry's AssetId/SceneId and that the two scenes get distinct indices.
+            StubBuildManifest(buildPath);
+            var locations = schemaBuilder.GenerateCatalogLocations(aaContext, addressablesBuildResult);
+            var entries = locations[schema.CatalogId];
+
+            var prefabData = entries.Single(e => e.InternalId == "testPrefab").Data as ContentDirectoryAssetData;
+            Assert.AreEqual(-1, prefabData.SceneId, "Asset entry should have SceneId=-1 (not applicable).");
+            Assert.GreaterOrEqual(prefabData.AssetId, 0);
+
+            var sceneDataA = entries.Single(e => e.InternalId == "testSceneA").Data as ContentDirectoryAssetData;
+            var sceneDataB = entries.Single(e => e.InternalId == "testSceneB").Data as ContentDirectoryAssetData;
+            Assert.AreEqual(-1, sceneDataA.AssetId, "Scene entry should have AssetId=-1 (not applicable).");
+            Assert.AreEqual(-1, sceneDataB.AssetId, "Scene entry should have AssetId=-1 (not applicable).");
+            Assert.GreaterOrEqual(sceneDataA.SceneId, 0);
+            Assert.GreaterOrEqual(sceneDataB.SceneId, 0);
+            Assert.AreNotEqual(sceneDataA.SceneId, sceneDataB.SceneId, "Distinct scenes must get distinct SceneId indices.");
+
+            // Each SceneId resolves to a distinct, valid LoadableSceneId.
+            var loadableSceneA = rootAsset.GetLoadableSceneId(sceneDataA.SceneId);
+            var loadableSceneB = rootAsset.GetLoadableSceneId(sceneDataB.SceneId);
+            Assert.AreNotEqual(default(LoadableSceneId), loadableSceneA);
+            Assert.AreNotEqual(default(LoadableSceneId), loadableSceneB);
+            Assert.AreNotEqual(loadableSceneA, loadableSceneB);
+
+            Directory.Delete(buildPath, true);
+            if (File.Exists(buildPath + ".meta"))
+                File.Delete(buildPath + ".meta");
         }
     }
 }

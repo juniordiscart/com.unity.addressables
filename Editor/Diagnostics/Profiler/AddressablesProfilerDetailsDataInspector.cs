@@ -198,12 +198,12 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             if (bundleData.Source == BundleSource.Local)
             {
                 if (bundleData.CheckSumEnabled)
-                    m_HelpManager.MakeHelp(ProfilerStrings.LocalBundleUsingCRC, new List<ContentData>(), "ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
+                    m_HelpManager.MakeHelp(ProfilerStrings.LocalBundleUsingCRC, new List<ContentData>(), "group-inspector-settings-reference.html#advanced-options", "Learn more: About CRC");
             }
             else if (bundleData.Source == BundleSource.Cache)
             {
                 if (bundleData.CheckSumEnabled)
-                    m_HelpManager.MakeHelp(ProfilerStrings.CachedBundleUsingCRC, new List<ContentData>(), "ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
+                    m_HelpManager.MakeHelp(ProfilerStrings.CachedBundleUsingCRC, new List<ContentData>(), "group-inspector-settings-reference.html#advanced-options", "Learn more: About CRC");
             }
             else if (bundleData.Source == BundleSource.Download)
             {
@@ -215,7 +215,7 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                     m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCachingEnabled);
 #endif
                 if (bundleData.CachingEnabled && !bundleData.CheckSumEnabled)
-                    m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCRC, new List<ContentData>(), "ContentPackingAndLoadingSchema.html#assetbundle-crc", "Learn more: About CRC");
+                    m_HelpManager.MakeHelp(ProfilerStrings.DownloadWithoutCRC, new List<ContentData>(), "group-inspector-settings-reference.html#advanced-options", "Learn more: About CRC");
             }
         }
 
@@ -274,24 +274,8 @@ namespace UnityEditor.AddressableAssets.Diagnostics
             if (assetData.ReferencesToThis.Count > 0)
             {
                 // get root addressable assets
-                Queue<ContentData> refQueue = new Queue<ContentData>(assetData.ReferencesToThis);
-                HashSet<ContentData> addressedContentReferencingSelection = new HashSet<ContentData>();
-                while (refQueue.Count > 0)
-                {
-                    ContentData referencingContent = refQueue.Dequeue();
-                    if (referencingContent.AddressableHandles > 0)
-                        addressedContentReferencingSelection.Add(referencingContent);
-                    foreach (ContentData innerRef in referencingContent.ReferencesToThis)
-                        refQueue.Enqueue(innerRef);
-                }
-
-                Stack<ContentData> stack = new Stack<ContentData>();
-                List<ContentData[]> addressableStacks = new List<ContentData[]>();
-                foreach (ContentData refTo in assetData.ReferencesToThis)
-                    ProcessReference(refTo, stack, addressableStacks);
+                List<ContentData[]> addressableStacks = CollectAddressableReferenceChains(assetData);
                 m_HelpManager.MakeHelp(ProfilerStrings.ReferencedAssetText, addressableStacks);
-
-                // m_HelpManager.MakeHelp(ProfilerStrings.ReferencedAssetText, new List<ContentData>(addressedContentReferencingSelection));
             }
 
             DisplayAssetPreview(assetData);
@@ -301,17 +285,38 @@ namespace UnityEditor.AddressableAssets.Diagnostics
                 m_Elements.SelectInGroups.SetEnabled(true);
         }
 
-        private void ProcessReference(ContentData processing, in Stack<ContentData> stack, in List<ContentData[]> addressableStacks)
+        // Collects the reference chains from each addressable asset that (transitively)
+        // references assetData, up to the inspected asset itself. Pure graph walk, kept
+        // free of UI dependencies so it can be unit tested against cyclic graphs.
+        internal static List<ContentData[]> CollectAddressableReferenceChains(AssetData assetData)
         {
+            Stack<ContentData> stack = new Stack<ContentData>();
+            List<ContentData[]> addressableStacks = new List<ContentData[]>();
+            HashSet<ContentData> visited = new HashSet<ContentData>();
+            // Pin the inspected asset so the walk can never traverse back through it,
+            // which would fabricate reference chains routed through the selection.
+            visited.Add(assetData);
+            foreach (ContentData refTo in assetData.ReferencesToThis)
+                ProcessReference(refTo, stack, addressableStacks, visited);
+            return addressableStacks;
+        }
+
+        private static void ProcessReference(ContentData processing, in Stack<ContentData> stack, in List<ContentData[]> addressableStacks, HashSet<ContentData> visited)
+        {
+            // Guard against circular references (e.g. a SpriteAtlas and its packed
+            // textures reference each other), which would otherwise recurse forever.
+            if (!visited.Add(processing))
+                return;
             stack.Push(processing);
 
             if (processing.AddressableHandles > 0)
                 addressableStacks.Add(stack.ToArray());
 
             foreach (ContentData refTo in processing.ReferencesToThis)
-                ProcessReference(refTo, stack, addressableStacks);
+                ProcessReference(refTo, stack, addressableStacks, visited);
 
             stack.Pop();
+            visited.Remove(processing);
         }
 
         private void DisplayAssetPreview(AssetData assetData)

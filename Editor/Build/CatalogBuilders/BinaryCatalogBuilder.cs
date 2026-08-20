@@ -2,12 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine.AddressableAssets;
-using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -22,7 +20,13 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
     public class BinaryCatalogBuilder : BaseCatalogBuilder
     {
         /// <inheritdoc/>
-        protected override string CatalogExtension { get => "bin"; }
+        public override Type CatalogProviderType => typeof(BinaryCatalogProvider);
+
+        /// <inheritdoc/>
+        public override string CatalogExtension { get => "bin"; }
+
+        /// <inheritdoc/>
+        public override bool SupportsLocalCatalogBundling => false;
 
         /// <inheritdoc/>
         public override ContentCatalogData GenerateCatalog(
@@ -42,7 +46,7 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
             ContentCatalogData contentCatalog = null;
             using (logger.ScopedStep(LogLevel.Info, "Generate Binary Catalog"))
             {
-                contentCatalog = new ContentCatalogData(catalogLocatorId);
+                contentCatalog = new BinaryContentCatalogData(catalogLocatorId);
                 contentCatalog.ProviderId = catalogLocatorId;
                 contentCatalog.BuildResultHash = buildResultHash;
 
@@ -63,7 +67,7 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
                     contentCatalog.ResourceProviderData.Add(serializedType);
                 }
 
-                contentCatalog.SetData(catalogDataEntries.OrderBy(f => f.InternalId).ToList());//, aaContext.Settings.OptimizeCatalogSize);
+                contentCatalog.SetData(catalogDataEntries);
                 var bytes = contentCatalog.SerializeToByteArray();
                 var contentHash = HashingMethods.Calculate(bytes);
 
@@ -101,11 +105,11 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
 
             // Path needs to be resolved at runtime.
             var runtimeCatalogFilename = AddExtensionToCatalogFilename(catalogPaths.RuntimeCatalogFilename);
-            string localLoadPath = $"{DirectoryUtility.EnsureTrailingSlash(catalogPaths.LoadPath)}{runtimeCatalogFilename}";
-            string catalogBuildPath = Path.Combine(catalogPaths.BuildPath, runtimeCatalogFilename);
+            string localLoadPath = AddExtensionToCatalogFilename(catalogPaths.LoadPath);
+            string catalogBuildPath = Path.Combine(Addressables.BuildPath, runtimeCatalogFilename);
 
-            BuildScriptBase.WriteFile(catalogBuildPath, data, registry);
-            BuildScriptBase.WriteStringToFile(catalogBuildPath.Replace(".bin", ".hash"), HashingMethods.Calculate(data).ToString(), registry);
+            registry.WriteAndAddFile(catalogBuildPath, data);
+            registry.WriteAndAddFile(CatalogUtilities.GetHashFilePath(catalogBuildPath), HashingMethods.Calculate(data).ToString());
 
             string[] dependencyHashes = null;
             if (buildRemoteCatalog)
@@ -126,8 +130,8 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
             catalogLocations.Add(new ResourceLocationData(
                 new[] { catalogLocatorId },
                 localLoadPath,
-                typeof(ContentCatalogProvider),
-                typeof(ContentCatalogData),
+                typeof(BinaryCatalogProvider),
+                typeof(BinaryContentCatalogData),
                 dependencyHashes));
 
             return true;
@@ -158,8 +162,8 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
                 var remoteCatalogBuildPath = DirectoryUtility.EnsureTrailingSlash(CatalogPathConfig.RemoteBuildPath) + CatalogPathConfig.VersionedCatalogFileName + ".bin";
                 var remoteHashBuildPath = DirectoryUtility.EnsureTrailingSlash(CatalogPathConfig.RemoteBuildPath) + CatalogPathConfig.VersionedCatalogFileName + ".hash";
 
-                BuildScriptBase.WriteFile(remoteCatalogBuildPath, data, registry);
-                BuildScriptBase.WriteStringToFile(remoteHashBuildPath, contentHash.ToString(), registry);
+                registry.WriteAndAddFile(remoteCatalogBuildPath, data);
+                registry.WriteAndAddFile(remoteHashBuildPath, contentHash.ToString());
 
                 dependencyHashes = new string[((int)ContentCatalogProvider.DependencyHashIndex.Count)];
                 dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = $"{catalogLocatorId}RemoteHash";

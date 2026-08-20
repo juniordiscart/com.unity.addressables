@@ -1,5 +1,8 @@
 # Create a script to check for content updates
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 You can use [`CheckForCatalogUpdates`](xref:UnityEngine.AddressableAssets.Addressables.CheckForCatalogUpdates*) to check whether there are new Addressables content updates. Use the following call to start the update:
 
 ```c#

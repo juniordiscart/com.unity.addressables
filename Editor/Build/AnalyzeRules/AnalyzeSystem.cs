@@ -205,6 +205,11 @@ namespace UnityEditor.AddressableAssets.Build
             rule?.FixIssues(Settings);
         }
 
+        internal static void FixSelectedResults(AnalyzeRule rule, IReadOnlyCollection<string> selectedResultNames)
+        {
+            rule?.FixSelectedResults(Settings, selectedResultNames);
+        }
+
         private static AnalyzeRule FindRule<TRule>() where TRule : AnalyzeRule
         {
             var rule = Rules.FirstOrDefault(r => r.GetType().IsAssignableFrom(typeof(TRule)));

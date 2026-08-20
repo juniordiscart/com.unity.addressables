@@ -15,6 +15,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// Contains the collection of asset entries associated with this group.
     /// </summary>
     [Serializable]
+    [AddressablesHelpURL("Groups.html")]
     public class AddressableAssetGroup : ScriptableObject, IComparer<AddressableAssetEntry>, ISerializationCallbackReceiver
     {
         internal static GUIContent RemoveSchemaContent = new GUIContent("Remove Schema", "Remove this schema.");
@@ -46,6 +47,43 @@ namespace UnityEditor.AddressableAssets.Settings
         [FormerlySerializedAs("m_schemaSet")]
         [SerializeField]
         AddressableAssetGroupSchemaSet m_SchemaSet = new AddressableAssetGroupSchemaSet();
+
+        [SerializeField]
+        [Tooltip("If true, the assets in this group will be included in the Addressables build.")]
+        bool m_IncludeInBuild = true;
+
+        // Guards the one-time migration of the legacy per-schema IncludeInBuild flag up to the group.
+        [SerializeField]
+        bool m_IncludeInBuildMigrated = false;
+
+        /// <summary>
+        /// If true, the assets in this group will be included in the Addressables build.
+        /// This flag was previously stored per-schema on the buildable schemas; it now lives on the group and
+        /// applies to whichever buildable schema is enabled.
+        /// </summary>
+        public bool IncludeInBuild
+        {
+            get => m_IncludeInBuild;
+            set
+            {
+                if (m_IncludeInBuild != value)
+                {
+                    m_IncludeInBuild = value;
+
+                    var buildableSchemas = GetBuildableSchemas();
+
+                    //We iterate through the buildable schemas and raise the modified event this way
+                    //for backwards compatibility from when IncludeInBuild was stored on the buildable schemas.
+                    //This way any code that was listening for the schema modified event will still be notified.
+                    foreach (var schema in buildableSchemas)
+                    {
+                        if (schema != null)
+                            SetDirty(AddressableAssetSettings.ModificationEvent.GroupSchemaModified, schema, true, true);
+                    }
+
+                }
+            }
+        }
 
         Dictionary<string, AddressableAssetEntry> m_EntryMap = new Dictionary<string, AddressableAssetEntry>();
         List<AddressableAssetEntry> m_FolderEntryCache = null;
@@ -156,6 +194,21 @@ namespace UnityEditor.AddressableAssets.Settings
         {
             get { return m_SchemaSet.Schemas; }
         }
+
+        /// <summary>
+        /// Display order for schemas in the inspector.
+        /// </summary>
+        internal List<string> SchemaDisplayOrder => m_SchemaSet.SchemaDisplayOrder;
+
+        /// <summary>
+        /// Gets schema at the specified display index.
+        /// </summary>
+        internal AddressableAssetGroupSchema GetSchemaByDisplayIndex(int displayIndex) => m_SchemaSet.GetSchemaByDisplayIndex(displayIndex);
+
+        /// <summary>
+        /// Gets actual schema index from display index.
+        /// </summary>
+        internal int GetActualIndexFromDisplayIndex(int displayIndex) => m_SchemaSet.GetActualIndexFromDisplayIndex(displayIndex);
 
         /// <summary>
         /// Get the types of added schema for this group.
@@ -515,6 +568,48 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (m_GroupName == null)
                     m_GroupName = Settings.FindUniqueGroupName("Packed Content Group");
             }
+
+            if (!m_IncludeInBuildMigrated)
+                MigrateIncludeInBuildFromSchemas();
+        }
+
+        List<AddressableAssetGroupSchema> GetBuildableSchemas()
+        {
+            List<AddressableAssetGroupSchema> buildableSchemas = new List<AddressableAssetGroupSchema>();
+            foreach(var schema in m_SchemaSet.Schemas)
+            {
+                if (schema is IBuildableSchema)
+                {
+                    buildableSchemas.Add(schema);
+                }
+            }
+            return buildableSchemas;
+        }
+
+        // IncludeInBuild used to live on the two buildable schemas (Bundled Asset / Content Directory). Pull any
+        // previously-serialized per-schema value up to the group exactly once. Only one buildable schema is enabled
+        // at a time, so prefer the enabled schema's value (the one that drove the build); otherwise fall back to
+        // whichever buildable schema stored a value, else keep the group default (true).
+        void MigrateIncludeInBuildFromSchemas()
+        {
+            var buildableSchemas = GetBuildableSchemas();
+
+            bool? enabledValue = null;
+            bool? anyValue = null;
+            foreach (var schema in buildableSchemas)
+            {
+                bool? legacy = schema != null ? schema.GetDeprecatedIncludeInBuild() : null;
+                if (!legacy.HasValue)
+                    continue;
+                if (!anyValue.HasValue)
+                    anyValue = legacy;
+                if (schema.IsEnabled && !enabledValue.HasValue)
+                    enabledValue = legacy;
+            }
+
+            m_IncludeInBuild = enabledValue ?? anyValue ?? true;
+            m_IncludeInBuildMigrated = true;
+            SetDirty(AddressableAssetSettings.ModificationEvent.GroupSchemaModified, this, false, true);
         }
 
         internal void DedupeEnteries()
@@ -550,6 +645,8 @@ namespace UnityEditor.AddressableAssets.Settings
                 m_GroupName = settings.FindUniqueGroupName("Packed Content Group");
             m_ReadOnly = readOnly;
             m_GUID = guid;
+            // A freshly created group starts with the flag on the group already, so there is nothing to migrate.
+            m_IncludeInBuildMigrated = true;
         }
 
         /// <summary>

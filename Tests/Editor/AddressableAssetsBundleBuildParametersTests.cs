@@ -31,9 +31,6 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void WhenNonRecursiveBuildingSet_BuildParametersHaveCorrectValue()
         {
-#if !NONRECURSIVE_DEPENDENCY_DATA
-            Assert.Ignore($"Skipping test {nameof(WhenNonRecursiveBuildingSet_BuildParametersHaveCorrectValue)}.");
-#else
             var bundleToAssetGroup = new Dictionary<string, string>();
 
             Settings.NonRecursiveBuilding = true;
@@ -43,7 +40,6 @@ namespace UnityEditor.AddressableAssets.Tests
             Settings.NonRecursiveBuilding = false;
             testParams = new AddressableAssetsBundleBuildParameters(Settings, bundleToAssetGroup, BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone, "Unused");
             Assert.AreEqual(testParams.NonRecursiveDependencies, Settings.NonRecursiveBuilding);
-#endif
         }
 
         [Test]
@@ -78,8 +74,8 @@ namespace UnityEditor.AddressableAssets.Tests
         [TestCase(false)]
         public void StripUnityVersion_SetsBuildFlagCorrectly(bool stripUnityVersion)
         {
-            bool oldValue = Settings.StripUnityVersionFromBundleBuild;
-            Settings.StripUnityVersionFromBundleBuild = stripUnityVersion;
+            bool oldValue = Settings.StripUnityVersion;
+            Settings.StripUnityVersion = stripUnityVersion;
 
             var testParams = new AddressableAssetsBundleBuildParameters(Settings, new Dictionary<string, string>(),
                 BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone, "Unused");
@@ -88,7 +84,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
             Assert.AreEqual(stripUnityVersion, (buildSettings.buildFlags & ContentBuildFlags.StripUnityVersion) != 0);
 
-            Settings.StripUnityVersionFromBundleBuild = oldValue;
+            Settings.StripUnityVersion = oldValue;
         }
 
         [Test]

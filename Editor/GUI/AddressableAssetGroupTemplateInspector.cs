@@ -132,18 +132,20 @@ namespace UnityEditor.AddressableAssets.GUI
             EditorGUILayout.LabelField("Group Template Description");
             m_AddressableAssetGroupTarget.Description = EditorGUILayout.TextArea(m_AddressableAssetGroupTarget.Description);
 
-            int objectCount = m_AddressableAssetGroupTarget.SchemaObjects.Count;
-            if (m_FoldoutState == null || m_FoldoutState.Length != objectCount)
-                m_FoldoutState = new bool[objectCount];
+            int displayCount = m_AddressableAssetGroupTarget.SchemaDisplayOrder.Count;
+            if (m_FoldoutState == null || m_FoldoutState.Length != displayCount)
+                m_FoldoutState = new bool[displayCount];
 
-            for (int i = 0; i < objectCount; i++)
+            for (int displayIndex = 0; displayIndex < displayCount; displayIndex++)
             {
-                var schema = m_AddressableAssetGroupTarget.SchemaObjects[i];
-                int currentIndex = i;
+                var schema = m_AddressableAssetGroupTarget.GetSchemaByDisplayIndex(displayIndex);
+                if (schema == null)
+                    continue;
+                int currentDisplayIndex = displayIndex;
 
                 AddressablesGUIUtility.DrawDivider();
                 EditorGUILayout.BeginHorizontal();
-                m_FoldoutState[i] = EditorGUILayout.Foldout(m_FoldoutState[i], AddressableAssetUtility.GetCachedTypeDisplayName(m_AddressableAssetGroupTarget.SchemaObjects[i].GetType()));
+                m_FoldoutState[displayIndex] = EditorGUILayout.Foldout(m_FoldoutState[displayIndex], AddressableAssetUtility.GetCachedTypeDisplayName(schema.GetType()));
 
                 GUILayout.FlexibleSpace();
                 GUIStyle gearIconStyle = UnityEngine.GUI.skin.FindStyle("IconButton") ?? EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle("IconButton");
@@ -153,57 +155,72 @@ namespace UnityEditor.AddressableAssets.GUI
                     var menu = new GenericMenu();
                     menu.AddItem(AddressableAssetGroup.RemoveSchemaContent, false, () =>
                     {
-                        var schemaName = AddressableAssetUtility.GetCachedTypeDisplayName(m_AddressableAssetGroupTarget.SchemaObjects[currentIndex].GetType());
+                        var schemaName = AddressableAssetUtility.GetCachedTypeDisplayName(schema.GetType());
                         if (EditorUtility.DisplayDialog("Remove selected schema?", "Are you sure you want to remove " + schemaName + " schema?\n\nYou cannot undo this action.", "Yes", "No"))
                         {
-                            m_AddressableAssetGroupTarget.RemoveSchema(currentIndex);
-                            var newFoldoutstate = new bool[objectCount - 1];
-                            for (int j = 0; j < newFoldoutstate.Length; j++)
+                            int actualIndex = m_AddressableAssetGroupTarget.GetActualIndexFromDisplayIndex(currentDisplayIndex);
+                            if (actualIndex != -1)
                             {
-                                if (j < i)
-                                    newFoldoutstate[j] = m_FoldoutState[j];
-                                else
-                                    newFoldoutstate[j] = m_FoldoutState[currentIndex + 1];
+                                m_AddressableAssetGroupTarget.RemoveSchema(actualIndex);
+                                var newFoldoutstate = new bool[displayCount - 1];
+                                for (int j = 0; j < newFoldoutstate.Length; j++)
+                                {
+                                    if (j < currentDisplayIndex)
+                                        newFoldoutstate[j] = m_FoldoutState[j];
+                                    else
+                                        newFoldoutstate[j] = m_FoldoutState[j + 1];
+                                }
+                                m_FoldoutState = newFoldoutstate;
                             }
-
-                            m_FoldoutState = newFoldoutstate;
                         }
                     });
                     menu.AddItem(AddressableAssetGroup.MoveSchemaUpContent, false, () =>
                     {
-                        if (currentIndex > 0)
+                        if (currentDisplayIndex > 0)
                         {
-                            m_AddressableAssetGroupTarget.SchemaObjects[currentIndex] = m_AddressableAssetGroupTarget.SchemaObjects[currentIndex - 1];
-                            m_AddressableAssetGroupTarget.SchemaObjects[currentIndex - 1] = schema;
-                            return;
+                            Undo.RecordObject(m_AddressableAssetGroupTarget, "Move Schema Up");
+                            var displayOrder = m_AddressableAssetGroupTarget.SchemaDisplayOrder;
+                            var temp = displayOrder[currentDisplayIndex];
+                            displayOrder[currentDisplayIndex] = displayOrder[currentDisplayIndex - 1];
+                            displayOrder[currentDisplayIndex - 1] = temp;
+                            bool tempFoldout = m_FoldoutState[currentDisplayIndex];
+                            m_FoldoutState[currentDisplayIndex] = m_FoldoutState[currentDisplayIndex - 1];
+                            m_FoldoutState[currentDisplayIndex - 1] = tempFoldout;
+                            EditorUtility.SetDirty(m_AddressableAssetGroupTarget);
                         }
                     });
                     menu.AddItem(AddressableAssetGroup.MoveSchemaDownContent, false, () =>
                     {
-                        if (currentIndex < m_AddressableAssetGroupTarget.SchemaObjects.Count - 1)
+                        if (currentDisplayIndex < m_AddressableAssetGroupTarget.SchemaDisplayOrder.Count - 1)
                         {
-                            m_AddressableAssetGroupTarget.SchemaObjects[currentIndex] = m_AddressableAssetGroupTarget.SchemaObjects[currentIndex + 1];
-                            m_AddressableAssetGroupTarget.SchemaObjects[currentIndex + 1] = schema;
-                            return;
+                            Undo.RecordObject(m_AddressableAssetGroupTarget, "Move Schema Down");
+                            var displayOrder = m_AddressableAssetGroupTarget.SchemaDisplayOrder;
+                            var temp = displayOrder[currentDisplayIndex];
+                            displayOrder[currentDisplayIndex] = displayOrder[currentDisplayIndex + 1];
+                            displayOrder[currentDisplayIndex + 1] = temp;
+                            bool tempFoldout = m_FoldoutState[currentDisplayIndex];
+                            m_FoldoutState[currentDisplayIndex] = m_FoldoutState[currentDisplayIndex + 1];
+                            m_FoldoutState[currentDisplayIndex + 1] = tempFoldout;
+                            EditorUtility.SetDirty(m_AddressableAssetGroupTarget);
                         }
                     });
                     menu.AddSeparator("");
                     menu.AddItem(AddressableAssetGroup.ExpandSchemaContent, false, () =>
                     {
-                        m_FoldoutState[currentIndex] = true;
-                        m_AddressableAssetGroupTarget.SchemaObjects[currentIndex].ShowAllProperties();
+                        m_FoldoutState[currentDisplayIndex] = true;
+                        schema.ShowAllProperties();
                     });
                     menu.ShowAsContext();
                 }
 
                 EditorGUILayout.EndHorizontal();
 
-                if (m_FoldoutState[i])
+                if (m_FoldoutState[displayIndex])
                 {
                     try
                     {
                         EditorGUI.indentLevel++;
-                        m_AddressableAssetGroupTarget.SchemaObjects[i].OnGUI();
+                        schema.OnGUI();
                         EditorGUI.indentLevel--;
                     }
                     catch (Exception se)

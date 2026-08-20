@@ -14,7 +14,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     /// <summary>
     /// Implementation if ISceneProvider
     /// </summary>
-    public class SceneProvider : ISceneProvider2
+    internal class SceneProvider : ISceneProvider
     {
         class SceneOp : AsyncOperationBase<SceneInstance>, IUpdateReceiver
         {
@@ -26,9 +26,9 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             int m_Priority;
             private AsyncOperationHandle<IList<AsyncOperationHandle>> m_DepOp;
             ResourceManager m_ResourceManager;
-            ISceneProvider2 m_provider;
+            ISceneProvider m_provider;
 
-            public SceneOp(ResourceManager rm, ISceneProvider2 provider)
+            public SceneOp(ResourceManager rm, ISceneProvider provider)
             {
                 m_ResourceManager = rm;
                 m_provider = provider;
@@ -102,9 +102,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             {
                 var loadingFromBundle = false;
 
-                var loadingFromContentDirectory = false;
-
-                object result = null;
                 if (m_DepOp.IsValid())
                 {
                     foreach (var d in m_DepOp.Result)
@@ -115,47 +112,34 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                             loadingFromBundle = true;
                             break;
                         }
-
-#if ENABLE_CONTENT_DIRECTORIES
-                        if (d.Result is IAddressableRootAsset)
-                        {
-                            result = d.Result;
-                            loadingFromContentDirectory = true;
-                            break;
-                        }
-#endif
                     }
                 }
+
+#if ENABLE_CONTENT_DIRECTORIES
+                var contentDirectoryData = m_Location.Data as ContentDirectoryAssetData;
+#endif
 
                 if (!m_DepOp.IsValid() || m_DepOp.OperationException == null)
                 {
 #if ENABLE_CONTENT_DIRECTORIES
-                    if (loadingFromContentDirectory)
+                    if (contentDirectoryData != null)
                     {
-                        var rootAsset = result as IAddressableRootAsset;
-                        LoadableInfo schemeLoadableInfo;
-                        try
-                        {
-                            schemeLoadableInfo = rootAsset.GetLoadableInfo(m_Location.PrimaryKey, typeof(SceneInstance));
-                        }
-                        catch (Exception ex)
-                        {
-                            var rootKey = rootAsset != null ? rootAsset.Key : "<null root>";
-                            throw new Exception(
-                                $"Content Directory scene load failed for address '{m_Location.PrimaryKey}' (internal id '{m_ResourceManager.TransformInternalId(m_Location)}', group root key '{rootKey}'). " +
-                                "See inner exception for the problematic GroupRootAsset entry.",
-                                ex);
-                        }
+                        // Mount the Content Directory directly from the load path embedded in the
+                        // catalog entry data. The mount stays registered until AddressablesImpl.Dispose.
+                        var cdHandle = ContentDirectoryMountManager.EnsureMounted(contentDirectoryData.LoadPath);
 
-                        if (schemeLoadableInfo == null)
-                        {
-                            var rootKey = rootAsset != null ? rootAsset.Key : "<null root>";
-                            throw new Exception(
-                                $"Content Directory scene load: address '{m_Location.PrimaryKey}' (internal id '{m_ResourceManager.TransformInternalId(m_Location)}', type {nameof(SceneInstance)}) was not found in GroupRootAsset with key '{rootKey}'. " +
-                                "Confirm the scene is included in that Addressables Content Directory group and rebuild.");
-                        }
+                        var globalRootAsset = ContentDirectoryMountManager.GetRootAsset(cdHandle);
+                        if (globalRootAsset == null)
+                            throw new Exception($"Content Directory scene load failed: no AddressableRootAsset found for address '{m_Location.PrimaryKey}'.");
 
-                        var scene = schemeLoadableInfo.scene;
+                        var scene = globalRootAsset.GetLoadableSceneId(contentDirectoryData.SceneId);
+                        if (scene == default)
+                        {
+                            string reason = !contentDirectoryData.IsSceneIdValid
+                                ? "the catalog entry is not a scene"
+                                : $"SceneId {contentDirectoryData.SceneId} is out of range in the AddressableRootAsset";
+                            throw new Exception($"Content Directory scene load failed for address '{m_Location.PrimaryKey}': {reason}.");
+                        }
 
                         m_Inst = InternalLoadScene(scene, m_LoadSceneParameters, m_ActivateOnLoad, m_Priority);
                     }
@@ -378,18 +362,27 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
         internal Type GetSceneDependencyResourceType(ResourceManager resourceManager, IResourceLocation location)
         {
-            var provider = resourceManager.GetResourceProvider(null, location);
+            // Check the first dependency's provider to determine what type it provides
+            if (location.HasDependencies && location.Dependencies.Count > 0)
+            {
+                var depLocation = location.Dependencies[0];
+                var depProvider = resourceManager.GetResourceProvider(null, depLocation);
+                if (depProvider is ResourceProviderBase rpb && rpb.SceneDependencyResourceType != null)
+                    return rpb.SceneDependencyResourceType;
+            }
+
+            var provider = resourceManager.GetResourceProvider(null, location); // Ensure provider is registered and throw if not
             return (provider as ResourceProviderBase)?.SceneDependencyResourceType ?? typeof(IAssetBundleResource);
         }
 
         /// <inheritdoc/>
         public AsyncOperationHandle<SceneInstance> ReleaseScene(ResourceManager resourceManager, AsyncOperationHandle<SceneInstance> sceneLoadHandle)
         {
-            return ((ISceneProvider2)(this)).ReleaseScene(resourceManager, sceneLoadHandle, UnloadSceneOptions.None);
+            return ((ISceneProvider)(this)).ReleaseScene(resourceManager, sceneLoadHandle, UnloadSceneOptions.None);
         }
 
         /// <inheritdoc/>
-        AsyncOperationHandle<SceneInstance> ISceneProvider2.ReleaseScene(ResourceManager resourceManager, AsyncOperationHandle<SceneInstance> sceneLoadHandle, UnloadSceneOptions unloadOptions)
+        AsyncOperationHandle<SceneInstance> ISceneProvider.ReleaseScene(ResourceManager resourceManager, AsyncOperationHandle<SceneInstance> sceneLoadHandle, UnloadSceneOptions unloadOptions)
         {
             var unloadOp = new UnloadSceneOp();
             unloadOp.Init(sceneLoadHandle, unloadOptions);

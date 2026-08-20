@@ -32,6 +32,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetDatabase.CreateAsset(mainSO, m_ScriptableObjectPath);
             AssetDatabase.AddObjectToAsset(subSO, m_ScriptableObjectPath);
             AssetDatabase.AddObjectToAsset(subSO2, m_ScriptableObjectPath);
+            AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(m_ScriptableObjectPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
 
             m_InheritedObjectPath = GetAssetPath("testInheritedObject.asset");

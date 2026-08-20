@@ -1,15 +1,18 @@
 using System.Collections;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.Tests
@@ -22,6 +25,7 @@ namespace UnityEditor.AddressableAssets.Tests
 
         const string k_TempPath = "NoDomainReloadPlaymodeCleanupTests";
         const string k_AssetKey = "editmodeloaded";
+        const string k_SceneKey = "editmodeloaded_scene";
 
         // SessionState default when Addressables.kAddressablesRuntimeDataPath was never set.
         const string k_NoSavedRuntimeDataPath = "__NoDomainReloadPlaymodeCleanupTests_NoSavedRuntimeDataPath__";
@@ -43,6 +47,14 @@ namespace UnityEditor.AddressableAssets.Tests
             return AssetDatabase.AssetPathToGUID(path);
         }
 
+        string CreateSceneAsset(string path)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            EditorSceneManager.SaveScene(scene, path);
+            EditorSceneManager.CloseScene(scene, true);
+            return AssetDatabase.AssetPathToGUID(path);
+        }
+
         string BuildTestBundle()
         {
             if (AssetDatabase.IsValidFolder($"Assets/{k_TempPath}"))
@@ -57,6 +69,8 @@ namespace UnityEditor.AddressableAssets.Tests
 
             settings.CreateOrMoveEntry(CreateAsset(k_AssetKey, GetPath($"{k_AssetKey}.asset")),
                 settings.DefaultGroup, false, false).address = k_AssetKey;
+            settings.CreateOrMoveEntry(CreateSceneAsset(GetPath($"{k_SceneKey}.unity")),
+                settings.DefaultGroup, false, false).address = k_SceneKey;
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
@@ -141,6 +155,8 @@ namespace UnityEditor.AddressableAssets.Tests
                 "The Addressables class was used outside playmode and loaded references might be invalidated when entering playmode. " +
                 "Ensure that your Editor scripts are registered to EditorApplication.playModeStateChanged " +
                 "to reload what is needed. This warning can be turned off in Preferences/Addressables.");
+            // Forcing the load to fail also logs it, like other AssetBundle failures.
+            LogAssert.Expect(LogType.Error, new Regex("^RemoteProviderException : AssetBundle load canceled.*"));
             // LogAssert.ignoreFailingMessages = true;
 
             // Act
@@ -154,8 +170,15 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(0, WebRequestQueue.s_ActiveRequests.Count,
                 "Active web requests should be aborted when entering play mode.");
 
+            double timeout = EditorApplication.timeSinceStartup + 5;
+            while (operation.Status == AsyncOperationStatus.None && EditorApplication.timeSinceStartup < timeout)
+                yield return null;
+
             Assert.That(operation.Status, Is.EqualTo(AsyncOperationStatus.Failed),
                 "Load operation should fail after play mode transition aborts the in-flight web request.");
+
+            if (operation.IsValid())
+                operation.Release();
 
             yield return new ExitPlayMode();
         }
@@ -191,6 +214,23 @@ namespace UnityEditor.AddressableAssets.Tests
                 "No AssetBundles should remain loaded after entering play mode.");
 
             yield return new ExitPlayMode();
+        }
+
+        [UnityTest]
+        public IEnumerator ExitingPlayMode_AfterLoadingAnAddressableSceneInPlayMode_DoesNotThrow()
+        {
+            yield return new EnterPlayMode();
+
+            var handle = Addressables.LoadSceneAsync(k_SceneKey, LoadSceneMode.Additive);
+            yield return handle;
+
+            Assert.AreEqual(AsyncOperationStatus.Succeeded, handle.Status,
+                "Expected the addressable scene to load successfully while in play mode.");
+
+            yield return new ExitPlayMode();
+
+            Assert.IsFalse(handle.IsValid(),
+                "Handle should have been released by Dispose() when exiting play mode.");
         }
     }
 }

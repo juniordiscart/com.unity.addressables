@@ -284,8 +284,7 @@ namespace UnityEditor.AddressableAssets.Tests.OptionalPackages.Ccd
             Assert.True(await refreshDataSources());
 
             // Setup ContentStatePath
-            var getContentStateBuildPathMethod = m_Input.AddressableSettings.GetType().GetMethod("GetContentStateBuildPath", BindingFlags.NonPublic | BindingFlags.Instance);
-            var contentStateBuildPath = (string)getContentStateBuildPathMethod.Invoke(m_Input.AddressableSettings, null);
+            var contentStateBuildPath = m_Input.AddressableSettings.GetContentStateBuildPath();
             m_ContentStatePath = Path.Combine(contentStateBuildPath, "addressables_content_state.bin");
             resetManagedBucket();
         }

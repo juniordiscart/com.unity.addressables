@@ -51,7 +51,9 @@ namespace UnityEngine.AddressableAssets.Initialization
             var tdp = new TextDataProvider();
             aa.ResourceManager.ResourceProviders.Add(tdp);
             aa.ResourceManager.ResourceProviders.Add(new BinaryDataProvider());
-            aa.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(aa.ResourceManager));
+            aa.ResourceManager.ResourceProviders.Add(new JsonCatalogProvider(aa.ResourceManager));
+            aa.ResourceManager.ResourceProviders.Add(new BinaryCatalogProvider(aa.ResourceManager));
+            aa.ResourceManager.ResourceProviders.Add(new BinaryAssetProvider<BinaryContentCatalogData.Serializer>());
 
             var runtimeDataLocation = new ResourceLocationBase("RuntimeData", playerSettingsLocation, typeof(JsonAssetProvider).FullName, typeof(ResourceManagerRuntimeData));
 
@@ -138,12 +140,13 @@ namespace UnityEngine.AddressableAssets.Initialization
 
             Addressables.Log("Addressables - loading initialization objects.");
 
-            ContentCatalogProvider ccp = m_Addressables.ResourceManager.ResourceProviders
-                .FirstOrDefault(rp => rp.GetType() == typeof(ContentCatalogProvider)) as ContentCatalogProvider;
-            if (ccp != null)
+            foreach (var rp in m_Addressables.ResourceManager.ResourceProviders)
             {
-                ccp.DisableCatalogUpdateOnStart = rtd.DisableCatalogUpdateOnStartup;
-                ccp.IsLocalCatalogInBundle = rtd.IsLocalCatalogInBundle;
+                if (rp is ContentCatalogProvider ccp)
+                {
+                    ccp.DisableCatalogUpdateOnStart = rtd.DisableCatalogUpdateOnStartup;
+                    ccp.IsLocalCatalogInBundle = rtd.IsLocalCatalogInBundle;
+                }
             }
 
             m_LocMap = new ResourceLocationMap("CatalogLocator", rtd.CatalogLocations);
@@ -271,11 +274,7 @@ namespace UnityEngine.AddressableAssets.Initialization
 
                 if (remoteHashLocation != null)
                     data.location.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = remoteHashLocation;
-#if ENABLE_JSON_CATALOG
                 IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix);
-#else
-                IResourceLocator locMap = data.CreateCustomLocator(data.location.PrimaryKey, providerSuffix);
-#endif
                 addressables.AddResourceLocator(locMap, data.LocalHash, data.location);
                 addressables.AddResourceLocator(new DynamicResourceLocator(addressables));
 

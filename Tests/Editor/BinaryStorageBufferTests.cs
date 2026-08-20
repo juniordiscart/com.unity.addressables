@@ -625,7 +625,6 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.AreEqual(new ComplexObject(i), re.ReadObject<ComplexObject>(ids[i], out var _));
         }
 
-#if !ENABLE_JSON_CATALOG
         //https://jira.unity3d.com/browse/ADDR-3459
         [Test]
         [TestCase(short.MinValue, 0)]
@@ -638,7 +637,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetBundleRequestOptions options = new AssetBundleRequestOptions();
             options.Timeout = timeout;
 
-            ContentCatalogData.AssetBundleRequestOptionsSerializationAdapter adapter = new ContentCatalogData.AssetBundleRequestOptionsSerializationAdapter();
+            BinaryContentCatalogData.AssetBundleRequestOptionsSerializationAdapter adapter = new BinaryContentCatalogData.AssetBundleRequestOptionsSerializationAdapter();
             BinaryStorageBuffer.Writer writer = new BinaryStorageBuffer.Writer();
             var id = adapter.Serialize(writer, options);
 
@@ -662,7 +661,7 @@ namespace UnityEditor.AddressableAssets.Tests
             AssetBundleRequestOptions options = new AssetBundleRequestOptions();
             options.RedirectLimit = redirectLimit;
 
-            ContentCatalogData.AssetBundleRequestOptionsSerializationAdapter adapter = new ContentCatalogData.AssetBundleRequestOptionsSerializationAdapter();
+            BinaryContentCatalogData.AssetBundleRequestOptionsSerializationAdapter adapter = new BinaryContentCatalogData.AssetBundleRequestOptionsSerializationAdapter();
             BinaryStorageBuffer.Writer writer = new BinaryStorageBuffer.Writer();
             var id = adapter.Serialize(writer, options);
 
@@ -672,6 +671,140 @@ namespace UnityEditor.AddressableAssets.Tests
             var result = adapter.Deserialize(reader, typeof(AssetBundleRequestOptions), id, out var _) as AssetBundleRequestOptions;
 
             Assert.AreEqual(expectedRedirectLimit, result.RedirectLimit);
+        }
+
+#if ENABLE_CONTENT_DIRECTORIES
+        // ── ContentDirectoryAssetData round-trip tests ────────────────────────────
+
+        static ContentDirectoryAssetData RoundTrip(ContentDirectoryAssetData input)
+        {
+            var adapter = new ContentDirectoryAssetData.SerializationAdapter();
+            var writer = new BinaryStorageBuffer.Writer();
+            var id = adapter.Serialize(writer, input);
+            var bytes = writer.SerializeToByteArray();
+            return adapter.Deserialize(new BinaryStorageBuffer.Reader(bytes),
+                typeof(ContentDirectoryAssetData), id, out _) as ContentDirectoryAssetData;
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_RegularAsset_RoundTrips()
+        {
+            var input = new ContentDirectoryAssetData { AssetId = 7, SceneId = -1, SubAssetIds = null };
+            var result = RoundTrip(input);
+            Assert.AreEqual(7, result.AssetId);
+            Assert.AreEqual(-1, result.SceneId);
+            Assert.IsNull(result.SubAssetIds);
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_FirstAssetIndexZero_RoundTrips()
+        {
+            var input = new ContentDirectoryAssetData { AssetId = 0, SceneId = -1, SubAssetIds = null };
+            var result = RoundTrip(input);
+            Assert.AreEqual(0, result.AssetId);
+            Assert.AreEqual(-1, result.SceneId);
+            Assert.IsNull(result.SubAssetIds);
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_SceneEntry_RoundTrips()
+        {
+            var input = new ContentDirectoryAssetData { AssetId = -1, SceneId = 4, SubAssetIds = null };
+            var result = RoundTrip(input);
+            Assert.AreEqual(-1, result.AssetId);
+            Assert.AreEqual(4, result.SceneId);
+            Assert.IsNull(result.SubAssetIds);
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_FirstSceneIndexZero_RoundTrips()
+        {
+            var input = new ContentDirectoryAssetData { AssetId = -1, SceneId = 0, SubAssetIds = null };
+            var result = RoundTrip(input);
+            Assert.AreEqual(-1, result.AssetId);
+            Assert.AreEqual(0, result.SceneId);
+            Assert.IsNull(result.SubAssetIds);
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_AssetWithSubAssets_RoundTrips()
+        {
+            var input = new ContentDirectoryAssetData { AssetId = 2, SceneId = -1, SubAssetIds = new[] { 0, 1, 3 } };
+            var result = RoundTrip(input);
+            Assert.AreEqual(2, result.AssetId);
+            Assert.AreEqual(-1, result.SceneId);
+            Assert.AreEqual(new[] { 0, 1, 3 }, result.SubAssetIds);
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_EmptySubAssetArray_DeserializesAsNull()
+        {
+            // Length==0 is written with subAssetIdsOffset=0 (same sentinel as null),
+            // so it round-trips back as null rather than an empty array.
+            var input = new ContentDirectoryAssetData { AssetId = 1, SceneId = -1, SubAssetIds = new int[0] };
+            var result = RoundTrip(input);
+            Assert.AreEqual(1, result.AssetId);
+            Assert.IsNull(result.SubAssetIds, "Empty SubAssetIds array should deserialise as null");
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_NullInput_RoundTrips()
+        {
+            // Serialize(null) uses the ??-1 guards: both ids written as -1 so a
+            // missing assetData can never be mistaken for a valid index 0.
+            var result = RoundTrip(null);
+            Assert.AreEqual(-1, result.AssetId);
+            Assert.AreEqual(-1, result.SceneId);
+            Assert.IsNull(result.SubAssetIds);
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_DefaultConstructed_HasSentinelIds()
+        {
+            var data = new ContentDirectoryAssetData();
+            Assert.AreEqual(-1, data.AssetId);
+            Assert.AreEqual(-1, data.SceneId);
+        }
+
+        [Test]
+        public void ContentDirectoryAssetData_MultipleEntriesInOneBuffer_RoundTrip()
+        {
+            // Writes three entries to a shared buffer so the sub-asset offset
+            // in the first entry must survive the subsequent writes without
+            // aliasing or being overwritten.
+            var inputs = new[]
+            {
+                new ContentDirectoryAssetData { AssetId = 2, SceneId = -1, SubAssetIds = new[] { 0, 1, 3 } },
+                new ContentDirectoryAssetData { AssetId = -1, SceneId = 4, SubAssetIds = null },
+                new ContentDirectoryAssetData { AssetId = 9, SceneId = -1, SubAssetIds = null },
+            };
+
+            var adapter = new ContentDirectoryAssetData.SerializationAdapter();
+            var writer = new BinaryStorageBuffer.Writer();
+            var ids = new uint[inputs.Length];
+            for (int i = 0; i < inputs.Length; i++)
+                ids[i] = adapter.Serialize(writer, inputs[i]);
+
+            var bytes = writer.SerializeToByteArray();
+            var reader = new BinaryStorageBuffer.Reader(bytes);
+
+            // Asset with sub-assets
+            var r0 = adapter.Deserialize(reader, typeof(ContentDirectoryAssetData), ids[0], out _) as ContentDirectoryAssetData;
+            Assert.AreEqual(2, r0.AssetId);
+            Assert.AreEqual(-1, r0.SceneId);
+            Assert.AreEqual(new[] { 0, 1, 3 }, r0.SubAssetIds);
+
+            // Scene entry
+            var r1 = adapter.Deserialize(reader, typeof(ContentDirectoryAssetData), ids[1], out _) as ContentDirectoryAssetData;
+            Assert.AreEqual(-1, r1.AssetId);
+            Assert.AreEqual(4, r1.SceneId);
+            Assert.IsNull(r1.SubAssetIds);
+
+            // Plain asset without sub-assets
+            var r2 = adapter.Deserialize(reader, typeof(ContentDirectoryAssetData), ids[2], out _) as ContentDirectoryAssetData;
+            Assert.AreEqual(9, r2.AssetId);
+            Assert.AreEqual(-1, r2.SceneId);
+            Assert.IsNull(r2.SubAssetIds);
         }
 #endif
         [Test]
@@ -1365,5 +1498,200 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(0, failures, "Concurrent reads produced incorrect strings");
         }
 
+        // Matches the layout of BinaryStorageBuffer.TypeSerializer.Data
+        [StructLayout(LayoutKind.Sequential)]
+        struct TypeSerializerData
+        {
+            public uint assemblyId;
+            public uint classId;
+        }
+
+        [Test]
+        public void TypeDeserialize_ResolvesType_WhenAssemblyNotFound()
+        {
+            // Simulate CoreCLR scenario: assembly doesn't exist but type is resolvable by name only
+            var wr = new BinaryStorageBuffer.Writer();
+            var assemblyId = wr.WriteString("NonExistentAssembly.ForTesting", '.');
+            var classId = wr.WriteString("System.String", '.');
+            var dataId = wr.Write(new TypeSerializerData { assemblyId = assemblyId, classId = classId });
+
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray());
+            var resolvedType = re.ReadObject<Type>(dataId, out var _);
+            Assert.AreEqual(typeof(string), resolvedType);
+        }
+
+        [Test]
+        public void TypeDeserialize_ReturnsNull_WhenTypeCannotBeResolved()
+        {
+            // Both assembly and type are non-existent — all fallbacks return null
+            var wr = new BinaryStorageBuffer.Writer();
+            var assemblyId = wr.WriteString("NonExistentAssembly.ForTesting", '.');
+            var classId = wr.WriteString("NonExistent.FakeType.ForTesting", '.');
+            var dataId = wr.Write(new TypeSerializerData { assemblyId = assemblyId, classId = classId });
+
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray());
+            var resolvedType = re.ReadObject<Type>(dataId, out var _);
+            Assert.IsNull(resolvedType);
+        }
+
+        [Test]
+        [TestCase("System.Int32", typeof(int))]
+        [TestCase("System.Boolean", typeof(bool))]
+        [TestCase("System.Int64", typeof(long))]
+        public void TypeDeserialize_ResolvesCommonTypes_WhenAssemblyNotFound(string typeName, Type expected)
+        {
+            var wr = new BinaryStorageBuffer.Writer();
+            var assemblyId = wr.WriteString("mscorlib.Fake", '.');
+            var classId = wr.WriteString(typeName, '.');
+            var dataId = wr.Write(new TypeSerializerData { assemblyId = assemblyId, classId = classId });
+
+            var re = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray());
+            var resolvedType = re.ReadObject<Type>(dataId, out var _);
+            Assert.AreEqual(expected, resolvedType);
+        }
+
+        [Test]
+        public void TypeRoundTrip_Corelib_UsesNullAssemblySentinel()
+        {
+            var wr = new BinaryStorageBuffer.Writer();
+            var typeId = wr.WriteObject(typeof(string), false);
+            var bytes = wr.SerializeToByteArray();
+
+            var re = new BinaryStorageBuffer.Reader(bytes);
+            // Inspect the raw on-disk Data to confirm the corelib assembly is encoded as the null sentinel.
+            var data = re.ReadValue<TypeSerializerData>(typeId, out _);
+            Assert.AreEqual(uint.MaxValue, data.assemblyId, "corelib assembly should be encoded as uint.MaxValue (null sentinel)");
+
+            var resolved = re.ReadObject<Type>(typeId, out _);
+            Assert.AreEqual(typeof(string), resolved);
+        }
+
+        [Test]
+        public void TypeRoundTrip_NonCore_StripsVersionInfo()
+        {
+            var wr = new BinaryStorageBuffer.Writer();
+            var typeId = wr.WriteObject(typeof(UnityEngine.Vector3), false);
+            var bytes = wr.SerializeToByteArray();
+
+            var re = new BinaryStorageBuffer.Reader(bytes);
+            var data = re.ReadValue<TypeSerializerData>(typeId, out _);
+            var assemblyName = re.ReadString(data.assemblyId, out _, '.');
+            Assert.AreEqual("UnityEngine.CoreModule", assemblyName, "non-corelib assembly should be the simple name only");
+            Assert.IsFalse(assemblyName.Contains("Version="), "version info must be stripped");
+
+            var resolved = re.ReadObject<Type>(typeId, out _);
+            Assert.AreEqual(typeof(UnityEngine.Vector3), resolved);
+        }
+
+        [Test]
+        public void TypeRoundTrip_GenericOverUserType()
+        {
+            var wr = new BinaryStorageBuffer.Writer();
+            var t = typeof(List<SimpleStruct>);
+            var typeId = wr.WriteObject(t, false);
+            var bytes = wr.SerializeToByteArray();
+
+            var re = new BinaryStorageBuffer.Reader(bytes);
+            var data = re.ReadValue<TypeSerializerData>(typeId, out _);
+            var className = re.ReadString(data.classId, out _, '.');
+            Assert.IsFalse(className.Contains("Version="), "generic argument identity must not embed Version=");
+            Assert.IsFalse(className.Contains("PublicKeyToken="), "generic argument identity must not embed PublicKeyToken=");
+
+            var resolved = re.ReadObject<Type>(typeId, out _);
+            Assert.AreEqual(t, resolved);
+        }
+
+        [Test]
+        public void TypeRoundTrip_ArrayType()
+        {
+            var wr = new BinaryStorageBuffer.Writer();
+            var typeId = wr.WriteObject(typeof(UnityEngine.Vector3[]), false);
+            var resolved = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray()).ReadObject<Type>(typeId, out _);
+            Assert.AreEqual(typeof(UnityEngine.Vector3[]), resolved);
+        }
+
+        class OuterTestType { public class InnerTestType { } }
+
+        [Test]
+        public void TypeRoundTrip_NestedType()
+        {
+            var wr = new BinaryStorageBuffer.Writer();
+            var typeId = wr.WriteObject(typeof(OuterTestType.InnerTestType), false);
+            var resolved = new BinaryStorageBuffer.Reader(wr.SerializeToByteArray()).ReadObject<Type>(typeId, out _);
+            Assert.AreEqual(typeof(OuterTestType.InnerTestType), resolved);
+        }
+
+        [Test]
+        public void TypeNameResolver_NullAssembly_ResolvesCorelibType()
+        {
+            Assert.AreEqual(typeof(string), TypeNameResolver.Resolve(null, "System.String"));
+            Assert.AreEqual(typeof(int), TypeNameResolver.Resolve("", "System.Int32"));
+        }
+
+        [Test]
+        public void TypeNameResolver_UnknownAssembly_ReturnsNullNoThrow()
+        {
+            Assert.IsNull(TypeNameResolver.Resolve("Definitely.Not.A.Real.Assembly.ZZZ", "Definitely.Not.A.Real.Type.ZZZ"));
+        }
+
+        [Test]
+        public void TypeNameResolver_GetSimpleAssemblyName_NullForCorelib()
+        {
+            Assert.IsNull(TypeNameResolver.GetSimpleAssemblyName(typeof(string)));
+            Assert.AreEqual("UnityEngine.CoreModule", TypeNameResolver.GetSimpleAssemblyName(typeof(UnityEngine.Vector3)));
+        }
+
+        [Test]
+        public void TypeNameResolver_Initialize_IsIdempotentAndResolveStillWorks()
+        {
+            // Repeated calls must not throw, and resolution must keep working.
+            TypeNameResolver.Initialize();
+            TypeNameResolver.Initialize();
+            TypeNameResolver.Initialize();
+
+            Assert.AreEqual(typeof(string), TypeNameResolver.Resolve(null, "System.String"));
+            Assert.AreEqual(typeof(UnityEngine.Vector3), TypeNameResolver.Resolve("UnityEngine.CoreModule", "UnityEngine.Vector3"));
+        }
+
+        [Test]
+        public void NormalizeTypeName_CorelibGenericArguments_OmitRuntimeSpecificAssembly()
+        {
+            var corelibName = typeof(object).Assembly.GetName().Name;
+            foreach (var t in new[] { typeof(List<string>), typeof(Dictionary<string, int>), typeof(List<List<string>>) })
+            {
+                var name = TypeNameResolver.NormalizeTypeName(t);
+                Assert.IsFalse(name.Contains(corelibName), $"normalized name '{name}' embeds the writer's corelib identity '{corelibName}'");
+                Assert.AreEqual(t, TypeNameResolver.Resolve(TypeNameResolver.GetSimpleAssemblyName(t), name));
+            }
+        }
+
+        [Test]
+        [TestCase("mscorlib")]
+        [TestCase("System.Private.CoreLib")]
+        public void TypeNameResolver_NullAssembly_ResolvesGenericWithForeignCorelibArgs(string corelib)
+        {
+            // The writer no longer emits these names, but legacy/foreign-runtime catalogs contain them.
+            var typeName = "System.Collections.Generic.List`1[[System.String, " + corelib + "]]";
+            Assert.AreEqual(typeof(List<string>), TypeNameResolver.Resolve(null, typeName));
+        }
+
+        [Test]
+        public void TypeRoundTrip_GenericOverCorelibType()
+        {
+            var wr = new BinaryStorageBuffer.Writer();
+            var t = typeof(Dictionary<string, int>);
+            var typeId = wr.WriteObject(t, false);
+            var bytes = wr.SerializeToByteArray();
+
+            var re = new BinaryStorageBuffer.Reader(bytes);
+            var data = re.ReadValue<TypeSerializerData>(typeId, out _);
+            Assert.AreEqual(uint.MaxValue, data.assemblyId, "corelib outer assembly should be encoded as the null sentinel");
+            var className = re.ReadString(data.classId, out _, '.');
+            var corelibName = typeof(object).Assembly.GetName().Name;
+            Assert.IsFalse(className.Contains(corelibName), $"serialized class name '{className}' embeds the writer's corelib identity '{corelibName}'");
+
+            var resolved = re.ReadObject<Type>(typeId, out _);
+            Assert.AreEqual(t, resolved);
+        }
     }
 }

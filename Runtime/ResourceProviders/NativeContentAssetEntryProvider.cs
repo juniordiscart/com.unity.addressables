@@ -11,7 +11,7 @@ using UnityEngine.ResourceManagement.Util;
 namespace UnityEngine.AddressableAssets.ResourceProviders
 {
     /// <summary>
-    /// Loads objects from a GroupRootAsset by issuing batched requests through the
+    /// Loads objects from a Content Directory by issuing batched requests through the
     /// L0 NativeLoadingSystem API. Requests accumulate into a fixed-size staging
     /// buffer and are submitted in one LoadAsync call per frame (or sooner if the
     /// buffer fills).
@@ -75,9 +75,6 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         readonly Dictionary<IResourceLocation, ResourceHandle> m_SingleHandlesByLocation = new Dictionary<IResourceLocation, ResourceHandle>();
         readonly Dictionary<IResourceLocation, ResourceHandle[]> m_ListHandlesByLocation = new Dictionary<IResourceLocation, ResourceHandle[]>();
 
-        // Reused across calls to keep the single-asset path allocation-free.
-        readonly List<object> m_DepsBuffer = new List<object>();
-
         readonly LoadingResponseQueue m_Queue;
         readonly int m_MainThreadId;
 
@@ -103,19 +100,20 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         /// <inheritdoc/>
         public override Type SceneDependencyResourceType => typeof(Object);
 
-        GroupRootAsset GetContentDirectoryResourceFromDependencies(ref ProvideHandle provideHandle)
+        // Mounts the Content Directory named by the entry data (if not already mounted) and
+        // returns its root asset. Mounts stay registered until AddressablesImpl.Dispose calls
+        // ContentDirectoryMountManager.UnmountAll, so there is nothing to release per load.
+        AddressableRootAsset GetRootAsset(ContentDirectoryAssetData assetData)
         {
-            provideHandle.GetDependencies(m_DepsBuffer);
-            foreach (var d in m_DepsBuffer)
+            var cdHandle = ContentDirectoryMountManager.EnsureMounted(assetData.LoadPath);
+
+            foreach (var ra in ContentLoadManager.GetRootAssets(cdHandle))
             {
-                if (d is GroupRootAsset cdr)
-                {
-                    m_DepsBuffer.Clear();
-                    return cdr;
-                }
+                if (ra is AddressableRootAsset ara)
+                    return ara;
             }
-            m_DepsBuffer.Clear();
-            throw new Exception("NativeContentAssetEntryProvider failed to find GroupRootAsset in dependencies.");
+
+            throw new Exception("NativeContentAssetEntryProvider failed to find AddressableRootAsset in ContentDirectory.");
         }
 
         /// <inheritdoc />
@@ -123,18 +121,20 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
         {
             try
             {
-                GroupRootAsset cdr = GetContentDirectoryResourceFromDependencies(ref provideHandle);
+                var assetData = provideHandle.Location.Data as ContentDirectoryAssetData;
+                if (assetData == null)
+                    throw new Exception("NativeContentAssetEntryProvider failed to find ContentDirectoryAssetData in location Data.");
 
-                if (HandleListRequest(ref provideHandle, cdr))
+                var rootAsset = GetRootAsset(assetData);
+
+                if (HandleListRequest(ref provideHandle, assetData, rootAsset))
                     return;
 
-                string primaryKey = provideHandle.Location.PrimaryKey;
-                LoadableInfo info = cdr.GetLoadableInfo(primaryKey, provideHandle.Location.ResourceType);
-                if (info == null)
-                    throw new Exception($"NativeContentAssetEntryProvider failed to find LoadableInfo for {primaryKey} in GroupRootAsset.");
+                if (!assetData.IsAssetIdValid)
+                    throw new Exception($"Content Directory asset load failed for address '{provideHandle.Location.PrimaryKey}': the catalog entry is a scene, not a regular asset. Use LoadSceneAsync instead.");
 
                 var single = GetPendingSingle(provideHandle);
-                Enqueue(info.loadable.LoadableObjectId, single, 0);
+                Enqueue(rootAsset.GetLoadableObjectId(assetData.AssetId), single, 0);
                 provideHandle.SetWaitForCompletionCallback(single.waitCallback);
 #if ADDR_NATIVECONTENT_STATS
                 m_StatsSingleProvides++;
@@ -146,32 +146,31 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             }
         }
 
-        bool HandleListRequest(ref ProvideHandle provideHandle, GroupRootAsset cdr)
+        bool HandleListRequest(ref ProvideHandle provideHandle, ContentDirectoryAssetData assetData, AddressableRootAsset globalRootAsset)
         {
             Type requestedType = provideHandle.Type;
             if (!requestedType.IsGenericType || typeof(IList<>) != requestedType.GetGenericTypeDefinition())
                 return false;
 
-            // IList<T> path: load all subassets in one batch.
-            string primaryKey = provideHandle.Location.PrimaryKey;
-            Type elementType = requestedType.GetGenericArguments()[0];
-            var subassets = cdr.GetAllSubAssets(primaryKey, elementType);
-
-            if (subassets == null || subassets.Count == 0)
-                throw new Exception($"NativeContentAssetEntryProvider failed to find subassets for {primaryKey} of type {elementType}.");
+            var subAssetIds = assetData.SubAssetIds;
+            if (subAssetIds == null || subAssetIds.Length == 0)
+                return false; // Not a list request or no subassets precomputed
 
             var list = new PendingList
             {
                 provideHandle = provideHandle,
-                handles = new ResourceHandle[subassets.Count],
-                entityIds = new EntityId[subassets.Count],
-                succeeded = new bool[subassets.Count],
-                remaining = subassets.Count
+                handles = new ResourceHandle[subAssetIds.Length],
+                entityIds = new EntityId[subAssetIds.Length],
+                succeeded = new bool[subAssetIds.Length],
+                remaining = subAssetIds.Length
             };
             list.waitCallback = () => WaitForList(list);
 
-            for (int i = 0; i < subassets.Count; i++)
-                Enqueue(subassets[i].loadable.LoadableObjectId, list, i);
+            for (int i = 0; i < subAssetIds.Length; i++)
+            {
+                var loadableObjId = globalRootAsset.GetLoadableObjectId(subAssetIds[i]);
+                Enqueue(loadableObjId, list, i);
+            }
             provideHandle.SetWaitForCompletionCallback(list.waitCallback);
 #if ADDR_NATIVECONTENT_STATS
             m_StatsListProvides++;
@@ -334,7 +333,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders
             {
                 ReleasePendingSingle(s);
                 IssueReleaseSingle(handle);
-                ph.Complete<Object>(null, false, new Exception($"NativeContentAssetEntryProvider failed to load {location.PrimaryKey} from GroupRootAsset."));
+                ph.Complete<Object>(null, false, new Exception($"NativeContentAssetEntryProvider failed to load {location.PrimaryKey} from Content Directory."));
                 return;
             }
 

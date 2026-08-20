@@ -178,6 +178,9 @@ namespace UnityEditor.AddressableAssets.Build
         internal bool IsBuildAndRelease = false;
         internal bool IsContentUpdateBuild = false;
 
-        internal IBuildLogger Logger { get; set; }
+        /// <summary>
+        /// The logger used to record build diagnostics and warnings during an Addressables build.
+        /// </summary>
+        public IBuildLogger Logger { get; internal set; }
     }
 }

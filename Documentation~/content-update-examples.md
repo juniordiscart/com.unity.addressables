@@ -1,5 +1,8 @@
 # Content update examples
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 The following examples illustrate how Addressables handles content during an update build.
 
 ## Content marked as Prevent Updates
@@ -12,7 +15,7 @@ In this example, consider a shipped application built with the following Address
 | AssetB| AssetM | AssetY |
 | AssetC| AssetN | AssetZ |
 
-`Local_Static` and `Remote_Static` have the [**Prevent Updates**](ContentPackingAndLoadingSchema.md#content-update-restriction) property in their group settings enabled.
+`Local_Static` and `Remote_Static` have the [**Prevent Updates**](group-inspector-settings-reference.md#content-update-restriction) property in their group settings enabled.
 
 Existing players have `Local_Static` on their devices, and might have both of the remote AssetBundles cached locally.
 
@@ -82,4 +85,4 @@ If only Dependency3 is changed:
 
 * [Content update build settings](content-update-build-settings.md)
 * [Create a script to check for content updates](content-update-builds-check.md)
-* [Group Inspector settings reference](ContentPackingAndLoadingSchema.md#content-update-restriction)
+* [Group Inspector settings reference](group-inspector-settings-reference.md#content-update-restriction)

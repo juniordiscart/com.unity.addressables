@@ -158,6 +158,12 @@ namespace UnityEditor.AddressableAssets.Settings
         }
 
         /// <summary>
+        /// Migration hook: returns the legacy per-schema IncludeInBuild value if this schema type stored one,
+        /// otherwise null. Used by <see cref="AddressableAssetGroup"/> to migrate the flag up to the group level.
+        /// </summary>
+        internal virtual bool? GetDeprecatedIncludeInBuild() => null;
+
+        /// <summary>
         /// Used for drawing properties in the inspector.
         /// </summary>
         public virtual void ShowAllProperties()

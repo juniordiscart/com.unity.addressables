@@ -162,7 +162,10 @@ internal class IconLazyLoad
 
     // Texture Caches
     private static Texture s_prefabIcon;
+    // No longer needed, as 6.6+ has disk free icon determination for Scriptable Objects
+#if !UNITY_6000_6_OR_NEWER
     private readonly Dictionary<string, Texture> m_scriptGuidToIconCache = new();
+#endif
 
     /// <summary>
     /// Assigns a temporary interim texture for <paramref name="item"/>
@@ -221,8 +224,10 @@ internal class IconLazyLoad
         m_needsIconRefreshPriority.Enqueue(new IconRequest(item, item.entry.AssetPath));
     }
 
+// See usage site, this is no longer needed on 6.6 or newer
+#if !UNITY_6000_6_OR_NEWER
     /// <summary>
-    /// Fast retrieval of a MonoBehaviour (e.g. ScriptableObject's) GUID from the beginning of it's asset
+    /// Fast retrieval of a MonoBehaviour (e.g. ScriptableObject's) GUID from the beginning of its asset
     /// Removes need to fully deserialize to deduce type information
     /// </summary>
     internal static string GetTypeGuidFromAsset(string assetPath)
@@ -249,6 +254,7 @@ internal class IconLazyLoad
 
         return null;
     }
+#endif
 
     /// <summary>
     /// Get a useful icon for <paramref name="entry"/> without causing a full deserialization of the asset
@@ -269,6 +275,19 @@ internal class IconLazyLoad
         var isPrefab = entry.AssetPath.EndsWith(".prefab");
         var isAsset = entry.AssetPath.EndsWith(".asset");
 
+        // We removed the dependency for a file read on Scriptable Objects in 6000.6; so it's now faster to just make the call
+#if UNITY_6000_6_OR_NEWER
+        if (isAsset)
+            return AssetDatabase.GetCachedIcon(entry.AssetPath) as Texture2D;
+
+        if (!performFileReads)
+        {
+            if (isPrefab)
+                return PrefabIcons.PrefabIcon(entry.AssetPath);
+            return null;
+        }
+#else
+        // This path still performs better on 6.5 or prior
         if (!performFileReads)
         {
             if (isPrefab)
@@ -289,6 +308,7 @@ internal class IconLazyLoad
             }
             return m_scriptGuidToIconCache[guid] as Texture2D;
         }
+#endif
         if (isPrefab)
         {
             if (PrefabIcons.IsPrefabVariant(entry.AssetPath))
@@ -415,7 +435,9 @@ internal class IconLazyLoad
         {
             LoadIconLazy(item);
         }
+#if !UNITY_6000_6_OR_NEWER
         m_scriptGuidToIconCache.Clear();
+#endif
         m_reloadWhenCacheInvalidated.Clear();
     }
 }

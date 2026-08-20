@@ -121,27 +121,14 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         /// <param name="sceneLoadHandle">The operation handle used to load the scene.</param>
         /// <returns>An operation handle for the unload.</returns>
         AsyncOperationHandle<SceneInstance> ReleaseScene(ResourceManager resourceManager, AsyncOperationHandle<SceneInstance> sceneLoadHandle);
-    }
 
-    internal interface ISceneProvider2 : ISceneProvider
-    {
         /// <summary>
         /// Release a scene.
         /// </summary>
         /// <param name="resourceManager">The resource manager to use for loading dependencies.</param>
         /// <param name="sceneLoadHandle">The operation handle used to load the scene.</param>
+        /// <param name="unloadOptions">The options to use when unloading the scene.</param>
         /// <returns>An operation handle for the unload.</returns>
         AsyncOperationHandle<SceneInstance> ReleaseScene(ResourceManager resourceManager, AsyncOperationHandle<SceneInstance> sceneLoadHandle, UnloadSceneOptions unloadOptions);
-    }
-
-    static internal class SceneProviderExtensions
-    {
-        public static AsyncOperationHandle<SceneInstance> ReleaseScene(this ISceneProvider provider, ResourceManager resourceManager, AsyncOperationHandle<SceneInstance> sceneLoadHandle,
-            UnloadSceneOptions unloadOptions)
-        {
-            if (provider is ISceneProvider2)
-                return ((ISceneProvider2)provider).ReleaseScene(resourceManager, sceneLoadHandle, unloadOptions);
-            return provider.ReleaseScene(resourceManager, sceneLoadHandle);
-        }
     }
 }

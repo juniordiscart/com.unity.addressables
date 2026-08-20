@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.Serialization;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.Util;
 
@@ -196,6 +197,69 @@ namespace UnityEngine.ResourceManagement.Exceptions
                 return $"{GetType().Name} : {base.Message}\nUnityWebRequest result : {WebRequestResult}\n{InnerException}";
             else
                 return base.ToString();
+        }
+    }
+
+
+    /// <summary>
+    /// Exception thrown when awaiting a failed <see cref="AsyncOperationHandle"/> or
+    /// <see cref="AsyncOperationHandle{TObject}"/> directly (e.g. <c>await handle;</c>).
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Handle"/> is a reference dedicated to this exception, distinct from the awaited handle -
+    /// which <c>ToAwaitable</c> already releases automatically on failure (unless it already had its own
+    /// release-on-completion listener, e.g. from an <c>autoReleaseHandle: true</c> API). This lets a caller
+    /// who only awaited still inspect <see cref="AsyncOperationHandle.Status"/> or a partial
+    /// <see cref="AsyncOperationHandle{TObject}.Result"/> and release it via <see cref="Handle"/>.
+    /// </remarks>
+    public class AsyncOperationHandleException : OperationException
+    {
+        /// <summary>
+        /// The handle for the operation that failed. See the remarks on this type for its release
+        /// ownership.
+        /// </summary>
+        public AsyncOperationHandle Handle { get; }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="AsyncOperationHandleException"/>.
+        /// </summary>
+        /// <param name="handle">The handle for the operation that failed.</param>
+        /// <param name="message">A message describing the error.</param>
+        /// <param name="innerException">The exception that caused the error, if any.</param>
+        public AsyncOperationHandleException(AsyncOperationHandle handle, string message, Exception innerException = null)
+            : base(message, innerException)
+        {
+            Handle = handle;
+        }
+    }
+
+    /// <summary>
+    /// Exception thrown when awaiting a failed <see cref="AsyncOperationHandle{TObject}"/> directly
+    /// (e.g. <c>await handle;</c>).
+    /// </summary>
+    /// <remarks>
+    /// See <see cref="AsyncOperationHandleException"/>. This typed variant exposes the failed handle
+    /// as an <see cref="AsyncOperationHandle{TObject}"/> so its <see cref="AsyncOperationHandle{TObject}.Result"/>
+    /// can be accessed directly, without a cast.
+    /// </remarks>
+    /// <typeparam name="TObject">The object type of the underlying operation.</typeparam>
+    public class AsyncOperationHandleException<TObject> : AsyncOperationHandleException
+    {
+        /// <summary>
+        /// The handle for the operation that failed.
+        /// </summary>
+        public new AsyncOperationHandle<TObject> Handle { get; }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="AsyncOperationHandleException{TObject}"/>.
+        /// </summary>
+        /// <param name="handle">The handle for the operation that failed.</param>
+        /// <param name="message">A message describing the error.</param>
+        /// <param name="innerException">The exception that caused the error, if any.</param>
+        public AsyncOperationHandleException(AsyncOperationHandle<TObject> handle, string message, Exception innerException = null)
+            : base(handle, message, innerException)
+        {
+            Handle = handle;
         }
     }
 }

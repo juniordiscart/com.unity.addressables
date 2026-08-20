@@ -239,5 +239,66 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
             }
             Assert.AreEqual(expected, valueCount);
         }
+
+        private static AssetData MakeAsset(string name, int addressableHandles)
+        {
+            var data = new AssetData(new BuildLayout.ExplicitAsset
+            {
+                AddressableName = name,
+                AssetPath = "Assets/" + name + ".asset",
+                Guid = name
+            });
+            data.AddressableHandles = addressableHandles;
+            return data;
+        }
+
+        [Test]
+        public void Test_CollectAddressableReferenceChains_CyclicGraph_Terminates()
+        {
+            // A SpriteAtlas and its packed texture reference each other. Before the fix this
+            // cycle caused an infinite queue/recursion and an Editor OutOfMemoryException.
+            var texture = MakeAsset("texture", 0);
+            var atlas = MakeAsset("atlas", 1);
+            texture.AddReferenceBy(atlas); // atlas references texture
+            atlas.AddReferenceBy(texture); // texture references atlas (closes the cycle)
+
+            var chains = AddressablesProfilerDetailsDataInspector.CollectAddressableReferenceChains(texture);
+
+            // Reaching this line at all proves the walk terminates. The atlas is the one
+            // addressable referrer, reached directly.
+            Assert.AreEqual(1, chains.Count);
+            Assert.AreEqual(1, chains[0].Length);
+            Assert.AreSame(atlas, chains[0][0]);
+        }
+
+        [Test]
+        public void Test_CollectAddressableReferenceChains_DoesNotRouteThroughInspectedAsset()
+        {
+            // Selected texture has both a cyclic parent (its atlas) and an unrelated direct
+            // referrer (prefab B). The walk must not thread B "through" the texture/atlas.
+            var texture = MakeAsset("texture", 0);
+            var atlas = MakeAsset("atlas", 1);
+            var b = MakeAsset("B", 1);
+
+            texture.AddReferenceBy(b);     // B references texture (directly, not via atlas)
+            texture.AddReferenceBy(atlas); // atlas references texture
+            atlas.AddReferenceBy(texture); // texture references atlas (cycle)
+
+            var chains = AddressablesProfilerDetailsDataInspector.CollectAddressableReferenceChains(texture);
+
+            // Exactly the two true referrers, each reached directly; no chain passes back
+            // through the inspected texture.
+            Assert.AreEqual(2, chains.Count);
+            var leaves = new HashSet<ContentData>();
+            foreach (var chain in chains)
+            {
+                Assert.AreEqual(1, chain.Length, "referrer should be reached directly, not routed through the selection");
+                foreach (var node in chain)
+                    Assert.AreNotSame(texture, node, "walk must not traverse back through the inspected asset");
+                leaves.Add(chain[0]);
+            }
+            Assert.IsTrue(leaves.Contains(atlas));
+            Assert.IsTrue(leaves.Contains(b));
+        }
     }
 }

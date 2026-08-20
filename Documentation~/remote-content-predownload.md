@@ -4,6 +4,9 @@ uid: addressables-api-download-dependencies-async
 
 # Pre-download remote content
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 When you distribute content remotely, you can improve performance by downloading dependencies in advance of when your application needs them. For example, you can download essential content on start up when your application is launched for the first time to make sure that users don't have to wait for content in the middle of gameplay.
 
 ## Create a pre-download script

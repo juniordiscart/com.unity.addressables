@@ -9,7 +9,7 @@ To assign a value, drag an asset to the field or select the object picker icon t
 If you drag a non-Addressable asset to an `AssetReference` field, Unity automatically makes the asset Addressable and adds it to the [default Addressables group](groups-create.md). Sprite and SpriteAtlas assets can have sub objects and display an additional object picker that you can use to specify which sub object to reference.
 
 > [!IMPORTANT]
-> To assign assets from a group to an AssetReference field, you must enable the __Include GUIDs in Catalog__ property in the group's Advanced Options. The __Include GUIDs in Catalog__ option is enabled by default. For more information, refer to [Group Inspector settings reference](ContentPackingAndLoadingSchema.md).
+> To assign assets from a group to an AssetReference field, you must enable the __Include GUIDs in Catalog__ property in the group's Advanced Options. The __Include GUIDs in Catalog__ option is enabled by default. For more information, refer to [Group Inspector settings reference](group-inspector-settings-reference.md).
 
 ## AssetReference types
 

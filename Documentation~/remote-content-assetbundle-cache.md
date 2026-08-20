@@ -1,5 +1,8 @@
 # Remote content AssetBundle caching
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 By default, AssetBundles produced for an Addressables build are cached on the client device at the path defined by [`Application.dataPath`](xref:UnityEngine.Application.dataPath) after they're downloaded. Cached AssetBundles are only downloaded again if they're updated or if they're deleted from the cache. You can further control where the cache is stored with the [`Caching` API](xref:UnityEngine.Caching).
 
 An updated catalog can exclude AssetBundle entries present in an older version of the catalog. When these entries are cached, their data is no longer needed on the device.
@@ -12,7 +15,7 @@ When you have unneeded cache data on the device, you can choose one of the follo
 
 If you disable caching for a group, the remote AssetBundles produced for the group are stored in memory when they're downloaded until you unload them or the application exits. The next time the application loads the AssetBundle, Addressables downloads it again.
 
-You can control how the AssetBundles produced by a group are cached with the __Use Asset Bundle Cache__ setting under [Advanced Options](ContentPackingAndLoadingSchema.md#advanced-options) in the Group Inspector settings.
+You can control how the AssetBundles produced by a group are cached with the __Use Asset Bundle Cache__ setting under [Advanced Options](group-inspector-settings-reference.md#advanced-options) in the Group Inspector settings.
 
 For information about AssetBundle caching, refer to [AssetBundle compression formats](xref:um-asset-bundles-cache). The Addressables system sets the cache-related parameters of the [`UnityWebRequests`](xref:UnityEngine.Networking.UnityWebRequest) it uses to download Addressable AssetBundles based on the group settings.
 
@@ -22,4 +25,4 @@ Note that there are some limitations for WebGL AssetBundles. For more informatio
 
 * [Enable remote content](remote-content-enable.md)
 * [Define remote content profiles](remote-content-profiles.md)
-* [Group Inspector settings reference](ContentPackingAndLoadingSchema.md)
+* [Group Inspector settings reference](group-inspector-settings-reference.md)

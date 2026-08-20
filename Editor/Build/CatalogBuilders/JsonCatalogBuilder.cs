@@ -25,7 +25,13 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
     public class JsonCatalogBuilder : BaseCatalogBuilder
     {
         /// <inheritdoc/>
-        protected override string CatalogExtension { get => "json"; }
+        public override Type CatalogProviderType => typeof(JsonCatalogProvider);
+
+        /// <inheritdoc/>
+        public override string CatalogExtension { get => "json"; }
+
+        /// <inheritdoc/>
+        public override bool SupportsLocalCatalogBundling => true;
 
         /// <inheritdoc/>
         public override ContentCatalogData GenerateCatalog(
@@ -44,9 +50,11 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
             ContentCatalogData contentCatalog = null;
             using (logger.ScopedStep(LogLevel.Info, "Generate JSON Catalog"))
             {
-                contentCatalog = new ContentCatalogData(catalogLocatorId);
+                contentCatalog = new JsonContentCatalogData(catalogLocatorId);
 
-                contentCatalog.SetData(catalogDataEntries.OrderBy(f => f.InternalId).ToList());
+                if (catalogDataEntries == null)
+                    throw new ArgumentNullException(nameof(catalogDataEntries));
+                contentCatalog.SetData(catalogDataEntries);
                 contentCatalog.ProviderId = catalogLocatorId;
 
                 IEnumerable<Type> sortedEnum = providerTypes.OrderBy(f => f.Name);
@@ -119,9 +127,9 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
             if (catalogBundleConfig != null)
             {
                 localLoadPath = localLoadPath.Replace(".json", ".bundle");
-                localLoadPath = localLoadPath.Replace(".json", ".bundle");
-                var returnCode = CreateCatalogBundle(logger, catalogBundleConfig, registry, localLoadPath, jsonText);
-                if (returnCode != ReturnCode.Success || !File.Exists(localLoadPath))
+                var bundleBuildPath = catalogBuildPath.Replace(".json", ".bundle");
+                var returnCode = CreateCatalogBundle(logger, catalogBundleConfig, registry, bundleBuildPath, jsonText);
+                if (returnCode != ReturnCode.Success || !File.Exists(bundleBuildPath))
                 {
                     Addressables.LogError($"An error occured during the creation of the content catalog bundle (return code {returnCode}).");
                     return false;
@@ -129,9 +137,12 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
             }
             else
             {
-                BuildScriptBase.WriteStringToFile(catalogBuildPath, jsonText, registry);
-                BuildScriptBase.WriteStringToFile(catalogBuildPath.Replace(".json", ".hash"), HashingMethods.Calculate(jsonText).ToString(), registry);
+                registry.WriteAndAddFile(catalogBuildPath, jsonText);
             }
+
+            // Always write the local hash file so the remote-catalog update check can compare
+            // it against the remote hash, regardless of whether the catalog is bundled or not.
+            registry.WriteAndAddFile(CatalogUtilities.GetHashFilePath(catalogBuildPath), catalogHash ?? HashingMethods.Calculate(jsonText).ToString());
 
             string[] dependencyHashes = null;
             if (buildRemoteCatalog)
@@ -152,8 +163,8 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
             ResourceLocationData localCatalog = new ResourceLocationData(
                 new[] { catalogLocatorId },
                 localLoadPath,
-                typeof(ContentCatalogProvider),
-                typeof(ContentCatalogData),
+                typeof(JsonCatalogProvider),
+                typeof(JsonContentCatalogData),
                 dependencyHashes);
             //We need to set the data here because this location data gets used later if we decide to load the remote/cached catalog instead.  See DetermineIdToLoad(...)
             localCatalog.Data = new ProviderLoadRequestOptions() {
@@ -183,7 +194,7 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
 
             var tempFolderPath = Path.Combine(catalogBundleConfig.ConfigFolder, tempFolderName);
             var tempFilePath = Path.Combine(tempFolderPath, Path.GetFileName(filepath).Replace(".bundle", ".json"));
-            if (!BuildScriptBase.WriteStringToFile(tempFilePath, jsonText, registry))
+            if (!registry.WriteAndAddFile(tempFilePath, jsonText))
             {
                 throw new Exception("An error occured during the creation of temporary files needed to bundle the content catalog.");
             }
@@ -263,8 +274,8 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
                 var remoteJsonBuildPath = DirectoryUtility.EnsureTrailingSlash(catalogPaths.RemoteBuildPath) + catalogPaths.VersionedCatalogFileName + ".json";
                 var remoteHashBuildPath = DirectoryUtility.EnsureTrailingSlash(catalogPaths.RemoteBuildPath) + catalogPaths.VersionedCatalogFileName + ".hash";
 
-                BuildScriptBase.WriteStringToFile(remoteJsonBuildPath, jsonText, registry);
-                BuildScriptBase.WriteStringToFile(remoteHashBuildPath, contentHash, registry);
+                registry.WriteAndAddFile(remoteJsonBuildPath, jsonText);
+                registry.WriteAndAddFile(remoteHashBuildPath, contentHash);
 
                 dependencyHashes = new string[((int)ContentCatalogProvider.DependencyHashIndex.Count)];
                 dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Remote] = $"{catalogLocatorId}RemoteHash";
@@ -282,7 +293,7 @@ namespace UnityEditor.AddressableAssets.Build.CatalogBuilders
 #if UNITY_SWITCH || UNITY_SWITCH2
                 var cacheLoadPath = remoteHashLoadPath; // ResourceLocationBase does not allow empty string id
 #else
-                var cacheLoadPath = "{UnityEngine.Application.persistentDataPath}/com.unity.addressables" + catalogPaths.VersionedCatalogFileName + ".hash";
+                var cacheLoadPath = DirectoryUtility.EnsureTrailingSlash("{UnityEngine.Application.persistentDataPath}/com.unity.addressables") + catalogPaths.VersionedCatalogFileName + ".hash";
 #endif
                 var cacheLoadLocation = new ResourceLocationData(
                     new[] { dependencyHashes[(int)ContentCatalogProvider.DependencyHashIndex.Cache] },

@@ -6,9 +6,15 @@ uid: group-templates
 
 Create reusable group templates that define which schema objects Unity creates for new groups.
 
-A group template defines which types of schema objects Unity creates for a new group. The Addressables system includes the **Packed Assets** template, which includes all the settings needed to build and load Addressables using the default build scripts.
+A group template defines which types of schema objects Unity creates for a new group. The Addressables system includes the following default templates:
 
-If you want to create your own build scripts, you can define the additional settings in your own schema objects and create your own group templates. To create a group template, perform the following steps:
+* **Packed Assets**: Includes all the settings needed to build and load Addressables using the [AssetBundle system](xref:um-asset-bundles).
+* **Content Directories**: Includes all the settings needed to build and load Addressables using the [content directory system](xref:um-content-directories).
+* **Blank (no schema)**: A group with [no schema](GroupSchemas) attached to it.
+
+## Create a custom group template
+
+To create your own build scripts, define the additional settings in a custom schema object and create a custom group template. To create a group template, perform the following steps:
 
 1. In the **Project** window, navigate to the folder you want to save the new group template to. The default template is in the `AssetGroups` subfolder of `AddressablesAssetsData`.
 1. Right-click and select **Create** > **Addressables** > **Group Templates** > **Blank Group Template**.
@@ -18,10 +24,10 @@ If you want to create your own build scripts, you can define the additional sett
 Repeat these steps to add as many new schemas as needed.
 
 > [!NOTE]
-> If you use the default build script, a group must use the __Content Packing & Loading__ schema. If you use content update builds, a group must include the __Content Update Restrictions__ schema. For more information, refer to [Builds](xref:addressables-builds).
+> If you use the default build script, a group must use the __Content Directories__ or __Content Packing & Loading__ schema. If you use content update builds, a group must include the __Content Update Restrictions__ schema. For more information, refer to [Builds](Builds.md).
 
 ## Additional resources
 
 * [Define group settings](GroupSchemas.md)
-* [Content packing settings reference](ContentPackingAndLoadingSchema.md)
+* [Content packing settings reference](group-inspector-settings-reference.md)
 * [Addressables Asset Settings reference](AddressableAssetSettings.md)

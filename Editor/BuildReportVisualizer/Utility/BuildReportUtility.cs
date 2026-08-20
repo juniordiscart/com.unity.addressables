@@ -350,11 +350,6 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 case BuildTarget.Switch:
                     iconClassName = BuildTarget.Switch.ToString();
                     break;
-#if !UNITY_2022_2_OR_NEWER
-                case BuildTarget.Lumin:
-                    iconClassName = BuildTarget.Lumin.ToString();
-                    break;
-# endif
                 default:
                     iconClassName = "NoIcon";
                     break;
@@ -371,18 +366,18 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             if (kbytes < 1024)
             {
                 dec = Mathf.FloorToInt(((bytes % 1024) / 1024f) * 100);
-                return $"{kbytes}.{Mathf.FloorToInt(dec)} KB";
+                return $"{kbytes}.{dec:D2} KB";
             }
             ulong mbytes = kbytes / 1024;
             if (mbytes < 1024)
             {
                 dec = Mathf.FloorToInt(((kbytes % 1024) / 1024f) * 100);
-                return $"{mbytes}.{Mathf.FloorToInt(dec)} MB";
+                return $"{mbytes}.{dec:D2} MB";
             }
 
             ulong gbytes = mbytes / 1024;
             dec = Mathf.FloorToInt(((mbytes % 1024) / 1024f) * 100);
-            return $"{gbytes}.{Mathf.FloorToInt(dec)} GB";
+            return $"{gbytes}.{dec:D2} GB";
         }
 
         internal static string GetDeliminatedList(char delimChar, List<string> lst)

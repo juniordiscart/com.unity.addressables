@@ -10,12 +10,12 @@ using UnityEngine.U2D;
 namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
 {
     /// <summary>
-    /// Runs the GroupRootAssetEntryProviderIntegrationTests suite against
+    /// Runs the GroupAssetEntryProviderIntegrationTests suite against
     /// <see cref="NativeContentAssetEntryProvider"/>.
     ///
-    /// Both fixtures build the same catalog (stamped with GroupRootAssetEntryProvider).
+    /// Both fixtures build the same catalog (stamped with GroupAssetEntryProvider).
     /// At runtime, after AddressablesImpl is initialized, this fixture swaps the
-    /// GroupRootAssetEntryProvider instance in ResourceManager.ResourceProviders for a
+    /// GroupAssetEntryProvider instance in ResourceManager.ResourceProviders for a
     /// NativeContentAssetEntryProvider that reports the same ProviderId so catalog
     /// references still resolve. This is intentionally fragile - it should be removed
     /// once the original provider is retired and NativeContentAssetEntryProvider becomes
@@ -25,7 +25,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
     /// (synchronous WaitForCompletion, multi-Provide-per-frame batching) that the
     /// inherited suite does not reach.
     /// </summary>
-    public class NativeContentAssetEntryProviderIntegrationTests : GroupRootAssetEntryProviderIntegrationTests
+    public class NativeContentAssetEntryProviderIntegrationTests : GroupAssetEntryProviderIntegrationTests
     {
         // Keys defined in the base fixture. Re-declared here as locals so this file is
         // self-contained; values must match the base.
@@ -43,11 +43,11 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         void SwapProviderForNativeContent()
         {
             var providers = m_Addressables.ResourceManager.ResourceProviders;
-            string targetProviderId = typeof(GroupRootAssetEntryProvider).FullName;
+            string targetProviderId = typeof(NativeContentAssetEntryProvider).FullName;
 
             for (int i = 0; i < providers.Count; i++)
             {
-                if (providers[i] is GroupRootAssetEntryProvider existing && existing.ProviderId == targetProviderId)
+                if (providers[i] is NativeContentAssetEntryProvider existing && existing.ProviderId == targetProviderId)
                 {
                     var native = new NativeContentAssetEntryProvider();
                     // Inherit the catalog-side ProviderId so location resolution still finds us.
@@ -57,7 +57,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
                 }
             }
 
-            Assert.Fail($"NativeContentAssetEntryProviderIntegrationTests setup: did not find a {nameof(GroupRootAssetEntryProvider)} to replace in ResourceManager.");
+            Assert.Fail($"NativeContentAssetEntryProviderIntegrationTests setup: did not find a {nameof(NativeContentAssetEntryProvider)} to replace in ResourceManager.");
         }
 
         [UnityTest]
@@ -81,7 +81,7 @@ namespace UnityEngine.AddressableAssets.ResourceProviders.Tests
         public IEnumerator ConcurrentLoads_BatchedInSingleFrame()
         {
             // Issue multiple Provides without yielding between them. They share the
-            // GroupRootAsset dependency, so once it's loaded, the entry Provides run
+            // ContentDirectory dependency, so once it's loaded, the entry Provides run
             // together in the same Update tick and are batched into a single LoadAsync
             // call. This exercises the staging buffer's accumulate-then-flush behavior
             // and Drain's per-handle dispatch back to the right ProvideHandle.

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEngine;
@@ -19,7 +21,7 @@ namespace UnityEditor.AddressableAssets.GUI
         private GUIContent m_ClearRulesGUIContent = new GUIContent("Clear", "Clear information collected for the Analyze Rules");
         private GUIContent m_ClearSelectedRulesGUIContent = new GUIContent("Selection", "Clear information collected for the selected Rules");
         private GUIContent m_ClearAllRulesGUIContent = new GUIContent("All", "Clear information collected for the all Rules");
-        private GUIContent m_FixSelectedRulesGUIContent = new GUIContent("Fix Selected Rules", "Make changes to Addressables Groups with errors found by the selected Fixable Rules");
+        private GUIContent m_FixToolbarContent = new GUIContent();
 
         private GUIContent m_ExportJsonGUIContent = new GUIContent("Export Results", "Export a json file with the analyze results for all rules");
         private GUIContent m_ImportJsonGUIContent = new GUIContent("Import Results", "Import a json file with the analyze results for all rules, this will overwrite any existing results");
@@ -42,26 +44,43 @@ namespace UnityEditor.AddressableAssets.GUI
             buttonRect.height = k_ButtonHeight;
 
             GUILayout.BeginArea(buttonRect);
-            EditorGUI.BeginDisabledGroup(!m_Tree.SelectionContainsRuleContainer);
 
             var runRect = buttonRect;
             float activeWidth = 170;
             runRect.width = activeWidth;
             buttonRect.x += activeWidth;
             buttonRect.width -= activeWidth;
+            EditorGUI.BeginDisabledGroup(!m_Tree.SelectionContainsRuleContainer);
             if (UnityEngine.GUI.Button(runRect, m_AnalyzeSelectedRulesGUIContent, EditorStyles.toolbarButton))
             {
-                EditorApplication.delayCall += () => m_Tree.RunAllSelectedRules();
+                var selectionSnapshot = SnapshotTreeSelection(m_Tree);
+                EditorApplication.delayCall += () => m_Tree.RunAllSelectedRules(selectionSnapshot);
             }
 
+            EditorGUI.EndDisabledGroup();
+
             var fixRect = buttonRect;
-            activeWidth = 120;
+            activeWidth = 220;
             fixRect.width = activeWidth;
             buttonRect.x += activeWidth;
             buttonRect.width -= activeWidth;
-            if (UnityEngine.GUI.Button(fixRect, m_FixSelectedRulesGUIContent, EditorStyles.toolbarButton))
+            m_Tree.GetFixToolbarLabel(out var fixToolbarText, out var fixToolbarTooltip);
+            m_FixToolbarContent.text = fixToolbarText;
+            m_FixToolbarContent.tooltip = fixToolbarTooltip;
+            var canFixToolbar = m_Tree.SelectionContainsFixableSelectedResults
+                || (m_Tree.SelectionContainsRuleContainer && m_Tree.SelectionContainsFixableRule && m_Tree.SelectionContainsErrors);
+            EditorGUI.BeginDisabledGroup(!canFixToolbar);
+            if (UnityEngine.GUI.Button(fixRect, m_FixToolbarContent, EditorStyles.toolbarButton))
             {
-                EditorApplication.delayCall += () => m_Tree.FixAllSelectedRules();
+                var selectionSnapshot = SnapshotTreeSelection(m_Tree);
+                EditorApplication.delayCall += () =>
+                {
+                    m_Tree.UpdateSelections(selectionSnapshot);
+                    if (m_Tree.SelectionContainsFixableSelectedResults)
+                        m_Tree.FixSelectedResultsFromCurrentSelection(selectionSnapshot);
+                    else
+                        m_Tree.FixAllSelectedRules(selectionSnapshot);
+                };
             }
 
             EditorGUI.EndDisabledGroup();
@@ -77,7 +96,11 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (!m_Tree.SelectionContainsRuleContainer)
                     menu.AddDisabledItem(m_ClearSelectedRulesGUIContent, false);
                 else
-                    menu.AddItem(m_ClearSelectedRulesGUIContent, false, () => EditorApplication.delayCall += () => m_Tree.ClearAllSelectedRules());
+                    menu.AddItem(m_ClearSelectedRulesGUIContent, false, () =>
+                    {
+                        var snap = SnapshotTreeSelection(m_Tree);
+                        EditorApplication.delayCall += () => m_Tree.ClearAllSelectedRules(snap);
+                    });
                 menu.AddItem(m_ClearAllRulesGUIContent, false, () => EditorApplication.delayCall += () => m_Tree.ClearAll());
                 menu.DropDown(clearRect);
             }
@@ -117,6 +140,15 @@ namespace UnityEditor.AddressableAssets.GUI
             //{
             //    m_Tree.RevertAllActiveRules();
             //}
+        }
+
+        /// <summary>
+        /// Copies the current tree selection so delayed toolbar callbacks run against click-time rows, not a mutated selection.
+        /// </summary>
+        static List<int> SnapshotTreeSelection(AssetSettingsAnalyzeTreeView tree)
+        {
+            var sel = tree.GetSelection();
+            return sel != null ? new List<int>(sel) : new List<int>();
         }
     }
 }

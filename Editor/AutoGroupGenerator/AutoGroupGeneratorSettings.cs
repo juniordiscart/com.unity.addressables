@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor.AddressableAssets.Settings;
 
 namespace AutoGroupGenerator
 {
@@ -103,6 +104,7 @@ namespace AutoGroupGenerator
     /// <seealso cref="InputRule"/>
     /// <seealso cref="OutputRule"/>
     [CreateAssetMenu(menuName = Constants.ContextMenus.Root + "Settings")]
+    [AddressablesHelpURL("groups-auto-group-generator-reference.html")]
     public class AutoGroupGeneratorSettings : ScriptableObject
     {
         #region Fields

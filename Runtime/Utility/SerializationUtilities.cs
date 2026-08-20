@@ -89,8 +89,9 @@ namespace UnityEngine.AddressableAssets.Utility
                         int jsonLength = BitConverter.ToInt32(keyData, dataIndex);
                         dataIndex += 4;
                         string jsonText = Encoding.Unicode.GetString(keyData, dataIndex, jsonLength);
-                        var assembly = Assembly.Load(assemblyName);
-                        var t = assembly.GetType(className);
+                        var t = ResourceManagement.Util.TypeNameResolver.Resolve(assemblyName, className);
+                        if (t == null)
+                            return null;
                         return JsonUtility.FromJson(jsonText, t);
                     }
                 }
@@ -183,15 +184,16 @@ namespace UnityEngine.AddressableAssets.Utility
             buffer.Add((byte)ObjectType.JsonObject);
             length++;
 
-            //write assembly name
-            byte[] tmpAssemblyName = Encoding.ASCII.GetBytes(objectType.Assembly.FullName);
+            //write assembly name (empty for corelib types — reader resolves via Type.GetType)
+            var simpleAssemblyName = ResourceManagement.Util.TypeNameResolver.GetSimpleAssemblyName(objectType) ?? string.Empty;
+            byte[] tmpAssemblyName = Encoding.ASCII.GetBytes(simpleAssemblyName);
             buffer.Add((byte)tmpAssemblyName.Length);
             length++;
             buffer.AddRange(tmpAssemblyName);
             length += tmpAssemblyName.Length;
 
             //write class name
-            var objName = objectType.FullName;
+            var objName = ResourceManagement.Util.TypeNameResolver.NormalizeTypeName(objectType);
             if (objName == null)
                 objName = string.Empty;
             byte[] tmpClassName = Encoding.ASCII.GetBytes(objName);

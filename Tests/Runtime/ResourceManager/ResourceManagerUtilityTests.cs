@@ -218,4 +218,96 @@ namespace UnityEngine.ResourceManagement.Tests
             Assert.AreEqual(usesMultiThreading, PlatformUtilities.PlatformUsesMultiThreading(platform));
         }
     }
+
+    [TestFixture]
+    class AddressablesImplGetCatalogExtensionTests
+    {
+        static readonly TestCaseData[] k_Cases =
+        {
+            // HTTP URLs with query strings — the core fix case
+            new TestCaseData("http://127.0.0.1/catalog.bin?param1=value1&param2=value2", ".bin"),
+            new TestCaseData("http://127.0.0.1/catalog.json?param=value",                ".json"),
+            new TestCaseData("http://127.0.0.1/catalog.bin?date=20240101",               ".bin"),
+            // HTTP URLs without query strings
+            new TestCaseData("http://127.0.0.1/catalog.bin",                             ".bin"),
+            new TestCaseData("http://127.0.0.1/catalog.json",                            ".json"),
+            // Relative file paths
+            new TestCaseData("Assets/catalog.bin",                                       ".bin"),
+            new TestCaseData("Assets/catalog.json",                                      ".json"),
+            new TestCaseData("catalog.bin",                                               ".bin"),
+            // Unsupported extensions — returned as-is; caller validates
+            new TestCaseData("http://127.0.0.1/catalog.xyz?param=value",                 ".xyz"),
+            new TestCaseData("catalog.xyz",                                               ".xyz"),
+            // No extension at all
+            new TestCaseData("http://127.0.0.1/catalog?param=value",                     ""),
+            new TestCaseData("catalog",                                                   ""),
+        };
+
+        [Test, TestCaseSource(nameof(k_Cases))]
+        public void GetCatalogExtension_ReturnsCorrectExtension(string path, string expected)
+        {
+            Assert.AreEqual(expected, CatalogUtilities.GetCatalogExtension(path));
+        }
+    }
+
+    [TestFixture]
+    class AddressablesImplGetHashFilePathTests
+    {
+        static readonly TestCaseData[] k_Cases =
+        {
+            // Query string with colon — the exact pattern that broke Path.ChangeExtension
+            new TestCaseData("http://127.0.0.1/catalog.bin?param1=value1&param2=value2:date=number",
+                             "http://127.0.0.1/catalog.hash?param1=value1&param2=value2:date=number"),
+            // Regular query string
+            new TestCaseData("http://127.0.0.1/catalog.json?param=value",
+                             "http://127.0.0.1/catalog.hash?param=value"),
+            // URL without query string
+            new TestCaseData("http://127.0.0.1/catalog.bin",
+                             "http://127.0.0.1/catalog.hash"),
+            // Relative paths
+            new TestCaseData("Assets/catalog.bin",  "Assets/catalog.hash"),
+            new TestCaseData("catalog.json",         "catalog.hash"),
+            // URL with no extension — ChangeExtension adds .hash
+            new TestCaseData("http://127.0.0.1/catalog?param=value",
+                             "http://127.0.0.1/catalog.hash?param=value"),
+            new TestCaseData("catalog",              "catalog.hash"),
+        };
+
+        [Test, TestCaseSource(nameof(k_Cases))]
+        public void GetHashFilePath_ReturnsCorrectHashPath(string catalogPath, string expected)
+        {
+            Assert.AreEqual(expected, CatalogUtilities.GetHashFilePath(catalogPath));
+        }
+    }
+
+    [TestFixture]
+    class GetCatalogFilePathTests
+    {
+        static readonly TestCaseData[] k_Cases =
+        {
+            // Simple extension swap: .hash → .bin / .json
+            new TestCaseData("http://127.0.0.1/catalog.hash",   ".bin",  "http://127.0.0.1/catalog.bin"),
+            new TestCaseData("http://127.0.0.1/catalog.hash",   ".json", "http://127.0.0.1/catalog.json"),
+            // Relative and bare filenames
+            new TestCaseData("Assets/catalog.hash", ".bin",  "Assets/catalog.bin"),
+            new TestCaseData("catalog.hash",         ".json", "catalog.json"),
+            // Query string is preserved
+            new TestCaseData("http://127.0.0.1/catalog.hash?param=value", ".bin",
+                             "http://127.0.0.1/catalog.bin?param=value"),
+            // Query string with colon — the edge case that breaks Path.ChangeExtension directly
+            new TestCaseData("http://127.0.0.1/catalog.hash?param1=value1&param2=value2:date=number", ".bin",
+                             "http://127.0.0.1/catalog.bin?param1=value1&param2=value2:date=number"),
+            // .hash appearing earlier in the path must NOT be touched (the original bug)
+            new TestCaseData("http://h/my.hash.dir/catalog.hash",   ".bin",
+                             "http://h/my.hash.dir/catalog.bin"),
+            new TestCaseData("http://h/my.hash.dir/catalog.hash?q=1", ".json",
+                             "http://h/my.hash.dir/catalog.json?q=1"),
+        };
+
+        [Test, TestCaseSource(nameof(k_Cases))]
+        public void GetCatalogFilePath_ReturnsCorrectCatalogPath(string hashPath, string catalogExt, string expected)
+        {
+            Assert.AreEqual(expected, CatalogUtilities.GetCatalogFilePath(hashPath, catalogExt));
+        }
+    }
 }

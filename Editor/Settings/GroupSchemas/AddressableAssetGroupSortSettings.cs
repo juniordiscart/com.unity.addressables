@@ -7,6 +7,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
     /// <summary>
     /// Class used for sorting Addressables Groups
     /// </summary>
+    [AddressablesHelpURL("GroupsWindow.html")]
     public class AddressableAssetGroupSortSettings : ScriptableObject
     {
         const string DEFAULT_PATH = "Assets/AddressableAssetsData";

@@ -319,7 +319,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                 }
 
                 var schema = group.GetSchema<BundledAssetGroupSchema>();
-                if (schema != null && schema.IncludeInBuild && schema.IsEnabled && schema.CanEnableSchema() == "")
+                if (schema != null && group.IncludeInBuild && schema.IsEnabled && schema.CanEnableSchema() == "")
                 {
                     List<AssetBundleBuild> bundleInputDefinitions = new List<AssetBundleBuild>();
                     m_AssetEntries.AddRange(BuildScriptPackedMode.PrepGroupBundlePacking(group, bundleInputDefinitions, schema));
@@ -686,6 +686,11 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         public override void FixIssues(AddressableAssetSettings settings)
         {
             //Do nothing.  There's nothing to fix.
+        }
+
+        /// <inheritdoc />
+        public override void FixSelectedResults(AddressableAssetSettings settings, IReadOnlyCollection<string> selectedResultNames)
+        {
         }
     }
 }

@@ -3,10 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
+using UnityEditor.AddressableAssets.Build.Layout;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Pipeline.Utilities;
+#if ENABLE_CONTENT_DIRECTORIES
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
+#endif
 using UnityEngine;
 using UnityEngine.Analytics;
 using UnityEngine.ResourceManagement.Util;
@@ -23,7 +29,6 @@ namespace UnityEditor.AddressableAssets
 
         private const string packageName = "com.unity.addressables";
 
-#if UNITY_2023_1_OR_NEWER
         private static PackageManager.PackageInfo s_packageInfo = null;
         private static PackageManager.PackageInfo packageInfo
         {
@@ -34,9 +39,7 @@ namespace UnityEditor.AddressableAssets
                 return s_packageInfo;
             }
         }
-#endif
 
-#if UNITY_2023_3_OR_NEWER
         [AnalyticInfo(vendorKey: VendorKey, eventName: BuildEvent)]
         public class AddressablesBuildEvent : IAnalytic
         {
@@ -138,6 +141,12 @@ namespace UnityEditor.AddressableAssets
             public string package;
             public string package_ver;
 
+            public int NumberOfContentDirectoryGroups;
+            public int NumberOfSerializedFiles;
+            public int ArchivingEnabled;
+            public int NumberOfDuplicatedAssets;
+            public float ArchiveSize;
+
             public AnalyticsBuildData(BuildData bd)
             {
                 IsUsingCCD = bd.IsUsingCCD;
@@ -145,10 +154,8 @@ namespace UnityEditor.AddressableAssets
                 IsPlayModeBuild = bd.IsPlayModeBuild;
                 BuildScript = bd.BuildScript;
                 BuildAndRelease = bd.BuildAndRelease;
-#if UNITY_2022_2_OR_NEWER
                 DebugBuildLayoutEnabled = bd.DebugBuildLayoutEnabled;
                 AutoOpenBuildReportEnabled = bd.AutoOpenBuildReportEnabled;
-#endif
                 NumberOfLabels = bd.NumberOfLabels;
                 IsIncrementalBuild = bd.IsIncrementalBuild;
                 NumberOfAssetBundles = bd.NumberOfAssetBundles;
@@ -175,12 +182,15 @@ namespace UnityEditor.AddressableAssets
                 NumberOfAssetsInCCDPaths = bd.NumberOfAssetsInCCDPaths;
                 BuildTarget = bd.BuildTarget;
                 ErrorCode = bd.ErrorCode;
+                NumberOfContentDirectoryGroups = bd.NumberOfContentDirectoryGroups;
+                NumberOfSerializedFiles = bd.NumberOfSerializedFiles;
+                ArchivingEnabled = bd.ArchivingEnabled;
+                NumberOfDuplicatedAssets = bd.NumberOfDuplicatedAssets;
+                ArchiveSize = bd.ArchiveSize;
                 package = packageName;
                 package_ver = packageInfo?.version;
             }
         }
-#endif
-
         [Serializable]
         internal struct BuildData
         {
@@ -220,6 +230,12 @@ namespace UnityEditor.AddressableAssets
             public int IsIncrementalBuild;
             public int ErrorCode;
             public double TotalBuildTime;
+
+            public int NumberOfContentDirectoryGroups;
+            public int NumberOfSerializedFiles;
+            public int ArchivingEnabled;
+            public int NumberOfDuplicatedAssets;
+            public float ArchiveSize;
         }
 
         private static string GetSessionStateKeyByUsageEventType(UsageEventType uet)
@@ -305,6 +321,13 @@ namespace UnityEditor.AddressableAssets
             CCD = 2,
             Custom = 3,
             Automatic = 4
+        }
+
+        internal enum ArchivingStatus
+        {
+            Inconclusive = -1,
+            Disabled = 0,
+            Enabled = 1,
         }
 
         internal enum BuildType
@@ -438,6 +461,12 @@ namespace UnityEditor.AddressableAssets
             int numberOfAssetsInRemoteCustomPaths = 0;
             int numberOfAssetsInLocalCustomPaths = 0;
 
+            int numberOfContentDirectoryGroups = 0;
+            int numberOfSerializedFiles = -1;
+            int numberOfDuplicatedAssets = -1;
+            int archivingEnabled = (int) ArchivingStatus.Inconclusive;
+            float archiveSize = -1f;
+
 
             List<ProfileGroupType> groupTypes = ProfileGroupType.CreateGroupTypes(currentSettings.profileSettings.GetProfile(currentSettings.activeProfileId), currentSettings);
             var dataSourceSettings = ProfileDataSourceSettings.GetSettings();
@@ -467,11 +496,30 @@ namespace UnityEditor.AddressableAssets
 
                 numberOfAddressableAssets += group.entries.Count;
 
-                var schema = group.GetSchema<BundledAssetGroupSchema>();
-                if (schema == null || !schema.IsEnabled)
+                bool otherSchemaTypeExists = false;
+                int selected = 0;
+                string loadPath = "";
+#if ENABLE_CONTENT_DIRECTORIES
+                var cdGroupSchema = group.GetSchema<ContentDirectoryGroupSchema>();
+                if (cdGroupSchema != null && cdGroupSchema.IsEnabled)
+                {
+                    // we need this check to let this logic run correctly for both the CDs enabled and disabled case.
+                    otherSchemaTypeExists = true;
+                    selected = cdGroupSchema.DetermineSelectedIndex(groupTypes, -1, currentSettings, vars);
+                    numberOfContentDirectoryGroups += 1;
+                    loadPath = cdGroupSchema.LoadPath.GetValue(currentSettings);
+                }
+#endif
+
+                var baGroupSchema = group.GetSchema<BundledAssetGroupSchema>();
+                if ((baGroupSchema == null || !baGroupSchema.IsEnabled) && !otherSchemaTypeExists)
                     continue;
 
-                int selected = schema.DetermineSelectedIndex(groupTypes, -1, currentSettings, vars);
+                if (baGroupSchema != null && baGroupSchema.IsEnabled)
+                {
+                    selected = baGroupSchema.DetermineSelectedIndex(groupTypes, -1, currentSettings, vars);
+                    loadPath = baGroupSchema.LoadPath.GetValue(currentSettings);
+                }
 
                 PathType pathType;
                 if (selected == -1)
@@ -481,7 +529,7 @@ namespace UnityEditor.AddressableAssets
 
                 if (pathType == PathType.Custom)
                 {
-                    if (ResourceManagerConfig.IsPathRemote(schema.LoadPath.GetValue(currentSettings)))
+                    if (ResourceManagerConfig.IsPathRemote(loadPath))
                     {
                         numberOfGroupsUsingRemoteCustomPaths += 1;
                         numberOfAssetsInRemoteCustomPaths += group.entries.Count;
@@ -517,33 +565,36 @@ namespace UnityEditor.AddressableAssets
                     numberOfAssetsInCCDPaths += group.entries.Count;
                 }
 
-                var bundleMode = schema.BundleMode;
-                var compressionType = schema.Compression;
-
-                switch (compressionType)
+                if (baGroupSchema != null && baGroupSchema.IsEnabled)
                 {
-                    case BundledAssetGroupSchema.BundleCompressionMode.Uncompressed:
-                        numberOfGroupsUncompressed += 1;
-                        break;
-                    case BundledAssetGroupSchema.BundleCompressionMode.LZ4:
-                        numberOfGroupsUsingLZ4 += 1;
-                        break;
-                    case BundledAssetGroupSchema.BundleCompressionMode.LZMA:
-                        numberOfGroupsUsingLZMA += 1;
-                        break;
-                }
+                    var bundleMode = baGroupSchema.BundleMode;
+                    var compressionType = baGroupSchema.Compression;
 
-                switch (bundleMode)
-                {
-                    case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
-                        numberOfGroupsPackedSeparately += 1;
-                        break;
-                    case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
-                        numberOfGroupsPackedTogether += 1;
-                        break;
-                    case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
-                        numberOfGroupsPackedTogetherByLabel += 1;
-                        break;
+                    switch (compressionType)
+                    {
+                        case BundledAssetGroupSchema.BundleCompressionMode.Uncompressed:
+                            numberOfGroupsUncompressed += 1;
+                            break;
+                        case BundledAssetGroupSchema.BundleCompressionMode.LZ4:
+                            numberOfGroupsUsingLZ4 += 1;
+                            break;
+                        case BundledAssetGroupSchema.BundleCompressionMode.LZMA:
+                            numberOfGroupsUsingLZMA += 1;
+                            break;
+                    }
+
+                    switch (bundleMode)
+                    {
+                        case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
+                            numberOfGroupsPackedSeparately += 1;
+                            break;
+                        case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
+                            numberOfGroupsPackedTogether += 1;
+                            break;
+                        case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
+                            numberOfGroupsPackedTogetherByLabel += 1;
+                            break;
+                    }
                 }
 
                 if (group.entries.Count > maxNumberOfAssetsInAGroup)
@@ -552,6 +603,18 @@ namespace UnityEditor.AddressableAssets
                     minNumberOfAssetsInAGroup = group.entries.Count;
             }
 
+            numberOfDuplicatedAssets = GetDuplicatedAssetCount();
+
+#if ENABLE_CONTENT_DIRECTORIES
+            numberOfSerializedFiles = CountSerializedFiles(result);
+            if (currentSettings.ArchiveContentDirectories)
+                archivingEnabled = (int)ArchivingStatus.Enabled;
+            else
+                archivingEnabled = (int)ArchivingStatus.Disabled;
+
+            if (archivingEnabled == (int)ArchivingStatus.Enabled)
+                archiveSize = currentSettings.TargetArchiveSizeInMB;
+#endif
             BuildData data = new BuildData()
             {
                 IsUsingCCD = usingCCD,
@@ -586,35 +649,66 @@ namespace UnityEditor.AddressableAssets
                 NumberOfAssetsInEditorHostedPaths = numberOfAssetsInEditorHostedPaths,
                 NumberOfAssetsInCCDPaths = numberOfAssetsInCCDPaths,
                 BuildTarget = (int)EditorUserBuildSettings.activeBuildTarget,
-                ErrorCode = (int)errorCode
+                ErrorCode = (int)errorCode,
+                NumberOfContentDirectoryGroups = numberOfContentDirectoryGroups,
+                NumberOfSerializedFiles = numberOfSerializedFiles,
+                ArchivingEnabled = archivingEnabled,
+                NumberOfDuplicatedAssets = numberOfDuplicatedAssets,
+                ArchiveSize = archiveSize
             };
 
             return data;
         }
+
+        private static int GetDuplicatedAssetCount()
+        {
+            // can't efficiently retrieve duplicated asset count if json build report is not enabled.
+            if (!ProjectConfigData.GenerateBuildLayout ||
+                ProjectConfigData.BuildLayoutReportFileFormat != ProjectConfigData.ReportFileFormat.JSON)
+                return -1;
+
+            string layoutPath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.ReportFileFormat.JSON);
+            if (!File.Exists(layoutPath))
+                return -1;
+
+            BuildLayout layout = BuildLayout.Open(layoutPath, readHeader: true, readFullFile:false);
+            return layout?.DuplicatedAssetCount ?? -1;
+        }
+#if ENABLE_CONTENT_DIRECTORIES
+
+        private static int CountSerializedFiles(AddressableAssetBuildResult result)
+        {
+            if (!(result is AddressablesPlayerBuildResult playerResult) ||
+                playerResult.ContentDirectoryBuildResults.Count == 0)
+                return 0;
+
+            int total = 0;
+            foreach (var contentDirectoryResult in playerResult.ContentDirectoryBuildResults)
+            {
+                BuildReport report = BuildHistory.LoadBuildReport(contentDirectoryResult.BuildSessionGUID);
+                ContentSummary summary = report?.contentSummary;
+                if (summary == null)
+                    continue;
+
+                total += summary.serializedFileCount;
+            }
+
+            return total;
+        }
+#endif
 
         internal static void ReportBuildEvent(AddressablesDataBuilderInput builderInput, AddressableAssetBuildResult result, BuildType buildType)
         {
             if (!EditorAnalytics.enabled)
                 return;
 
-#if UNITY_2023_1_OR_NEWER
             // Cannot post analytics events from contexts that don't have access to the package version
             if (packageInfo == null)
                 return;
-#endif
 
             BuildData data = GenerateBuildData(builderInput, result, buildType);
-#if UNITY_2023_3_OR_NEWER
             AddressablesBuildEvent evt = new AddressablesBuildEvent(data);
             EditorAnalytics.SendAnalytic(evt);
-#else
-            #pragma warning disable CS0618 // Type or member is obsolete
-            if (!EventIsRegistered(BuildEvent))
-                if (!RegisterEvent(BuildEvent))
-                    return;
-            EditorAnalytics.SendEventWithLimit(BuildEvent, data);
-            #pragma warning restore CS0618 // Type or member is obsolete
-#endif
         }
 
         internal static UsageData GenerateUsageData(UsageEventType eventType, AnalyticsContentUpdateRestriction restriction = AnalyticsContentUpdateRestriction.NotApplicable)
@@ -641,11 +735,9 @@ namespace UnityEditor.AddressableAssets
                 return;
 
 
-#if UNITY_2023_1_OR_NEWER
             // Cannot post analytics events from contexts that don't have access to the package version
             if (packageInfo == null)
                 return;
-#endif
 
             var sessionStateKey = GetSessionStateKeyByUsageEventType(eventType);
 
@@ -656,17 +748,8 @@ namespace UnityEditor.AddressableAssets
                 SessionState.SetBool(sessionStateKey, true);
 
             UsageData data = GenerateUsageData(eventType, (AnalyticsContentUpdateRestriction)contentUpdateRestriction);
-#if UNITY_2023_3_OR_NEWER
             AddressablesUsageEvent evt = new AddressablesUsageEvent(data);
             EditorAnalytics.SendAnalytic(evt);
-#else
-            #pragma warning disable CS0618 // Type or member is obsolete
-            if (!EventIsRegistered(UsageEvent))
-                if (!RegisterEvent(UsageEvent))
-                    return;
-            EditorAnalytics.SendEventWithLimit(UsageEvent, data);
-            #pragma warning restore CS0618 // Type or member is obsolete
-#endif
         }
 
         private static bool RegisterEvent(string eventName)

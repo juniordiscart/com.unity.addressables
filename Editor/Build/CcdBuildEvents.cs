@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using Unity.Services.Ccd.Management;
 using Unity.Services.Ccd.Management.Models;
 using Unity.Services.Core;
+#if ENABLE_CONTENT_DIRECTORIES
+using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
+#endif
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
@@ -875,6 +878,29 @@ namespace UnityEditor.AddressableAssets.Build
             return ccdEntry;
         }
 
+        /// <summary>
+        /// Builds the set of catalog artifact file names that must not be uploaded to CCD.
+        /// Content Directories are not supported on CCD, so their catalog (.bin/.hash) is excluded.
+        /// </summary>
+#if ENABLE_CONTENT_DIRECTORIES
+        internal static HashSet<string> GetExcludedFileNames(AddressableAssetSettings settings)
+        {
+            var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            excluded.Add(ContentDirectorySchemaBuilder.ContentDirectoryArchiver.kBuildManifestHashFileName);
+            foreach (var group in settings.groups)
+            {
+                if (group == null)
+                    continue;
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+                if (schema == null || !schema.IsEnabled || string.IsNullOrEmpty(schema.CatalogId))
+                    continue;
+                excluded.Add($"{schema.CatalogId}.bin");
+                excluded.Add($"{schema.CatalogId}.hash");
+            }
+            return excluded;
+        }
+#endif
+
         CcdBuildDataFolder CreateData(DirectoryInfo startDirectory)
         {
             var buildDataFolder = new CcdBuildDataFolder
@@ -904,6 +930,11 @@ namespace UnityEditor.AddressableAssets.Build
         async Task UploadAndRelease(ICcdManagementServiceSdk api, AddressableAssetSettings settings, string defaultEnvironmentId, CcdBuildDataFolder buildData)
         {
             var progressId = StartProgress("Upload and Release");
+#if ENABLE_CONTENT_DIRECTORIES
+            var excludedFileNames = GetExcludedFileNames(settings);
+            // Only warn once even if many Content Directory files are skipped, to avoid log spam.
+            var warnedContentDirectoriesSkipped = false;
+#endif
             try
             {
                 foreach (var env in buildData.Environments)
@@ -936,10 +967,30 @@ namespace UnityEditor.AddressableAssets.Build
                                 badge.Name = "latest";
                             }
                             var entries = new List<CcdReleaseEntryCreate>();
-                            var total = badge.Files.Count();
+                            var badgeFiles = badge.Files;
+#if ENABLE_CONTENT_DIRECTORIES
+                            // Content Directory catalogs and archives are not supported on CCD and must not be uploaded.
+                            badgeFiles = new List<FileInfo>();
+                            foreach (var f in badge.Files)
+                            {
+                                if (excludedFileNames.Contains(f.Name)
+                                    || f.Extension.Equals(".archive", StringComparison.OrdinalIgnoreCase)
+                                    || f.Extension.Equals(".cf", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    if (!warnedContentDirectoriesSkipped)
+                                    {
+                                        Addressables.LogWarning("Skipping upload of Content Directory catalog and archive files to CCD. Currently, all Content Directory Groups only support local content.");
+                                        warnedContentDirectoriesSkipped = true;
+                                    }
+                                    continue;
+                                }
+                                badgeFiles.Add(f);
+                            }
+#endif
+                            var total = badgeFiles.Count();
                             for (var i = 0; i < total; i++)
                             {
-                                var file = badge.Files[i];
+                                var file = badgeFiles[i];
                                 var contentHash = AddressableAssetUtility.GetMd5Hash(file.FullName);
                                 using (var stream = File.OpenRead(file.FullName))
                                 {

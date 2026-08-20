@@ -1,13 +1,13 @@
 {
-    "ErrorExceptions": [
-        {
-            "ValidationTest": "API Validation",
-            "PackageVersion": "3.1.0"
-        },
-        {
-            "ValidationTest": "Restricted File Type Validation",
-            "ExceptionMessage": "/Editor/Tools~/win/AddressablesFormatConverter.exe cannot be included in a package.",
-            "PackageVersion": "3.1.0"
-        }
-    ]
+  "ErrorExceptions": [
+    {
+      "ValidationTest": "API Validation",
+      "PackageVersion": "4.0.0"
+    },
+    {
+      "ValidationTest": "Restricted File Type Validation",
+      "ExceptionMessage": "/Editor/Tools~/win/AddressablesFormatConverter.exe cannot be included in a package.",
+      "PackageVersion": "4.0.0"
+    }
+  ]
 }

@@ -19,6 +19,11 @@ namespace UnityEditor.AddressableAssets.Tests
     [TestFixture]
     public class AssetReferenceDrawerTestsFixture : AddressableAssetTestBase
     {
+        // See AddressableAssetTestBase.ManageDefaultSettings: this fixture's
+        // IsAssetPathInAddressableDirectory tests need AddressableAssetSettingsDefaultObject.Settings to
+        // deterministically be this fixture's own Settings, not whatever a previous fixture left behind.
+        protected override bool ManageDefaultSettings => true;
+
         protected string m_fbxAssetPath;
 
         [OneTimeTearDown]
@@ -1126,7 +1131,7 @@ namespace UnityEditor.AddressableAssets.Tests
                     if (currElement == selectedElement)
                         Assert.AreEqual(atlasGuid, checkList[selectedElement].AssetGUID);
                     else
-                        Assert.AreEqual(null, checkList[currElement].AssetGUID);
+                        Assert.IsTrue(string.IsNullOrEmpty(checkList[currElement].AssetGUID));
                 }
             }
 

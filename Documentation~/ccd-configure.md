@@ -1,5 +1,8 @@
 # Configure Cloud Content Delivery
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 You can use Addressables with [Unity Cloud Content Delivery](https://docs.unity.com/ccd/UnityCCD.html) (CCD) to distribute Addressables content.
 
 To set up Addressable assets to work with CCD you must configure a profile to include the CCD URL.

@@ -9,12 +9,17 @@ using UnityEngine.TestTools;
 
 namespace UnityEditor.AddressableAssets.GUI
 {
-    [InitializeOnLoad, ExcludeFromCoverage]
-    class GroupsPopupWindow : EditorWindow
+    [ExcludeFromCoverage]
+    class GroupsPopupContent : PopupWindowContent
     {
+        // Minimum popup width when the activator rect is narrower (e.g. opened from a context menu).
+        private const float k_MinWidth = 240f;
+        private const float k_DefaultHeight = 300f;
+
         private AddressableAssetGroup m_InitialSelection;
         private bool m_AllowReadOnlyGroups;
         private bool m_StayOpenAfterSelection;
+        private Rect m_ActivatorRect;
 
         private Action<AddressableAssetSettings, List<AddressableAssetEntry>, AddressableAssetGroup> m_Action;
         private AddressableAssetSettings m_SettingsContext;
@@ -28,48 +33,44 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private bool m_ShouldClose;
 
-        private void ForceClose()
-        {
-            m_ShouldClose = true;
-        }
-
-        public void Initialize(AddressableAssetGroup initialSelection, bool allowReadOnlyGroups, bool stayOpenAfterSelection, Vector2 mousePosition,
+        public GroupsPopupContent(Rect activatorRect, AddressableAssetGroup initialSelection, bool allowReadOnlyGroups, bool stayOpenAfterSelection,
             Action<AddressableAssetSettings, List<AddressableAssetEntry>, AddressableAssetGroup> action, AddressableAssetSettings settingsContext, List<AddressableAssetEntry> entriesContext)
         {
+            m_ActivatorRect = activatorRect;
             m_InitialSelection = initialSelection;
             m_AllowReadOnlyGroups = allowReadOnlyGroups;
             m_StayOpenAfterSelection = stayOpenAfterSelection;
-
-            Rect rect = position;
-            mousePosition = GUIUtility.GUIToScreenPoint(mousePosition);
-            rect.position = mousePosition;
-            position = rect;
 
             m_Action = action;
             m_SettingsContext = settingsContext;
             m_EntriesContext = entriesContext;
 
             m_SearchField = new SearchField();
-            m_SearchField.SetFocus();
             m_SearchField.downOrUpArrowKeyPressed += () => { m_Tree.SetFocus(); };
-
-            if (m_Tree != null && m_InitialSelection != null)
-                m_Tree.SetInitialSelection(m_InitialSelection.Name);
 
             m_FolderTexture = EditorGUIUtility.IconContent("Folder Icon").image as Texture2D;
 
             m_ShouldClose = false;
         }
 
-        private void OnLostFocus()
+        private void ForceClose()
         {
-            ForceClose();
+            m_ShouldClose = true;
         }
 
-        private void OnGUI()
+        public override Vector2 GetWindowSize()
         {
-            Rect rect = position;
+            float width = Mathf.Max(m_ActivatorRect.width, k_MinWidth);
+            return new Vector2(width, k_DefaultHeight);
+        }
 
+        public override void OnOpen()
+        {
+            m_SearchField.SetFocus();
+        }
+
+        public override void OnGUI(Rect rect)
+        {
             int border = 4;
             int topPadding = 2;
             int searchHeight = 20;
@@ -102,8 +103,10 @@ namespace UnityEditor.AddressableAssets.GUI
             {
                 string helpMessage = "The Shared Bundle Settings Group must have an enabled Content Packing & Loading schema attached to it. It appears none of the Groups that match your search criteria " +
                     "have this schema attached and enabled. A quick fix is to create an empty Group with the Content Packing & Loading schema, then set the shared Group to that empty Group.";
-                float helpBoxHeight = EditorStyles.helpBox.CalcHeight(new GUIContent(helpMessage), remainingRect.width);
-                Rect helpBoxRect = new Rect(remainingRect.x, remainingRect.y, remainingRect.width, helpBoxHeight);
+                // Reserve room for the info icon so the message height accounts for the narrower text area and is not clipped.
+                const float helpBoxIconWidth = 55f;
+                float helpBoxHeight = EditorStyles.helpBox.CalcHeight(new GUIContent(helpMessage), remainingRect.width - helpBoxIconWidth);
+                Rect helpBoxRect = new Rect(remainingRect.x, remainingRect.y, remainingRect.width, Mathf.Min(helpBoxHeight, remainingRect.height));
                 EditorGUI.HelpBox(helpBoxRect, helpMessage, MessageType.Info);
             }
             else
@@ -115,7 +118,7 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_ShouldClose || isEnterKeyPressed)
             {
                 GUIUtility.hotControl = 0;
-                Close();
+                editorWindow.Close();
             }
         }
 
@@ -133,20 +136,18 @@ namespace UnityEditor.AddressableAssets.GUI
 
         internal class GroupsPopupTreeView : TreeViewAdapter
         {
-            internal GroupsPopupWindow m_Popup;
+            internal GroupsPopupContent m_Popup;
 
             internal bool IsEnterKeyPressed { get; set; }
 
             internal bool m_ShowReadOnlyGroups;
 
-            public GroupsPopupTreeView(TreeViewStateAdapter state, GroupsPopupWindow popup, bool showReadOnlyGroups)
+            public GroupsPopupTreeView(TreeViewStateAdapter state, GroupsPopupContent popup, bool showReadOnlyGroups)
                 : base(state)
             {
                 m_Popup = popup;
                 m_ShowReadOnlyGroups = showReadOnlyGroups;
-#if UNITY_2022_1_OR_NEWER
                 enableItemHovering = true;
-#endif
             }
 
             public override void OnGUI(Rect rect)
@@ -261,6 +262,13 @@ namespace UnityEditor.AddressableAssets.GUI
         static Texture s_GroupsCaretTexture = null;
         static Texture s_FolderTexture = null;
 
+        internal static void ShowGroupsPopup(Rect activatorRect, AddressableAssetGroup initialSelection, bool allowReadOnlyGroups, bool stayOpenAfterSelection,
+            Action<AddressableAssetSettings, List<AddressableAssetEntry>, AddressableAssetGroup> action, AddressableAssetSettings settingsContext, List<AddressableAssetEntry> entriesContext)
+        {
+            var content = new GroupsPopupContent(activatorRect, initialSelection, allowReadOnlyGroups, stayOpenAfterSelection, action, settingsContext, entriesContext);
+            PopupWindow.Show(activatorRect, content);
+        }
+
         internal static void DrawGroupsDropdown(GUIContent dropdownlabelContent, AddressableAssetGroup displayGroup, bool enabledDropdown, bool mixedValueDropdown, bool allowReadOnlyGroups,
         Action<AddressableAssetSettings, List<AddressableAssetEntry>, AddressableAssetGroup> action, List<AddressableAssetEntry> entriesContext)
         {
@@ -269,8 +277,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 GUILayout.Label(dropdownlabelContent);
                 if (mixedValueDropdown)
                     EditorGUI.showMixedValue = true;
-
-                UnityEngine.GUI.SetNextControlName(s_GroupsDropdownControlName);
 
                 float iconHeight = EditorGUIUtility.singleLineHeight - EditorGUIUtility.standardVerticalSpacing * 3;
                 Vector2 iconSize = EditorGUIUtility.GetIconSize();
@@ -281,45 +287,82 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
 
                 string displayName = displayGroup != null ? displayGroup.Name : "No Valid Group";
-
                 GUIContent groupGUIContent = new GUIContent(displayName, s_FolderTexture);
+
                 Rect groupFieldRect = GUILayoutUtility.GetRect(new GUIContent(), EditorStyles.objectField);
                 float newXPos = EditorGUIUtility.labelWidth + 20;
                 float newWidth = groupFieldRect.width + (groupFieldRect.x - newXPos);
                 groupFieldRect.x = newXPos;
                 groupFieldRect.width = newWidth;
 
+                float pickerWidth = 12f;
+                Rect groupFieldRectNoPicker = new Rect(groupFieldRect);
+                groupFieldRectNoPicker.xMax = groupFieldRect.xMax - pickerWidth * 1.33f;
+                Rect pickerRect = new Rect(groupFieldRectNoPicker.xMax, groupFieldRectNoPicker.y, pickerWidth, groupFieldRectNoPicker.height);
+
+                // Take hotControl on mouse-down so the mouse-up is delivered here and the popup opens on release; opening
+                // on the press leaves a pending mouse-up that returns focus to the host window and closes the popup.
+                // Runs before DropdownButton so the button cannot consume the picker click first.
+                int pickerControlId = GUIUtility.GetControlID(FocusType.Passive);
+                bool isPickerPressed = false;
+                if (enabledDropdown)
+                {
+                    switch (Event.current.GetTypeForControl(pickerControlId))
+                    {
+                        case EventType.MouseDown:
+                            if (Event.current.button == 0 && pickerRect.Contains(Event.current.mousePosition))
+                            {
+                                GUIUtility.hotControl = pickerControlId;
+                                Event.current.Use();
+                            }
+                            break;
+                        case EventType.MouseUp:
+                            if (GUIUtility.hotControl == pickerControlId)
+                            {
+                                GUIUtility.hotControl = 0;
+                                isPickerPressed = pickerRect.Contains(Event.current.mousePosition);
+                                Event.current.Use();
+                            }
+                            break;
+                    }
+                }
+
+                UnityEngine.GUI.SetNextControlName(s_GroupsDropdownControlName);
                 EditorGUI.DropdownButton(groupFieldRect, groupGUIContent, FocusType.Keyboard, EditorStyles.objectField);
                 EditorGUIUtility.SetIconSize(new Vector2(iconSize.x, iconSize.y));
 
                 if (mixedValueDropdown)
                     EditorGUI.showMixedValue = false;
 
-                float pickerWidth = 12f;
-                Rect groupFieldRectNoPicker = new Rect(groupFieldRect);
-                groupFieldRectNoPicker.xMax = groupFieldRect.xMax - pickerWidth * 1.33f;
-
-                Rect pickerRect = new Rect(groupFieldRectNoPicker.xMax, groupFieldRectNoPicker.y, pickerWidth, groupFieldRectNoPicker.height);
-                bool isPickerPressed = Event.current.clickCount == 1 && pickerRect.Contains(Event.current.mousePosition);
-
                 DrawCaret(pickerRect);
 
                 if (enabledDropdown)
                 {
-                    bool isEnterKeyPressed = Event.current.type == EventType.KeyDown && Event.current.isKey && (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return);
-                    bool enterKeyRequestsPopup = isEnterKeyPressed && (s_GroupsDropdownControlName == UnityEngine.GUI.GetNameOfFocusedControl());
-                    if (isPickerPressed || enterKeyRequestsPopup)
-                    {
-                        AddressableAssetGroup initialSelection = !mixedValueDropdown ? displayGroup : null;
-                        EditorWindow.GetWindow<GroupsPopupWindow>(true, "Select Addressable Group").Initialize(initialSelection, allowReadOnlyGroups, true, Event.current.mousePosition, action, displayGroup.Settings, entriesContext);
-                    }
+                    // Get settings from displayGroup if available, otherwise from entriesContext
+                    AddressableAssetSettings settings = displayGroup?.Settings;
+                    if (settings == null && entriesContext != null && entriesContext.Count > 0)
+                        settings = entriesContext[0]?.parentGroup?.Settings;
+                    if (settings == null)
+                        settings = AddressableAssetSettingsDefaultObject.Settings;
 
-                    bool isDragging = Event.current.type == EventType.DragUpdated && groupFieldRectNoPicker.Contains(Event.current.mousePosition);
-                    bool isDropping = Event.current.type == EventType.DragPerform && groupFieldRectNoPicker.Contains(Event.current.mousePosition);
-                    HandleDragAndDrop(isDragging, isDropping, allowReadOnlyGroups, action, displayGroup.Settings, entriesContext);
+                    if (settings != null)
+                    {
+                        bool isEnterKeyPressed = Event.current.type == EventType.KeyDown && Event.current.isKey && (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return);
+                        bool enterKeyRequestsPopup = isEnterKeyPressed && (s_GroupsDropdownControlName == UnityEngine.GUI.GetNameOfFocusedControl());
+                        if (isPickerPressed || enterKeyRequestsPopup)
+                        {
+                            AddressableAssetGroup initialSelection = !mixedValueDropdown ? displayGroup : null;
+                            ShowGroupsPopup(groupFieldRect, initialSelection, allowReadOnlyGroups, true, action, settings, entriesContext);
+                            Event.current.Use();
+                        }
+
+                        bool isDragging = Event.current.type == EventType.DragUpdated && groupFieldRectNoPicker.Contains(Event.current.mousePosition);
+                        bool isDropping = Event.current.type == EventType.DragPerform && groupFieldRectNoPicker.Contains(Event.current.mousePosition);
+                        HandleDragAndDrop(isDragging, isDropping, allowReadOnlyGroups, action, settings, entriesContext);
+                    }
                 }
 
-                if (!mixedValueDropdown)
+                if (!mixedValueDropdown && displayGroup != null)
                 {
                     if (Event.current.clickCount == 1 && groupFieldRectNoPicker.Contains(Event.current.mousePosition))
                     {

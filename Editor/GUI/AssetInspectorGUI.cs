@@ -210,12 +210,12 @@ namespace UnityEditor.AddressableAssets.GUI
                             bool preAddressPrevEnabledState = UnityEngine.GUI.enabled;
                             UnityEngine.GUI.enabled = false;
                             string address = entryInfo.Address + (entryInfo.IsMainAsset ? "" : $"[{entryInfo.TargetObject.name}]");
-                            EditorGUILayout.DelayedTextField(address, GUILayout.ExpandWidth(true));
+                            EditorGUILayout.DelayedTextField(address, GUILayout.MinWidth(50));
                             UnityEngine.GUI.enabled = preAddressPrevEnabledState;
                         }
                         else
                         {
-                            string newAddress = EditorGUILayout.DelayedTextField(entryInfo.Address, GUILayout.ExpandWidth(true));
+                            string newAddress = EditorGUILayout.DelayedTextField(entryInfo.Address, GUILayout.MinWidth(50));
                             if (newAddress != entryInfo.Address)
                             {
                                 if (newAddress.Contains('[') && newAddress.Contains(']'))
@@ -262,52 +262,61 @@ namespace UnityEditor.AddressableAssets.GUI
 
         static void DrawIncludeInBuildToggle(Object[] targets)
         {
-            var schemas = new List<ICanIncludeInBuild>();
+            // Include in Build is now a group-level flag. Only surface it for groups that have an enabled buildable
+            // schema, since the flag has no effect otherwise.
+            var groups = new List<AddressableAssetGroup>();
             foreach (Object t in targets)
             {
-                if (t is AddressableAssetGroup group)
-                {
-                    var schema = group.Schemas.OfType<ICanIncludeInBuild>().FirstOrDefault();
-
-                    if (schema != null)
-                        schemas.Add(schema);
-                }
+                if (t is AddressableAssetGroup group && GroupHasEnabledBuildableSchema(group))
+                    groups.Add(group);
             }
-            if (schemas.Count == targets.Length)
+
+            if (groups.Count != targets.Length)
+                return;
+
+            bool sameValue = true;
+            for (int i = 1; i < groups.Count; i++)
             {
-                bool sameValue = true;
-                for (int i = 0; i < schemas.Count; i++)
+                if (groups[i].IncludeInBuild != groups[0].IncludeInBuild)
                 {
-                    sameValue = schemas[0].IncludeInBuild == schemas[i].IncludeInBuild;
-                }
-
-                if (schemas.Count > 1 && !sameValue)
-                {
-                    if (s_ToggleMixed == null)
-                        s_ToggleMixed = new GUIStyle("ToggleMixed");
-                    EditorGUI.BeginChangeCheck();
-                    bool newIncludeInBuildValue = GUILayout.Toggle(false, m_IncludeInBuildGUIContent, s_ToggleMixed);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        foreach (ICanIncludeInBuild schema in schemas)
-                        {
-                            schema.IncludeInBuild = newIncludeInBuildValue;
-                        }
-                    }
-                }
-                else
-                {
-                    EditorGUI.BeginChangeCheck();
-                    bool newIncludeInBuildValue = GUILayout.Toggle(schemas[0].IncludeInBuild, m_IncludeInBuildGUIContent);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        foreach (ICanIncludeInBuild schema in schemas)
-                        {
-                            schema.IncludeInBuild = newIncludeInBuildValue;
-                        }
-                    }
+                    sameValue = false;
+                    break;
                 }
             }
+
+            if (groups.Count > 1 && !sameValue)
+            {
+                if (s_ToggleMixed == null)
+                    s_ToggleMixed = new GUIStyle("ToggleMixed");
+                EditorGUI.BeginChangeCheck();
+                bool newIncludeInBuildValue = GUILayout.Toggle(false, m_IncludeInBuildGUIContent, s_ToggleMixed);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    foreach (AddressableAssetGroup group in groups)
+                        group.IncludeInBuild = newIncludeInBuildValue;
+                }
+            }
+            else
+            {
+                EditorGUI.BeginChangeCheck();
+                bool newIncludeInBuildValue = GUILayout.Toggle(groups[0].IncludeInBuild, m_IncludeInBuildGUIContent);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    foreach (AddressableAssetGroup group in groups)
+                        group.IncludeInBuild = newIncludeInBuildValue;
+                }
+            }
+        }
+
+        static bool GroupHasEnabledBuildableSchema(AddressableAssetGroup group)
+        {
+            foreach (var schema in group.Schemas)
+            {
+                if (schema != null && schema.IsEnabled &&
+                    (schema is BundledAssetGroupSchema || schema is ContentDirectoryGroupSchema))
+                    return true;
+            }
+            return false;
         }
 
         private static void DrawLabels(List<TargetInfo> entryInfos, AddressableAssetSettings aaSettings, Editor editor)
@@ -496,7 +505,7 @@ namespace UnityEditor.AddressableAssets.GUI
             var prevGuiEnabled = UnityEngine.GUI.enabled;
             UnityEngine.GUI.enabled = true;
 
-            if (GUILayout.Button("Select"))
+            if (GUILayout.Button("Select", GUILayout.ExpandWidth(false)))
             {
                 AddressableAssetsWindow.Init();
                 var window = EditorWindow.GetWindow<AddressableAssetsWindow>();

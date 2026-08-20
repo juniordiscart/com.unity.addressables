@@ -47,11 +47,9 @@ namespace UnityEngine.ResourceManagement.Util
         /// <returns>Returns true if the AssetBundle is downloaded.</returns>
         public static bool IsAssetBundleDownloaded(UnityWebRequestAsyncOperation op)
         {
-#if ENABLE_ASYNC_ASSETBUNDLE_UWR
             var handler = (DownloadHandlerAssetBundle)op.webRequest.downloadHandler;
             if (handler != null && handler.autoLoadAssetBundle)
                 return handler.isDownloadComplete;
-#endif
             return op.isDone;
         }
 
@@ -63,18 +61,11 @@ namespace UnityEngine.ResourceManagement.Util
             {
                 var webRequest = webRequestOperation.webRequest;
                 var result = new UnityWebRequestResult(webRequest);
-#if UNITY_2020_1_OR_NEWER
                 if (result.Result == UnityWebRequest.Result.Success)
                 {
                     Log(result.ToString());
                     return;
                 }
-#else
-            if (string.IsNullOrEmpty(result.Error)) {
-                Log(result.ToString());
-                return;
-            }
-#endif
 
                 LogError(result.ToString());
             }
@@ -185,9 +176,7 @@ namespace UnityEngine.ResourceManagement.Util
                 Error == "Header name contains invalid characters" ||
                 Error == "Header value contains invalid characters" ||
                 Error == "Cannot override system-specified headers"
-#if UNITY_2022_1_OR_NEWER
                 || Error == "Insecure connection not allowed"
-#endif
                )
                 return false;
 

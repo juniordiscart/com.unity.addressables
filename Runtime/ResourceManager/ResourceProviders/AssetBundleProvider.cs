@@ -415,6 +415,26 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             }
         }
 
+        /// <summary>
+        /// Fails this load immediately, since aborting the web request
+        /// doesn't reliably invoke our completed callback.
+        /// </summary>
+        internal void CancelForPlayModeTransition()
+        {
+            if (m_Completed || m_RequestCompletedCallbackCalled)
+                return;
+
+            m_RequestCompletedCallbackCalled = true;
+
+            if (m_Options != null && m_Options.Timeout > 0)
+                m_ProvideHandle.ResourceManager.RemoveUpdateReciever(this);
+
+            var exception = new RemoteProviderException(
+                "AssetBundle load canceled: entering play mode aborted the in-flight web request.",
+                m_ProvideHandle.Location);
+            CompleteOperation(null, false, exception);
+        }
+
 		internal long BytesToDownload
 		{
 			get
@@ -559,14 +579,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 
 			if (m_Options.AssetLoadMode == AssetLoadMode.AllPackedAssetsAndDependencies)
 			{
-#if !UNITY_2021_1_OR_NEWER
-                if (AsyncOperationHandle.IsWaitingForCompletion)
-                {
-                    m_AssetBundle.LoadAllAssets();
-                    m_PreloadCompleted = true;
-                    return null;
-                }
-#endif
 				if (m_PreloadRequest == null)
 				{
 					m_PreloadRequest = m_AssetBundle.LoadAllAssetsAsync();
@@ -727,14 +739,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
 			{
 				while (!UnityWebRequestUtilities.IsAssetBundleDownloaded(op))
 					System.Threading.Thread.Sleep(k_WaitForWebRequestMainThreadSleep);
-#if ENABLE_ASYNC_ASSETBUNDLE_UWR
                 if (m_Source == BundleSource.Cache)
                 {
                     var downloadHandler = (DownloadHandlerAssetBundle)op?.webRequest?.downloadHandler;
                     if (downloadHandler.autoLoadAssetBundle)
                         m_AssetBundle = downloadHandler.assetBundle;
 			}
-#endif
                 WebRequestQueue.DequeueRequest(op);
 
                 if (!m_RequestCompletedCallbackCalled)
@@ -828,11 +838,6 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         private void LoadLocalBundle()
         {
                 m_Source = BundleSource.Local;
-#if !UNITY_2021_1_OR_NEWER
-                if (AsyncOperationHandle.IsWaitingForCompletion)
-                    CompleteBundleLoad(AssetBundle.LoadFromFile(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc));
-                else
-#endif
 				{
 					m_RequestOperation = AssetBundle.LoadFromFileAsync(m_TransformedInternalId, m_Options == null ? 0 : m_Options.Crc);
 #if ENABLE_PROFILER
@@ -845,9 +850,7 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         internal WebRequestQueueOperation EnqueueWebRequest(string internalId)
 			{
             var req = CreateWebRequest(internalId);
-#if ENABLE_ASYNC_ASSETBUNDLE_UWR
 				((DownloadHandlerAssetBundle)req.downloadHandler).autoLoadAssetBundle = !(m_ProvideHandle.Location is DownloadOnlyLocation);
-#endif
 				req.disposeDownloadHandlerOnDispose = false;
 
             return WebRequestQueue.QueueRequest(req);
@@ -1105,6 +1108,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
             {
                 WaitForAllUnloadingBundlesToComplete();
                 s_UnloadingBundles.Clear();
+
+                // Force-fail stuck loads; see CancelForPlayModeTransition for why.
+                foreach (var kvp in new List<KeyValuePair<string, AssetBundleResource>>(s_LoadingRemoteBundles))
+                    kvp.Value.CancelForPlayModeTransition();
                 s_LoadingRemoteBundles.Clear();
             }
         }

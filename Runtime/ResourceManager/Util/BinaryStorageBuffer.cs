@@ -117,8 +117,7 @@ namespace UnityEngine.ResourceManagement.Util
                     var assemblyName = reader.ReadString(d.assemblyId, out var assemblySize, '.');
                     var className = reader.ReadString(d.classId, out var strSize, '.');
                     size = dataSize + assemblySize + strSize;
-                    var assembly = Assembly.Load(assemblyName);
-                    return assembly == null ? null : assembly.GetType(className);
+                    return TypeNameResolver.Resolve(assemblyName, className);
                 }
                 catch (Exception e)
                 {
@@ -142,8 +141,8 @@ namespace UnityEngine.ResourceManagement.Util
                     throw new NotSupportedException($"TypeSerializer cannot serialize type {t} (Assembly.FullName={assemblyName ?? "<null>"}, FullName={className ?? "<null>"}).");
                 return writer.Write(new Data
                 {
-                    assemblyId = writer.WriteString(assemblyName, '.'),
-                    classId = writer.WriteString(className, '.')
+                    assemblyId = writer.WriteString(TypeNameResolver.GetSimpleAssemblyName(t), '.'),
+                    classId = writer.WriteString(TypeNameResolver.NormalizeTypeName(t), '.')
                 });
             }
         }

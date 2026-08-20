@@ -21,40 +21,12 @@ namespace UnityEditor.AddressableAssets.Settings
 {
     using Object = UnityEngine.Object;
 
-    internal static class AddressableAssetUtility
+    /// <summary>
+    /// Editor utility methods for Addressables — type mapping, path validation,
+    /// asset-bundle conversion, version-control integration, and cached type display names.
+    /// </summary>
+    public static class AddressableAssetUtility
     {
-#if !UNITY_2020_3_OR_NEWER
-        //these extention methods are needed prior to 2020.3 since they are not available
-        public static void Append(this ref Hash128 thisHash, string val)
-        {
-            Hash128 valHash = Hash128.Compute(val);
-            HashUtilities.AppendHash(ref valHash, ref thisHash);
-        }
-
-        public static void Append(this ref Hash128 thisHash, int val)
-        {
-            Hash128 valHash = default;
-            HashUtilities.ComputeHash128(ref val, ref valHash);
-            HashUtilities.AppendHash(ref valHash, ref thisHash);
-        }
-
-        public static void Append(this ref Hash128 thisHash, Hash128[] vals)
-        {
-            Hash128 valHash = default;
-            for (int i = 0; i < vals.Length; i++)
-            {
-                HashUtilities.ComputeHash128(ref vals[i], ref valHash);
-                HashUtilities.AppendHash(ref valHash, ref thisHash);
-            }
-        }
-
-        public static void Append<T>(this ref Hash128 thisHash, ref T val) where T : unmanaged
-        {
-            Hash128 valHash = default;
-            HashUtilities.ComputeHash128(ref val, ref valHash);
-            HashUtilities.AppendHash(ref valHash, ref thisHash);
-        }
-#endif
 
         internal static bool IsInResources(string path)
         {
@@ -164,27 +136,47 @@ namespace UnityEditor.AddressableAssets.Settings
             return true;
         }
 
-        static HashSet<Type> validTypes = new HashSet<Type>();
-
-        internal static Type MapEditorTypeToRuntimeType(Type t, bool allowFolders)
+        static readonly KeyValuePair<Type, Type>[] k_DefaultRuntimeTypeMappings =
         {
-            //type is valid and already seen (most common)
-            if (validTypes.Contains(t))
-                return t;
+            new KeyValuePair<Type, Type>(typeof(UnityEditor.Animations.AnimatorController), typeof(RuntimeAnimatorController)),
+            new KeyValuePair<Type, Type>(typeof(UnityEditor.SceneAsset), typeof(UnityEngine.ResourceManagement.ResourceProviders.SceneInstance)),
+        };
 
+        static readonly ConcurrentDictionary<Type, Type> s_RuntimeTypeCache =
+            new ConcurrentDictionary<Type, Type>(k_DefaultRuntimeTypeMappings);
+
+        /// <summary>
+        /// Maps an editor-only asset type (e.g. <c>SceneAsset</c>, <c>MonoScript</c>) to its
+        /// corresponding runtime type (e.g. <c>SceneInstance</c>, <c>MonoBehaviour</c>).
+        /// Returns <paramref name="t"/> unchanged if it is already a valid runtime type.
+        /// </summary>
+        /// <param name="t">The type to map. May be <c>null</c> (returns <c>null</c>).</param>
+        /// <param name="allowFolders">Whether <c>DefaultAsset</c> (folder) entries are permitted.</param>
+        /// <returns>The runtime type to use for catalog entries, or <c>null</c> if the type cannot be mapped.</returns>
+        public static Type MapEditorTypeToRuntimeType(Type t, bool allowFolders)
+        {
             //removes the need to check this outside of this call
             if (t == null)
                 return t;
 
+            //type is valid and already seen (most common)
+            Type mappedType;
+            if (s_RuntimeTypeCache.TryGetValue(t, out mappedType))
+                return mappedType;
+
+            if (t == typeof(DefaultAsset))
+            {
+                s_RuntimeTypeCache[t] = typeof(DefaultAsset);
+                return typeof(DefaultAsset);
+            }
+
             //check for editor type, this will get hit once for each new type encountered
             if (!t.Assembly.IsDefined(typeof(AssemblyIsEditorAssembly), true) && !Build.BuildUtility.IsEditorAssembly(t.Assembly))
             {
-                validTypes.Add(t);
+                s_RuntimeTypeCache[t] = t;
                 return t;
             }
 
-            if (t == typeof(DefaultAsset))
-                return typeof(DefaultAsset);
 
             //try to remap the editor type to a runtime type
             return MapEditorTypeToRuntimeTypeInternal(t);
@@ -192,15 +184,31 @@ namespace UnityEditor.AddressableAssets.Settings
 
         static Type MapEditorTypeToRuntimeTypeInternal(Type t)
         {
-            if (t == typeof(UnityEditor.Animations.AnimatorController))
-                return typeof(RuntimeAnimatorController);
-            if (t == typeof(UnityEditor.SceneAsset))
-                return typeof(UnityEngine.ResourceManagement.ResourceProviders.SceneInstance);
             if (t.FullName == "UnityEditor.Audio.AudioMixerController")
+            {
+                s_RuntimeTypeCache[t] = typeof(UnityEngine.Audio.AudioMixer);
                 return typeof(UnityEngine.Audio.AudioMixer);
+            }
             if (t.FullName == "UnityEditor.Audio.AudioMixerGroupController")
+            {
+                s_RuntimeTypeCache[t] = typeof(UnityEngine.Audio.AudioMixerGroup);
                 return typeof(UnityEngine.Audio.AudioMixerGroup);
+            }
+            s_RuntimeTypeCache[t] = null;
             return null;
+        }
+
+        /// <summary>
+        /// Clears the runtime-type mapping cache and restores the built-in
+        /// default mappings. Called when the Addressables build cache is
+        /// cleared so that stale mappings do not persist across builds.
+        /// </summary>
+        internal static void ClearRuntimeTypeCache()
+        {
+            s_CachedDisplayNames.Clear();
+            s_RuntimeTypeCache.Clear();
+            foreach (var kvp in k_DefaultRuntimeTypeMappings)
+                s_RuntimeTypeCache[kvp.Key] = kvp.Value;
         }
 
         internal static void ConvertAssetBundlesToAddressables()
@@ -247,7 +255,7 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <typeparam name="T">The class type to use as the base class or interface for all found types.</typeparam>
         /// <returns>A list of types that are assignable to type T.  The results are cached.</returns>
-        public static List<Type> GetTypes<T>()
+        internal static List<Type> GetTypes<T>()
         {
             return TypeManager<T>.Types;
         }
@@ -257,12 +265,12 @@ namespace UnityEditor.AddressableAssets.Settings
         /// </summary>
         /// <param name="rootType">The class type to use as the base class or interface for all found types.</param>
         /// <returns>A list of types that are assignable to type T.  The results are not cached.</returns>
-        public static List<Type> GetTypes(Type rootType)
+        internal static List<Type> GetTypes(Type rootType)
         {
             return TypeManager.GetManagerTypes(rootType);
         }
 
-        class TypeManager
+        internal class TypeManager
         {
             public static List<Type> GetManagerTypes(Type rootType)
             {
@@ -289,7 +297,7 @@ namespace UnityEditor.AddressableAssets.Settings
             }
         }
 
-        class TypeManager<T> : TypeManager
+        internal class TypeManager<T> : TypeManager
         {
             // ReSharper disable once StaticMemberInGenericType
             static List<Type> s_Types;
@@ -352,7 +360,7 @@ namespace UnityEditor.AddressableAssets.Settings
             return false;
         }
 
-        static Dictionary<Type, string> s_CachedDisplayNames = new Dictionary<Type, string>();
+        static ConcurrentDictionary<Type, string> s_CachedDisplayNames = new ConcurrentDictionary<Type, string>();
 
         internal static string GetCachedTypeDisplayName(Type type)
         {
@@ -369,14 +377,14 @@ namespace UnityEditor.AddressableAssets.Settings
                     else
                         result = type.Name;
 
-                    s_CachedDisplayNames.Add(type, result);
+                    s_CachedDisplayNames[type] = result;
                 }
             }
 
             return result;
         }
 
-        struct PackageData
+        internal struct PackageData
         {
             public string version;
         }
@@ -398,7 +406,7 @@ namespace UnityEditor.AddressableAssets.Settings
             return m_Version;
         }
 
-        public static string GenerateDocsURL(string page)
+        internal static string GenerateDocsURL(string page)
         {
             return $"https://docs.unity3d.com/Packages/com.unity.addressables@{GetVersionFromPackageData()}/manual/{page}";
         }

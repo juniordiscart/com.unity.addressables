@@ -1,6 +1,6 @@
 # Load assets by location
 
-When you load an Addressable asset by address, label, or AssetReference, the Addressables system first looks up the resource locations for the assets and uses the [`IResourceLocation`](xref:UnityEngine.ResourceManagement.ResourceLocations.IResourceLocation) instances to download the required AssetBundles and any dependencies. To perform the asset load operation, get the `IResourceLocation` objects with [`LoadResourceLocationsAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadResourceLocationsAsync*) and then use those objects as keys to load or instantiate the assets.
+When you load an Addressable asset by address, label, or AssetReference, the Addressables system first looks up the resource locations for the assets and uses the [`IResourceLocation`](xref:UnityEngine.ResourceManagement.ResourceLocations.IResourceLocation) instances to download the required AssetBundles or content directories, and any dependencies. To perform the asset load operation, get the `IResourceLocation` objects with [`LoadResourceLocationsAsync`](xref:UnityEngine.AddressableAssets.Addressables.LoadResourceLocationsAsync*) and then use those objects as keys to load or instantiate the assets.
 
 `IResourceLocation` objects contain the information needed to load one or more assets.
 

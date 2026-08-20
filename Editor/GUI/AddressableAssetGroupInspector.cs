@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
+using UnityEngine.ResourceManagement.Util;
 
 // ReSharper disable DelegateSubtraction
 
@@ -114,6 +115,20 @@ namespace UnityEditor.AddressableAssets.GUI
             if (m_GroupTargets == null || m_GroupTargets.Length == 0)
                 return values;
 
+            // For single selection, use display order
+            if (m_GroupTargets.Length == 1)
+            {
+                var displayOrder = m_GroupTarget.SchemaDisplayOrder;
+                for (int i = 0; i < displayOrder.Count; i++)
+                {
+                    var schema = m_GroupTarget.GetSchemaByDisplayIndex(i);
+                    if (schema != null)
+                        values.Add(schema);
+                }
+                return values;
+            }
+
+            // For multi-selection, use intersection (alphabetical order)
             values.AddRange(m_GroupTarget.Schemas);
 
             foreach (var group in m_GroupTargets)
@@ -156,14 +171,41 @@ namespace UnityEditor.AddressableAssets.GUI
             GUILayout.Space(6);
 
             var bundledSchema = m_GroupTarget.GetSchema(typeof(BundledAssetGroupSchema));
-            var contentDirSchema = m_GroupTarget.GetSchema(typeof(ContentDirectoryGroupSchema));
-            bool bothEnabled = bundledSchema != null && contentDirSchema != null && bundledSchema.IsEnabled && contentDirSchema.IsEnabled;
+            var contentDirSchema = m_GroupTarget.GetSchema<ContentDirectoryGroupSchema>();
+            bool contentDirEnabled = contentDirSchema != null && contentDirSchema.IsEnabled;
+            bool bothEnabled = bundledSchema != null && bundledSchema.IsEnabled && contentDirEnabled;
+
+            bool issueDividerDrawn = false;
+            if (contentDirEnabled)
+            {
+                string contentDirLoadPath = contentDirSchema.LoadPath.GetValue(m_GroupTarget.Settings);
+
+                if (ResourceManagerConfig.IsPathRemote(contentDirLoadPath))
+                {
+                    DrawDivider();
+                    GUILayout.Space(6);
+                    issueDividerDrawn = true;
+
+                    AddressablesGUIUtility.DrawErrorBoxWithLink(
+                        $"Currently, \"{AddressableAssetUtility.GetCachedTypeDisplayName(contentDirSchema.GetType())}\" only supports local content. Change the Load Path to resolve.",
+                        "Read more...",
+                        AddressableAssetUtility.GenerateDocsURL("group-inspector-settings-reference.html"));
+                    GUILayout.Space(6);
+                }
+            }
+
             if (bothEnabled)
             {
+                if (!issueDividerDrawn)
+                {
+                    DrawDivider();
+                    GUILayout.Space(6);
+                }
+
                 AddressablesGUIUtility.DrawErrorBoxWithLink(
                     $"Cannot enable \"{AddressableAssetUtility.GetCachedTypeDisplayName(bundledSchema.GetType())}\" and \"{AddressableAssetUtility.GetCachedTypeDisplayName(contentDirSchema.GetType())}\" schemas at the same time. Disable one to resolve.",
                     "Read more...",
-                    AddressableAssetUtility.GenerateDocsURL("ContentPackingAndLoadingSchema.html"));
+                    AddressableAssetUtility.GenerateDocsURL("group-inspector-settings-reference.html"));
                 GUILayout.Space(6);
             }
 
@@ -181,9 +223,9 @@ namespace UnityEditor.AddressableAssets.GUI
 
                 string helpUrl = null;
                 if (schemaType == typeof(BundledAssetGroupSchema))
-                    helpUrl = AddressableAssetUtility.GenerateDocsURL("ContentPackingAndLoadingSchema.html");
+                    helpUrl = AddressableAssetUtility.GenerateDocsURL("group-inspector-settings-reference.html");
                 if (schemaType == typeof(ContentUpdateGroupSchema))
-                    helpUrl = AddressableAssetUtility.GenerateDocsURL("UpdateRestrictionSchema.html");
+                    helpUrl = AddressableAssetUtility.GenerateDocsURL("group-inspector-settings-reference.html#content-update-group-schema");
                 Action helpAction = null;
 
                 if (!string.IsNullOrEmpty(helpUrl))
@@ -238,16 +280,24 @@ namespace UnityEditor.AddressableAssets.GUI
                     {
                         if (currentIndex > 0)
                         {
-                            m_GroupTarget.Schemas[currentIndex] = m_GroupTarget.Schemas[currentIndex - 1];
-                            m_GroupTarget.Schemas[currentIndex - 1] = schema;
+                            Undo.RecordObject(m_GroupTarget, "Move Schema Up");
+                            var displayOrder = m_GroupTarget.SchemaDisplayOrder;
+                            var temp = displayOrder[currentIndex];
+                            displayOrder[currentIndex] = displayOrder[currentIndex - 1];
+                            displayOrder[currentIndex - 1] = temp;
+                            EditorUtility.SetDirty(m_GroupTarget);
                         }
                     });
                     menu.AddItem(AddressableAssetGroup.MoveSchemaDownContent, false, () =>
                     {
-                        if (currentIndex < m_GroupTarget.Schemas.Count - 1)
+                        if (currentIndex < m_GroupTarget.SchemaDisplayOrder.Count - 1)
                         {
-                            m_GroupTarget.Schemas[currentIndex] = m_GroupTarget.Schemas[currentIndex + 1];
-                            m_GroupTarget.Schemas[currentIndex + 1] = schema;
+                            Undo.RecordObject(m_GroupTarget, "Move Schema Down");
+                            var displayOrder = m_GroupTarget.SchemaDisplayOrder;
+                            var temp = displayOrder[currentIndex];
+                            displayOrder[currentIndex] = displayOrder[currentIndex + 1];
+                            displayOrder[currentIndex + 1] = temp;
+                            EditorUtility.SetDirty(m_GroupTarget);
                         }
                     });
                     menu.AddSeparator("");

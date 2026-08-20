@@ -14,7 +14,15 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     public class BinaryDataProvider : ResourceProviderBase
     {
         /// <summary>
-        /// Controls whether errors are logged - this is disabled when trying to load from the local cache since failures are expected
+        /// Base namespace-qualified name for BinaryAssetProvider. Combine with a
+        /// serialization adapter's type name to form a unique ProviderId per adapter.
+        /// </summary>
+        public const string kBinaryAssetProviderBaseId =
+            "UnityEngine.ResourceManagement.ResourceProviders.BinaryAssetProvider";
+
+        /// <summary>
+        /// Controls whether errors are logged. Disabled when loading from the local cache
+        /// since failures are expected in that context.
         /// </summary>
         public bool IgnoreFailures { get; set; }
 
@@ -118,12 +126,12 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     if (!UnityWebRequestUtilities.RequestHasErrors(webReq, out UnityWebRequestResult uwrResult))
                         binaryResult = webReq.downloadHandler.data;
                     else
-                        exception = new RemoteProviderException($"{nameof(TextDataProvider)} : unable to load from url : {webReq.url}", m_PI.Location, uwrResult);
+                        exception = new RemoteProviderException($"{nameof(BinaryDataProvider)} : unable to load from url : {webReq.url}", m_PI.Location, uwrResult);
                     webReq.Dispose();
                 }
                 else
                 {
-                    exception = new RemoteProviderException(nameof(TextDataProvider) + " unable to load from unknown url", m_PI.Location);
+                    exception = new RemoteProviderException(nameof(BinaryDataProvider) + " unable to load from unknown url", m_PI.Location);
                 }
 
                 CompleteOperation(binaryResult, exception);

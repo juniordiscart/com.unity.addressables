@@ -111,6 +111,21 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
         }
 
         /// <summary>
+        /// When true, this rule supports fixing only a subset of analyze results (see <see cref="FixSelectedResults"/>).
+        /// </summary>
+        public virtual bool SupportsFixSelectedResults => false;
+
+        /// <summary>
+        /// Fix only the analysis results whose full names appear in <paramref name="selectedResultNames"/>.
+        /// Call only after <see cref="RefreshAnalysis"/> so rule-specific fix data is populated.
+        /// </summary>
+        /// <param name="settings">Addressables settings.</param>
+        /// <param name="selectedResultNames">Full <see cref="AnalyzeResult.resultName"/> values to fix.</param>
+        public virtual void FixSelectedResults(AddressableAssetSettings settings, IReadOnlyCollection<string> selectedResultNames)
+        {
+        }
+
+        /// <summary>
         /// Clears out the analysis results. When overriding, use to clear rule-specific data as well.
         /// </summary>
         public virtual void ClearAnalysis()

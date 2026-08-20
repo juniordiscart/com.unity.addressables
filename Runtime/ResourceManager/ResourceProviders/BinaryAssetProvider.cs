@@ -1,4 +1,3 @@
-#if !ENABLE_JSON_CATALOG
 using System;
 using System.ComponentModel;
 using UnityEngine.ResourceManagement.Util;
@@ -11,6 +10,15 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
     [DisplayName("Binary Asset Provider")]
     internal class BinaryAssetProvider<TAdapter> : BinaryDataProvider where TAdapter : BinaryStorageBuffer.ISerializationAdapter, new()
     {
+        /// <summary>
+        /// Initializes the provider with an id composed from the base provider name
+        /// and the adapter's type name, giving each adapter a unique ProviderId.
+        /// </summary>
+        public BinaryAssetProvider()
+        {
+            m_ProviderId = $"{kBinaryAssetProviderBaseId}<{typeof(TAdapter).FullName}>";
+        }
+
         /// <summary>
         /// Converts raw bytes into requested object type via BinaryStorageBuffer.ISerializationAdapter
         /// </summary>
@@ -26,4 +34,3 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         }
     }
 }
-#endif

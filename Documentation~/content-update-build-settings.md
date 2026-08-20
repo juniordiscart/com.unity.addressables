@@ -1,5 +1,8 @@
 # Content update build settings reference
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 There are several settings that affect how Unity performs content update builds.
 
 To publish content updates, your application must already use a remote catalog and host its remote content on an accessible server. Refer to [Distribute remote content](RemoteContentDistribution.md) for information about setting up content hosting and distribution.
@@ -17,7 +20,7 @@ The __Content State Build Path__ can be a remote location, if you want to have a
 
 ## Group Update Restriction settings
 
-For each group in your project, the [__Update Restriction__](ContentPackingAndLoadingSchema.md#content-update-restriction) schema determines how Unity handles a group and its assets in a content update as follows. When you enable **Prevent Updates**, Unity treats assets in that group as static content that you expect to update infrequently, if at all. All local content should use this setting.
+For each group in your project, the [__Update Restriction__](group-inspector-settings-reference.md#content-update-restriction) schema determines how Unity handles a group and its assets in a content update as follows. When you enable **Prevent Updates**, Unity treats assets in that group as static content that you expect to update infrequently, if at all. All local content should use this setting.
 
 Choose the setting based on the content type in a group and how frequently you expect to update that content between full player builds of your application.
 

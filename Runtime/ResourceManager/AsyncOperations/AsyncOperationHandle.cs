@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
+using UnityEngine.ResourceManagement.Exceptions;
 
 namespace UnityEngine.ResourceManagement.AsyncOperations
 {
@@ -109,6 +111,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// </summary>
         public void ReleaseHandleOnCompletion()
         {
+            InternalOp.MarkReleaseOnCompletionRegistered();
             Completed += op => op.Release();
         }
 
@@ -177,28 +180,12 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <returns>The result of the operation or null.</returns>
         public TObject WaitForCompletion()
         {
-#if !UNITY_2021_1_OR_NEWER
-            AsyncOperationHandle.IsWaitingForCompletion = true;
-            try
-            {
-                if (IsValid() && !InternalOp.IsDone)
-                    InternalOp.WaitForCompletion();
-                if (IsValid())
-                    return Result;
-            }
-            finally
-            {
-                AsyncOperationHandle.IsWaitingForCompletion = false;
-                m_InternalOp?.m_RM?.Update(Time.unscaledDeltaTime);
-            }
-#else
             if (IsValid() && !InternalOp.IsDone)
                 InternalOp.WaitForCompletion();
 
             m_InternalOp?.m_RM?.Update(Time.unscaledDeltaTime);
             if (IsValid())
                 return Result;
-#endif
             return default(TObject);
         }
 
@@ -252,10 +239,11 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
         /// <summary>
         /// The current reference count of the internal operation.
+        /// Returns 0 if the handle is not valid (for example, after it has been released).
         /// </summary>
-        internal int ReferenceCount
+        public int ReferenceCount
         {
-            get { return InternalOp.ReferenceCount; }
+            get { return IsValid() ? m_InternalOp.ReferenceCount : 0; }
         }
 
         /// <summary>
@@ -291,6 +279,88 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             get { return InternalOp.Task; }
         }
 
+        /// <summary>
+        /// Creates an <see cref="Awaitable{TObject}"/> that completes when the operation completes.
+        /// </summary>
+        /// <remarks>
+        /// Unlike <see cref="Task"/>, failure throws an <see cref="AsyncOperationHandleException{TObject}"/> instead of resolving
+        /// with a default or partial <see cref="Result"/>. Its <see cref="AsyncOperationHandleException{TObject}.Handle"/> carries a
+        /// reference you must release (via <c>e.Handle.Release()</c>) if you still need to inspect <see cref="Status"/> or a partial result.
+        /// The returned <see cref="Awaitable{TObject}"/> can only be awaited once. Don't await the same handle from multiple call sites
+        /// unless nothing else releases it - whichever awaiter hits a failure or cancellation first releases the handle out from
+        /// under the others. For multiple independent consumers, hold the handle and use <see cref="Completed"/> instead.
+        /// </remarks>
+        /// <returns>An awaitable that completes with the operation's result, or throws on failure.</returns>
+        public Awaitable<TObject> ToAwaitable()
+        {
+            return ToAwaitable(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates an <see cref="Awaitable{TObject}"/> that completes when the operation completes, or is
+        /// canceled when <paramref name="cancellationToken"/> is canceled.
+        /// </summary>
+        /// <remarks>
+        /// See the parameterless <see cref="ToAwaitable()"/> for failure and single-use semantics. This overload also
+        /// releases the handle on cancellation, so it assumes sole ownership of the reference - a lifetime-scoped token
+        /// (e.g. <see cref="MonoBehaviour.destroyCancellationToken"/> via <see cref="ToAwaitable(MonoBehaviour)"/>) can
+        /// therefore replace a manual release call. Expected to be canceled on the main thread.
+        /// </remarks>
+        /// <param name="cancellationToken">Token that cancels the awaitable and releases this handle.</param>
+        /// <returns>An awaitable that completes with the operation's result, or throws on failure or cancellation.</returns>
+        public Awaitable<TObject> ToAwaitable(CancellationToken cancellationToken)
+        {
+            // See AwaitableOperationDriver for the shared reference-counting/cancellation rationale;
+            // `this` implicitly converts to the non-generic handle it drives against.
+            var source = new AwaitableCompletionSource<TObject>();
+            AwaitableOperationDriver.Drive(this, cancellationToken,
+                completeSource: handle => CompleteSource(source, handle.Convert<TObject>()),
+                setCanceled: () => source.TrySetCanceled());
+            return source.Awaitable;
+        }
+
+        /// <summary>
+        /// Creates an <see cref="Awaitable{TObject}"/> tied to <paramref name="owner"/>'s destruction - shorthand
+        /// for <c>ToAwaitable(owner.destroyCancellationToken)</c>.
+        /// </summary>
+        /// <remarks>
+        /// Destroy-scoped, not Disable-scoped: <see cref="MonoBehaviour.destroyCancellationToken"/> only cancels on
+        /// destruction. For a load that repeats across <c>OnEnable</c>/<c>OnDisable</c>, use a
+        /// <see cref="CancellationTokenSource"/> created and canceled per cycle instead - see <see cref="ToAwaitable(CancellationToken)"/>.
+        /// </remarks>
+        /// <param name="owner">The component whose destruction cancels the awaitable and releases this handle.</param>
+        /// <returns>An awaitable that completes with the operation's result, or throws on failure or cancellation.</returns>
+        public Awaitable<TObject> ToAwaitable(MonoBehaviour owner)
+        {
+            return ToAwaitable(owner.destroyCancellationToken);
+        }
+
+        static void CompleteSource(AwaitableCompletionSource<TObject> source, AsyncOperationHandle<TObject> handle)
+        {
+            if (handle.Status == AsyncOperationStatus.Failed)
+            {
+                var opEx = handle.OperationException;
+                var message = opEx?.Message ?? $"Addressables operation '{handle.DebugName}' failed.";
+                // Acquire a reference dedicated to the exception, distinct from `handle` (which the caller manages
+                // separately) - otherwise releasing both would double-release the same reference.
+                source.SetException(new AsyncOperationHandleException<TObject>(handle.Acquire(), message, opEx));
+            }
+            else
+                source.SetResult(handle.Result);
+        }
+
+        /// <summary>
+        /// Enables directly awaiting this handle, e.g. <c>TObject result = await handle;</c>.
+        /// Declared as an instance member (rather than only an extension method) so that
+        /// <c>await</c> works without requiring a <c>using UnityEngine.ResourceManagement.AsyncOperations;</c>
+        /// directive. See <see cref="ToAwaitable"/> for failure and single-use semantics.
+        /// </summary>
+        /// <returns>The awaiter used by the compiler-generated await code.</returns>
+        public Awaitable<TObject>.Awaiter GetAwaiter()
+        {
+            return ToAwaitable().GetAwaiter();
+        }
+
         object IEnumerator.Current
         {
             get { return Result; }
@@ -318,17 +388,6 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
     /// </summary>
     public struct AsyncOperationHandle : IEnumerator
     {
-#if !UNITY_2021_1_OR_NEWER
-        private static bool m_IsWaitingForCompletion = false;
-        /// <summary>
-        /// Indicates that the async operation is in the process of being completed synchronously.
-        /// </summary>
-        public static bool IsWaitingForCompletion
-        {
-            get { return m_IsWaitingForCompletion; }
-            internal set { m_IsWaitingForCompletion = value; }
-        }
-#endif
 
         internal IAsyncOperation m_InternalOp;
         int m_Version;
@@ -393,6 +452,7 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// </summary>
         public void ReleaseHandleOnCompletion()
         {
+            InternalOp.MarkReleaseOnCompletionRegistered();
             Completed += op => op.Release();
         }
 
@@ -467,6 +527,20 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             }
         }
 
+
+        /// <summary>
+        /// Whether something has already registered a release-on-completion listener for this operation
+        /// (an <c>autoReleaseHandle: true</c> API, or a direct <see cref="ReleaseHandleOnCompletion"/> call).
+        /// Used by <see cref="AwaitableOperationDriver"/> to avoid releasing a reference that listener already owns.
+        /// </summary>
+        internal bool HasReleaseOnCompletionRegistered => InternalOp.HasReleaseOnCompletionRegistered;
+
+        /// <summary>
+        /// Whether this operation's <see cref="Completed"/> event already has listeners. Used by
+        /// <see cref="AwaitableOperationDriver"/> to gate its fast path for an already-done operation.
+        /// </summary>
+        internal bool CompletedEventHasListeners => InternalOp.CompletedEventHasListeners;
+
         /// <summary>
         /// True if the operation is complete.
         /// </summary>
@@ -524,10 +598,11 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
 
         /// <summary>
         /// The current reference count of the internal operation.
+        /// Returns 0 if the handle is not valid (for example, after it has been released).
         /// </summary>
-        internal int ReferenceCount
+        public int ReferenceCount
         {
-            get { return InternalOp.ReferenceCount; }
+            get { return IsValid() ? m_InternalOp.ReferenceCount : 0; }
         }
 
         /// <summary>
@@ -563,6 +638,73 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
             get { return InternalOp.Task; }
         }
 
+        /// <summary>
+        /// Creates an <see cref="Awaitable"/> that completes when the operation completes.
+        /// </summary>
+        /// <remarks>
+        /// On failure, throws an <see cref="AsyncOperationHandleException"/> whose <see cref="AsyncOperationHandleException.Handle"/>
+        /// carries a reference you must release (via <c>e.Handle.Release()</c>). The returned <see cref="Awaitable"/> can only be awaited once.
+        /// </remarks>
+        /// <returns>An awaitable that completes when the operation completes, or throws on failure.</returns>
+        public Awaitable ToAwaitable()
+        {
+            return ToAwaitable(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates an <see cref="Awaitable"/> that completes when the operation completes, or is canceled when
+        /// <paramref name="cancellationToken"/> is canceled. See the generic <see cref="AsyncOperationHandle{TObject}.ToAwaitable(CancellationToken)"/>
+        /// overload for details.
+        /// </summary>
+        /// <param name="cancellationToken">Token that cancels the awaitable and releases this handle.</param>
+        /// <returns>An awaitable that completes when the operation completes, or throws on failure or cancellation.</returns>
+        public Awaitable ToAwaitable(CancellationToken cancellationToken)
+        {
+            // See AwaitableOperationDriver for the shared reference-counting/cancellation rationale.
+            var source = new AwaitableCompletionSource();
+            AwaitableOperationDriver.Drive(this, cancellationToken,
+                completeSource: handle => CompleteSource(source, handle),
+                setCanceled: () => source.TrySetCanceled());
+            return source.Awaitable;
+        }
+
+        /// <summary>
+        /// Creates an <see cref="Awaitable"/> tied to <paramref name="owner"/>'s destruction - shorthand for
+        /// <c>ToAwaitable(owner.destroyCancellationToken)</c>. See the generic
+        /// <see cref="AsyncOperationHandle{TObject}.ToAwaitable(MonoBehaviour)"/> overload for the
+        /// Destroy-vs-Disable scoping caveat.
+        /// </summary>
+        /// <param name="owner">The component whose destruction cancels the awaitable and releases this handle.</param>
+        /// <returns>An awaitable that completes when the operation completes, or throws on failure or cancellation.</returns>
+        public Awaitable ToAwaitable(MonoBehaviour owner)
+        {
+            return ToAwaitable(owner.destroyCancellationToken);
+        }
+
+        static void CompleteSource(AwaitableCompletionSource source, AsyncOperationHandle handle)
+        {
+            if (handle.Status == AsyncOperationStatus.Failed)
+            {
+                var opEx = handle.OperationException;
+                var message = opEx?.Message ?? $"Addressables operation '{handle.DebugName}' failed.";
+                source.SetException(new AsyncOperationHandleException(handle.Acquire(), message, opEx));
+            }
+            else
+                source.SetResult();
+        }
+
+        /// <summary>
+        /// Enables directly awaiting this handle, e.g. <c>await handle;</c>.
+        /// Declared as an instance member (rather than only an extension method) so that
+        /// <c>await</c> works without requiring a <c>using UnityEngine.ResourceManagement.AsyncOperations;</c>
+        /// directive. See <see cref="ToAwaitable"/> for failure and single-use semantics.
+        /// </summary>
+        /// <returns>The awaiter used by the compiler-generated await code.</returns>
+        public Awaitable.Awaiter GetAwaiter()
+        {
+            return ToAwaitable().GetAwaiter();
+        }
+
         object IEnumerator.Current
         {
             get { return Result; }
@@ -590,25 +732,10 @@ namespace UnityEngine.ResourceManagement.AsyncOperations
         /// <returns>The result of the operation or null.</returns>
         public object WaitForCompletion()
         {
-#if !UNITY_2021_1_OR_NEWER
-            IsWaitingForCompletion = true;
-            try
-            {
-                if (IsValid() && !InternalOp.IsDone)
-                    InternalOp.WaitForCompletion();
-                if (IsValid())
-                    return Result;
-            }
-            finally
-            {
-                IsWaitingForCompletion = false;
-            }
-#else
             if (IsValid() && !InternalOp.IsDone)
                 InternalOp.WaitForCompletion();
             if (IsValid())
                 return Result;
-#endif
             return null;
         }
     }

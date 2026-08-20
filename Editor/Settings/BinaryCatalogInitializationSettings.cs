@@ -1,7 +1,7 @@
-#if !ENABLE_JSON_CATALOG
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
+using UnityEditor.AddressableAssets.Settings;
 
 namespace UnityEditor.AddressableAssets
 {
@@ -9,6 +9,7 @@ namespace UnityEditor.AddressableAssets
     /// Object to hold cache settings for the binary catalog.  Create an asset of this type using the Create menu (Addressables/Initialization/Binary Catalog Initialization Settings) and then add it to the Initialization Objects of the Addressables system settings object.
     /// </summary>
     [CreateAssetMenu(fileName = "BinaryCatalogInitialization.asset", menuName = "Addressables/Initialization/Binary Catalog Initialization Settings")]
+    [AddressablesHelpURL("build-content-catalogs.html")]
     public class BinaryCatalogInitializationSettings : ScriptableObject, IObjectInitializationDataProvider
     {
 
@@ -41,4 +42,3 @@ namespace UnityEditor.AddressableAssets
         }
     }
 }
-#endif

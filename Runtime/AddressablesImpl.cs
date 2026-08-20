@@ -81,6 +81,12 @@ namespace UnityEngine.AddressableAssets
         {
             m_ResourceManager = new ResourceManager(alloc);
             SceneManager.sceneUnloaded += OnSceneUnloaded;
+#if ENABLE_CONTENT_DIRECTORIES
+            // The Content Directory providers live in the lower-level ResourceManager assembly and
+            // cannot reference this assembly's runtime-property evaluator directly, so hand them the
+            // resolver they need to expand placeholders in the stored Content Directory load paths.
+            ContentDirectoryMountManager.PathResolver = AddressablesRuntimeProperties.EvaluateString;
+#endif
         }
 
         public void Dispose()
@@ -92,13 +98,20 @@ namespace UnityEngine.AddressableAssets
             var handles = new List<AsyncOperationHandle>(m_resultToHandle.Values);
             foreach (var handle in handles)
             {
-                m_ResourceManager.Release(handle);
+                if (handle.IsValid())
+                    m_ResourceManager.Release(handle);
             }
             handles = new List<AsyncOperationHandle>(m_SceneInstances);
             foreach (var handle in handles)
             {
-                m_ResourceManager.Release(handle);
+                if(handle.IsValid())
+                    m_ResourceManager.Release(handle);
             }
+
+#if ENABLE_CONTENT_DIRECTORIES
+            // Content Directories stay mounted for the lifetime of the system; unmount them all here.
+            ContentDirectoryMountManager.UnmountAll();
+#endif
 
             m_ResourceManager.Dispose();
         }
@@ -298,12 +311,24 @@ namespace UnityEngine.AddressableAssets
             m_ResourceLocators.Clear();
         }
 
+        private Type ResolveArrayTypes(Type t)
+        {
+            if (t == null)
+                return null;
+            if (t.IsArray)
+                t = t.GetElementType();
+            else if (t.IsGenericType && typeof(IList<>) == t.GetGenericTypeDefinition())
+                t = t.GetGenericArguments()[0];
+            return t;
+        }
+
         internal bool GetResourceLocations(object key, Type type, out IList<IResourceLocation> locations)
         {
             if (type == null && (key is AssetReference))
                 type = (key as AssetReference).SubObjectType;
 
             key = EvaluateKey(key);
+            type = ResolveArrayTypes(type);
 
             locations = null;
             HashSet<IResourceLocation> current = null;
@@ -409,6 +434,7 @@ namespace UnityEngine.AddressableAssets
             }
 
             hasStartedInitialization = true;
+            TypeNameResolver.Initialize();
             if (m_InitializationOperation.IsValid())
                 return m_InitializationOperation;
             //these need to be referenced in order to prevent stripping on IL2CPP platforms.
@@ -493,12 +519,55 @@ namespace UnityEngine.AddressableAssets
 
         public ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(string catalogLocation) where T : IResourceProvider
         {
-#if ENABLE_JSON_CATALOG
-            string hashFilePath = catalogLocation.Replace(".json", ".hash");
-#else
-            string hashFilePath = catalogLocation.Replace(".bin", ".hash");
-#endif
+            string hashFilePath = CatalogUtilities.GetHashFilePath(catalogLocation);
             return CreateCatalogLocationWithHashDependencies<T>(catalogLocation, hashFilePath);
+        }
+
+        internal ResourceLocationBase CreateCatalogLocationWithHashDependencies(string catalogLocation, Type providerType)
+        {
+            string hashFilePath = CatalogUtilities.GetHashFilePath(catalogLocation);
+            var catalogLoc = new ResourceLocationBase(catalogLocation, catalogLocation, providerType.FullName, typeof(IResourceLocator))
+            {
+                Data = new ProviderLoadRequestOptions()
+                {
+                    IgnoreFailures = false,
+                    WebRequestTimeout = CatalogRequestsTimeout
+                }
+            };
+
+            if (!string.IsNullOrEmpty(hashFilePath))
+            {
+                ProviderLoadRequestOptions hashOptions = new ProviderLoadRequestOptions()
+                {
+                    IgnoreFailures = true,
+                    WebRequestTimeout = CatalogRequestsTimeout
+                };
+
+                string tmpPath = hashFilePath;
+                if (ResourceManagerConfig.IsPathRemote(hashFilePath))
+                {
+                    tmpPath = ResourceManagerConfig.StripQueryParameters(hashFilePath);
+                }
+                var hashResourceLocation = new ResourceLocationBase(hashFilePath, hashFilePath, typeof(TextDataProvider).FullName, typeof(string))
+                {
+                    Data = hashOptions.Copy()
+                };
+                catalogLoc.Dependencies.Add(hashResourceLocation);
+
+#if UNITY_SWITCH || UNITY_SWITCH2
+                string cacheHashFilePath = hashFilePath;
+#else
+                string cacheHashFilePath = ResolveInternalId(kCacheDataFolder + tmpPath.GetHashCode() + ".hash");
+#endif
+                var cacheResourceLocation = new ResourceLocationBase(cacheHashFilePath, cacheHashFilePath, typeof(TextDataProvider).FullName, typeof(string))
+                {
+                    Data = hashOptions.Copy()
+                };
+                catalogLoc.Dependencies.Add(cacheResourceLocation);
+                catalogLoc.Dependencies.Add(cacheResourceLocation);
+            }
+
+            return catalogLoc;
         }
 
         public ResourceLocationBase CreateCatalogLocationWithHashDependencies<T>(string catalogPath, string hashFilePath) where T : IResourceProvider
@@ -564,7 +633,21 @@ namespace UnityEngine.AddressableAssets
 
         public AsyncOperationHandle<IResourceLocator> LoadContentCatalogAsync(string catalogPath, bool autoReleaseHandle = true, string providerSuffix = null)
         {
-            var catalogLoc = CreateCatalogLocationWithHashDependencies<ContentCatalogProvider>(catalogPath);
+            var ext = CatalogUtilities.GetCatalogExtension(catalogPath);
+            ContentCatalogProvider catalogProvider = null;
+            foreach (var p in ResourceManager.ResourceProviders)
+            {
+                if (p is ContentCatalogProvider ccp &&
+                    string.Equals(ccp.CatalogExtension, ext, StringComparison.OrdinalIgnoreCase))
+                {
+                    catalogProvider = ccp;
+                    break;
+                }
+            }
+            if (catalogProvider == null)
+                return ResourceManager.CreateCompletedOperationWithException<IResourceLocator>(default(IResourceLocator), new InvalidOperationException(
+                    $"No catalog provider registered for extension '{ext}'."));
+            var catalogLoc = CreateCatalogLocationWithHashDependencies(catalogPath, catalogProvider.GetType());
             if (ShouldChainRequest)
                 return ResourceManager.CreateChainOperation(ChainOperation, op => LoadContentCatalogAsync(catalogPath, autoReleaseHandle, providerSuffix));
             var handle = Initialization.InitializationOperation.LoadContentCatalog(this, catalogLoc, providerSuffix);
@@ -624,11 +707,7 @@ namespace UnityEngine.AddressableAssets
             key = EvaluateKey(key);
 
             IList<IResourceLocation> locs;
-            var t = typeof(TObject);
-            if (t.IsArray)
-                t = t.GetElementType();
-            else if (t.IsGenericType && typeof(IList<>) == t.GetGenericTypeDefinition())
-                t = t.GetGenericArguments()[0];
+            var t = ResolveArrayTypes(typeof(TObject));
             foreach (var locatorInfo in m_ResourceLocators)
             {
                 var locator = locatorInfo.Locator;
@@ -917,11 +996,7 @@ namespace UnityEngine.AddressableAssets
                                                                          $"be setup using CreateCatalogLocationWithHashDependencies");
 
             var internalIdHash = catalogLoc.Dependencies[(int)ContentCatalogProvider.DependencyHashIndex.Remote].InternalId;
-#if ENABLE_JSON_CATALOG
-            var internalIdCat = internalIdHash.Replace(".hash", ".json");
-#else
-            var internalIdCat = internalIdHash.Replace(".hash", ".bin");
-#endif
+            var internalIdCat = CatalogUtilities.GetCatalogFilePath(internalIdHash, CatalogUtilities.GetCatalogExtension(catalogLoc.InternalId));
             var uwr = new UnityWebRequest(internalIdCat, UnityWebRequest.kHttpVerbHEAD);
             AsyncOperationBase<UnityWebRequest> uwrAsyncOp = new UnityWebRequestOperation(uwr);
 
@@ -1150,7 +1225,7 @@ namespace UnityEngine.AddressableAssets
 
         internal void AutoReleaseHandleOnTypelessCompletion<TObject>(AsyncOperationHandle<TObject> handle)
         {
-            handle.CompletedTypeless += op => op.Release();
+            handle.ReleaseHandleOnCompletion();
         }
 
         public AsyncOperationHandle<bool> ClearDependencyCacheAsync(object key, bool autoReleaseHandle)

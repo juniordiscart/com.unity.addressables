@@ -8,7 +8,7 @@ using System.Text;
 using System.Net.Http;
 using UnityEditor.AddressableAssets.Build;
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
 using System.Threading.Tasks;
 using Unity.Services.Core;
 using Unity.Services.Ccd.Management;
@@ -22,6 +22,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// <summary>
     /// Scriptable Object that holds data source setting information for the profile data source dropdown window
     /// </summary>
+    [AddressablesHelpURL("AddressablesCCD.html")]
     public class ProfileDataSourceSettings : ScriptableObject, ISerializationCallbackReceiver
     {
         const string DEFAULT_PATH = "Assets/AddressableAssetsData";
@@ -229,7 +230,7 @@ namespace UnityEditor.AddressableAssets.Settings
             return profileGroupTypes.Where((groupType) => groupType.GroupTypePrefix.StartsWith(prefix, StringComparison.Ordinal)).ToList();
         }
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
         /// <summary>
         /// Updates the CCD buckets and badges with the data source settings
         /// </summary>

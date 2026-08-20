@@ -1,4 +1,3 @@
-#if !ENABLE_JSON_CATALOG
 using System;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Util;
@@ -94,4 +93,3 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
         public int m_CatalogLocationCacheSize = BinaryCatalogInitialization.CatalogLocationCacheSize;
     }
 }
-#endif

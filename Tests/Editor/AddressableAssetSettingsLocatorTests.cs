@@ -262,8 +262,20 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         [Test]
-        public void WhenLocatorWithAssetsInFolder_LocateWithFolderKeyFails()
+        public void WhenLocatorWithAssetsInFolder_LocateWithFolderKeySucceeds()
         {
+            // IncludeFolderKeysInCatalog defaults to true, so the folder's own address now
+            // resolves to every asset inside it, mirroring how a folder label already does.
+            var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
+            m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
+            AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "TF", GetPath("TestFolder/asset1.asset"),
+                GetPath("TestFolder/asset2.asset"), GetPath("TestFolder/asset3.asset"));
+        }
+
+        [Test]
+        public void WhenLocatorWithAssetsInFolder_AndFolderKeysDisabled_LocateWithFolderKeyFails()
+        {
+            m_Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>().IncludeFolderKeysInCatalog = false;
             var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset", "asset2.asset", "asset3.asset"});
             m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
             var locator = new AddressableAssetSettingsLocator(m_Settings);
@@ -279,6 +291,48 @@ namespace UnityEditor.AddressableAssets.Tests
             folderEntry.SetLabel("FolderLabel", true, true, true);
             AssertLocateResult<UnityEngine.AddressableAssets.Tests.TestObject>(new AddressableAssetSettingsLocator(m_Settings), "FolderLabel", GetPath("TestFolder/asset1.asset"),
                 GetPath("TestFolder/asset2.asset"), GetPath("TestFolder/asset3.asset"));
+        }
+
+
+        [Test]
+        public void WhenLocatorWithMultipeAssets_AndLabelsDisabled_LocateWithSharedLabelFails()
+        {
+            m_Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>().IncludeLabelsInCatalog = false;
+            m_Settings.CreateOrMoveEntry(CreateAsset("asset1", GetPath("asset1.asset")), m_Settings.DefaultGroup).SetLabel("label", true, true);
+            m_Settings.CreateOrMoveEntry(CreateAsset("asset2", GetPath("asset2.asset")), m_Settings.DefaultGroup).SetLabel("label", true, true);
+            var locator = new AddressableAssetSettingsLocator(m_Settings);
+            Assert.IsFalse(locator.Locate("label", null, out var locations));
+            CollectionAssert.DoesNotContain(locator.Keys, "label");
+        }
+
+        [Test]
+        public void WhenLocatorWithMultipeAssets_AndLabelsEnabled_KeysPropertyContainsLabel()
+        {
+            m_Settings.CreateOrMoveEntry(CreateAsset("asset1", GetPath("asset1.asset")), m_Settings.DefaultGroup).SetLabel("label", true, true);
+            var locator = new AddressableAssetSettingsLocator(m_Settings);
+            CollectionAssert.Contains(locator.Keys, "label");
+        }
+
+        [Test]
+        public void WhenLocatorWithAssetsInFolder_LocateWithFolderKey_KeysPropertyContainsFolderAddress()
+        {
+            // The folder's own address is a valid key via Locate (see
+            // WhenLocatorWithAssetsInFolder_LocateWithFolderKeySucceeds above); Keys must advertise
+            // it too so callers enumerating Keys can discover folder addresses.
+            var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset"});
+            m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
+            var locator = new AddressableAssetSettingsLocator(m_Settings);
+            CollectionAssert.Contains(locator.Keys, "TF");
+        }
+
+        [Test]
+        public void WhenLocatorWithAssetsInFolder_AndFolderKeysDisabled_KeysPropertyDoesNotContainFolderAddress()
+        {
+            m_Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>().IncludeFolderKeysInCatalog = false;
+            var folderGUID = CreateFolder("TestFolder", new string[] {"asset1.asset"});
+            m_Settings.CreateOrMoveEntry(folderGUID, m_Settings.DefaultGroup).address = "TF";
+            var locator = new AddressableAssetSettingsLocator(m_Settings);
+            CollectionAssert.DoesNotContain(locator.Keys, "TF");
         }
 
         [Test]
@@ -330,6 +384,9 @@ namespace UnityEditor.AddressableAssets.Tests
             "TF/TestSubFolder2/scene3.unity",
             //label applied to folder
             "FolderLabel1",
+            //folder's own address is a folder key (IncludeFolderKeysInCatalog defaults to true)
+            "TF",
+            "TestFolder/TestSubFolder1",
             //assets in subfolder without address
             "TestFolder/TestSubFolder1/asset1.asset",
             "TestFolder/TestSubFolder1/asset2.asset",

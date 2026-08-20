@@ -4,9 +4,11 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build.BuildPipelineTasks;
+using UnityEditor.AddressableAssets.Build.CatalogBuilders;
 using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.AddressableAssets;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEditor.Build.Pipeline.Utilities;
@@ -21,9 +23,25 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// <summary>
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
+    /// <remarks>
+    /// <para>This is the preferred base class for custom Addressables build scripts. Subclass it and
+    /// override <see cref="CreateSchemaBuilders"/> to add, replace, or wrap the schema builders that
+    /// drive the build. Most build customisations — bundle packing, catalog generation, content
+    /// update logic — should be implemented by subclassing the relevant
+    /// <see cref="UnityEditor.AddressableAssets.Build.ISchemaBuilder"/> (e.g.
+    /// <see cref="SchemaBuilders.BundledAssetSchemaBuilder"/>) and returning it from
+    /// <see cref="CreateSchemaBuilders"/>, rather than overriding methods on the build script
+    /// itself.</para>
+    /// <para><see cref="BuildScriptPackedMode"/> extends this class with additional virtual hooks
+    /// (<c>ProcessBundledAssetSchema</c>, <c>ConstructAssetBundleName</c>) for compatibility with
+    /// earlier extension patterns. New code should prefer schema-builder overrides instead.</para>
+    /// </remarks>
     [CreateAssetMenu(fileName = "BuildScriptSchemaDriver.asset", menuName = "Addressables/Content Builders/Default Build Schema Driven")]
+    [AddressablesHelpURL("Builds.html")]
     public class BuildScriptSchemaDriven : BuildScriptBase
     {
+        [NonSerialized]
+        private BuildContext m_BuildContext;
 
         [NonSerialized]
         private ISchemaBuilder[] m_SchemaBuilders;
@@ -60,7 +78,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <inheritdoc />
         public override string Name
         {
-            get { return "Schema Driven Build"; }
+            get { return "Default Build Script"; }
         }
 
         /// <inheritdoc />
@@ -143,33 +161,51 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             NotifyUserAboutBuildReport();
 
             TResult result = default(TResult);
-            m_IncludedGroupsInBuild?.Clear();
+            m_IncludedGroupsInBuild = new List<AddressableAssetGroup>();
 
             InitializeBuildContext(builderInput, out AddressableAssetsBuildContext aaContext);
 
-            using (Log.ScopedStep(LogLevel.Info, "ProcessAllGroups"))
+            try
             {
-                var errorString = ProcessAllGroups(aaContext);
-                if (!string.IsNullOrEmpty(errorString))
-                    result = CreateErrorResult<TResult>(errorString, builderInput, aaContext);
+                using (Log.ScopedStep(LogLevel.Info, "ProcessAllGroups"))
+                {
+                    var errorString = ProcessAllGroups(aaContext);
+                    if (!string.IsNullOrEmpty(errorString))
+                        result = CreateErrorResult<TResult>(errorString, builderInput, aaContext);
+                }
+
+                if (result == null)
+                {
+                    result = DoBuild<TResult>(builderInput, aaContext);
+                }
+
+                if (result == null)
+                    return result;
+
+                var span = DateTime.Now - aaContext.buildStartTime;
+                result.Duration = span.TotalSeconds;
+                if (string.IsNullOrEmpty(result.Error))
+                {
+                    ClearContentUpdateNotifications(m_IncludedGroupsInBuild);
+                }
+            }
+            finally
+            {
+                using (Log.ScopedStep(LogLevel.Info, "Cleanup"))
+                {
+                    Cleanup();
+                }
             }
 
-            if (result == null)
-            {
-                result = DoBuild<TResult>(builderInput, aaContext);
-            }
-
-            if (result == null)
-                return result;
-
-            var span = DateTime.Now - aaContext.buildStartTime;
-            result.Duration = span.TotalSeconds;
-            if (string.IsNullOrEmpty(result.Error))
-            {
-                ClearContentUpdateNotifications(m_IncludedGroupsInBuild);
-            }
             DisplayBuildReport();
             return result;
+        }
+
+        private void Cleanup()
+        {
+            m_BuildContext = null;
+            m_SchemaBuilders = null;
+            m_IncludedGroupsInBuild = null;
         }
 
         private TResult CreateErrorResult<TResult>(string errorString, AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext) where TResult : IDataBuilderResult
@@ -180,8 +216,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
         internal void InitializeBuildContext(AddressablesDataBuilderInput builderInput, out AddressableAssetsBuildContext aaContext)
         {
-            var now = DateTime.Now;
-            var aaSettings = builderInput.AddressableSettings;
+            using (Log.ScopedStep(LogLevel.Info, "InitializeBuildContext"))
+            {
+                var now = DateTime.Now;
+                var aaSettings = builderInput.AddressableSettings;
 #if ENABLE_CCD
             // we have to populate the ccd managed data every time we build.
             try
@@ -194,42 +232,46 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 throw;
             }
 #endif
-            var bundleToAssetGroup = new Dictionary<string, string>();
-            var runtimeData = new ResourceManagerRuntimeData
-            {
-                SettingsHash = aaSettings.currentHash.ToString(),
-                CertificateHandlerType = aaSettings.CertificateHandlerType,
-                BuildTarget = builderInput.Target.ToString(),
+                var bundleToAssetGroup = new Dictionary<string, string>();
+                var runtimeData = new ResourceManagerRuntimeData
+                {
+                    SettingsHash = aaSettings.currentHash.ToString(),
+                    CertificateHandlerType = aaSettings.CertificateHandlerType,
+                    BuildTarget = builderInput.Target.ToString(),
 #if ENABLE_CCD
                 CcdManagedData = aaSettings.m_CcdManagedData,
 #endif
-                LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions,
-                DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup,
-#if ENABLE_JSON_CATALOG
-                IsLocalCatalogInBundle = aaSettings.BundleLocalCatalog,
-#endif
-                AddressablesVersion = Addressables.Version,
-                MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests,
-                CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout
-            };
+                    LogResourceManagerExceptions = aaSettings.buildSettings.LogResourceManagerExceptions,
+                    DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup,
+                    IsLocalCatalogInBundle = CreateCatalogBuilder(aaSettings).SupportsLocalCatalogBundling && aaSettings.BundleLocalCatalog,
+                    AddressablesVersion = Addressables.Version,
+                    MaxConcurrentWebRequests = aaSettings.MaxConcurrentWebRequests,
+                    CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout
+                };
 
-            aaContext = new AddressableAssetsBuildContext
-            {
-                Settings = aaSettings,
-                runtimeData = runtimeData,
-                bundleToAssetGroup = bundleToAssetGroup,
-                locations = new List<ContentCatalogDataEntry>(),
-                providerTypes = new HashSet<Type>(),
-                assetEntries = new List<AddressableAssetEntry>(),
-                internalToOutputBundleName = new Dictionary<string, string>(),
-                buildStartTime = now,
-                ContainsAssetBundleData = false,
-                ContainsContentDirectoryData = false
-            };
+                aaContext = new AddressableAssetsBuildContext
+                {
+                    Settings = aaSettings,
+                    runtimeData = runtimeData,
+                    bundleToAssetGroup = bundleToAssetGroup,
+                    locations = new List<ContentCatalogDataEntry>(),
+                    providerTypes = new HashSet<Type>(),
+                    assetEntries = new List<AddressableAssetEntry>(),
+                    internalToOutputBundleName = new Dictionary<string, string>(),
+                    buildStartTime = now,
+                    ContainsAssetBundleData = false,
+                    ContainsContentDirectoryData = false
+                };
 
-            foreach (ISchemaBuilder schemaBuilder in SchemaBuilders)
-            {
-                schemaBuilder.Init(aaContext, this);
+                m_BuildContext = new BuildContext(aaContext, Log);
+
+                foreach (ISchemaBuilder schemaBuilder in SchemaBuilders)
+                {
+                    using (Log.ScopedStep(LogLevel.Verbose, $"{schemaBuilder.Name}.Init"))
+                    {
+                        schemaBuilder.Init(aaContext, builderInput, m_BuildContext, this);
+                    }
+                }
             }
         }
 
@@ -245,46 +287,185 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var genericResult = AddressableAssetBuildResult.CreateResult<TResult>();
             AddressablesPlayerBuildResult addrResult = genericResult as AddressablesPlayerBuildResult;
 
-            ExtractDataTask extractData = new ExtractDataTask();
-            List<CachedAssetState> carryOverCachedState = new List<CachedAssetState>();
+            aaContext.cachedState = new List<CachedAssetState>();
             if (!BuildUtility.CheckModifiedScenesAndAskToSave())
                 return CreateErrorResult<TResult>("Unsaved scenes", builderInput, aaContext);
 
             AddInstanceAndSceneProvider(aaContext);
 
-            var contentCatalogs = new List<ContentCatalogData>();
-            BuildContext buildContext = new BuildContext(aaContext, Log);
-            foreach (ISchemaBuilder schemaBuilder in SchemaBuilders)
-            {
-                schemaBuilder.Build(
-                    buildContext,
-                    builderInput,
-                    aaContext,
-                    extractData,
-                    carryOverCachedState,
-                    addrResult);
-                var schemaGeneratedCatalogs = schemaBuilder.GenerateCatalogs(builderInput, aaContext, addrResult);
+            var mergedLocations = BuildAndMergeLocations(aaContext, addrResult,
+                out var builderToCatalogIds);
 
-                foreach (var contentCatalog in schemaGeneratedCatalogs)
-                {
-                    if (contentCatalog == null)
-                    {
-                        Debug.Log($"No catalog generated for schema builder: {schemaBuilder.Name}");
-                        continue;
-                    }
-                    schemaBuilder.GenerateTypeStrippingInfo(builderInput, aaContext, contentCatalog);
-                    schemaBuilder.GenerateContentUpdate(builderInput, aaContext, extractData, carryOverCachedState, addrResult);
-                    contentCatalogs.Add(contentCatalog);
-                }
-            }
+            var contentCatalogs = WriteMergedCatalogs(mergedLocations, builderInput,
+                aaContext, addrResult, out var catalogIdToData);
+
+            ApplyTypeStrippingAndContentUpdate(builderToCatalogIds, catalogIdToData,
+                aaContext, addrResult);
+
             // sort catalogs to be deterministic
             aaContext.runtimeData.CatalogLocations.Sort((a, b) => string.Compare(a.InternalId, b.InternalId, StringComparison.Ordinal));
+
+            // write settings.json
             var settingsPath = GenerateRuntimeSettingsFile(aaContext, builderInput);
             genericResult.LocationCount = aaContext.locations.Count;
             genericResult.OutputPath = settingsPath;
 
-            GenerateBuildLayout(extractData.BuildContext, aaContext.internalToOutputBundleName, contentCatalogs.ToArray(), addrResult);
+            GenerateBuildLayout(m_BuildContext, aaContext.internalToOutputBundleName, contentCatalogs.ToArray(), addrResult);
             return genericResult;
+        }
+
+        /// <summary>
+        /// Runs each schema builder's <see cref="ISchemaBuilder.Build"/> and
+        /// <see cref="ISchemaBuilder.GenerateCatalogLocations"/>, then merges the resulting
+        /// locations by catalog id.
+        /// </summary>
+        private Dictionary<string, List<ContentCatalogDataEntry>> BuildAndMergeLocations(
+            AddressableAssetsBuildContext aaContext,
+            AddressablesPlayerBuildResult addrResult,
+            out Dictionary<ISchemaBuilder, List<string>> builderToCatalogIds)
+        {
+            // this is the actual catalogs with all merged locations
+            var mergedLocations = new Dictionary<string, List<ContentCatalogDataEntry>>();
+
+            // this is a collection of the catalogs split by schema builder for generating
+            // content updates and stripping information
+            builderToCatalogIds = new Dictionary<ISchemaBuilder, List<string>>();
+
+            foreach (ISchemaBuilder schemaBuilder in SchemaBuilders)
+            {
+                using (Log.ScopedStep(LogLevel.Info, $"Building {schemaBuilder.Name}"))
+                {
+                    schemaBuilder.Build(aaContext, addrResult);
+                }
+
+                using (Log.ScopedStep(LogLevel.Info, $"Generating {schemaBuilder.Name} Catalog Locations"))
+                {
+                    var locationsByCatalogId = schemaBuilder.GenerateCatalogLocations(aaContext, addrResult);
+                    if (locationsByCatalogId == null)
+                        continue;
+
+                    var contributedIds = new List<string>();
+                    foreach (var kvp in locationsByCatalogId)
+                    {
+                        if (!mergedLocations.TryGetValue(kvp.Key, out var existing))
+                        {
+                            existing = new List<ContentCatalogDataEntry>();
+                            mergedLocations[kvp.Key] = existing;
+                        }
+
+                        existing.AddRange(kvp.Value);
+                        contributedIds.Add(kvp.Key);
+                    }
+
+                    builderToCatalogIds[schemaBuilder] = contributedIds;
+                }
+            }
+
+            return mergedLocations;
+        }
+
+        /// <summary>
+        /// Writes one catalog file per merged catalog id and returns the generated catalog list.
+        /// </summary>
+        private List<ContentCatalogData> WriteMergedCatalogs(
+            Dictionary<string, List<ContentCatalogDataEntry>> mergedLocations,
+            AddressablesDataBuilderInput builderInput,
+            AddressableAssetsBuildContext aaContext,
+            AddressablesPlayerBuildResult addrResult,
+            out Dictionary<string, ContentCatalogData> catalogIdToData)
+        {
+            var contentCatalogs = new List<ContentCatalogData>();
+            using (Log.ScopedStep(LogLevel.Info, $"Writing Catalogs"))
+            {
+                catalogIdToData = new Dictionary<string, ContentCatalogData>();
+
+                var sortedCatalogIds = new List<string>(mergedLocations.Keys);
+                sortedCatalogIds.Sort(StringComparer.Ordinal);
+                foreach (var catalogId in sortedCatalogIds)
+                {
+                    var catalogEntries = mergedLocations[catalogId];
+                    catalogEntries.Sort((a, b) =>
+                        string.Compare(a.InternalId, b.InternalId, StringComparison.Ordinal));
+
+                    var catalogPathConfig = CreateCatalogPathConfig(aaContext.Settings, catalogId, builderInput.PlayerVersion, builderInput.RuntimeCatalogFilename);
+                    var buildResultHash = ComputeCatalogBuildHash(catalogId, addrResult);
+
+                    var catalogBuilder = CreateCatalogBuilder(aaContext.Settings);
+                    CatalogBundleConfig catalogBundleConfig = null;
+                    if (catalogId == ResourceManagerRuntimeData.kCatalogAddress
+                        && catalogBuilder.SupportsLocalCatalogBundling
+                        && aaContext.Settings.BundleLocalCatalog)
+                    {
+                        var configFolder = AddressableAssetSettingsDefaultObject.kDefaultConfigFolder;
+                        if (builderInput.AddressableSettings != null && builderInput.AddressableSettings.IsPersisted)
+                            configFolder = builderInput.AddressableSettings.ConfigFolder;
+                        catalogBundleConfig = new CatalogBundleConfig
+                        {
+                            ConfigFolder = configFolder,
+                            Target = builderInput.Target,
+                            TargetGroup = builderInput.TargetGroup
+                        };
+                    }
+
+                    using (Log.ScopedStep(LogLevel.Info, $"Generating {catalogBuilder.CatalogExtension} Catalog {catalogId}"))
+                    {
+                        var catalogData = catalogBuilder.GenerateCatalog(
+                            Log,
+                            catalogPathConfig,
+                            catalogId,
+                            catalogEntries,
+                            aaContext.runtimeData.CatalogLocations,
+                            aaContext.providerTypes,
+                            builderInput.Registry,
+                            buildResultHash,
+                            aaContext.Settings.BuildRemoteCatalog,
+                            aaContext.Settings.CatalogRequestsTimeout,
+                            catalogBundleConfig);
+
+                        if (catalogData != null)
+                        {
+                            contentCatalogs.Add(catalogData);
+                            catalogIdToData[catalogId] = catalogData;
+                        }
+                        else
+                        {
+                            Log.AddEntry(LogLevel.Warning, $"No catalog generated for catalog id: {catalogId}");
+                        }
+                    }
+                }
+            }
+            return contentCatalogs;
+        }
+
+        /// <summary>
+        /// Runs per-builder type stripping and content-update, using the first generated catalog
+        /// that each builder contributed as the representative.
+        /// </summary>
+        private void ApplyTypeStrippingAndContentUpdate(
+            Dictionary<ISchemaBuilder, List<string>> builderToCatalogIds,
+            Dictionary<string, ContentCatalogData> catalogIdToData,
+            AddressableAssetsBuildContext aaContext,
+            AddressablesPlayerBuildResult addrResult)
+        {
+            foreach (var kvp in builderToCatalogIds)
+            {
+                var schemaBuilder = kvp.Key;
+                var catalogIds = kvp.Value;
+                if (catalogIds.Count == 0)
+                    continue;
+
+                ContentCatalogData representativeCatalog = null;
+                foreach (var id in catalogIds)
+                {
+                    if (catalogIdToData.TryGetValue(id, out representativeCatalog))
+                        break;
+                }
+
+                if (representativeCatalog != null)
+                    schemaBuilder.GenerateTypeStrippingInfo(aaContext, representativeCatalog);
+
+                schemaBuilder.GenerateContentUpdate(aaContext, addrResult);
+            }
         }
 
         private void AddInstanceAndSceneProvider(AddressableAssetsBuildContext aaContext)
@@ -294,19 +475,77 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 
         /// <summary>
+        /// Builds a <see cref="CatalogPathConfig"/> for the given catalog id.
+        /// The main catalog (<see cref="ResourceManagerRuntimeData.kCatalogAddress"/>) uses the
+        /// runtime catalog filename and versioned filename from the builder input; additional catalog
+        /// ids use the id itself as both filename and load-path suffix.
+        /// </summary>
+        internal CatalogPathConfig CreateCatalogPathConfig(AddressableAssetSettings aaSettings, string catalogId, string playerVersion, string runtimeCatalogFilename)
+        {
+            var remoteBuildPath = aaSettings.RemoteCatalogBuildPath.Id != "" ? aaSettings.RemoteCatalogBuildPath.GetValue(aaSettings) : "";
+            var remoteLoadPath = aaSettings.RemoteCatalogLoadPath.Id != "" ? aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings) : "";
+
+
+            var runtimeCatalogFileName = catalogId;
+            var versionedFileName = aaSettings.profileSettings.EvaluateString(aaSettings.activeProfileId, $"{catalogId}_{playerVersion}");
+            if (catalogId == ResourceManagerRuntimeData.kCatalogAddress)
+            {
+                runtimeCatalogFileName = runtimeCatalogFilename;
+                versionedFileName = aaSettings.profileSettings.EvaluateString(aaSettings.activeProfileId, $"{runtimeCatalogFilename}_{playerVersion}");
+            }
+
+            return new CatalogPathConfig
+                {
+                    BuildPath = Addressables.BuildPath,
+                    LoadPath = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/" + runtimeCatalogFileName,
+                    RemoteBuildPath = remoteBuildPath,
+                    RemoteLoadPath = remoteLoadPath,
+                    RuntimeCatalogFilename = runtimeCatalogFileName,
+                    VersionedCatalogFileName = versionedFileName,
+                };
+        }
+
+        /// <summary>
+        /// Computes the build result hash for a catalog.
+        /// For the main catalog (<see cref="ResourceManagerRuntimeData.kCatalogAddress"/>) this
+        /// includes asset-bundle build hashes. For all catalog ids, content-directory build hashes
+        /// (when <c>ENABLE_CONTENT_DIRECTORIES</c> is set) matching the catalog id are also included.
+        /// A bundled-only build produces a byte-identical hash to the previous implementation.
+        /// </summary>
+        private string ComputeCatalogBuildHash(string catalogId, AddressablesPlayerBuildResult addrResult)
+        {
+            if (addrResult == null)
+                return null;
+
+            var allHashes = new List<object>();
+
+            if (catalogId == ResourceManagerRuntimeData.kCatalogAddress)
+                foreach (var r in addrResult.AssetBundleBuildResults)
+                    allHashes.Add(r.Hash);
+
+#if ENABLE_CONTENT_DIRECTORIES
+            foreach (var r in addrResult.ContentDirectoryBuildResults)
+                if (r.CatalogName == catalogId)
+                    allHashes.Add(r.Hash);
+#endif
+
+            return HashingMethods.Calculate(allHashes.ToArray()).ToString();
+        }
+
+        /// <summary>
         /// Generates the runtime settings JSON file that configures Addressables at runtime.
         /// </summary>
         /// <param name="aaContext">The Addressables build context containing runtime data.</param>
         /// <param name="builderInput">The build input containing settings and registry.</param>
         /// <returns>The path to the generated settings file.</returns>
-        public string GenerateRuntimeSettingsFile(AddressableAssetsBuildContext aaContext, AddressablesDataBuilderInput builderInput)
+        private string GenerateRuntimeSettingsFile(AddressableAssetsBuildContext aaContext, AddressablesDataBuilderInput builderInput)
         {
-            var settingsPath = Addressables.BuildPath + "/" + builderInput.RuntimeSettingsFilename;
-
             using (Log.ScopedStep(LogLevel.Info, "Generate Settings"))
-                WriteFile(settingsPath, JsonUtility.ToJson(aaContext.runtimeData), builderInput.Registry);
-
-            return settingsPath;
+            {
+                var settingsPath = Addressables.BuildPath + "/" + builderInput.RuntimeSettingsFilename;
+                builderInput.Registry.WriteAndAddFile(settingsPath, JsonUtility.ToJson(aaContext.runtimeData));
+                return settingsPath;
+            }
         }
 
         private void GenerateBuildLayout(IBuildContext buildContext,
@@ -334,7 +573,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <inheritdoc />
         protected override string ProcessGroup(AddressableAssetGroup assetGroup, AddressableAssetsBuildContext aaContext)
         {
-            if (assetGroup == null)
+            if (assetGroup == null || !assetGroup.IncludeInBuild)
                 return string.Empty;
 
             if (assetGroup.Schemas.Count == 0)
@@ -347,19 +586,23 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             foreach (var schema in assetGroup.Schemas)
             {
-                string errorString = "";
-                if (schema.IsEnabled)
+                using (Log.ScopedStep(LogLevel.Verbose, "ProcessGroupSchema",
+                           ("Name", schema.GetType().FullName),
+                           ("Enabled", schema.IsEnabled.ToString())))
                 {
-                    errorString = schema.CanEnableSchema();
+                    string errorString = "";
+                    if (schema.IsEnabled && assetGroup.IncludeInBuild)
+                    {
+                        errorString = schema.CanEnableSchema();
+                        if (!string.IsNullOrEmpty(errorString))
+                            return errorString;
+                    }
+
+                    errorString = ProcessGroupSchema(schema, assetGroup, aaContext);
                     if (!string.IsNullOrEmpty(errorString))
                         return errorString;
                 }
-
-                errorString = ProcessGroupSchema(schema, assetGroup, aaContext);
-                if (!string.IsNullOrEmpty(errorString))
-                    return errorString;
             }
-
             return string.Empty;
         }
 
@@ -378,18 +621,17 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 if (!schemaBuilder.CanBuildSchema(schema))
                     continue;
-                var errorString = schemaBuilder.ProcessGroupSchema(schema, assetGroup, aaContext);
+                var errorString = schemaBuilder.ProcessGroupSchema(aaContext, schema);
                 if (errorString != string.Empty)
                     return errorString;
             }
-            AssetDatabase.Refresh();
             return string.Empty;
         }
 
         /// <summary>
         /// A temporary list of the groups that get processed during a build.
         /// </summary>
-        List<AddressableAssetGroup> m_IncludedGroupsInBuild = new List<AddressableAssetGroup>();
+        List<AddressableAssetGroup> m_IncludedGroupsInBuild;
 
         /// <summary>
         /// Returns a delegate bound to this instance's <see cref="ProcessBundledAssetSchema"/> via virtual dispatch.
@@ -452,6 +694,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> bundleInputDefs, BundledAssetGroupSchema schema,
             Func<AddressableAssetEntry, bool> entryFilter = null)
         {
+            var labelStringBuilder = new StringBuilder();
             var combinedEntries = new List<AddressableAssetEntry>();
             var packingMode = schema.BundleMode;
             var namingMode = schema.InternalBundleIdMode;
@@ -493,10 +736,11 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         {
                             if (entryFilter != null && !entryFilter(a))
                                 continue;
-                            var sb = new StringBuilder();
                             foreach (var l in a.labels)
-                                sb.Append(l);
-                            var key = sb.ToString();
+                                labelStringBuilder.Append(l);
+                            var key = labelStringBuilder.ToString();
+                            labelStringBuilder.Clear();
+
                             List<AddressableAssetEntry> entries;
                             if (!labelTable.TryGetValue(key, out entries))
                                 labelTable.Add(key, entries = new List<AddressableAssetEntry>());
@@ -525,7 +769,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return combinedEntries;
         }
 
-        internal static void GenerateBuildInputDefinitions(List<AddressableAssetEntry> allEntries, List<AssetBundleBuild> buildInputDefs, string groupGuid, string address,
+        private static void GenerateBuildInputDefinitions(List<AddressableAssetEntry> allEntries, List<AssetBundleBuild> buildInputDefs, string groupGuid, string address,
             bool ignoreUnsupportedFilesInBuild)
         {
             var scenes = new List<AddressableAssetEntry>();
@@ -570,15 +814,6 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return assetsInputDef;
         }
 
-
-        internal string ConstructOutputName(AddressableAssetGroup assetGroup, AddressableAssetGroupSchema schema, BundleDetails info, string name)
-        {
-            var bundledAssetSchema = schema as BundledAssetGroupSchema;
-            if (bundledAssetSchema != null)
-                return ConstructAssetBundleName(assetGroup, bundledAssetSchema, info, name);
-            return "";
-        }
-
         /// <summary>
         /// Creates a name for an asset bundle using the provided information.
         /// </summary>
@@ -616,13 +851,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             {
                 try
                 {
-#if ENABLE_JSON_CATALOG
-                    var catalogPath = Addressables.BuildPath + "/catalog.json";
+                    var settings = AddressableAssetSettingsDefaultObject.Settings;
+                    var catalogExt = settings?.CatalogProviderType != null
+                        ? $".{CreateCatalogBuilder(settings).CatalogExtension}"
+                        : ".bin";
+                    var catalogPath = Addressables.BuildPath + "/catalog" + catalogExt;
                     DeleteFile(catalogPath);
-#else
-                    var catalogPath = Addressables.BuildPath + "/catalog.bin";
-                    DeleteFile(catalogPath);
-#endif
                     var settingsPath = Addressables.BuildPath + "/settings.json";
                     DeleteFile(settingsPath);
                     Directory.Delete(Addressables.BuildPath, true);
@@ -640,12 +874,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var settingsPath = Addressables.BuildPath + "/settings.json";
             if (!File.Exists(settingsPath))
                 return false;
-            foreach (var schemaBuilder in SchemaBuilders)
-            {
-                if (!schemaBuilder.IsDataBuilt())
-                    return false;
-            }
+
             return true;
         }
+
+        internal ICatalogBuilder CreateCatalogBuilderForTest(AddressableAssetSettings settings) => CreateCatalogBuilder(settings);
     }
 }

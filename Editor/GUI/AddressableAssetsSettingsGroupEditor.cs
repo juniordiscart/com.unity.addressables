@@ -11,7 +11,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.Serialization;
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
 using System.Threading.Tasks;
 using static UnityEditor.AddressableAssets.Build.CcdBuildEvents;
 #endif
@@ -110,6 +110,9 @@ namespace UnityEditor.AddressableAssets.GUI
 
 		const int k_SplitterWidth = 3;
 
+#if ENABLE_CONTENT_DIRECTORIES
+        const float k_BannerHeight = 28f;
+#endif
 
 		public AddressableAssetsSettingsGroupEditor(AddressableAssetsWindow w)
 		{
@@ -223,6 +226,9 @@ namespace UnityEditor.AddressableAssets.GUI
                 case AddressableAssetSettings.ModificationEvent.GroupMoved:
 				case AddressableAssetSettings.ModificationEvent.EntryModified:
 				case AddressableAssetSettings.ModificationEvent.BatchModification:
+                case AddressableAssetSettings.ModificationEvent.GroupSchemaAdded:
+                case AddressableAssetSettings.ModificationEvent.GroupSchemaRemoved:
+                case AddressableAssetSettings.ModificationEvent.GroupSchemaModified:
                     // the reload does a new sort
                     m_EntryTree?.Reload();
 
@@ -399,11 +405,17 @@ namespace UnityEditor.AddressableAssets.GUI
 					{
 						if (buildOption.SelectableBuildScript)
 						{
+                            // Hide BuildScriptPackedMode so BuildScriptSchemaDriven is the default, but only when the
+                            // schema-driven script actually exists; otherwise keep packed visible so the menu still has
+                            // a usable build script instead of showing "No Build Script Available".
+                            bool schemaDrivenBuilderExists = SchemaDrivenBuilderExists(settings);
 							bool addressablesPlayerBuildResultBuilderExists = false;
 							for (int i = 0; i < settings.DataBuilders.Count; i++)
 							{
 								var dataBuilder = settings.GetDataBuilder(i);
-                                if (dataBuilder != null && dataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
+
+                                if (dataBuilder != null && dataBuilder.CanBuildData<AddressablesPlayerBuildResult>()
+                                    && (!schemaDrivenBuilderExists || dataBuilder.GetType() != typeof(BuildScriptPackedMode)))
 								{
 									addressablesPlayerBuildResultBuilderExists = true;
 									BuildMenuContext context = new BuildMenuContext()
@@ -414,8 +426,6 @@ namespace UnityEditor.AddressableAssets.GUI
 									};
 
                                     string displayName = dataBuilder.Name;
-                                    if (dataBuilder.GetType() == typeof(BuildScriptSchemaDriven))
-                                        displayName += " (Recommended)";
                                     genericDropdownMenu.AddItem(new GUIContent(buildOption.BuildMenuPath + "/" + displayName), false, OnBuildAddressables, context);
 								}
 							}
@@ -449,7 +459,7 @@ namespace UnityEditor.AddressableAssets.GUI
 					genericDropdownMenu.DropDown(rBuild);
 				}
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
                 var guiBuildToCcd = new GUIContent("Build to CCD", "Options for building Addressable Assets");
                 Rect rBuildToCcd = GUILayoutUtility.GetRect(guiBuildToCcd, EditorStyles.toolbarDropDown);
                 if (EditorGUI.DropdownButton(rBuildToCcd, guiBuildToCcd, FocusType.Passive, EditorStyles.toolbarDropDown))
@@ -461,11 +471,16 @@ namespace UnityEditor.AddressableAssets.GUI
                     {
                         if (buildOption.SelectableBuildScript)
                         {
+                            // Hide BuildScriptPackedMode so BuildScriptSchemaDriven is the default, but only when the
+                            // schema-driven script actually exists; otherwise keep packed visible so the menu still has
+                            // a usable build script instead of showing "No Build Script Available".
+                            bool schemaDrivenBuilderExists = SchemaDrivenBuilderExists(settings);
                             bool addressablesPlayerBuildResultBuilderExists = false;
                             for (int i = 0; i < settings.DataBuilders.Count; i++)
                             {
                                 var dataBuilder = settings.GetDataBuilder(i);
-                                if (dataBuilder != null && dataBuilder.CanBuildData<AddressablesPlayerBuildResult>())
+                                if (dataBuilder != null && dataBuilder.CanBuildData<AddressablesPlayerBuildResult>()
+                                    && (!schemaDrivenBuilderExists || dataBuilder.GetType() != typeof(BuildScriptPackedMode)))
                                 {
                                     addressablesPlayerBuildResultBuilderExists = true;
                                     BuildMenuContext context = new BuildMenuContext()
@@ -476,8 +491,6 @@ namespace UnityEditor.AddressableAssets.GUI
                                     };
 
                                     string displayName = dataBuilder.Name;
-                                    if (dataBuilder.GetType() == typeof(BuildScriptSchemaDriven))
-                                        displayName += " (Recommended)";
                                     genericDropdownMenu.AddItem(new GUIContent(displayName), false, OnBuildCcd, context);
                                 }
                             }
@@ -558,6 +571,18 @@ namespace UnityEditor.AddressableAssets.GUI
 			return displayMenus;
 		}
 
+        // Returns true if the settings contain a BuildScriptSchemaDriven data builder. The build menus hide
+        // BuildScriptPackedMode in favor of the schema-driven script, but only when it is actually present.
+        static bool SchemaDrivenBuilderExists(AddressableAssetSettings settings)
+        {
+            for (int i = 0; i < settings.DataBuilders.Count; i++)
+            {
+                if (settings.GetDataBuilder(i) is BuildScriptSchemaDriven)
+                    return true;
+            }
+            return false;
+        }
+
 
 
         private static void OnBuildAddressables(object ctx)
@@ -607,7 +632,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return result;
 		}
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
         private static void OnBuildCcd(object ctx)
         {
             BuildMenuContext buildAddressablesContext = (BuildMenuContext)ctx;
@@ -854,7 +879,7 @@ namespace UnityEditor.AddressableAssets.GUI
 			Reload();
 		}
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
 		async void OnBuildAndRelease()
 		{
 			await AddressableAssetSettings.BuildAndReleasePlayerContent();
@@ -970,9 +995,26 @@ namespace UnityEditor.AddressableAssets.GUI
 			HandleVerticalResize(pos);
 			var inRectY = pos.height;
 			var searchRect = new Rect(pos.xMin, pos.yMin, pos.width, k_SearchHeight);
-			var treeRect = new Rect(pos.xMin, pos.yMin + k_SearchHeight, pos.width, inRectY - k_SearchHeight);
+
+            float bannerHeight = 0f;
+#if ENABLE_CONTENT_DIRECTORIES
+            if (!ProjectConfigData.UserHasSeenContentDirectoryAnnouncement)
+                bannerHeight = k_BannerHeight;
+#endif
+
+            var bannerRect = new Rect(pos.xMin, pos.yMin + k_SearchHeight, pos.width, bannerHeight);
+            var treeRect = new Rect(pos.xMin, pos.yMin + k_SearchHeight + bannerHeight, pos.width, inRectY - k_SearchHeight - bannerHeight);
 
 			TopToolbar(searchRect);
+
+#if ENABLE_CONTENT_DIRECTORIES
+            if (DrawContentDirectoryBanner(bannerRect))
+            {
+                if (window != null)
+                    window.Repaint();
+            }
+#endif
+
 			m_EntryTree.OnGUI(treeRect);
 			return m_ResizingVerticalSplitter;
 		}
@@ -1046,5 +1088,86 @@ namespace UnityEditor.AddressableAssets.GUI
 			else
 				m_VerticalSplitterPercent = Mathf.Clamp(m_VerticalSplitterPercent, 0.20f, 0.90f);
 		}
+
+#if ENABLE_CONTENT_DIRECTORIES
+        bool DrawContentDirectoryBanner(Rect rect)
+        {
+            if (ProjectConfigData.UserHasSeenContentDirectoryAnnouncement || rect.height <= 0)
+                return false;
+
+            bool needsRepaint = false;
+
+            //Using EditorStyles.helpbox.Draw ensure that a skin-appropriate background is drawn so the banner matches the active editor theme
+            if (Event.current.type == EventType.Repaint)
+                EditorStyles.helpBox.Draw(rect, GUIContent.none, 0);
+
+            // Add padding
+            Rect contentRect = new Rect(rect.x + 8, rect.y, rect.width - 16, rect.height);
+
+            // Close button on the right using built-in close icon
+            float closeButtonSize = 14f;
+            Rect closeButtonRect = new Rect(contentRect.xMax - closeButtonSize, contentRect.y + (contentRect.height - closeButtonSize) / 2, closeButtonSize, closeButtonSize);
+
+            // Draw hover background
+            if (closeButtonRect.Contains(Event.current.mousePosition))
+            {
+                EditorGUI.DrawRect(closeButtonRect, new Color(0.5f, 0.5f, 0.5f, 0.3f));
+            }
+
+            string crossIconName = EditorGUIUtility.isProSkin ? "d_Close" : "Close";
+            GUIContent closeIcon = EditorGUIUtility.IconContent(crossIconName);
+            GUIStyle closeStyle = GUIStyle.none;
+
+            EditorGUIUtility.AddCursorRect(closeButtonRect, MouseCursor.Link);
+            if (UnityEngine.GUI.Button(closeButtonRect, closeIcon, closeStyle))
+            {
+                ProjectConfigData.UserHasSeenContentDirectoryAnnouncement = true;
+                needsRepaint = true;
+            }
+
+            // Text area
+            Rect textRect = new Rect(contentRect.x, contentRect.y, contentRect.width - closeButtonSize - 4, contentRect.height);
+
+            GUIStyle labelStyle = new GUIStyle(EditorStyles.label);
+            labelStyle.alignment = TextAnchor.MiddleLeft;
+            labelStyle.wordWrap = false;
+
+            string message = "For the most up to date way of managing local content, use the Content Directory schema.";
+
+            Vector2 messageSize = labelStyle.CalcSize(new GUIContent(message));
+
+            // Truncate if needed
+            if (messageSize.x > textRect.width)
+            {
+                message = TruncateTextWithEllipsis(message, textRect.width, labelStyle);
+            }
+
+            UnityEngine.GUI.Label(textRect, message, labelStyle);
+
+            return needsRepaint;
+        }
+
+        string TruncateTextWithEllipsis(string text, float maxWidth, GUIStyle style)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            string ellipsis = "...";
+            float ellipsisWidth = style.CalcSize(new GUIContent(ellipsis)).x;
+
+            for (int i = text.Length - 1; i >= 0; i--)
+            {
+                string truncated = text.Substring(0, i);
+                float width = style.CalcSize(new GUIContent(truncated)).x;
+
+                if (width + ellipsisWidth <= maxWidth)
+                {
+                    return truncated + ellipsis;
+                }
+            }
+
+            return ellipsis;
+        }
+#endif
 	}
 }

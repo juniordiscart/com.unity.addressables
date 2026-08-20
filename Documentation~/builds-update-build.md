@@ -1,5 +1,8 @@
 # Create an update build
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 When you distribute content remotely, you can perform a differential update of the previous build to minimize the amount of data your users must download.
 
 Once you have configured remote Addressables groups and have a previous build which contains remote content, you can perform a content update build. To create an update build:
@@ -38,7 +41,7 @@ You can use __Check for Content Update Restrictions__ command to prepare groups 
 
 1. Open the __Addressables Groups__ window in the Unity Editor (__Window__ > __Asset Management__ > __Addressables__ > __Groups__).
 2. In the __Tools__ menu, select __Check for Content Update Restrictions__.
-3. If a group has the [__Prevent Updates__](ContentPackingAndLoadingSchema.md#content-update-restriction) setting enabled in the previous build, the tool gives you the option to move any changed assets to a new remote group. You can change the names of any new remote groups the tool created, but moving assets to different groups can have unintended consequences.
+3. If a group has the [__Prevent Updates__](group-inspector-settings-reference.md#content-update-restriction) setting enabled in the previous build, the tool gives you the option to move any changed assets to a new remote group. You can change the names of any new remote groups the tool created, but moving assets to different groups can have unintended consequences.
 
 When you create the update build, the new catalog maps the changed assets to their new remote AssetBundles, while still mapping the unchanged assets to their original AssetBundles. Checking for content update restrictions doesn't check groups with __Prevent Updates__ disabled.
 

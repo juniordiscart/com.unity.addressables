@@ -108,26 +108,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                     var assetPath = m_ProvideHandle.ResourceManager.TransformInternalId(m_ProvideHandle.Location);
                     if (m_ProvideHandle.Type.IsArray)
                     {
-#if !UNITY_2021_1_OR_NEWER
-                        if (AsyncOperationHandle.IsWaitingForCompletion)
-                        {
-                            GetArrayResult(m_AssetBundle.LoadAssetWithSubAssets(assetPath, m_ProvideHandle.Type.GetElementType()));
-                            CompleteOperation();
-                        }
-                        else
-#endif
                             m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetElementType());
                     }
                     else if (m_ProvideHandle.Type.IsGenericType && typeof(IList<>) == m_ProvideHandle.Type.GetGenericTypeDefinition())
                     {
-#if !UNITY_2021_1_OR_NEWER
-                        if (AsyncOperationHandle.IsWaitingForCompletion)
-                        {
-                            GetListResult(m_AssetBundle.LoadAssetWithSubAssets(assetPath, m_ProvideHandle.Type.GetGenericArguments()[0]));
-                            CompleteOperation();
-                        }
-                        else
-#endif
                             m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(assetPath, m_ProvideHandle.Type.GetGenericArguments()[0]);
                     }
                     else
@@ -135,26 +119,10 @@ namespace UnityEngine.ResourceManagement.ResourceProviders
                         if (ResourceManagerConfig.ExtractKeyAndSubKey(assetPath, out string mainPath, out string subKey))
                         {
                             subObjectName = subKey;
-#if !UNITY_2021_1_OR_NEWER
-                            if (AsyncOperationHandle.IsWaitingForCompletion)
-                            {
-                                GetAssetSubObjectResult(m_AssetBundle.LoadAssetWithSubAssets(mainPath, m_ProvideHandle.Type));
-                                CompleteOperation();
-                            }
-                            else
-#endif
                                 m_RequestOperation = m_AssetBundle.LoadAssetWithSubAssetsAsync(mainPath, m_ProvideHandle.Type);
                         }
                         else
                         {
-#if !UNITY_2021_1_OR_NEWER
-                            if (AsyncOperationHandle.IsWaitingForCompletion)
-                            {
-                                GetAssetResult(m_AssetBundle.LoadAsset(assetPath, m_ProvideHandle.Type));
-                                CompleteOperation();
-                            }
-                            else
-#endif
                                 m_RequestOperation = m_AssetBundle.LoadAssetAsync(assetPath, m_ProvideHandle.Type);
                         }
                     }

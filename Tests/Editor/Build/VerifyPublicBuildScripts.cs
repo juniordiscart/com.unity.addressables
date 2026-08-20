@@ -6,6 +6,8 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.TestTools;
 using File = System.IO.File;
 using Path = System.IO.Path;
@@ -68,10 +70,65 @@ public class VerifyPublicBuildScripts
         "Editor/Build/DataBuilders/BuildScriptFastMode.cs",
         "Editor/Build/DataBuilders/BuildScriptPackedMode.cs",
         "Editor/Build/DataBuilders/BuildScriptPackedPlayMode.cs",
+#if ENABLE_CONTENT_DIRECTORIES
         "Editor/Build/DataBuilders/BuildScriptSchemaDriven.cs",
+#endif
+        "Editor/Build/CatalogBuilders/JsonCatalogBuilder.cs",
+        "Editor/Build/CatalogBuilders/BinaryCatalogBuilder.cs",
+        "Runtime/ResourceProviders/JsonCatalogProvider.cs",
+        "Runtime/ResourceProviders/BinaryCatalogProvider.cs",
+        "Runtime/ResourceManager/ResourceProviders/InstanceProvider.cs",
+        "Editor/Build/DataBuilders/SchemaBuilders/BundledAssetSchemaBuilder.cs",
         "Samples/CustomBuildAndPlaymodeScripts/Editor/CustomBuildScript.cs",
         "Samples/CustomBuildAndPlaymodeScripts/Editor/CustomPlayModeScript.cs",
     };
+
+    /// <summary>
+    /// A named group of build script files that must compile together.
+    /// </summary>
+    public class BuildScriptGroupData
+    {
+        /// <summary>
+        /// The name of the build script group, used as the test case name.
+        /// </summary>
+        public readonly string Name;
+
+        /// <summary>
+        /// The package-relative file paths of the scripts in the group.
+        /// </summary>
+        public readonly string[] Files;
+
+        /// <summary>
+        /// Creates a new group of build script files.
+        /// </summary>
+        /// <param name="name">The name of the group.</param>
+        /// <param name="files">The package-relative file paths of the scripts in the group.</param>
+        public BuildScriptGroupData(string name, string[] files)
+        {
+            Name = name;
+            Files = files;
+        }
+
+        /// <summary>
+        /// Returns the group name.
+        /// </summary>
+        /// <returns>The name of the group.</returns>
+        public override string ToString() => Name;
+    }
+
+
+#if ENABLE_CONTENT_DIRECTORIES
+    private static BuildScriptGroupData[] BuildScriptGroups =
+    {
+        new BuildScriptGroupData("ContentDirectorySchemaBuilder", new[]
+        {
+            "Editor/Build/DataBuilders/SchemaBuilders/ContentDirectorySchemaBuilder.cs",
+            "Editor/Build/DataBuilders/SchemaBuilders/ContentDirectoryArchiver.cs",
+            "Editor/Build/DataBuilders/SchemaBuilders/WebGLContentDirectoryManifest.cs",
+        })
+    };
+
+#endif
 
     /// <summary>
     /// Verify that the public build scripts aren't using internal APIs directly
@@ -84,6 +141,7 @@ public class VerifyPublicBuildScripts
         var fullPath = String.Join($"{Path.DirectorySeparatorChar}", new[] { m_PackagePath, buildScriptPath });
         fullPath = fullPath.Replace("Samples", m_SamplePath);
         var content = File.ReadAllText(fullPath);
+        content = StripContentDirectoriesGuard(content);
         content = content.Replace("namespace UnityEditor.AddressableAssets.Build.DataBuilders", "namespace TestBuildScriptNamespace");
         // this is the using statement for the package the scripts are being copied from
         content = "using UnityEditor; // added by unit test\n" + content;
@@ -101,5 +159,62 @@ public class VerifyPublicBuildScripts
 
         // assert we didn't get any log messages when compiling the test file
         LogAssert.NoUnexpectedReceived();
+    }
+
+#if ENABLE_CONTENT_DIRECTORIES
+    /// <summary>
+    /// Verify that a group of related build scripts compile together without using internal APIs
+    /// </summary>
+    /// <param name="buildScriptPaths">File paths of the build scripts to compile as a group</param>
+    /// <returns>IEnumerator for async test</returns>
+    [UnityTest]
+    public IEnumerator Verify_BuildScriptGroup_HasNoInternalApis([ValueSource(nameof(BuildScriptGroups))] BuildScriptGroupData group)
+    {
+        foreach (var buildScriptPath in group.Files)
+        {
+            var fullPath = String.Join($"{Path.DirectorySeparatorChar}", new[] { m_PackagePath, buildScriptPath });
+            fullPath = fullPath.Replace("Samples", m_SamplePath);
+            var content = File.ReadAllText(fullPath);
+            content = StripContentDirectoriesGuard(content);
+            content = content.Replace("namespace UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders", "namespace TestBuildScriptNamespace");
+            content = content.Replace("namespace UnityEditor.AddressableAssets.Build.DataBuilders", "namespace TestBuildScriptNamespace");
+            content = "using UnityEditor; // added by unit test\n" + content;
+            content = "using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders; // added by unit test\n" + content;
+            content = "using UnityEditor.AddressableAssets.Build.DataBuilders; // added by unit test\n" + content;
+            content = "using UnityEditor.AddressableAssets.Build; // added by unit test\n" + content;
+            content = "using UnityEditor.AddressableAssets; // added by unit test\n" + content;
+
+            var testFilePath = String.Join($"{Path.DirectorySeparatorChar}", new[] { m_FolderPath, Path.GetFileName(buildScriptPath) });
+            Debug.Log(testFilePath);
+
+            File.WriteAllText(testFilePath, content);
+        }
+
+        AssetDatabase.Refresh();
+        yield return new WaitForDomainReload();
+
+        LogAssert.NoUnexpectedReceived();
+    }
+#endif
+
+    // Content Directory source files are wrapped in #if ENABLE_CONTENT_DIRECTORIES.
+    // That symbol is not defined for the predefined Assembly-CSharp-Editor assembly
+    // the copied test files land in, so without stripping the guard the body would
+    // be preprocessed out and the compile check would pass vacuously.
+    private static string StripContentDirectoriesGuard(string content)
+    {
+        string trimmed = content.TrimStart();
+        if (!trimmed.StartsWith("#if ENABLE_CONTENT_DIRECTORIES"))
+            return content;
+
+        int ifIndex = content.IndexOf("#if ENABLE_CONTENT_DIRECTORIES", StringComparison.Ordinal);
+        int lineEnd = content.IndexOf('\n', ifIndex);
+        content = content.Substring(lineEnd + 1);
+
+        int endifIndex = content.LastIndexOf("#endif", StringComparison.Ordinal);
+        if (endifIndex >= 0)
+            content = content.Substring(0, endifIndex);
+
+        return content;
     }
 }

@@ -64,7 +64,7 @@ To create a new output rule, go to **Assets** > **Create** > **Addressables** > 
 
 ### Customize group names
 
-Using asset names or folder paths to produce more descriptive group names makes group names path-dependent. In that case, renaming or moving an asset makes Unity generate a completely new group, which might trigger AssetBundle updates.
+Using asset names or folder paths to produce more descriptive group names makes group names path-dependent. In that case, renaming or moving an asset makes Unity generate a completely new group, which might trigger content updates.
 
 If you prefer custom naming behavior, you can define it by creating a custom `OutputRule` and overriding the `Refine` method. The `OutputRule` abstract class also provides a `Rename` method to assist with this.
 

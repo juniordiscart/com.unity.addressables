@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
@@ -11,6 +12,9 @@ namespace UnityEditor.AddressableAssets.GUI
 	{
 		private SearchRequest m_Request;
 		private string m_HelpUrl;
+        private const string k_WindowIconPathDark = "Packages/com.unity.addressables/Editor/Icons/Groups Window/Dark Theme/Addressables Window/d_AddressablesWindow.png";
+        private const string k_WindowIconPathLight = "Packages/com.unity.addressables/Editor/Icons/Groups Window/Light Theme/Addressables Window/AddressablesWindow.png";
+        private static Dictionary<string, Texture2D> s_WindowIconCache = new Dictionary<string, Texture2D>();
 
 		[FormerlySerializedAs("m_groupEditor")]
 		[SerializeField]
@@ -37,12 +41,45 @@ namespace UnityEditor.AddressableAssets.GUI
 			}
 		}
 
+        private static Texture2D GetWindowIcon()
+        {
+            bool isDark = EditorGUIUtility.isProSkin;
+            string path = isDark ? k_WindowIconPathDark : k_WindowIconPathLight;
+
+            // For high-DPI displays, try to load the @2x variant first
+            string hiDpiPath = null;
+            if (EditorGUIUtility.pixelsPerPoint > 1f)
+            {
+                hiDpiPath = path.Replace(".png", "@2x.png");
+            }
+
+            // Check cache first (use hi-DPI path as cache key if available)
+            string cacheKey = hiDpiPath ?? path;
+            if (s_WindowIconCache.TryGetValue(cacheKey, out var cachedIcon))
+                return cachedIcon;
+
+            // Try to load hi-DPI variant first, fall back to base icon
+            Texture2D icon = null;
+            if (hiDpiPath != null)
+            {
+                icon = AssetDatabase.LoadAssetAtPath<Texture2D>(hiDpiPath);
+            }
+            if (icon == null)
+            {
+                icon = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            }
+
+            // Cache the result (including null to prevent repeated disk access)
+            s_WindowIconCache[cacheKey] = icon;
+            return icon;
+        }
+
 		[MenuItem("Window/Asset Management/Addressables/Groups", priority = 2050)]
 		internal static void Init()
 		{
 			AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow);
 			var window = GetWindow<AddressableAssetsWindow>();
-			window.titleContent = new GUIContent("Addressables Groups");
+            window.titleContent = new GUIContent("Addressables Groups", GetWindowIcon());
 			window.minSize = new Vector2(430, 250);
 			window.Show();
 		}
@@ -70,6 +107,8 @@ namespace UnityEditor.AddressableAssets.GUI
 		public void OnEnable()
 		{
 			AddressableAnalytics.ReportUsageEvent(AddressableAnalytics.UsageEventType.OpenGroupsWindow, true);
+            // Ensure the window icon is set (it may not persist across Editor restarts)
+            titleContent = new GUIContent("Addressables Groups", GetWindowIcon());
 			m_GroupEditor?.OnEnable();
 			if (m_Request == null || m_Request.Status == StatusCode.Failure)
 			{

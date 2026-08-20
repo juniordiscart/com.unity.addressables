@@ -5,6 +5,7 @@ using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine;
 using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceLocators;
+using static UnityEditor.AddressableAssets.Build.ContentUpdateScript;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
 {
@@ -110,5 +111,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// A mapping of Asset GUID's to resulting ContentCatalogDataEntry entries.
         /// </summary>
         public Dictionary<GUID, List<ContentCatalogDataEntry>> GuidToCatalogLocation = null;
+
+        /// <summary>
+        /// Cached asset state carried forward through the build for content update generation.
+        /// </summary>
+        public List<CachedAssetState> cachedState;
     }
 }

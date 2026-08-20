@@ -3,9 +3,55 @@ All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
-## [3.1.0] - 2026-05-15
+
+## [4.0.0] - 2026-07-17
+- Fixed binary catalog serialization embedding runtime-specific core library names (mscorlib / System.Private.CoreLib) in generic type arguments, which could fail to resolve when the catalog was loaded on a different .NET runtime than it was built on.
+- Fixed an exception ("Attempting to use an invalid operation handle") thrown from `AddressablesImpl.Dispose()` when stopping Play Mode after loading an Addressable scene.
+- Added support for awaiting an `AsyncOperationHandle`/`AsyncOperationHandle<T>` directly (`await handle`), throwing an `AsyncOperationHandleException` on failure instead of resolving to `default` like `.Task` does.
+- Added `AsyncOperationHandle.ToAwaitable(CancellationToken)` and `ToAwaitable(MonoBehaviour)` overloads: canceling the token releases the handle and cancels the pending await, so a lifetime-scoped token (for example `destroyCancellationToken`) can replace a manual release call.
+- Fixed an issue where an in-flight remote AssetBundle load would never fail when entering play mode without a domain reload, leaving its `AsyncOperationHandle` stuck at `AsyncOperationStatus.None`.
+- Fixed blurry Active Profile checkmark icon on high-DPI displays
+- Added 64-character limit for Profile and Variable names to prevent UI breakage
+- Fixed Addressables section overlap in Inspector on narrow windows
+- Fixed Move Up/Move Down schema reordering in AddressableAssetGroupTemplate Inspector
+- Added hover state visual feedback to Remote/Local dropdown menu items in Profiles window
+- Fixed Prepare for Content Update so groups with a disabled BundledAssetGroupSchema are skipped instead of processed.
+- Exposed `ReferenceCount` as a public read-only property on `AsyncOperationHandle` and `AsyncOperationHandle<TObject>` so memory/leak tracking tools can read the handle's reference count without using reflection. Returns 0 when the handle is not valid.
+- Updating Scriptable Build Pipeline reference.
+- Fixed remote catalog URLs being generated with a double slash between the remote load path and the catalog file name when "Build Remote Catalog" is enabled.
+- Fixed UI issue where Bundle Pack Mode was using the incorrect label in the inspector
+- Optimized Content Directory builds with archiving enabled to eliminate writing artifacts to disk before archiving (now archives directly from UDS)
+- Fixed the Content Directory promotion banner being unreadable in the editor's Light mode and its text appearing as a clickable link on hover.
+- Added build check when a Content Directory uses a remote load path. Skip uploading Content Directory files to Cloud Content Delivery.
+- Fixed an issue where Select Addressable Group window opens outside Editor bounds.
+- Fixed Inspector help (?) button on Addressables ScriptableObjects (e.g. AddressableAssetSettings) opening a missing documentation page (UUM-125928).
+- Made AsyncOperationHandle Reference Count available as a readonly public property
+- Converting a group to Content Directories now disables the AssetBundle schema instead of removing it, so the change can be reversed.
+- Added a "Convert schema(s) to AssetBundles" option to the group context menu to convert Content Directory groups back to AssetBundles.
+- Converting a group with remote content to Content Directories now logs a warning and adds the Content Directory schema in a disabled state instead of producing an invalid configuration.
+- Added the option to load every asset in an addressable folder with a single call (e.g. `Addressables.LoadAssetsAsync<T>(folderAddress, ...)`), similar to `Resources.LoadAll`. Enable via the new **Include Folder Keys in Catalog** group schema property (enabled by default).
+- Added an **Exclude Individual Addresses for Folder Assets** group schema property (disabled by default) to further reduce catalog size when a folder's assets are only ever loaded via the folder key.
+- Added a missing **Include Labels in Catalog** toggle to the Content Directory group schema (`ENABLE_CONTENT_DIRECTORIES`).
+- Fixed a bug where a sprite from a directly-marked `SpriteAtlas`, or a sub-object of a directly-marked main asset, could be miscategorized as a folder child and lose its own address key.
+- Fixed an issue where setting a group's Asset Bundle CRC directly from "Enabled, Including Cache" to "Disabled" would not clear the cached-bundle CRC flag.
+- Moved the "Include in Build" flag to the Addressable group via the new `AddressableAssetGroup.IncludeInBuild` property. `BundledAssetGroupSchema.IncludeInBuild` and `ContentDirectoryGroupSchema.IncludeInBuild` now forward to the owning group so the group is the single source of truth; existing per-schema values are migrated to the group automatically on load.
+- Fixed an `IOException` that could block entering Play Mode when using the Asset Database build script and a build layout report already exists on disk.
+- Fixed an issue where Content Directory builds could silently load the wrong or empty additive scene, or silently load the wrong asset, due to an ambiguous build-time sentinel value. These cases now fail with a clear error instead.
+- Fixed an issue where text in the groups window would be the wrong color when not focused
+
+## [3.1.1] - 2026-05-15
 - Revert breaking changes.
 - Fixed: Build Report now shows correct duplication count for embedded assets referenced in bundles.
+- Added informational helpbox to Content Packing & Loading schema inspector to promote Content Directory schema when Local paths are selected
+- Fixed InvalidOperationException when renaming addressable asset groups
+- Fixed `BuildScriptPackedMode.CreateSchemaDrivenBuildScript` to use `CreateInstance<PackedModeSchemaDriven>()` instead of `new PackedModeSchemaDriven()` to correctly initialize the ScriptableObject.
+- Fixed `BuildScriptSchemaDriven` and `BuildScriptPackedMode` to use only public APIs so users can extend or copy these scripts into their own assembly without compiler errors.
+- Fixed issue where the previous element in the array is modified when assigning an Asset to a new element of AssetReferenceT.
+- Consolidated Content Directory architecture to single AddressableRootAsset per catalog with O(1) integer-based lookups
+- Eliminated GroupRootAsset and intermediate provider layer for simplified runtime loading
+- Added precomputed SubAssetIds for efficient batch subasset loading
+- Updated to use renamed Unity 6.6 BuildHistory APIs (`TryGetBuildReportDirectory`, `AddPreviousBuildReportDirectory`).
+- Added dismissible announcement banner for Content Directory feature in Groups window
 
 ## [3.0.0] - 2026-04-15
 - Fixed `PrefabPackedIdentifiers.SerializationIndexFromObjectIdentifier` so that when "Prefab Packed Header Size" is below 4, the leading bytes of the asset hash affect the **most significant** bits of the serialization index (little-endian safe), restoring contiguous bundle ordering without shrinking per-object entropy to 32 bits.

@@ -13,6 +13,7 @@ namespace UnityEditor.AddressableAssets.Settings
     /// In the Addressables Settings window, there is a list of Initialization Objects that this asset must be added to in order to be included in the build.
     /// </summary>
     [CreateAssetMenu(fileName = "CacheInitializationSettings.asset", menuName = "Addressables/Initialization/Cache Initialization Settings")]
+    [AddressablesHelpURL("AddressableAssetSettings.html#initialization-objects")]
     public class CacheInitializationSettings : ScriptableObject, IObjectInitializationDataProvider
     {
         [FormerlySerializedAs("m_data")]

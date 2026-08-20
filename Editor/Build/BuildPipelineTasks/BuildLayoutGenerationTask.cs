@@ -52,7 +52,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         [InjectContext(ContextUsage.In)]
         IAddressableAssetsBuildContext m_AaBuildContext;
 
-        [InjectContext(ContextUsage.In)]
+        [InjectContext(ContextUsage.In, true)]
         IBuildParameters m_Parameters;
 
         [InjectContext(ContextUsage.InOut, true)]
@@ -61,7 +61,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         [InjectContext(ContextUsage.In, true)]
         IBuildLogger m_Log;
 
-        [InjectContext]
+        [InjectContext(ContextUsage.In, true)]
         IBuildResults m_Results;
 
         [InjectContext(ContextUsage.In, true)]
@@ -238,9 +238,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 if (group.Name != group.name)
                 {
-                    Debug.LogWarningFormat(
-                        "Group name in settings does not match name in group asset, reset group name: \"{0}\" to \"{1}\"",
-                        group.name, group.Name);
+                    m_Log.AddEntry(LogLevel.Warning, $"Group name in settings does not match name in group asset, reset group name: \"{group.name}\" to \"{group.Name}\"");
                     group.name = group.Name;
                 }
 
@@ -286,14 +284,14 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         {
             if (m_BuildLayoutParameters?.BuildResult == null)
             {
-                Debug.LogError("BuildLayoutParameters.BuildResult is null. Cannot generate Content Directory layout data.");
+                m_Log.AddEntry(LogLevel.Error, "BuildLayoutParameters.BuildResult is null. Cannot generate Content Directory layout data.");
                 return;
             }
 
             var cdResults = m_BuildLayoutParameters.BuildResult.ContentDirectoryBuildResults;
             if (cdResults == null || cdResults.Count == 0)
             {
-                Debug.LogError("ContainsContentDirectoryData has indicated that the build contains Content Directory information, but no Content Directory Build Results " +
+                m_Log.AddEntry(LogLevel.Error, "ContainsContentDirectoryData has indicated that the build contains Content Directory information, but no Content Directory Build Results " +
                     "were present in the Build Result.");
                 return;
             }
@@ -302,14 +300,14 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 if (contentDirectoryBuild.GroupGuids == null || contentDirectoryBuild.GroupGuids.Count == 0)
                 {
-                    Debug.LogError("ContainsContentDirectoryData has indicated that the build contains Content Directory information, but no groups were built as part of the content directory build.");
+                    m_Log.AddEntry(LogLevel.Error, "ContainsContentDirectoryData has indicated that the build contains Content Directory information, but no groups were built as part of the content directory build.");
                     continue;
                 }
 
                 // since all groups should have same build location, pull build location using the first group guid.
                 if (!lookup.GroupGuidToBuildPath.TryGetValue(contentDirectoryBuild.GroupGuids[0], out string buildDirectory))
                 {
-                    Debug.LogError($"Build directory could not be found for group with guid {contentDirectoryBuild.GroupGuids[0]}");
+                    m_Log.AddEntry(LogLevel.Error, $"Build directory could not be found for group with guid {contentDirectoryBuild.GroupGuids[0]}");
                     continue;
                 }
 
@@ -320,8 +318,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     CatalogName = contentDirectoryBuild.CatalogName,
                     ManifestPath =  $"{buildDirectory}/{hash}.json",
-                    BuildLayoutPath = $"{contentDirectoryBuild.ContentDirectoryMetaDataPath}/Layout.json",
-                    BuildReportPath = $"{contentDirectoryBuild.ContentDirectoryMetaDataPath}/LastBuild.buildreport",
+                    BuildLayoutPath = $"{contentDirectoryBuild.BuildReportDirectory}/Layout.json",
+                    BuildReportPath = $"{contentDirectoryBuild.BuildReportDirectory}/LastBuild.buildreport",
                     BuildSessionGUID = contentDirectoryBuild.BuildSessionGUID,
                     Groups = new List<BuildLayout.Group>()
                 };
@@ -332,7 +330,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     if (!lookup.GroupLookup.TryGetValue(groupGuid, out group))
                     {
                         string errorMessage = $"Content Directory build to path {buildDirectory} references a group with guid {groupGuid}, but a group with that guid cannot be found.";
-                        Debug.LogError(errorMessage);
+                        m_Log.AddEntry(LogLevel.Error, errorMessage);
                         continue;
                     }
 
@@ -341,13 +339,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                     if (!lookup.GroupGuidToBuildPath.TryGetValue(groupGuid, out string bd))
                     {
-                        Debug.LogError($"Build directory could not be found for group with name: {group.Name}");
+                        m_Log.AddEntry(LogLevel.Error, $"Build directory could not be found for group with name: {group.Name}");
                         continue;
                     }
 
                     if (!string.Equals(bd, buildDirectory))
                     {
-                        Debug.LogError($"Build directory should be the same for all content directory groups, " +
+                        m_Log.AddEntry(LogLevel.Error, $"Build directory should be the same for all content directory groups, " +
                             $"but group with name {group.Name} builds to path: {bd} instead of expected path: {buildDirectory}. " +
                             $"Please ensure all of your groups marked with a Content Directory schema have the same build path.");
                         continue;
@@ -359,7 +357,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     {
                         string errorMessage = $"Content Directory build to path {buildDirectory} refers to " +
                         $"Addressables Group: {group.Name}, but {group.Name} does not have a Content Directory Group Schema attached to it.";
-                        Debug.LogError(errorMessage);
+                        m_Log.AddEntry(LogLevel.Error, errorMessage);
                         continue;
                     }
 
@@ -373,10 +371,10 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         private void GenerateAssetBundleLookupTables(AddressableAssetsBuildContext aaContext, LayoutLookupTables lookup)
         {
-            if (m_WriteData == null)
+            if (m_WriteData == null || m_Results == null || m_Parameters == null)
             {
-                throw new BuildFailedException("IBundleWriteData is required to generate AssetBundle layout data. The build context " +
-                    "indicates that there should be AssetBundle data present, but the IBundleWriteData is not present.");
+                throw new BuildFailedException("IBundleWriteData, IBuildResults, and IBuildParameters are required to generate AssetBundle layout data. The build context " +
+                    "indicates that there should be AssetBundle data present, but one or more of these objects is not present.");
             }
 
             Dictionary<ObjectIdentifier, Type[]> objectTypes = new Dictionary<ObjectIdentifier, Type[]>(1024);
@@ -428,7 +426,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     sf.Name = rf.fileAlias;
                     sf.Size = GetFileSizeFromPath(rf.fileName, out bool success);
                     if (!success)
-                        Debug.LogWarning($"Resource File {sf.Name} from file  \"{f.Name}\" was detected as part of the build, but the file could not be found. This may be because your build cache size is too small. Filesize of this Resource File will be 0 in BuildLayout.");
+                        m_Log.AddEntry(LogLevel.Warning, $"Resource File {sf.Name} from file  \"{f.Name}\" was detected as part of the build, but the file could not be found. This may be because your build cache size is too small. Filesize of this Resource File will be 0 in BuildLayout.");
 
                     f.SubFiles.Add(sf);
                 }
@@ -610,7 +608,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     bool bucketFound = buckets.TryGetValue(bid, out AssetBucket bucket);
                     if (!bucketFound)
                     {
-                        Debug.LogWarning($"Failed to find AssetBucket for asset with guid: {asset.Guid} in file: {file.Name}. This asset will not be properly represented in the build layout.");
+                        m_Log.AddEntry(LogLevel.Warning, $"Failed to find AssetBucket for asset with guid: {asset.Guid} in file: {file.Name}. This asset will not be properly represented in the build layout.");
                         continue;
                     }
 
@@ -971,7 +969,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     grp = layoutGroup;
                 else
                 {
-                    Debug.LogError($"Attempting to find default group {group.Name} in layout lookup, but it was not found. " +
+                    m_Log.AddEntry(LogLevel.Error, $"Attempting to find default group {group.Name} in layout lookup, but it was not found. " +
                         $"The Guid to Group lookup table should already be populated by this point.");
                     continue;
                 }
@@ -1103,7 +1101,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
                 b.FileSize = GetFileSizeFromPath(filePath, out bool success);
                 if (!success)
-                    Debug.LogWarning($"AssetBundle {b.Name} from Addressable Group \"{assetGroup.Name}\" was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
+                    m_Log.AddEntry(LogLevel.Warning, $"AssetBundle {b.Name} from Addressable Group \"{assetGroup.Name}\" was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
 
                 assetGroup.Bundles.Add(b);
             }
@@ -1115,12 +1113,12 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 if (lookup.GroupLookup.TryGetValue(selectedGroup.Guid, out var resolvedGroup))
                     b.Group = resolvedGroup;
                 else
-                    Debug.LogWarning($"Group with GUID {selectedGroup.Guid} not found in lookup. Bundle group assignment skipped for {b.Name}.");
+                    m_Log.AddEntry(LogLevel.Warning, $"Group with GUID {selectedGroup.Guid} not found in lookup. Bundle group assignment skipped for {b.Name}.");
                 lookup.FilenameToBundle[b.Name] = b;
 
                 b.FileSize = GetFileSizeFromPath(Path.Combine(lookup.GroupGuidToBuildPath[selectedGroup.Guid], b.Name), out bool success);
                 if (!success)
-                    Debug.LogWarning($"Built in assetBundle {b.Name} was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
+                    m_Log.AddEntry(LogLevel.Warning, $"Built in assetBundle {b.Name} was detected as part of the build, but the file could not be found. Filesize of this AssetBundle will be 0 in BuildLayout.");
 
                 layout.BuiltInBundles.Add(b);
             }
@@ -1256,7 +1254,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             }
         }
 
-        private static void ApplyAddressablesInformationToExplicitAsset(LayoutLookupTables lookup, BuildLayout.ExplicitAsset rootAsset, AddressableAssetEntry rootEntry, HashSet<string> loadPathsForBundle)
+        private void ApplyAddressablesInformationToExplicitAsset(LayoutLookupTables lookup, BuildLayout.ExplicitAsset rootAsset, AddressableAssetEntry rootEntry, HashSet<string> loadPathsForBundle)
         {
             rootAsset.AddressableName = rootEntry.address;
             rootAsset.MainAssetType = BuildLayoutHelpers.GetAssetType(rootEntry.MainAssetType);
@@ -1267,7 +1265,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
             if (rootAsset.Bundle == null)
             {
-                Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.AssetPath}");
+                m_Log.AddEntry(LogLevel.Error, $"Failed to get bundle information for AddressableAssetEntry: {rootEntry.AssetPath}");
                 return;
             }
 
@@ -1275,7 +1273,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             {
                 if (referencedAsset.Bundle == null)
                 {
-                    Debug.LogError($"Failed to get bundle information for AddressableAssetEntry: {rootEntry.AssetPath}");
+                    m_Log.AddEntry(LogLevel.Error, $"Failed to get bundle information for AddressableAssetEntry: {rootEntry.AssetPath}");
                     continue;
                 }
 
@@ -1347,6 +1345,8 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 if (assetDuplication.DuplicatedObjects.Count > 0)
                     layout.DuplicatedAssets.Add(assetDuplication);
             }
+
+            layout.DuplicatedAssetCount = layout.DuplicatedAssets.Count;
         }
 
         private static void SetDuration(BuildLayout layout)
@@ -1366,6 +1366,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             editorSettings.ContiguousBundles = aaSettings.ContiguousBundles;
             editorSettings.UniqueBundleIds = aaSettings.UniqueBundleIds;
             editorSettings.EnableJsonCatalog = aaSettings.EnableJsonCatalog;
+            editorSettings.CatalogProviderType = aaSettings.CatalogProviderType?.FullName;
 
             if (aaSettings.BuiltInBundleNaming == BuiltInBundleNaming.Custom)
                 editorSettings.ShaderBundleNaming = aaSettings.BuiltInBundleCustomNaming;
@@ -1375,15 +1376,13 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 editorSettings.MonoScriptBundleNaming = aaSettings.MonoScriptBundleCustomNaming;
             else
                 editorSettings.MonoScriptBundleNaming = aaSettings.MonoScriptBundleNaming.ToString();
-            editorSettings.StripUnityVersionFromBundleBuild = aaSettings.StripUnityVersionFromBundleBuild;
+            editorSettings.StripUnityVersionFromBundleBuild = aaSettings.StripUnityVersion;
 
             editorSettings.BuildRemoteCatalog = aaSettings.BuildRemoteCatalog;
             if (aaSettings.BuildRemoteCatalog)
                 editorSettings.RemoteCatalogLoadPath = aaSettings.RemoteCatalogLoadPath.GetValue(aaSettings);
             editorSettings.CatalogRequestsTimeout = aaSettings.CatalogRequestsTimeout;
-#if ENABLE_JSON_CATALOG
             editorSettings.BundleLocalCatalog = aaSettings.BundleLocalCatalog;
-#endif
             editorSettings.OptimizeCatalogSize = aaSettings.OptimizeCatalogSize;
             editorSettings.DisableCatalogUpdateOnStartup = aaSettings.DisableCatalogUpdateOnStartup;
 
@@ -1417,7 +1416,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
         {
             if (aaContext.runtimeData == null)
             {
-                Debug.LogError("Could not get runtime data for Addressables BuildReport");
+                m_Log.AddEntry(LogLevel.Error, "Could not get runtime data for Addressables BuildReport");
                 return null;
             }
 
@@ -1455,7 +1454,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                     string txtFilePath = GetLayoutFilePathForFormat(ProjectConfigData.ReportFileFormat.TXT);
                     using (FileStream s = File.Open(txtFilePath, FileMode.Create))
                         BuildLayoutPrinter.WriteBundleLayout(s, layout);
-                    Debug.Log($"Text build layout written to {txtFilePath} and json build layout written to {destinationPath}");
+                    m_Log.AddEntry(LogLevel.Info, $"Text build layout written to {txtFilePath} and json build layout written to {destinationPath}");
                 }
             }
             else
@@ -1465,7 +1464,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 if (File.Exists(legacyJsonFilePath))
                     File.Delete(legacyJsonFilePath);
                 File.Copy(destinationPath, legacyJsonFilePath);
-                Debug.Log($"Json build layout written to {legacyJsonFilePath}");
+                m_Log.AddEntry(LogLevel.Info, $"Json build layout written to {legacyJsonFilePath}");
             }
 
             ProjectConfigData.AddBuildReportFilePath(destinationPath);

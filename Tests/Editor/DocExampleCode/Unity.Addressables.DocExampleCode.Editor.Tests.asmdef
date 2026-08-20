@@ -22,11 +22,6 @@
     "defineConstraints": [],
     "versionDefines": [
         {
-            "name": "Unity",
-            "expression": "2020.2.0a9",
-            "define": "NONRECURSIVE_DEPENDENCY_DATA"
-        },
-        {
             "name": "com.unity.services.ccd.management",
             "expression": "[2.0.0,4.0.0)",
             "define": "ENABLE_CCD"

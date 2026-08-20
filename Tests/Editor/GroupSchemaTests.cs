@@ -688,5 +688,135 @@ namespace UnityEditor.AddressableAssets.Tests
             m_Settings.profileSettings.RemoveValue(m_Settings.profileSettings.GetVariableId($"{key}.BuildPath"));
             m_Settings.profileSettings.RemoveValue(m_Settings.profileSettings.GetVariableId($"{key}.LoadPath"));
         }
+
+        // UUM-140558: "Disabled" must clear both CRC flags, not just UseAssetBundleCrc.
+        [Test]
+        public void SetCrcFromPopupIndex_SetsBothFlagsConsistently()
+        {
+            AddressableAssetGroup group = null;
+            try
+            {
+                group = m_Settings.CreateGroup("CrcPopupTestGroup", false, false, false, null, typeof(BundledAssetGroupSchema));
+                var schema = group.GetSchema<BundledAssetGroupSchema>();
+
+                // Index 1 (Including Cached): both flags true
+                schema.UseAssetBundleCrc = false;
+                schema.UseAssetBundleCrcForCachedBundles = false;
+                schema.SetCrcFromPopupIndex(1, schema);
+                Assert.IsTrue(schema.UseAssetBundleCrc);
+                Assert.IsTrue(schema.UseAssetBundleCrcForCachedBundles);
+
+                // Index 2 (Excluding Cached): crc true, cached false
+                schema.SetCrcFromPopupIndex(2, schema);
+                Assert.IsTrue(schema.UseAssetBundleCrc);
+                Assert.IsFalse(schema.UseAssetBundleCrcForCachedBundles);
+
+                // Index 0 (Disabled): clears both flags, not just UseAssetBundleCrc
+                schema.SetCrcFromPopupIndex(0, schema);
+                Assert.IsFalse(schema.UseAssetBundleCrc);
+                Assert.IsFalse(schema.UseAssetBundleCrcForCachedBundles);
+            }
+            finally
+            {
+                if (group != null)
+                    m_Settings.RemoveGroupInternal(group, true, false);
+                Undo.ClearAll();
+            }
+        }
+
+        // UUM-140558: the (UseAssetBundleCrc, UseAssetBundleCrcForCachedBundles) pair must
+        // stay consistent no matter which order scripted callers set the two properties in.
+        // Cached-bundle CRC is a sub-behavior of CRC: disabling CRC clears cached, and
+        // enabling cached enables CRC, so (false, true) is never reachable.
+        [Test]
+        public void CrcCachedFlagPair_StaysConsistent_InAnyWriteOrder()
+        {
+            AddressableAssetGroup group = null;
+            try
+            {
+                group = m_Settings.CreateGroup("CrcSetterInvariantTestGroup", false, false, false, null, typeof(BundledAssetGroupSchema));
+                var schema = group.GetSchema<BundledAssetGroupSchema>();
+
+                // Disabling CRC clears the cached-bundle flag.
+                schema.UseAssetBundleCrc = true;
+                schema.UseAssetBundleCrcForCachedBundles = true;
+                schema.UseAssetBundleCrc = false;
+                Assert.IsFalse(schema.UseAssetBundleCrcForCachedBundles);
+
+                // Re-enabling CRC alone does not implicitly re-enable the cached-bundle
+                // flag: cached is a subset of CRC, not equal to it.
+                schema.UseAssetBundleCrc = true;
+                Assert.IsFalse(schema.UseAssetBundleCrcForCachedBundles);
+
+                // Enabling the cached-bundle flag while CRC is off enables CRC too,
+                // reaching the same (true, true) state as CRC-first order would.
+                schema.UseAssetBundleCrc = false;
+                schema.UseAssetBundleCrcForCachedBundles = true;
+                Assert.IsTrue(schema.UseAssetBundleCrc);
+                Assert.IsTrue(schema.UseAssetBundleCrcForCachedBundles);
+            }
+            finally
+            {
+                if (group != null)
+                    m_Settings.RemoveGroupInternal(group, true, false);
+            }
+        }
+
+        [Test]
+        public void MigrateStaleCrcCachedFlag_ClearsOnlyWhenStale()
+        {
+            AddressableAssetGroup group = null;
+            try
+            {
+                group = m_Settings.CreateGroup("CrcMigrationTestGroup", false, false, false, null, typeof(BundledAssetGroupSchema));
+                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                schema.UseAssetBundleCrc = true;
+                schema.UseAssetBundleCrcForCachedBundles = true;
+
+                // Consistent state: nothing to repair.
+                bool changed = AddressableAssetSettings.MigrateStaleCrcCachedFlag(schema);
+                Assert.IsFalse(changed);
+                Assert.IsTrue(schema.UseAssetBundleCrcForCachedBundles);
+
+                // Simulate legacy serialized data predating the fix: write the backing
+                // fields directly, bypassing the UseAssetBundleCrc setter invariant.
+                schema.m_UseAssetBundleCrc = false;
+                schema.m_UseAssetBundleCrcForCachedBundles = true;
+                changed = AddressableAssetSettings.MigrateStaleCrcCachedFlag(schema);
+                Assert.IsTrue(changed);
+                Assert.IsFalse(schema.UseAssetBundleCrcForCachedBundles);
+            }
+            finally
+            {
+                if (group != null)
+                    m_Settings.RemoveGroupInternal(group, true, false);
+            }
+        }
+
+        [Test]
+        public void MigrateStaleCrcCachedFlags_RunMigrationSteps_ClearsStaleSchemaAndSetsMigratedFlag()
+        {
+            AddressableAssetGroup group = null;
+            try
+            {
+                group = m_Settings.CreateGroup("CrcMigrationSettingsTestGroup", false, false, false, null, typeof(BundledAssetGroupSchema));
+                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                // Simulate legacy serialized data: backing fields written directly,
+                // bypassing the UseAssetBundleCrc setter invariant added for UUM-140558.
+                schema.m_UseAssetBundleCrc = false;
+                schema.m_UseAssetBundleCrcForCachedBundles = true;
+                m_Settings.CrcCachedBundleFlagMigrated = false;
+
+                AddressableAssetSettings.RunMigrationSteps(m_Settings);
+
+                Assert.IsFalse(schema.UseAssetBundleCrcForCachedBundles);
+                Assert.IsTrue(m_Settings.CrcCachedBundleFlagMigrated);
+            }
+            finally
+            {
+                if (group != null)
+                    m_Settings.RemoveGroupInternal(group, true, false);
+            }
+        }
     }
 }

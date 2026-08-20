@@ -145,10 +145,11 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
         handle.WaitForCompletion();
         Assert.IsTrue(handle.IsDone);
     }
-#if !ENABLE_JSON_CATALOG
     [UnityTest]
     public IEnumerator BinaryCatalogCacheInitializationObject_FullySetsCachingData()
     {
+        if (UseJsonCatalog)
+            Assert.Ignore("BinaryCatalogCacheInitializationObject test requires binary catalog format.");
         BinaryCatalogInitialization.ResetToDefaults();
         var setStorageBufferCacheSize = 123;
         var setLocationCacheSize = 456;
@@ -168,7 +169,6 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
         BinaryCatalogInitialization.ResetToDefaults();
         handle.Release();
     }
-#endif
 #endif
 
     [UnityTest]
@@ -311,11 +311,39 @@ public abstract class InitializationObjectsAsyncTests : AddressablesTestFixture
             get { return TestBuildScriptMode.PackedPlaymode; }
         }
     }
+
+    class InitializationObjects_FastMode_Json : InitializationObjectsAsyncTests
+    {
+        protected override bool UseJsonCatalog => true;
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
+
+    class InitializationObjects_PackedPlaymodeMode_Json : InitializationObjectsAsyncTests
+    {
+        protected override bool UseJsonCatalog => true;
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
     [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
     class InitializationObjects_PackedMode : InitializationObjectsAsyncTests
     {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
+    }
+
+    [UnityPlatform(exclude = new[] {RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor})]
+    class InitializationObjects_PackedMode_Json : InitializationObjectsAsyncTests
+    {
+        protected override bool UseJsonCatalog => true;
         protected override TestBuildScriptMode BuildScriptMode
         {
             get { return TestBuildScriptMode.Packed; }

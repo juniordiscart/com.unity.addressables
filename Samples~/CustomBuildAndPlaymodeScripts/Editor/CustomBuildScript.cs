@@ -69,8 +69,8 @@ public class CustomBuildScript : BuildScriptPackedMode
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             if (!schema)
                 continue;
-            m_SavedIncludeInBuildState.Add(group, schema.IncludeInBuild);
-            schema.IncludeInBuild = false;
+            m_SavedIncludeInBuildState.Add(group, group.IncludeInBuild);
+            group.IncludeInBuild = false;
         }
 
         m_CurrentSceneGroup = settings.CreateGroup("TempCurrentSceneGroup", false, false, true,
@@ -98,7 +98,7 @@ public class CustomBuildScript : BuildScriptPackedMode
             var schema = group.GetSchema<BundledAssetGroupSchema>();
             if (!schema || !m_SavedIncludeInBuildState.ContainsKey(group))
                 continue;
-            schema.IncludeInBuild = m_SavedIncludeInBuildState[group];
+            group.IncludeInBuild = m_SavedIncludeInBuildState[group];
         }
 
         m_SavedIncludeInBuildState.Clear();

@@ -1,5 +1,8 @@
 # Define remote content profiles
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 A [profile](profiles-introduction.md) defines variables that you can use to set the build and load paths for both local and remote content.
 
 When you distribute content remotely, you typically need to set different URLs (load paths) for remote content depending on why you want to make a build.
@@ -8,7 +11,7 @@ Some examples of such situations include:
 
 * [Testing builds](#testing-builds)
 * [Local hosting builds](#local-hosting-builds)
-* [CDN builds]
+* [CDN builds](#builds-for-cdn)
 
 ## Testing builds
 

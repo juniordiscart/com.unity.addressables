@@ -19,7 +19,7 @@
         },
         {
             "name": "Unity",
-            "expression": "6000.6.0a5",
+            "expression": "6000.6.0b1",
             "define": "ENABLE_CONTENT_DIRECTORIES"
         }
     ],

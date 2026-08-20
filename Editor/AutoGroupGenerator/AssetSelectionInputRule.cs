@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEditor.AddressableAssets.Settings;
 
 namespace AutoGroupGenerator
 {
@@ -9,6 +10,7 @@ namespace AutoGroupGenerator
     /// Input rule that aggregates assets selected directly or via JSON lists.
     /// </summary>
     [CreateAssetMenu(menuName = Constants.ContextMenus.InputRulesMenu + nameof(AssetSelectionInputRule))]
+    [AddressablesHelpURL("groups-auto-group-generator-reference.html")]
     public class AssetSelectionInputRule : InputRule
     {
         #region Fields

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor.AddressableAssets.Build.Layout;
+// using UnityEditor.AddressableAssets.Settings; // Re-enable with the "Learn More" link in CreateContentDirectoriesBanner.
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -77,6 +78,11 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                     localCatalogNames.Add(catalogFileName);
             }
 
+#if ENABLE_CONTENT_DIRECTORIES
+            if (buildReport.ContentDirectories?.Count > 0)
+                scrollbarElement.Add(CreateContentDirectoriesBanner());
+#endif
+
             SummaryRowBuilder generalInfo = new SummaryRowBuilder("General Information");
             if (localCatalogNames.Count > 0)
                 generalInfo.With("Local Catalog(s)", string.Join(", ", localCatalogNames));
@@ -106,10 +112,10 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
                 scrollbarElement.Add(duplicatedAssets.Build());
             }
 
-            SummaryRowBuilder aggregateInfo = new SummaryRowBuilder("Aggregate Information")
+            SummaryRowBuilder aggregateInfo = new SummaryRowBuilder("Aggregate Information (AssetBundles)")
                 .With("Number of bundles", summary.BundleSummary.Count.ToString())
                 .With("Total size of all bundles", BuildReportUtility.GetDenominatedBytesString(summary.BundleSummary.TotalCompressedSize))
-                .With("Total number of assets", summary.TotalAssetCount.ToString())
+                .With("Total number of assets in AssetBundles", summary.TotalAssetCount.ToString())
                 .With("Addressables", $"{summary.ExplicitAssetCount} ({String.Format("{0:0.##}", ((float)summary.ExplicitAssetCount/(float)summary.TotalAssetCount) * 100f)}%)")
                 .With("Assets pulled into a build by an Addressable", $"{summary.ImplicitAssetCount} ({String.Format("{0:0.##}", ((float)summary.ImplicitAssetCount/(float)summary.TotalAssetCount) * 100f)}%)", FontStyle.Italic);
 
@@ -144,6 +150,32 @@ namespace UnityEditor.AddressableAssets.BuildReportVisualizer
             scrollbarElement.Clear();
             scrollbarElement.visible = false;
         }
+
+#if ENABLE_CONTENT_DIRECTORIES
+        static HelpBox CreateContentDirectoriesBanner()
+        {
+            HelpBox banner = new HelpBox("This build includes content built using Content Directories. To view that content, use the Build Analysis window.", HelpBoxMessageType.Info);
+            banner.style.marginTop = banner.style.marginLeft = banner.style.marginRight = new Length(5f, LengthUnit.Pixel);
+            banner.style.marginBottom = 0f;
+            banner.style.paddingTop = banner.style.paddingBottom = banner.style.paddingLeft = banner.style.paddingRight = new Length(5f, LengthUnit.Pixel);
+            banner.buttonText = "Open Build Analysis";
+            banner.onButtonClicked += OpenBuildAnalysis;
+            // Re-enable once Content Directory / Build Analysis documentation exists, then point linkHref at it.
+            // banner.linkText = "Learn More";
+            // banner.linkHref = AddressableAssetUtility.GenerateDocsURL("index.html");
+
+            Label messageLabel = banner.Q<Label>(className: HelpBox.labelUssClassName);
+            if (messageLabel != null)
+                messageLabel.style.fontSize = 12f;
+
+            return banner;
+        }
+
+        static void OpenBuildAnalysis()
+        {
+            EditorApplication.ExecuteMenuItem("Window/Analysis/Build Analysis");
+        }
+#endif
 
         internal static ulong CalculateDuplicatedSize(IEnumerable<BuildReportHelperDuplicateImplicitAsset> duplicateAssets)
         {

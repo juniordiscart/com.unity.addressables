@@ -4,7 +4,10 @@ uid: addressables-loading-bundles
 
 # Load AssetBundles
 
-The Addressables system packs assets into AssetBundles and loads these AssetBundles as you load individual assets. You can control how AssetBundles load with the [`BundledAssetGroupSchema`](xref:UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema) class. You can set these options through the scripting API or under the [Advanced Options](ContentPackingAndLoadingSchema.md#advanced-options) in the Inspector of the Addressables Asset Group Inspector.
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
+The Addressables system packs assets into AssetBundles and loads these AssetBundles as you load individual assets. You can control how AssetBundles load with the [`BundledAssetGroupSchema`](xref:UnityEditor.AddressableAssets.Settings.GroupSchemas.BundledAssetGroupSchema) class. You can set these options through the scripting API or under the [Advanced Options](group-inspector-settings-reference.md#advanced-options) in the Inspector of the Addressables Asset Group Inspector.
 
 ## UnityWebRequestForLocalBundles
 

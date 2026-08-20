@@ -1,18 +1,13 @@
 # Addressable AssetBundle memory considerations
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 When you organize Addressable groups and AssetBundles, you must make trade-offs between the size and the number of AssetBundles you create and load. Fewer, larger AssetBundles can minimize the total memory usage of AssetBundles. However, using many small AssetBundles can minimize the peak memory usage because Unity can quickly unload assets and AssetBundles.
 
 The size of an AssetBundle on disk isn't the same as its size at runtime. However, you can use the disk size as a guide to the memory overhead of the AssetBundles in a build. You can get AssetBundle size and other information to help analyze AssetBundles from the [Build Layout Report](BuildLayoutReport.md).
 
 For information on AssetBundle memory overhead, refer to [Optimizing AssetBundles](xref:um-asset-bundles-optimization).
-
-## TypeTree management
-
-You can [remove TypeTrees](xref:um-asset-bundles-optimization) to optimize memory. However, this approach is only recommended for content you can rebuild each time you release a new Player. This is a suitable optimization for Addressable content that you include directly with the Player build. In that case you must always rebuild local Addressable groups before building a new Player.
-
-[Distributing content remotely](remote-content-intro.md) adds additional considerations. The ability to add new content after the Player has shipped means the content must exactly match the Unity Editor version the Player was built with. There must also be no serialization changes in your code and in the code of all the packages that contribute content. If you use multiple Player versions, updates, and Editor versions, it can become difficult to manage matching the AssetBundles with compatible Player builds. The memory savings from disabling TypeTrees might not be worth this extra trouble.
-
-You can enable the **[Extract TypeTree Data](AddressableAssetSettings.md#build)** setting to place TypeTree data in a separate file, which can reduce the file size of a build. However, this adjusts any existing AssetBundles, so don't use this setting in projects that you have already deployed.
 
 ## Loading AssetBundle dependencies
 

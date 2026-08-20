@@ -24,12 +24,9 @@ The following example loads a scene additively. The component that loads the sce
 
 If you load a scene with [`LoadSceneMode.Single`](xref:UnityEngine.SceneManagement.LoadSceneMode.Single), the Unity runtime unloads the current scene and calls [`Resources.UnloadUnusedAssets`](xref:UnityEngine.Resources.UnloadUnusedAssets). Refer to [Releasing Addressable assets](xref:addressables-unloading) for more information.
 
-> [!NOTE]
-> In the Editor, you can always load scenes in the current project, even when they're packaged in a remote bundle that's not available and you set the Play Mode Script to __Use Existing Build__. The Editor loads the scene using the Asset Database.
-
 ## Use Addressables in a scene
 
-If a scene is Addressable, you can use Addressable assets in the scene just like any other assets. You can place prefabs and other assets in the scene, and assign assets to component properties. If you use an asset that isn't Addressable, that asset becomes an implicit dependency of the scene and the build system packs it in the same AssetBundle as the scene when you make a content build. Addressable assets are packed into their own AssetBundles according to the group they're in.
+If a scene is Addressable, you can use Addressable assets in the scene just like any other assets. You can place prefabs and other assets in the scene, and assign assets to component properties. If you use an asset that isn't Addressable, that asset becomes an implicit dependency of the scene and the build system packs it in the same AssetBundle or content directory as the scene when you make a content build. Addressable assets are packed into their own AssetBundles or content directory according to the group they're in.
 
 > [!NOTE]
 > Implicit dependencies used in more than one place can be duplicated in multiple AssetBundles and in the built-in scene data. Use the [Build Layout Report](xref:addressables-build-layout-report) to identify and resolve unwanted asset duplication resulting from your project content organization.

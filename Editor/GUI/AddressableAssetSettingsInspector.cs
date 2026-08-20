@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Build;
+using UnityEditor.AddressableAssets.Build.CatalogBuilders;
+using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build;
@@ -38,12 +40,18 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_BuildHeader;
         static FoldoutSessionStateValue DataBuildersFoldout = new FoldoutSessionStateValue("Addressables.DataBuildersFoldout");
         GUIContent m_DataBuildersHeader;
+        static FoldoutSessionStateValue DataBuildersInternalFoldout = new FoldoutSessionStateValue("Addressables.DataBuildersInternalFoldout");
         static FoldoutSessionStateValue GroupTemplateObjectsFoldout = new FoldoutSessionStateValue("Addressables.GroupTemplateObjectsFoldout");
         GUIContent m_GroupTemplateObjectsHeader;
         static FoldoutSessionStateValue InitObjectsFoldout = new FoldoutSessionStateValue("Addressables.InitObjectsFoldout");
         GUIContent m_InitObjectsHeader;
         static FoldoutSessionStateValue CCDEnabledFoldout = new FoldoutSessionStateValue("Addressables.CCDEnabledFoldout");
         GUIContent m_CCDEnabledHeader;
+
+        // Foldout variables. Blank label to force uniform indents. Padding and row spacing to enforce uniform row spacing.
+        static readonly GUIContent s_BlankLabel = new GUIContent(" ");
+        const float k_RowPadding = 1f;
+        float FoldoutRowSpacing => EditorGUIUtility.standardVerticalSpacing + k_RowPadding;
 
         //Used for displaying path pairs
         bool m_UseCustomPaths = false;
@@ -83,6 +91,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             m_DataBuildersRl = new ReorderableList(m_AasTarget.DataBuilders, typeof(ScriptableObject), true, true, true, true);
             m_DataBuildersRl.drawElementCallback = DrawDataBuilderCallback;
+            m_DataBuildersRl.elementHeightCallback = GetDataBuilderElementHeight;
             m_DataBuildersRl.headerHeight = 0;
             m_DataBuildersRl.onAddDropdownCallback = OnAddDataBuilder;
             m_DataBuildersRl.onRemoveCallback = OnRemoveDataBuilder;
@@ -132,14 +141,9 @@ namespace UnityEditor.AddressableAssets.GUI
         GUIContent m_ContiguousBundles =
             new GUIContent("Contiguous Bundles",
                 "If set, packs assets in bundles contiguously based on the ordering of the source asset which results in improved asset loading times. Disable this if you've built bundles with a version of Addressables older than 1.12.1 and you want to minimize bundle changes.");
-#if NONRECURSIVE_DEPENDENCY_DATA
         GUIContent m_NonRecursiveBundleBuilding =
             new GUIContent("Non-Recursive Dependency Calculation",
                 "If set, Calculates and build asset bundles using Non-Recursive Dependency calculation methods. This approach helps reduce asset bundle rebuilds and runtime memory consumption.");
-#else
-        GUIContent m_NonRecursiveBundleBuilding =
-            new GUIContent("Non-Recursive Dependency Calculation", "If set, Calculates and build asset bundles using Non-Recursive Dependency calculation methods. This approach helps reduce asset bundle rebuilds and runtime memory consumption.\n*Requires Unity 2019.4.19f1 or above");
-#endif
         GUIContent m_BuildRemoteCatalog =
             new GUIContent("Build Remote Catalog",
                 "If set, this will create a copy of the content catalog for storage on a remote server.  This catalog can be overwritten later for content updates.");
@@ -172,14 +176,8 @@ namespace UnityEditor.AddressableAssets.GUI
             new GUIContent("Asset Bundle Provider", "The provider to use for loading AssetBundles (not the assets within bundles). Modify only if you have a custom AssetBundle provider.");
 
 #if ENABLE_CONTENT_DIRECTORIES
-        GUIContent m_ContentDirectoryProvider =
-            new GUIContent("Content Directory Provider", "The provider to use for loading content directories. Modify only if you have a custom content directory provider.");
-
-        GUIContent m_GroupRootAssetProvider =
-            new GUIContent("Group Root Asset Provider", "The provider to use for loading group root assets from content directories. Modify only if you have a custom group root asset provider.");
-
-        GUIContent m_GroupRootAssetEntryProvider =
-            new GUIContent("Group Root Asset Entry Provider", "The provider to use for loading entries from group root assets. Modify only if you have a custom group root asset entry provider.");
+        GUIContent m_GroupAssetEntryProvider =
+            new GUIContent("Group Asset Entry Provider", "The provider to use for loading entries from group assets. Modify only if you have a custom group asset entry provider.");
 
         GUIContent m_ArchiveContentDirectories =
             new GUIContent("Archive Content Directories",
@@ -266,11 +264,11 @@ namespace UnityEditor.AddressableAssets.GUI
 
 #if UNITY_6000_5_OR_NEWER
         GUIContent m_typeTreeOptionContent =
-            new GUIContent("TypeTree Option", "Controls how type tree data is handled in asset bundles. 'Include' writes type trees normally, 'Extract' strips them into a separate file, 'Disable' omits them entirely.");
+            new GUIContent("TypeTree Option", "Controls how type tree data is handled for both AssetBundle and Content Directory builds. 'Include' writes type trees into the bundles/content files themselves. 'Extract' strips them into a separate file (AssetBundles only; not currently supported for Content Directory groups). 'Disable' omits them entirely. Disabling type trees reduces bundle size but removes the ability to load bundles across different Unity versions.");
         static readonly string[] m_TypeTreeOptionNames = { "Include", "Extract", "Disable" };
 #else
         GUIContent m_disableWriteTypeTreeContent =
-            new GUIContent("Disable Write TypeTree", "If enabled, type tree data will not be written into asset bundles. This reduces bundle size but removes the ability to load bundles across different Unity versions.");
+            new GUIContent("Disable Write TypeTree", "If enabled, type tree data will not be written into AssetBundles or Content Directories. This reduces bundle size but removes the ability to load bundles across different Unity versions.");
 #endif
 
 #if (ENABLE_CCD)
@@ -292,8 +290,8 @@ namespace UnityEditor.AddressableAssets.GUI
             new GUIContent("Do not Build Addressables content on Player build", "No new Addressables build will be created with a Player Build")
         };
 
-        GUIContent m_EnableJsonCatalog = new GUIContent("Enable Json Catalog",
-            "If enabled, Json catalogs will be used instead of binary catalogs. Json catalogs are more human readible, but slower to load and have a larger size.");
+        GUIContent m_CatalogProviderTypeContent = new GUIContent("Catalog Provider",
+            "The catalog provider used to load content catalogs at runtime. Each provider corresponds to a catalog format (e.g. Binary, Json). New formats can be added by implementing ContentCatalogProvider and a matching BaseCatalogBuilder.");
 
         public override bool RequiresConstantRepaint()
         {
@@ -389,11 +387,6 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (overridePlayerVersion != m_AasTarget.OverridePlayerVersion)
                     m_QueuedChanges.Add(() => m_AasTarget.OverridePlayerVersion = overridePlayerVersion);
 
-#if ENABLE_JSON_CATALOG
-                bool bundleLocalCatalog = EditorGUILayout.Toggle(m_BundleLocalCatalog, m_AasTarget.BundleLocalCatalog);
-                if (bundleLocalCatalog != m_AasTarget.BundleLocalCatalog)
-                    m_QueuedChanges.Add(() => m_AasTarget.BundleLocalCatalog = bundleLocalCatalog);
-#endif
 /*
                 bool optimizeCatalogSize = EditorGUILayout.Toggle(m_OptimizeCatalogSize, m_AasTarget.OptimizeCatalogSize);
                 if (optimizeCatalogSize != m_AasTarget.OptimizeCatalogSize)
@@ -408,9 +401,23 @@ namespace UnityEditor.AddressableAssets.GUI
                     DrawRemoteCatalogPaths();
                 }
 
-                bool enableJsonCatalog = EditorGUILayout.Toggle(m_EnableJsonCatalog, m_AasTarget.EnableJsonCatalog);
-                if (enableJsonCatalog != m_AasTarget.EnableJsonCatalog)
-                    m_QueuedChanges.Add(() => ToggleJsonCatalog(m_AasTarget, enableJsonCatalog));
+                EditorGUILayout.PropertyField(
+                    serializedObject.FindProperty("m_CatalogProviderType"),
+                    m_CatalogProviderTypeContent);
+
+                var catalogProviderType = m_AasTarget.CatalogProviderType;
+                if (catalogProviderType == null)
+                {
+                    EditorGUILayout.HelpBox(
+                        "No Catalog Provider is selected. A build will fail until a provider is chosen.",
+                        MessageType.Error);
+                }
+                else if (BaseCatalogBuilder.CreateForProvider(catalogProviderType).SupportsLocalCatalogBundling)
+                {
+                    bool bundleLocalCatalog = EditorGUILayout.Toggle(m_BundleLocalCatalog, m_AasTarget.BundleLocalCatalog);
+                    if (bundleLocalCatalog != m_AasTarget.BundleLocalCatalog)
+                        m_QueuedChanges.Add(() => m_AasTarget.BundleLocalCatalog = bundleLocalCatalog);
+                }
 
                 EditorGUI.BeginDisabledGroup(!buildRemoteCatalog);
                 bool disableCatalogOnStartup = EditorGUILayout.Toggle(m_CheckForCatalogUpdateOnInit, m_AasTarget.DisableCatalogUpdateOnStartup);
@@ -447,24 +454,10 @@ namespace UnityEditor.AddressableAssets.GUI
 
 #if ENABLE_CONTENT_DIRECTORIES
                 EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_ContentDirectoryProviderType"), m_ContentDirectoryProvider, true);
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_GroupAssetEntryProviderType"), m_GroupAssetEntryProvider, true);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    m_QueuedChanges.Add(() => m_AasTarget.UpdateContentDirectoryProviderType());
-                }
-
-                EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_GroupRootAssetProviderType"), m_GroupRootAssetProvider, true);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    m_QueuedChanges.Add(() => m_AasTarget.UpdateGroupRootAssetProviderType());
-                }
-
-                EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("m_GroupRootAssetEntryProviderType"), m_GroupRootAssetEntryProvider, true);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    m_QueuedChanges.Add(() => m_AasTarget.UpdateGroupRootAssetEntryProviderType());
+                    m_QueuedChanges.Add(() => m_AasTarget.UpdateGroupAssetEntryProviderType());
                 }
 
 #endif
@@ -654,18 +647,12 @@ namespace UnityEditor.AddressableAssets.GUI
                 if (contiguousBundles != m_AasTarget.ContiguousBundles)
                     m_QueuedChanges.Add(() => m_AasTarget.ContiguousBundles = contiguousBundles);
 
-#if !NONRECURSIVE_DEPENDENCY_DATA
-                EditorGUI.BeginDisabledGroup(true);
-#endif
                 bool nonRecursiveBuilding = EditorGUILayout.Toggle(m_NonRecursiveBundleBuilding, m_AasTarget.NonRecursiveBuilding);
                 if (nonRecursiveBuilding != m_AasTarget.NonRecursiveBuilding)
                     m_QueuedChanges.Add(() => m_AasTarget.NonRecursiveBuilding = nonRecursiveBuilding);
-#if !NONRECURSIVE_DEPENDENCY_DATA
-                EditorGUI.EndDisabledGroup();
-#endif
-                bool stripUnityVersion = EditorGUILayout.Toggle(m_StripUnityVersionFromBundleBuild, m_AasTarget.StripUnityVersionFromBundleBuild);
-                if (stripUnityVersion != m_AasTarget.StripUnityVersionFromBundleBuild)
-                    m_QueuedChanges.Add(() => m_AasTarget.StripUnityVersionFromBundleBuild = stripUnityVersion);
+                bool stripUnityVersion = EditorGUILayout.Toggle(m_StripUnityVersionFromBundleBuild, m_AasTarget.StripUnityVersion);
+                if (stripUnityVersion != m_AasTarget.StripUnityVersion)
+                    m_QueuedChanges.Add(() => m_AasTarget.StripUnityVersion = stripUnityVersion);
 
                 bool disableVisibleSubAssetRepresentations = EditorGUILayout.Toggle(m_DisableVisibleSubAssetRepresentations, m_AasTarget.DisableVisibleSubAssetRepresentations);
                 if (disableVisibleSubAssetRepresentations != m_AasTarget.DisableVisibleSubAssetRepresentations)
@@ -891,13 +878,6 @@ namespace UnityEditor.AddressableAssets.GUI
           NamedBuildTarget.XboxOne
         };
 
-        void ToggleJsonCatalog(AddressableAssetSettings settings, bool enableJsonCatalog)
-        {
-            settings.EnableJsonCatalog = enableJsonCatalog;
-            foreach (var buildTarget in buildTargets)
-                AddressableAssetSettings.UpdateSymbolsForBuildTarget(buildTarget, enableJsonCatalog);
-        }
-
         internal static void SetSharedBundleSettingsCustomGroupIndex(AddressableAssetSettings settings, List<AddressableAssetEntry> entries, AddressableAssetGroup group)
         {
             for (int i = 0; i < settings.groups.Count; i++)
@@ -954,9 +934,55 @@ namespace UnityEditor.AddressableAssets.GUI
             var so = m_AasTarget.DataBuilders[index];
             var builder = so as IDataBuilder;
             var label = builder == null ? "" : builder.Name;
-            var nb = EditorGUI.ObjectField(rect, label, so, typeof(ScriptableObject), false) as ScriptableObject;
-            if (nb != so)
-                m_AasTarget.SetDataBuilderAtIndex(index, nb as IDataBuilder);
+
+            // Adding Simulated Load Delay foldout
+            if (m_AasTarget.DataBuilders[index] is BuildScriptFastMode)
+            {
+                // Draw foldout + label. Offset added to avoid overlap with list drag handle
+                const float foldoutIndent = 10f;
+                Rect foldoutRect = new Rect(rect.x + foldoutIndent, rect.y, EditorGUIUtility.labelWidth - foldoutIndent, EditorGUIUtility.singleLineHeight);
+                DataBuildersInternalFoldout.IsActive = EditorGUI.Foldout(foldoutRect, DataBuildersInternalFoldout.IsActive, label, true);
+
+                // Draw object field. Blank label passed to force correct indentation.
+                Rect objectRect = new Rect(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight);
+                var nb = EditorGUI.ObjectField(objectRect, s_BlankLabel, so, typeof(ScriptableObject), false) as ScriptableObject;
+                if (nb != so)
+                    m_AasTarget.SetDataBuilderAtIndex(index, nb as IDataBuilder);
+
+                // Create Load Delay float, Edited rect axis to position correctly
+                if (DataBuildersInternalFoldout.IsActive)
+                {
+                    float loadDelayY = rect.y + EditorGUIUtility.singleLineHeight + FoldoutRowSpacing;
+
+                    // Draw Label seperately with padding to be clear its part of foldout
+                    int padding = EditorStyles.foldout.padding.left;
+                    Rect loadDelayLabel = new Rect(foldoutRect.x + padding, loadDelayY, EditorGUIUtility.labelWidth - padding, EditorGUIUtility.singleLineHeight);
+                    EditorGUI.LabelField(loadDelayLabel, "Simulated Load Delay");
+
+                    // Draw float field. Blank label used to force correct indentation.
+                    Rect loadDelayRect = new Rect(rect.x, loadDelayY, rect.width, EditorGUIUtility.singleLineHeight);
+                    float newLoadDelay = EditorGUI.FloatField(loadDelayRect, s_BlankLabel, m_AasTarget.SimulatedLoadDelay);
+                    if(newLoadDelay != m_AasTarget.SimulatedLoadDelay)
+                        m_AasTarget.SimulatedLoadDelay = newLoadDelay;
+                }
+            }
+            else // For other labels, create usual ObjectField
+            {
+                Rect objectRect = new Rect(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight);
+                var nb = EditorGUI.ObjectField(objectRect, label, so, typeof(ScriptableObject), false) as ScriptableObject;
+                if (nb != so)
+                  m_AasTarget.SetDataBuilderAtIndex(index, nb as IDataBuilder);
+            }
+        }
+
+        // Ensure consistent row height & padding now foldout exists
+        float GetDataBuilderElementHeight(int index)
+        {
+            float contentHeight = EditorGUIUtility.singleLineHeight;
+            if (DataBuildersInternalFoldout.IsActive && m_AasTarget.DataBuilders[index] is BuildScriptFastMode)
+                contentHeight = EditorGUIUtility.singleLineHeight * 2 + FoldoutRowSpacing;
+
+            return contentHeight + k_RowPadding;
         }
 
         void OnRemoveDataBuilder(ReorderableList list)

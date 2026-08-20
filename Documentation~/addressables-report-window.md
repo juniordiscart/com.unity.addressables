@@ -107,3 +107,4 @@ The question mark icon is displayed next to assets that aren't Addressable but a
 * [Build Addressable assets with a player build](build-player-builds.md)
 * [Create a content-only build](builds-full-build.md)
 * [Build Addressable assets from scripts](build-scripting-builds.md)
+* [Known issues](known-issues.md)

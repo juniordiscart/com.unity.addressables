@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets.ResourceLocators;
@@ -54,8 +55,14 @@ namespace UnityEditor.AddressableAssets.Settings
                                         visitedFolders.Add(e.AssetPath);
                                     }
 
-                                    foreach (var l in e.labels)
-                                        m_Keys.Add(l);
+                                    if (IsLabelsEnabled(e))
+                                    {
+                                        foreach (var l in e.labels)
+                                            m_Keys.Add(l);
+                                    }
+
+                                    if (IsFolderKeysEnabled(e))
+                                        m_Keys.Add(e.address);
                                 }
                                 else
                                 {
@@ -158,13 +165,60 @@ namespace UnityEditor.AddressableAssets.Settings
             AddEntry(e, e.address, keyToEntries);
             AddEntry(e, e.guid, keyToEntries);
 
-            if (e.labels != null)
+            if (e.labels != null && IsLabelsEnabled(e))
             {
                 foreach (string l in e.labels)
                 {
                     AddEntry(e, l, keyToEntries);
                 }
             }
+        }
+
+        static bool IsFolderKeysEnabled(AddressableAssetEntry e)
+        {
+            if (e.parentGroup == null || e.parentGroup.Schemas == null)
+                return false;
+            foreach (var schema in e.parentGroup.Schemas)
+            {
+                if (!schema.IsEnabled)
+                    continue;
+                var includeKeysSchema = schema as ICanIncludeFolderKeys;
+                if (includeKeysSchema != null && includeKeysSchema.IncludeFolderKeysInCatalog)
+                    return true;
+            }
+            return false;
+        }
+
+
+        static bool IsLabelsEnabled(AddressableAssetEntry e)
+        {
+            if (e.parentGroup == null || e.parentGroup.Schemas == null)
+                return true;
+            foreach (var schema in e.parentGroup.Schemas)
+            {
+                if (!schema.IsEnabled)
+                    continue;
+                var includeLabelsSchema = schema as ICanIncludeLabels;
+                if (includeLabelsSchema != null && !includeLabelsSchema.IncludeLabelsInCatalog)
+                    return false;
+            }
+            return true;
+        }
+
+
+        static bool IsIncludeAddressesForFolderChildrenEnabled(AddressableAssetEntry e)
+        {
+            if (e.parentGroup == null || e.parentGroup.Schemas == null)
+                return true;
+            foreach (var schema in e.parentGroup.Schemas)
+            {
+                if (!schema.IsEnabled)
+                    continue;
+                var includeKeysSchema = schema as ICanIncludeFolderKeys;
+                if (includeKeysSchema != null && includeKeysSchema.IncludeFolderKeysInCatalog && !includeKeysSchema.IncludeAddressesForFolderChildren)
+                    return false;
+            }
+            return true;
         }
 
         static void GatherEntryLocations(AddressableAssetEntry entry, Type type, IList<IResourceLocation> locations, AddressableAssetTree assetTree)
@@ -223,7 +277,9 @@ namespace UnityEditor.AddressableAssets.Settings
             {
                 foreach (AddressableAssetEntry e in entries)
                 {
-                    if (AssetDatabase.IsValidFolder(e.AssetPath) && !e.labels.Contains(key as string))
+                    bool isFolderKeyMatch = key is string ks && ks == e.address && IsFolderKeysEnabled(e);
+                    bool isLabelMatch = IsLabelsEnabled(e) && e.labels.Contains(key as string);
+                    if (AssetDatabase.IsValidFolder(e.AssetPath) && !isLabelMatch && !isFolderKeyMatch)
                         continue;
 
                     if (type == null)
@@ -299,7 +355,11 @@ namespace UnityEditor.AddressableAssets.Settings
                         if (m_keyToEntries.TryGetValue(keyPath, out var entry))
                         {
                             foreach (var e in entry)
+                            {
+                                if (!IsIncludeAddressesForFolderChildrenEnabled(e))
+                                    continue;
                                 AddLocations(locations, type, keyStr, GetInternalIdFromFolderEntry(keyStr, e));
+                            }
                             break;
                         }
 

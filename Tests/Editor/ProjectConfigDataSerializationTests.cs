@@ -182,6 +182,22 @@ namespace UnityEditor.AddressableAssets.Tests
                 ProjectConfigData.ShowSubObjectsInGroupView = originalValue;
             }
         }
+
+        [Test]
+        public void ProjectConfigData_UserHasSeenContentDirectoryAnnouncement_CanBeReadAndWritten()
+        {
+            var originalValue = ProjectConfigData.UserHasSeenContentDirectoryAnnouncement;
+
+            try
+            {
+                ProjectConfigData.UserHasSeenContentDirectoryAnnouncement = !originalValue;
+                Assert.AreEqual(!originalValue, ProjectConfigData.UserHasSeenContentDirectoryAnnouncement);
+            }
+            finally
+            {
+                ProjectConfigData.UserHasSeenContentDirectoryAnnouncement = originalValue;
+            }
+        }
     }
 }
 #endif

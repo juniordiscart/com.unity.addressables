@@ -163,7 +163,7 @@ namespace UnityEditor.AddressableAssets.Tests
 			Assert.NotNull(cacheData);
 			Assert.NotNull(cacheData.cachedInfos.FirstOrDefault(s => s.asset.guid.ToString() == m_AssetGUID));
 
-			schema.IncludeInBuild = false;
+            group.IncludeInBuild = false;
 			context = new AddressablesDataBuilderInput(Settings);
 			op = Settings.ActivePlayerDataBuilder.BuildData<AddressablesPlayerBuildResult>(context);
 			Assert.IsTrue(string.IsNullOrEmpty(op.Error), op.Error);
@@ -176,18 +176,16 @@ namespace UnityEditor.AddressableAssets.Tests
 			Settings.RemoveGroup(group2);
 		}
 
-#if !ENABLE_JSON_CATALOG
 		[Test]
         public void CreateCustomLocator_ReturnsLocatorWithUniqueId()
 		{
-			ContentCatalogData ccd = new ContentCatalogData();
+            BinaryContentCatalogData ccd = new BinaryContentCatalogData();
 			ccd.SetData(new List<ContentCatalogDataEntry>());
             var data = ccd.SerializeToByteArray();
-            var newCCD = new ContentCatalogData(new BinaryStorageBuffer.Reader(data));
+            var newCCD = new BinaryContentCatalogData(new BinaryStorageBuffer.Reader(data));
             IResourceLocator map = newCCD.CreateCustomLocator("test");
 			Assert.AreEqual("test", map.LocatorId);
 		}
-#endif
 		[Test]
 		public void DownloadBinFileToTempLocation_DoesNotThrowError_WhenDownloadFails()
 		{
@@ -516,21 +514,22 @@ namespace UnityEditor.AddressableAssets.Tests
 			foreach (var p in paths)
             {
                 if (Path.GetFileNameWithoutExtension(p).EndsWith("catalog"))
-#if ENABLE_JSON_CATALOG
-                    return ContentCatalogData.LoadFromFile(p).CreateCustomLocator();
-#else
-
-                    return ContentCatalogData.LoadFromFile(p, true).CreateCustomLocator();
-#endif
+                {
+                    if (Path.GetExtension(p) == ".json")
+                        return JsonContentCatalogData.LoadFromFile(p).CreateCustomLocator();
+                    else
+                        return BinaryContentCatalogData.LoadFromFile(p, true).CreateCustomLocator();
+                }
             }
 			return null;
 		}
 
-#if ENABLE_JSON_CATALOG
-
 		[Test]
 		public void WhenContentUpdated_NewCatalogRetains_OldCatalogBundleLoadData()
 		{
+            WithEnableJsonCatalog(true, () =>
+            {
+
 			var group = Settings.CreateGroup("LocalStuff3", false, false, false, null);
 			Settings.BuildRemoteCatalog = true;
 			Settings.RemoteCatalogBuildPath = new ProfileValueReference();
@@ -585,8 +584,8 @@ namespace UnityEditor.AddressableAssets.Tests
 			}
 
 			Settings.RemoveGroup(group);
+            });
 		}
-#endif
 
 		[Test]
 		public void IsCacheDataValid_WhenNoPreviousRemoteCatalogPath_ReturnsFalseWithError()

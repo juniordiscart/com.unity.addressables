@@ -12,6 +12,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// Only saves the guid of the settings asset to <see cref="SessionState"/>.  All catalog data is generated directly from the settings as needed.
     /// </summary>
     [CreateAssetMenu(fileName = nameof(BuildScriptFastMode) + ".asset", menuName = "Addressables/Content Builders/Use Asset Database (fastest)")]
+    [AddressablesHelpURL("Builds.html")]
     public class BuildScriptFastMode : BuildScriptBase
     {
         /// <inheritdoc />

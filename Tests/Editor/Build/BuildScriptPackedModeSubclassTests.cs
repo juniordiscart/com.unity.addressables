@@ -27,7 +27,7 @@ namespace UnityEditor.AddressableAssets.Tests
         AddressableAssetSettings m_PersistedSettings;
         AddressablesDataBuilderInput m_BuilderInput;
 
-        protected new AddressableAssetSettings Settings =>
+        private new AddressableAssetSettings Settings =>
             m_PersistedSettings != null ? m_PersistedSettings : base.Settings;
 
         [SetUp]

@@ -6,7 +6,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using UnityEngine.AddressableAssets.ResourceLocators;
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
 using Unity.Services.Ccd.Management.Models;
 #endif
 
@@ -72,7 +72,10 @@ namespace UnityEditor.AddressableAssets.GUI
 
         static GUIStyle dropdownTitleStyle;
         static GUIStyle menuOptionStyle;
+        static GUIStyle menuOptionHoverStyle;
         static GUIStyle horizontalBarStyle;
+        static Texture2D s_HoverTexture;
+        static Texture2D s_BlackTexture;
 
         internal static string externalLinkIcon = EditorGUIUtility.isProSkin ? "d_ScaleTool" : "ScaleTool";
         internal static string nextIcon = EditorGUIUtility.isProSkin ? "d_tab_next" : "tab_next";
@@ -104,9 +107,12 @@ namespace UnityEditor.AddressableAssets.GUI
             options.Add(new CCDOption());
             options.Add(new CustomOption());
 
-            var blackTexture = new Texture2D(2, 2);
-            blackTexture.SetPixels(new Color[4] {Color.black, Color.black, Color.black, Color.black});
-            blackTexture.Apply();
+            if (s_BlackTexture == null)
+            {
+                s_BlackTexture = new Texture2D(2, 2);
+                s_BlackTexture.SetPixels(new Color[4] {Color.black, Color.black, Color.black, Color.black});
+                s_BlackTexture.Apply();
+            }
 
             dropdownTitleStyle = new GUIStyle()
             {
@@ -122,6 +128,14 @@ namespace UnityEditor.AddressableAssets.GUI
                 }
             };
 
+            if (s_HoverTexture == null)
+            {
+                s_HoverTexture = new Texture2D(2, 2);
+                var hoverColor = EditorGUIUtility.isProSkin ? new Color(0.3f, 0.3f, 0.3f, 1f) : new Color(0.7f, 0.7f, 0.7f, 1f);
+                s_HoverTexture.SetPixels(new Color[4] { hoverColor, hoverColor, hoverColor, hoverColor });
+                s_HoverTexture.Apply();
+            }
+
             menuOptionStyle = new GUIStyle()
             {
                 name = "datasource-dropdown-option",
@@ -133,15 +147,25 @@ namespace UnityEditor.AddressableAssets.GUI
                 normal = new GUIStyleState()
                 {
                     textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black
+                },
+                hover = new GUIStyleState()
+                {
+                    textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black,
+                    background = s_HoverTexture
                 }
+            };
+
+            menuOptionHoverStyle = new GUIStyle(menuOptionStyle)
+            {
+                normal = menuOptionStyle.hover
             };
 
             horizontalBarStyle = new GUIStyle()
             {
                 normal =
                 {
-                    background = blackTexture,
-                    scaledBackgrounds = new Texture2D[1] {blackTexture}
+                    background = s_BlackTexture,
+                    scaledBackgrounds = new Texture2D[1] {s_BlackTexture}
                 },
                 fixedHeight = 1,
                 stretchHeight = false
@@ -155,7 +179,7 @@ namespace UnityEditor.AddressableAssets.GUI
             SyncProfileGroupTypes();
         }
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
         public override async void OnGUI(Rect window)
 #else
         public override void OnGUI(Rect window)
@@ -221,7 +245,7 @@ namespace UnityEditor.AddressableAssets.GUI
                             BaseOption.DrawMenuItem("Automatic (set using CcdManager)", nextIcon, () => { CCDState = CCDDropdownState.AutomaticEnvironment; });
                             BaseOption.DrawMenuItem("Specify the Environment, Bucket, and Badge", nextIcon, () => { CCDState = CCDDropdownState.Environment; });
                             break;
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
                         case CCDDropdownState.AutomaticEnvironment:
                             isRefreshing =
  await DrawCcdEnabledDropdownHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, "Select Environment", DropdownState.CCD, CCDDropdownState.General);
@@ -374,7 +398,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     break;
                 case DropdownState.BuiltIn:
                 default:
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
                     SetCcdManagedDataState(CcdManagedData.ConfigState.None);
 #endif
                     editorWindow.Close();
@@ -402,7 +426,7 @@ namespace UnityEditor.AddressableAssets.GUI
             return true;
         }
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
         private async Task<bool> DrawCcdEnabledDropdownHeader(Rect window, Rect horizontalBarRect, Rect backButtonRect, Rect refreshButtonRect, Event evt, string title, DropdownState dropdownState, CCDDropdownState prevState)
         {
             DrawHeader(window, horizontalBarRect, backButtonRect, refreshButtonRect, evt, title, dropdownState, prevState);
@@ -451,7 +475,7 @@ namespace UnityEditor.AddressableAssets.GUI
         }
 
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
         private void SetCcdManagedDataState(CcdManagedData.ConfigState state)
         {
             AddressableAssetSettingsDefaultObject.Settings.m_CcdManagedData.State = state;
@@ -500,13 +524,18 @@ namespace UnityEditor.AddressableAssets.GUI
             internal static void DrawMenuItem(string title, string displayIcon, Action action)
             {
                 Rect labelRect = EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(title, menuOptionStyle);
+                bool isHovered = labelRect.Contains(Event.current.mousePosition);
+                GUIStyle styleToUse = isHovered ? menuOptionHoverStyle : menuOptionStyle;
+                EditorGUILayout.LabelField(title, styleToUse);
                 EditorGUILayout.EndHorizontal();
                 if (displayIcon != null)
                 {
                     Rect linkRect = new Rect(labelRect.x + labelRect.width - menuOptionStyle.fixedHeight - 10, labelRect.y, menuOptionStyle.fixedHeight, menuOptionStyle.fixedHeight);
                     EditorGUI.LabelField(linkRect, EditorGUIUtility.IconContent(displayIcon));
                 }
+
+                if (isHovered && Event.current.type == EventType.Repaint)
+                    EditorGUIUtility.AddCursorRect(labelRect, MouseCursor.Link);
 
                 if (Event.current.type == EventType.MouseDown && labelRect.Contains(Event.current.mousePosition))
                 {
@@ -517,7 +546,9 @@ namespace UnityEditor.AddressableAssets.GUI
             internal static void DrawMenuItemWithArg<T>(string title, Action<T> action, T arg, string infoIcon = null, string displayIcon = null)
             {
                 Rect labelRect = EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField(title, menuOptionStyle);
+                bool isHovered = labelRect.Contains(Event.current.mousePosition);
+                GUIStyle styleToUse = isHovered ? menuOptionHoverStyle : menuOptionStyle;
+                EditorGUILayout.LabelField(title, styleToUse);
                 EditorGUILayout.EndHorizontal();
 
                 if (infoIcon != null)
@@ -531,6 +562,9 @@ namespace UnityEditor.AddressableAssets.GUI
                     Rect linkRect = new Rect(labelRect.x + labelRect.width - menuOptionStyle.fixedHeight, labelRect.y, menuOptionStyle.fixedHeight, menuOptionStyle.fixedHeight);
                     EditorGUI.LabelField(linkRect, EditorGUIUtility.IconContent(displayIcon));
                 }
+
+                if (isHovered && Event.current.type == EventType.Repaint)
+                    EditorGUIUtility.AddCursorRect(labelRect, MouseCursor.Link);
 
                 if (Event.current.type == EventType.MouseDown && labelRect.Contains(Event.current.mousePosition))
                 {
@@ -587,7 +621,7 @@ namespace UnityEditor.AddressableAssets.GUI
                 DrawMenuItem(OptionName, nextIcon, action);
             }
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
             internal static void DrawBuckets(Dictionary<string, ProfileGroupType> buckets, string environmentId,
                 Action<KeyValuePair<string, ProfileGroupType>> action)
             {

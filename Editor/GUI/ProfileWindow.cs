@@ -4,7 +4,7 @@ using UnityEditor.AddressableAssets.GUI.Adapters;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
 using Unity.Services.Ccd.Management.Models;
 #endif
 
@@ -17,6 +17,7 @@ namespace UnityEditor.AddressableAssets.GUI
         const float k_MaxProfilePaneWidth = 0.6f;
 
         private const float k_MinLabelWidth = 155f;
+        private const float k_MaxLabelWidth = 350f;
         private const float k_ApproxCharWidth = 8.5f;
 
         const float k_DefaultHorizontalSplitterRatio = 0.33f;
@@ -68,6 +69,7 @@ namespace UnityEditor.AddressableAssets.GUI
             set { m_ProfileIndex = value; }
         }
 
+        internal float ProfilesPaneWidth => position.width * m_HorizontalSplitterRatio;
 
         private GUIStyle m_ButtonStyle;
 
@@ -116,7 +118,7 @@ namespace UnityEditor.AddressableAssets.GUI
             UnityEngine.GUI.color = orgColor;
         }
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
         private async void Awake()
         {
             if (CloudProjectSettings.projectId != String.Empty) await ProfileDataSourceSettings.UpdateCCDDataSourcesAsync(CloudProjectSettings.projectId, false);
@@ -270,8 +272,9 @@ namespace UnityEditor.AddressableAssets.GUI
                 GUILayout.Space(5);
                 Rect pathPairRect = EditorGUILayout.BeginHorizontal(new GUILayoutOption[]
                     {GUILayout.Width(fieldWidth + k_VariableItemPadding - k_SplitterThickness), GUILayout.MinWidth(fieldWidth + k_VariableItemPadding - k_SplitterThickness)});
+                string truncatedPrefix = TruncateWithEllipsis(groupType.GroupTypePrefix, m_LabelWidth);
                 m_foldouts[groupType.GroupTypePrefix] = EditorGUILayout.Foldout(foldout != null ? foldout.Value : true,
-                    new GUIContent(groupType.GroupTypePrefix, "A pair of profile variables used for AssetBundles Build and Load Paths"), true);
+                    new GUIContent(truncatedPrefix, groupType.GroupTypePrefix), true);
                 Rect dsDropdownRect = EditorGUILayout.BeginHorizontal(new GUILayoutOption[] {GUILayout.Width(fieldWidth - m_LabelWidth), GUILayout.MinWidth(fieldWidth - m_LabelWidth)});
                 string dropdownText = DetermineOptionString(groupType);
                 bool dsDropdown = EditorGUILayout.DropdownButton(new GUIContent(dropdownText, "Location type"), FocusType.Keyboard, new GUILayoutOption[] {GUILayout.Width(fieldWidth - m_LabelWidth)});
@@ -302,7 +305,9 @@ namespace UnityEditor.AddressableAssets.GUI
                     foreach (var variable in pathVariables)
                     {
                         Rect newPathRect = EditorGUILayout.BeginVertical();
-                        string newPath = EditorGUILayout.TextField(new GUIContent(groupType.GetName(variable), "Profile variable representing a file path or url"), variable.Value,
+                        string varName = groupType.GetName(variable);
+                        string truncatedVarName = TruncateWithEllipsis(varName, m_LabelWidth);
+                        string newPath = EditorGUILayout.TextField(new GUIContent(truncatedVarName, varName), variable.Value,
                             new GUILayoutOption[] {GUILayout.Width(fieldWidth)});
                         EditorGUILayout.EndVertical();
                         if (newPath != variable.Value && ProfileIndex == m_ProfileTreeView.lastClickedProfile)
@@ -327,7 +332,8 @@ namespace UnityEditor.AddressableAssets.GUI
                 {
                     GUILayout.Space(5);
                     Rect newValueRect = EditorGUILayout.BeginVertical();
-                    string newValue = EditorGUILayout.TextField(new GUIContent(curVariable.ProfileName, "Profile variable"), selectedProfile.values[i].value,
+                    string truncatedName = TruncateWithEllipsis(curVariable.ProfileName, m_LabelWidth);
+                    string newValue = EditorGUILayout.TextField(new GUIContent(truncatedName, curVariable.ProfileName), selectedProfile.values[i].value,
                         new GUILayoutOption[] {GUILayout.Width(fieldWidth)});
                     EditorGUILayout.EndVertical();
                     if (newValue != selectedProfile.values[i].value && ProfileIndex == m_ProfileTreeView.lastClickedProfile)
@@ -351,7 +357,7 @@ namespace UnityEditor.AddressableAssets.GUI
 
             //Update the label width to the maximum of the minimum acceptable label width and the amount of
             //space required to contain the longest variable name
-            m_LabelWidth = Mathf.Max(maxLabelLen * k_ApproxCharWidth, k_MinLabelWidth);
+            m_LabelWidth = Mathf.Clamp(maxLabelLen * k_ApproxCharWidth, k_MinLabelWidth, k_MaxLabelWidth);
             m_FieldBufferWidth = Mathf.Clamp((maxFieldLen * k_ApproxCharWidth) - fieldWidth, 0f, float.MaxValue);
         }
 
@@ -397,7 +403,7 @@ namespace UnityEditor.AddressableAssets.GUI
                     return "Custom";
                 m_CustomGroupTypes[groupType.GroupTypePrefix] = false;
 
-#if (ENABLE_CCD && UNITY_2019_4_OR_NEWER)
+#if (ENABLE_CCD)
                 //Could ERR if user has group type prefix that starts with CCD
                 if (selectedGroupType.GroupTypePrefix.StartsWith("CCD", StringComparison.Ordinal))
                 {
@@ -562,6 +568,11 @@ namespace UnityEditor.AddressableAssets.GUI
 
             if (m_IsResizingHorizontalSplitter)
                 Repaint();
+        }
+
+        string TruncateWithEllipsis(string text, float maxWidth)
+        {
+            return AddressablesGUIUtility.TruncateWithEllipsis(text, maxWidth, k_ApproxCharWidth);
         }
 
         class PathPairRenamePopup : PopupWindowContent

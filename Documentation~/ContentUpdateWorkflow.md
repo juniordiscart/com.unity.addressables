@@ -4,6 +4,9 @@ uid: addressables-content-update-builds
 
 # Update builds
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 When you need to update your application, you can create a content update build to only distribute the updated content of your application.
 
 |**Topic**|**Description**|
@@ -18,5 +21,5 @@ When you need to update your application, you can create a content update build 
 
 * [Distribute assets remotely](RemoteContentDistribution.md)
 * [Build Addressable assets from scripts](build-scripting-builds.md)
-* [Group Inspector settings reference](ContentPackingAndLoadingSchema.md)
+* [Group Inspector settings reference](group-inspector-settings-reference.md)
 * [Addressables Asset Settings reference](AddressableAssetSettings.md)

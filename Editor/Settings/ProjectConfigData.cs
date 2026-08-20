@@ -10,9 +10,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Serialization;
-#if !ENABLE_JSON_CATALOG
-using static UnityEngine.AddressableAssets.ResourceLocators.ContentCatalogData.ResourceLocator.ResourceLocation.Serializer;
-#endif
+using static UnityEngine.AddressableAssets.ResourceLocators.BinaryContentCatalogData.ResourceLocator.ResourceLocation.Serializer;
 
 namespace UnityEditor.AddressableAssets.Settings
 {
@@ -104,6 +102,11 @@ namespace UnityEditor.AddressableAssets.Settings
             [DataMember]
 #endif
             internal bool userHasBeenInformedAboutNestedFolderStructure = false;
+            [SerializeField]
+#if UNITY_6000_0_OR_NEWER
+            [DataMember]
+#endif
+            internal bool userHasSeenContentDirectoryAnnouncement = false;
         }
 
         static ConfigSaveData s_Data;
@@ -214,6 +217,24 @@ namespace UnityEditor.AddressableAssets.Settings
                 if (s_Data.userHasBeenInformedAboutNestedFolderStructure != value)
                 {
                     s_Data.userHasBeenInformedAboutNestedFolderStructure = value;
+                    SaveData();
+                }
+            }
+        }
+
+        internal static bool UserHasSeenContentDirectoryAnnouncement
+        {
+            get
+            {
+                ValidateData();
+                return s_Data.userHasSeenContentDirectoryAnnouncement;
+            }
+            set
+            {
+                ValidateData();
+                if (s_Data.userHasSeenContentDirectoryAnnouncement != value)
+                {
+                    s_Data.userHasSeenContentDirectoryAnnouncement = value;
                     SaveData();
                 }
             }

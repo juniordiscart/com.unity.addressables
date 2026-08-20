@@ -77,9 +77,7 @@ namespace UnityEditor.AddressableAssets.Tests
             m_Providers.Add(typeof(JsonAssetProvider));
             m_Providers.Add(typeof(TextDataProvider));
             m_Providers.Add(typeof(TextDataProvider));
-#if !ENABLE_JSON_CATALOG
-            m_Providers.Add(typeof(BinaryAssetProvider<ContentCatalogData.Serializer>));
-#endif
+            m_Providers.Add(typeof(BinaryAssetProvider<BinaryContentCatalogData.Serializer>));
         }
 
         List<T> GetRandomSubset<T>(List<T> keys, int count)
@@ -105,13 +103,11 @@ namespace UnityEditor.AddressableAssets.Tests
             public string path;
         }
 
-#if !ENABLE_JSON_CATALOG
-
         [UnityTest]
         public IEnumerator RunStressContinuously([Values(100)] int locateCallCount, [Values(1000)] int locCount, [Values(128, 256, 512)] int bufferCacheSize)
         {
             var locType = typeof(UnityEngine.Object);
-            var catalog = new ContentCatalogData();
+            var catalog = new BinaryContentCatalogData();
             var entries = new List<ContentCatalogDataEntry>();
             var allKeys = new List<object>();
 
@@ -147,8 +143,8 @@ namespace UnityEditor.AddressableAssets.Tests
             }
             catalog.SetData(entries);
             var data = catalog.SerializeToByteArray();
-            var loadedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, 0, new ContentCatalogData.Serializer()));
-            var locator = loadedCatalog.CreateCustomLocator("", null) as ContentCatalogData.ResourceLocator;
+            var loadedCatalog = new BinaryContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, 0, new BinaryContentCatalogData.Serializer()));
+            var locator = loadedCatalog.CreateCustomLocator("", null) as BinaryContentCatalogData.ResourceLocator;
             yield return null;
             int frameCount = 1000;
             for (int x = 0; x < frameCount; x++)
@@ -186,21 +182,21 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             var internalId = "{UnityEngine.AddressableAssets.Addressables.RuntimePath}/file.path";
             var locType = typeof(UnityEngine.Object);
-            var catalog = new ContentCatalogData();
+            var catalog = new BinaryContentCatalogData();
             var entries = new List<ContentCatalogDataEntry>();
             entries.Add(new ContentCatalogDataEntry(locType, internalId, "", new string[] { "a" }));
             catalog.SetData(entries);
             var data = catalog.SerializeToByteArray();
             {
-                var resolvedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, 0, new ContentCatalogData.Serializer()));
-                var resolvedLocator = resolvedCatalog.CreateCustomLocator("", null) as ContentCatalogData.ResourceLocator;
+                var resolvedCatalog = new BinaryContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, 0, new BinaryContentCatalogData.Serializer()));
+                var resolvedLocator = resolvedCatalog.CreateCustomLocator("", null) as BinaryContentCatalogData.ResourceLocator;
                 resolvedLocator.Locate("a", locType, out var locs);
                 Assert.AreEqual($"{UnityEngine.AddressableAssets.Addressables.RuntimePath}/file.path", locs[0].InternalId);
             }
 
             {
-                var nonresolvedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, 0, new ContentCatalogData.Serializer().WithInternalIdResolvingDisabled()));
-                var nonresolvedLocator = nonresolvedCatalog.CreateCustomLocator("", null) as ContentCatalogData.ResourceLocator;
+                var nonresolvedCatalog = new BinaryContentCatalogData(new BinaryStorageBuffer.Reader(data, 128, 0, new BinaryContentCatalogData.Serializer().WithInternalIdResolvingDisabled()));
+                var nonresolvedLocator = nonresolvedCatalog.CreateCustomLocator("", null) as BinaryContentCatalogData.ResourceLocator;
                 nonresolvedLocator.Locate("a", locType, out var locs);
                 Assert.AreEqual(internalId, locs[0].InternalId);
             }
@@ -211,7 +207,7 @@ namespace UnityEditor.AddressableAssets.Tests
         public void BinaryCatalogCacheStress([Values(1000)] int locateCallCount, [Values(1000)] int locCount, [Values(64, 256, 1024, 4096)] int bufferCacheSize)
         {
             var locType = typeof(UnityEngine.Object);
-            var catalog = new ContentCatalogData();
+            var catalog = new BinaryContentCatalogData();
             var entries = new List<ContentCatalogDataEntry>();
             var allKeys = new List<object>();
             Func<int, string> internalIdFunc = i => $"https://mysuperlongwebservername.com/internalId/path/blah/subdir/urlstuffetc/{i}.fileextension";
@@ -230,8 +226,8 @@ namespace UnityEditor.AddressableAssets.Tests
             }
             catalog.SetData(entries);
             var data = catalog.SerializeToByteArray();
-            var loadedCatalog = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, 0, new ContentCatalogData.Serializer()));
-            var locator = loadedCatalog.CreateCustomLocator("", null) as ContentCatalogData.ResourceLocator;
+            var loadedCatalog = new BinaryContentCatalogData(new BinaryStorageBuffer.Reader(data, bufferCacheSize, 0, new BinaryContentCatalogData.Serializer()));
+            var locator = loadedCatalog.CreateCustomLocator("", null) as BinaryContentCatalogData.ResourceLocator;
             var sw = new Stopwatch();
             sw.Start();
             for (int i = 0; i < locateCallCount; i++)
@@ -269,10 +265,10 @@ namespace UnityEditor.AddressableAssets.Tests
             var dataEntry = new ContentCatalogDataEntry(typeof(ContentCatalogData), "internalId", "provider", new object[] { 1 }, null, options);
             var entries = new List<ContentCatalogDataEntry>();
             entries.Add(dataEntry);
-            var ccData = new ContentCatalogData("TestCatalog");
+            var ccData = new BinaryContentCatalogData("TestCatalog");
             ccData.SetData(entries);
             var data = ccData.SerializeToByteArray();
-            ccData = new ContentCatalogData(new BinaryStorageBuffer.Reader(data, 1024, 0, new ContentCatalogData.Serializer()));
+            ccData = new BinaryContentCatalogData(new BinaryStorageBuffer.Reader(data, 1024, 0, new BinaryContentCatalogData.Serializer()));
             var locator = ccData.CreateCustomLocator("");
             IList<IResourceLocation> locations;
             if (!locator.Locate(1, typeof(object), out locations))
@@ -288,16 +284,59 @@ namespace UnityEditor.AddressableAssets.Tests
             Assert.AreEqual(locOptions.Timeout, options.Timeout);
             Assert.AreEqual(locOptions.AssetLoadMode, options.AssetLoadMode);
         }
-#endif
 
-#if ENABLE_JSON_CATALOG
+        // Exposes BinaryContentCatalogData's protected header constants (as a subclass) so
+        // tests below don't hardcode the live magic/version values.
+        class TestableBinaryContentCatalogData : BinaryContentCatalogData
+        {
+            public const int LiveMagic = kMagic;
+            public const int LiveVersion = kVersion;
+        }
+
+        static byte[] BuildMinimalSerializedCatalog()
+        {
+            var dataEntry = new ContentCatalogDataEntry(typeof(ContentCatalogData), "internalId", "provider", new object[] {1});
+            var ccData = new BinaryContentCatalogData("TestCatalog");
+            ccData.SetData(new List<ContentCatalogDataEntry> {dataEntry});
+            return ccData.SerializeToByteArray();
+        }
+
+        [Test]
+        public void BinaryCatalog_LogsExceptionAndReturnsNull_OnVersionMismatch()
+        {
+            // The public write path always stamps the current version, so simulate a catalog
+            // written by an older package version by corrupting the header after serializing.
+            // BinaryStorageBuffer.Reader.ReadObject<T> catches deserialization exceptions,
+            // logs them via Debug.LogException, and returns default -- it does not rethrow.
+            var data = BuildMinimalSerializedCatalog();
+            var corruptedVersion = TestableBinaryContentCatalogData.LiveVersion + 1;
+            Array.Copy(BitConverter.GetBytes(corruptedVersion), 0, data, 4, 4);
+
+            var reader = new BinaryStorageBuffer.Reader(data, 1024, 0, new BinaryContentCatalogData.Serializer());
+            LogAssert.Expect(LogType.Exception,
+                $"Exception: Catalog data version mismatch: expected {TestableBinaryContentCatalogData.LiveVersion}, found {corruptedVersion}. Rebuild your Addressables content with the current package version.");
+            var result = reader.ReadObject<BinaryContentCatalogData>(0, out _, false);
+            Assert.IsNull(result);
+        }
+
+        [Test]
+        public void BinaryCatalog_LogsExceptionAndReturnsNull_OnMagicMismatch()
+        {
+            var data = BuildMinimalSerializedCatalog();
+            Array.Copy(BitConverter.GetBytes(TestableBinaryContentCatalogData.LiveMagic + 1), 0, data, 0, 4);
+
+            var reader = new BinaryStorageBuffer.Reader(data, 1024, 0, new BinaryContentCatalogData.Serializer());
+            LogAssert.Expect(LogType.Exception, "Exception: Invalid header data!!!");
+            var result = reader.ReadObject<BinaryContentCatalogData>(0, out _, false);
+            Assert.IsNull(result);
+        }
 
         [Test]
         public void VerifySerialization()
         {
             var sw = Stopwatch.StartNew();
             sw.Start();
-            var catalog = new ContentCatalogData();
+            var catalog = new JsonContentCatalogData();
             var entries = new List<ContentCatalogDataEntry>();
             var availableKeys = new List<object>();
 
@@ -351,7 +390,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void VerifyDependencyHashCalculation()
         {
-            var catalog = new ContentCatalogData();
+            var catalog = new JsonContentCatalogData();
             Dictionary<int, object> hashSources = new Dictionary<int, object>();
 
             var dummyValues = new List<object>()
@@ -444,12 +483,12 @@ namespace UnityEditor.AddressableAssets.Tests
                 "startup_UnityBuiltInAssets.bundle"
             };
 
-            var hash1 = ContentCatalogData.GetHashCodeForEnumerable(dummyValues);
-            var hash2 = ContentCatalogData.GetHashCodeForEnumerable(dummyValues2);
+            var hash1 = JsonContentCatalogData.GetHashCodeForEnumerable(dummyValues);
+            var hash2 = JsonContentCatalogData.GetHashCodeForEnumerable(dummyValues2);
             Assert.AreEqual(hash1, hash2);
 
             dummyValues[0] = "maps_assets_ref/valley3.bundle";
-            var hash3 = ContentCatalogData.GetHashCodeForEnumerable(dummyValues);
+            var hash3 = JsonContentCatalogData.GetHashCodeForEnumerable(dummyValues);
             Assert.AreNotEqual(hash1, hash3);
         }
 
@@ -462,7 +501,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void ContentCatalogData_ExpandInternalId_GeneratesExpectedResults(string input, string expected, string[] prefixes)
         {
-            Assert.AreEqual(expected, ContentCatalogData.ExpandInternalId(prefixes, input));
+            Assert.AreEqual(expected, JsonContentCatalogData.ExpandInternalId(prefixes, input));
         }
 
         [Test]
@@ -484,7 +523,7 @@ namespace UnityEditor.AddressableAssets.Tests
         [Test]
         public void CanLoad_OldCatalogFormat()
         {
-            var ccd = JsonUtility.FromJson<ContentCatalogData>(testData);
+            var ccd = JsonUtility.FromJson<JsonContentCatalogData>(testData);
             Assert.IsNotNull(ccd);
             var loc = ccd.CreateLocator();
             Assert.IsNotNull(loc);
@@ -498,6 +537,65 @@ namespace UnityEditor.AddressableAssets.Tests
                 Assert.IsNotNull(res[0].ResourceType);
             }
         }
-#endif
+
+        // JSON-format counterparts to the cross-runtime TypeNameResolver coverage in
+        // BinaryStorageBufferTests.cs. These drive real JsonUtility.ToJson/FromJson round-trips
+        // (not just in-memory SetData/CreateLocator) to prove JsonContentCatalogData shares the
+        // same runtime-portable type resolution as the binary catalog format.
+
+        [Test]
+        public void JsonCatalog_ResolvesType_WhenAssemblyNotFound()
+        {
+            // Simulate a catalog written by a different runtime: the assembly name on disk
+            // can't be loaded here, but the corelib class name alone is enough to resolve.
+            var catalog = new JsonContentCatalogData();
+            var entry = new ContentCatalogDataEntry(typeof(string), "Assets/foo.asset", "SomeProvider", new object[] {"key"});
+            catalog.SetData(new List<ContentCatalogDataEntry> {entry});
+
+            var json = JsonUtility.ToJson(catalog);
+            Assert.IsTrue(json.Contains("\"m_ClassName\":\"System.String\""), "test JSON missing expected resource type entry");
+            json = json.Replace("\"m_AssemblyName\":\"\",\"m_ClassName\":\"System.String\"",
+                "\"m_AssemblyName\":\"NonExistentAssembly.ForTesting\",\"m_ClassName\":\"System.String\"");
+
+            var loaded = JsonUtility.FromJson<JsonContentCatalogData>(json);
+            var loc = loaded.CreateLocator();
+            Assert.IsTrue(loc.Locate("key", null, out var res));
+            Assert.AreEqual(typeof(string), res[0].ResourceType);
+        }
+
+        [Test]
+        public void JsonCatalog_RoundTrip_NonCore_StripsVersionInfo()
+        {
+            var catalog = new JsonContentCatalogData();
+            var entry = new ContentCatalogDataEntry(typeof(Vector3), "Assets/foo.asset", "SomeProvider", new object[] {"key"});
+            catalog.SetData(new List<ContentCatalogDataEntry> {entry});
+
+            var json = JsonUtility.ToJson(catalog);
+            Assert.IsFalse(json.Contains("Version="), "version info must be stripped");
+            Assert.IsFalse(json.Contains("PublicKeyToken="), "public key token must be stripped");
+            Assert.IsTrue(json.Contains("\"m_AssemblyName\":\"UnityEngine.CoreModule\""), "non-corelib assembly should be the simple name only");
+
+            var loaded = JsonUtility.FromJson<JsonContentCatalogData>(json);
+            var loc = loaded.CreateLocator();
+            Assert.IsTrue(loc.Locate("key", null, out var res));
+            Assert.AreEqual(typeof(Vector3), res[0].ResourceType);
+        }
+
+        [Test]
+        public void JsonCatalog_RoundTrip_Corelib_UsesNullAssemblySentinel()
+        {
+            var catalog = new JsonContentCatalogData();
+            var entry = new ContentCatalogDataEntry(typeof(string), "Assets/foo.asset", "SomeProvider", new object[] {"key"});
+            catalog.SetData(new List<ContentCatalogDataEntry> {entry});
+
+            var json = JsonUtility.ToJson(catalog);
+            Assert.IsTrue(json.Contains("\"m_AssemblyName\":\"\",\"m_ClassName\":\"System.String\""),
+                "corelib assembly should be encoded as the empty/null sentinel");
+
+            var loaded = JsonUtility.FromJson<JsonContentCatalogData>(json);
+            var loc = loaded.CreateLocator();
+            Assert.IsTrue(loc.Locate("key", null, out var res));
+            Assert.AreEqual(typeof(string), res[0].ResourceType);
+        }
     }
 }

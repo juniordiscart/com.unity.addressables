@@ -2,9 +2,9 @@
 uid: addressables-building-content
 ---
 
-# Create a content-only build
+# Create a content build
 
-To create a content-only build, you need to use the [Addressables Groups window](GroupsWindow.md), which allows you to run a build script to create a build that only contains the Addressables assets in your project. You can also use the Addressables Groups window to run [your own custom build scripts](build-scripting-builds.md).
+To create a content build, you need to use the [Addressables Groups window](GroupsWindow.md), which allows you to run a build script to create a build that only contains the Addressables assets in your project. You can also use the Addressables Groups window to run [your own custom build scripts](build-scripting-builds.md).
 
 To create a content-only build:
 
@@ -33,9 +33,14 @@ After you have group and Addressables system settings configured, you can run a 
 
 1. Open the [Addressables Groups window](GroupsWindow.md) (menu: __Windows > Asset Management > Addressables > Groups__).
 2. Select the desired profile from the __Profile__ menu on the toolbar.
-3. Select __Build > New Build > Default Build Script__. If you have created your own build scripts they are also available from this menu.
+3. Select __Build > New Build > Default Build Script__. If you have created your own build scripts they're also available from this menu.
 
-The Default Build Script creates one or more AssetBundles for each group and saves them to either the local or the remote build path. By default, the build creates files in the locations defined in your [Profile](xref:addressables-profiles) settings for the __LocalBuildPath__ and __RemoteBuildPath__ variables. The files that Unity uses for your Player builds include AssetBundles (.bundle), catalog JSON and hash files, and settings files.
+The output of the build depends on the [content build system](content-build-systems.md) you're using:
+
+* **AssetBundles**: The build scripts create one or more AssetBundles for each group and saves them to either the local or the remote build path.
+* **Content directories**: The build scripts create one content directory, regardless of how you set up groups.
+
+By default, the build creates files in the locations defined in the [Profile](xref:addressables-profiles) settings for the build paths. The files that Unity uses for Player builds include AssetBundles (`.bundle`), content directories (`.cf` or `.archive` files), catalog JSON and hash files, and settings files.
 
 If you've already created a build, the __Update a Previous Build__ option is also available, and you can use it to create an [update build](builds-update-build.md).
 

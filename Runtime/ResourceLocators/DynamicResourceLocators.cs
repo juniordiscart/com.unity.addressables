@@ -74,14 +74,14 @@ namespace UnityEngine.AddressableAssets
         {
             if (type == typeof(Sprite) && mainLoc.ResourceType == typeof(U2D.SpriteAtlas))
             {
-                locations.Add(new ResourceLocationBase(locName, $"{mainLoc.InternalId}[{subKey}]", AtlasSpriteProviderId, type, new IResourceLocation[] {mainLoc}));
+                locations.Add(new ResourceLocationBase(locName, $"{mainLoc.InternalId}[{subKey}]", AtlasSpriteProviderId, type, mainLoc.Data, new IResourceLocation[] {mainLoc}));
             }
             else
             {
                 if (mainLoc.HasDependencies)
-                    locations.Add(new ResourceLocationBase(locName, $"{mainLoc.InternalId}[{subKey}]", mainLoc.ProviderId, mainLoc.ResourceType, mainLoc.Dependencies.ToArray()));
+                    locations.Add(new ResourceLocationBase(locName, $"{mainLoc.InternalId}[{subKey}]", mainLoc.ProviderId, mainLoc.ResourceType, mainLoc.Data, mainLoc.Dependencies.ToArray()));
                 else
-                    locations.Add(new ResourceLocationBase(locName, $"{mainLoc.InternalId}[{subKey}]", mainLoc.ProviderId, mainLoc.ResourceType));
+                    locations.Add(new ResourceLocationBase(locName, $"{mainLoc.InternalId}[{subKey}]", mainLoc.ProviderId, mainLoc.ResourceType, mainLoc.Data));
             }
         }
     }

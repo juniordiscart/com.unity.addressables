@@ -12,7 +12,7 @@ You can integrate Addressables into your continuous integration (CI) to perform 
 
 ## Configure custom content builders
 
-Addressables uses content builders to process and package your project's assets. The system defaults to `BuildScriptPackedMode` when you call [`AddressableAssetSettings.BuildPlayerContent`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.BuildPlayerContent). This method automatically uses the [`ActivePlayerDataBuilder`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.ActivePlayerDataBuilder) setting and executes that builder's `BuildDataImplementation`.
+Addressables uses content builders to process and package your project's assets. The system defaults to `BuildScriptSchemaDriven` when you call [`AddressableAssetSettings.BuildPlayerContent`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.BuildPlayerContent). This method automatically uses the [`ActivePlayerDataBuilder`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.ActivePlayerDataBuilder) setting and executes that builder's `BuildDataImplementation`.
 
 ### Setting up custom builders for continuous integration
 
@@ -20,7 +20,7 @@ If you have implemented a custom [`IDataBuilder`](xref:UnityEditor.AddressableAs
 
 1. Set the [`ActivePlayerDataBuilderIndex`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.ActivePlayerDataBuilderIndex) property on the [`AddressableAssetSettings`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings) instance.
 2. Access the settings through [`AddressableAssetSettingsDefaultObject.Settings`](xref:UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject.Settings).
-3. Use the index that corresponds to thr custom builder's position in the [`DataBuilders`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.DataBuilders) list.
+3. Use the index that corresponds to the custom builder's position in the [`DataBuilders`](xref:UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.DataBuilders) list.
 
 The following code example demonstrates how to configure a custom builder:
 
@@ -30,16 +30,19 @@ The following code example demonstrates how to configure a custom builder:
 
 Cache cleaning prevents CI builds from using outdated files from previous builds, which can cause inconsistent or incorrect build results.
 
-Each [`IDataBuilder`](xref:UnityEditor.AddressableAssets.Build.IDataBuilder) implementation includes a [`ClearCachedData`](xref:UnityEditor.AddressableAssets.Build.IDataBuilder.ClearCachedData) method that removes files created by that specific builder. For the default `BuildScriptPackedMode`, this includes:
+Each [`IDataBuilder`](xref:UnityEditor.AddressableAssets.Build.IDataBuilder) implementation includes a [`ClearCachedData`](xref:UnityEditor.AddressableAssets.Build.IDataBuilder.ClearCachedData) method that removes files created by that specific builder. For the default `BuildScriptSchemaDriven`, this includes:
 
 - Content catalog files.
 - Serialized settings files.
-- Built AssetBundles.
+- Built content.
 - Generated link.xml files.
 
 Call `IDataBuilder.ClearCachedData` as part of your CI process to ensure clean builds that don't rely on artifacts from previous runs.
 
 ## Clean the scriptable build pipeline cache
+
+>[!NOTE]
+>Cleaning the scriptable build pipeline cache is only applicable if you're using AssetBundles. Content directories are tracked via the `BuildHistory` API.
 
 The Scriptable Build Pipeline (SBP) creates a build cache in the `Library/BuildCache` folder to optimize subsequent builds. This cache contains:
 

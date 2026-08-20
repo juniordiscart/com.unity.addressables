@@ -1,8 +1,8 @@
 # Add assets to groups
 
-Create groups, add and remove assets from groups, and manage group organization using the Addressables Groups window.
+Create groups, add and remove assets from groups, and manage group organization using the **Addressables Groups** window.
 
-To manage groups and Addressables assets, open the Addressables Groups window by going to **Window** &gt;**Asset Management** &gt; **Addressables** &gt; **Groups**. Refer to [Addressables Groups window](xref:addressables-groups-window) for details about the features of this window.
+To manage groups and Addressables assets, open the **Addressables Groups** window by going to **Window** &gt;**Asset Management** &gt; **Addressables** &gt; **Groups**. Refer to [Addressables Groups window](xref:addressables-groups-window) for details about the features of this window.
 
 ![The Addressables Groups window showing the toolbar and list of groups and assets.](images/addressables-groups-window.png)<br/><br/>*The Addressables Groups window showing the toolbar and list of groups and assets.*
 
@@ -11,19 +11,31 @@ To manage groups and Addressables assets, open the Addressables Groups window by
 To create a group:
 
 1. Open the Addressables Groups window: **Window** &gt; **Asset Management** &gt; **Addressables** &gt; **Groups**
-1. Select **New** &gt; **Packed Asset**, or right-click in the window and select **Create New Group** to create a new group. You can alternatively select a custom [group template](xref:group-templates), if any are available.
+1. Select **New** and choose from:
+    * **Content Directory**: Builds assets into a content directory. Select this option for new projects with assets that you plan on distributing locally.
+    * **Packed Asset**: Builds assets into AssetBundles. Select this option if you're using an older project that uses AssetBundles, or you want to distribute assets remotely.
+    * **Blank**: Creates a group with [no schema](GroupSchemas) attached to it. The default build script can't process assets in a blank group.
+    * **Custom template**: If you've created a custom [group template](GroupTemplates.md) it appears in this dropdown.
+
+    You can also right-click in the window and select **Create New Group** to create a new group.
 1. Right click the new group and select **Rename** to rename the group.
-1. Open the context menu again and select **Inspect Group Settings**. Alternatively, you can select the group from the `AssetGroups` folder in the project.
-1. In the Inspector, adjust the [group settings](ContentPackingAndLoadingSchema.md) as desired.
+1. Select the group to view its [group settings](group-inspector-settings-reference.md) in the Inspector.
 
-For groups that contain assets that you plan to distribute with your main application, you can use the default settings.
+For groups that contain assets that you plan to distribute with your main application, use the default settings.
 
->[!TIP]
+> [!TIP]
 > You can optionally use the **[Auto Group Generator window](groups-auto-group-generator.md)** to automatically generate optimized groups for assets and their dependencies.
 
 ### Groups for remote distribution
 
-For groups containing assets that you plan to distribute remotely, you must change the build and load paths to use the remote versions of the [profile](xref:addressables-profiles) path variables. To build AssetBundles for remote distribution, you must also enable the __Build Remote Catalog__ option in the [Addressable System Settings](xref:addressables-asset-settings).
+> [!IMPORTANT]
+> Remote distribution is only compatible with the AssetBundle system, so you must use the **Packed Asset** group for assets you want to distribute remotely.
+
+For groups containing assets that you plan to distribute remotely, you must do the following:
+
+* Use the **Packed Asset** group type.
+* Change the build and load paths to use the remote versions of the [profile](AddressableAssetsProfiles) path variables.
+* To build content for remote distribution, enable the __Build Remote Catalog__ option in the [Addressable System Settings](AddressableAssetSettings.md).
 
 ## Add assets to a group
 
@@ -53,4 +65,4 @@ To add, remove or rename your labels, select the __+__ button, then select __Man
 * [Labelling assets](Labels.md)
 * [Define how groups are packed into AssetBundles](PackingGroupsAsBundles.md)
 * [Addressables Groups window reference](GroupsWindow.md)
-* [Content packing settings reference](ContentPackingAndLoadingSchema.md)
+* [Content packing settings reference](group-inspector-settings-reference.md)

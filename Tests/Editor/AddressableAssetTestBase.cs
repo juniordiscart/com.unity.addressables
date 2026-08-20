@@ -28,6 +28,8 @@ namespace UnityEditor.AddressableAssets.Tests
         }
 
         private AddressableAssetSettings m_Settings;
+        private AddressableAssetSettings m_PreviousDefaultSettings;
+        private bool m_DidOverrideDefaultSettings;
 
         protected AddressableAssetSettings Settings
         {
@@ -46,6 +48,13 @@ namespace UnityEditor.AddressableAssets.Tests
         {
             get { return true; }
         }
+
+        // Opt-in: makes AddressableAssetSettingsDefaultObject.Settings deterministically point at this
+        // fixture's own Settings for the duration of its tests (see Init/Cleanup). Off by default because
+        // the setter also live-registers this fixture's OnPostprocessAllAssets on the real
+        // AssetPostprocessor pipeline (AddressableAssetSettingsDefaultObject.cs:96), which conflicts with
+        // fixtures that themselves test that exact mechanism (e.g. AddressableAssetSettingsTests).
+        protected virtual bool ManageDefaultSettings => false;
 
         [OneTimeSetUp]
         public void Init()
@@ -104,6 +113,18 @@ namespace UnityEditor.AddressableAssets.Tests
                 AssetDatabase.AssetPathToGUID(scene3Path)
             };
 
+            // Make the process-wide default settings object deterministic for fixtures that opt in via
+            // ManageDefaultSettings: point it at THIS fixture's Settings so tests reading
+            // AddressableAssetSettingsDefaultObject.Settings (e.g. via AddressableAssetUtility.IsPathValidForEntry)
+            // don't depend on whatever the previously-run fixture left behind. Requires a persisted asset --
+            // the setter refuses an in-memory (PersistSettings=false) settings object.
+            if (ManageDefaultSettings && !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(Settings)))
+            {
+                m_PreviousDefaultSettings = AddressableAssetSettingsDefaultObject.Settings;
+                AddressableAssetSettingsDefaultObject.Settings = Settings;
+                m_DidOverrideDefaultSettings = true;
+            }
+
             OnInit();
 
             //TODO: Remove when NSImage warning issue on bokken is fixed
@@ -135,6 +156,15 @@ namespace UnityEditor.AddressableAssets.Tests
         public void Cleanup()
         {
             OnCleanup();
+
+            if (m_DidOverrideDefaultSettings)
+            {
+                AddressablesAssetPostProcessor.OnPostProcess.Unregister(Settings.OnPostprocessAllAssets);
+                AddressableAssetSettingsDefaultObject.Settings = m_PreviousDefaultSettings;
+                m_DidOverrideDefaultSettings = false;
+                m_PreviousDefaultSettings = null;
+            }
+
             if (Directory.Exists(TestFolder))
             {
                 Debug.Log($"{GetType()} - (cleanup) deleting {TestFolder}");
@@ -153,6 +183,20 @@ namespace UnityEditor.AddressableAssets.Tests
 
         protected virtual void OnCleanup()
         {
+        }
+
+        /// <summary>
+        /// Temporarily sets <see cref="AddressableAssetSettings.EnableJsonCatalog"/> to <paramref name="value"/>,
+        /// runs <paramref name="body"/>, then restores the previous value. Use in tests that exercise
+        /// the build pipeline so the catalog format under test is controlled without permanently
+        /// mutating the shared <see cref="Settings"/> instance.
+        /// </summary>
+        protected void WithEnableJsonCatalog(bool value, Action body)
+        {
+            bool prev = Settings.EnableJsonCatalog;
+            Settings.EnableJsonCatalog = value;
+            try { body(); }
+            finally { Settings.EnableJsonCatalog = prev; }
         }
 
         protected string CreateAsset(string assetPath, string objectName = null)

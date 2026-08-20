@@ -9,6 +9,9 @@ namespace UnityEditor.AddressableAssets.GUI
 {
     internal class ProfileTreeView : TreeViewAdapter
     {
+        internal const int k_IconSize = 12;
+        internal const float k_ApproxCharWidth = 7f;
+
         private List<string> m_Names;
         private Dictionary<int, AddressableAssetProfileSettings.BuildProfile> m_TreeIndexToBuildProfileMap;
         public List<string> Names => m_Names;
@@ -24,13 +27,13 @@ namespace UnityEditor.AddressableAssets.GUI
 
         private List<AddressableAssetProfileSettings.BuildProfile> m_ProfileList;
 
-        static Texture2D k_CheckMark;
+        static GUIContent k_CheckMarkContent;
 
         public static MultiColumnHeader CreateHeader()
         {
-            k_CheckMark = EditorGUIUtility.isProSkin
-                ? EditorGUIUtility.FindTexture("d_FilterSelectedOnly")
-                : EditorGUIUtility.FindTexture("FilterSelectedOnly");
+            k_CheckMarkContent = EditorGUIUtility.IconContent(EditorGUIUtility.isProSkin
+                ? "d_FilterSelectedOnly"
+                : "FilterSelectedOnly");
 
             var columns = new[]
             {
@@ -124,10 +127,19 @@ namespace UnityEditor.AddressableAssets.GUI
                 case 0:
                     //Display checkmark next to the active profile
                     if (GetProfile(item.id).id.Equals(m_Window.settings.activeProfileId))
-                        UnityEngine.GUI.DrawTexture(cellRect, k_CheckMark, ScaleMode.ScaleToFit);
+                    {
+                        var iconRect = new Rect(
+                            cellRect.x + (cellRect.width - k_IconSize) / 2,
+                            cellRect.y + (cellRect.height - k_IconSize) / 2,
+                            k_IconSize,
+                            k_IconSize);
+                        UnityEngine.GUI.DrawTexture(iconRect, k_CheckMarkContent.image, ScaleMode.ScaleToFit);
+                    }
                     break;
                 case 1:
-                    EditorGUI.LabelField(cellRect, item.displayName);
+                    float availableWidth = m_Window.ProfilesPaneWidth - 20; // subtract checkmark column and scrollbar
+                    string displayText = TruncateWithEllipsis(item.displayName, availableWidth);
+                    EditorGUI.LabelField(cellRect, new GUIContent(displayText, item.displayName));
                     break;
             }
         }
@@ -288,6 +300,11 @@ namespace UnityEditor.AddressableAssets.GUI
             }
 
             return default(AddressableAssetProfileSettings.BuildProfile);
+        }
+
+        string TruncateWithEllipsis(string text, float maxWidth)
+        {
+            return AddressablesGUIUtility.TruncateWithEllipsis(text, maxWidth, k_ApproxCharWidth);
         }
     }
 }

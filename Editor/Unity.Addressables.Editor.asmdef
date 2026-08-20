@@ -20,11 +20,6 @@
     "defineConstraints": [],
     "versionDefines": [
         {
-            "name": "Unity",
-            "expression": "2019.4.19f1",
-            "define": "NONRECURSIVE_DEPENDENCY_DATA"
-        },
-        {
             "name": "com.unity.services.ccd.management",
             "expression": "[2.0.0,4.0.0)",
             "define": "ENABLE_CCD"
@@ -36,7 +31,7 @@
         },
         {
             "name": "Unity",
-            "expression": "6000.6.0a5",
+            "expression": "6000.6.0b1",
             "define": "ENABLE_CONTENT_DIRECTORIES"
         }
     ],

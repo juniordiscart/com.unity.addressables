@@ -9,6 +9,7 @@ If you want to convert your in-progress project to use Addressables, you can con
 |**[Convert prefabs to use Addressables](convert-prefabs.md)**|Make prefabs Addressable and avoid duplication across scenes.|
 |**[Move assets from the Resources system](convert-resources-system.md)**|Migrate assets from the Resources folder to the Addressables system.|
 |**[Convert AssetBundles to Addressables](convert-assetbundles.md)**|Convert existing AssetBundle setups to use Addressables.|
+|**[Convert Addressables projects to content directories](convert-content-directories.md)**|Convert existing AssetBundle based groups to content directories.|
 
 ## Additional resources
 

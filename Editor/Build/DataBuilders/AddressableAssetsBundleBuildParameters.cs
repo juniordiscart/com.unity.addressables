@@ -33,9 +33,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         {
             UseCache = true;
             ContiguousBundles = aaSettings.ContiguousBundles;
-#if NONRECURSIVE_DEPENDENCY_DATA
             NonRecursiveDependencies = aaSettings.NonRecursiveBuilding;
-#endif
             DisableVisibleSubAssetRepresentations = aaSettings.DisableVisibleSubAssetRepresentations;
 
             m_settings = aaSettings;
@@ -48,7 +46,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             else
                 BundleCompression = target == BuildTarget.WebGL ? BuildCompression.LZ4Runtime : BuildCompression.LZMA;
 
-            if (aaSettings.StripUnityVersionFromBundleBuild)
+            if (aaSettings.StripUnityVersion)
                 ContentBuildFlags |= ContentBuildFlags.StripUnityVersion;
         }
 

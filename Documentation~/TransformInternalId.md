@@ -4,6 +4,9 @@ uid: addressables-api-transform-internal-id
 
 # Change Addressable load URLs
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 You can modify the URLs that Addressables uses to load assets at runtime in the following ways:
 
 * [Use static properties in a profile variable](#static-profile-variables)

@@ -10,7 +10,7 @@ using UnityEditor.Build;
 using UnityEditor.Build.Content;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using System.Linq;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 
 /// <summary>
 /// Maintains Addresssables build data when processing a player build.
@@ -134,10 +134,10 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
         {
             foreach (var buildResult in result.ContentDirectoryBuildResults)
             {
-                if (BuildHistory.TryGetMetadataPath(buildResult.BuildSessionGUID, out string metadataLocation)
-                    && !string.IsNullOrEmpty(metadataLocation))
+                if (BuildHistory.TryGetBuildReportDirectory(buildResult.BuildSessionGUID, out string buildReportDirectory)
+                    && !string.IsNullOrEmpty(buildReportDirectory))
                 {
-                    buildPlayerContext.AddAdditionalMetadataPathToPlayerOptions(metadataLocation);
+                    buildPlayerContext.AddPreviousBuildReportDirectory(buildReportDirectory);
                 }
             }
         }
@@ -145,11 +145,24 @@ public class AddressablesPlayerBuildProcessor : BuildPlayerProcessor
         // if no addressables build performed during player build, try to retrieve metadata path from content directory build path
         else if (settings != null)
         {
-            if (BuildHistory.TryGetBuildSummaryForOutputPath(settings.buildSettings.contentDirectoryBuildPath, out var buildSummary) &&
-                BuildHistory.TryGetMetadataPath(buildSummary.BuildSessionGUID, out var metadataLocation) &&
-                !string.IsNullOrEmpty(metadataLocation))
+            ContentDirectoryGroupSchema contentDirectoryGroupSchema = null;
+            foreach(var group in settings.groups)
             {
-                buildPlayerContext.AddAdditionalMetadataPathToPlayerOptions(metadataLocation);
+                // Require an enabled schema; a converted-back group keeps a disabled ContentDirectoryGroupSchema
+                // whose build path no longer reflects a real Content Directory build.
+                var schema = group.GetSchema<ContentDirectoryGroupSchema>();
+                if (schema != null && schema.IsEnabled)
+                {
+                    contentDirectoryGroupSchema = schema;
+                    break;
+                }
+            }
+
+            if (contentDirectoryGroupSchema != null && BuildHistory.TryGetBuildSummaryForOutputPath(contentDirectoryGroupSchema.BuildPath.GetValue(settings), out var buildSummary) &&
+                BuildHistory.TryGetBuildReportDirectory(buildSummary.BuildSessionGUID, out var buildReportDirectory) &&
+                !string.IsNullOrEmpty(buildReportDirectory))
+            {
+                buildPlayerContext.AddPreviousBuildReportDirectory(buildReportDirectory);
             }
 
         }

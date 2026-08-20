@@ -21,6 +21,9 @@ using UnityEditor.Presets;
 using UnityEditor.TestTools;
 using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
+using UnityEngine.AddressableAssets.Initialization;
+using UnityEditor.Build;
+using UnityEngine.AddressableAssets;
 
 namespace BuildLayoutGenerationTaskPerPlatformTests
 {
@@ -239,16 +242,51 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
         internal BuildLayout BuildAndExtractLayout(out AddressablesPlayerBuildResult buildResult)
         {
+
+            var layoutTEPFilePath = string.Empty;
             try
             {
                 BuildLayout layout = null;
                 BuildLayoutGenerationTask.s_LayoutCompleteCallback = (x, y) => layout = y;
                 buildResult = Settings.BuildPlayerContentImpl();
+                if (layout != null)
+                    layoutTEPFilePath = BuildScriptBase.GetLayoutTEPFilePath(layout.BuildStart);
                 return layout;
             }
             finally
             {
                 BuildLayoutGenerationTask.s_LayoutCompleteCallback = null;
+                if (File.Exists(layoutTEPFilePath))
+                    File.Delete(layoutTEPFilePath);
+            }
+        }
+
+        // regression test for UUM-147985
+        [Test]
+        public void WriteBuildLog_WhenTimestampedTEPAlreadyExists_SkipsCopyWithoutThrowing()
+        {
+            ProjectConfigData.BuildLayoutReportFileFormat = ProjectConfigData.ReportFileFormat.JSON;
+
+            BuildLayout layout = BuildAndExtractLayout();
+            Assert.IsNotNull(layout);
+
+            string tepSourceDir = Path.Combine(m_TestAssetsRoot, "BuildLog");
+            string timestampedTEPPath = BuildScriptBase.GetLayoutTEPFilePath(layout.BuildStart);
+            try
+            {
+                // Simulates the first Play Mode entry: creates the timestamped TEP copy.
+                BuildScriptBase.WriteBuildLog(new BuildLog(), tepSourceDir);
+                FileAssert.Exists(timestampedTEPPath);
+
+                // Simulates re-entering Play Mode against the same build layout report
+                // (same BuildStart, so the same timestamped filename). This used to throw
+                // IOException from File.Copy because the destination already existed.
+                Assert.DoesNotThrow(() => BuildScriptBase.WriteBuildLog(new BuildLog(), tepSourceDir));
+            }
+            finally
+            {
+                if (File.Exists(timestampedTEPPath))
+                    File.Delete(timestampedTEPPath);
             }
         }
 
@@ -363,6 +401,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
             AddressableAssetGroup group = null;
 
+            var layoutTEPFilePath = string.Empty;
             try
             {
                 // setup
@@ -373,6 +412,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                 AssetDatabase.SaveAssets();
 
                 BuildLayout layout = BuildAndExtractLayout();
+                layoutTEPFilePath = BuildScriptBase.GetLayoutTEPFilePath(layout.BuildStart);
 
                 // Test
                 BuildLayout.DataFromOtherAsset oa = layout.Groups[0].Bundles[0].Files[0].OtherAssets.First(x => x.AssetPath.Contains("p2.prefab"));
@@ -384,6 +424,8 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                     Settings.RemoveGroup(group);
                 if (File.Exists(layoutFilePath))
                     File.Delete(layoutFilePath);
+                if (File.Exists(layoutTEPFilePath))
+                    File.Delete(layoutTEPFilePath);
                 DeletePrefab("p1");
                 DeletePrefab("p2");
             }
@@ -550,6 +592,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
             AddressableAssetGroup group = null;
 
+            var layoutTEPFilePath = string.Empty;
             try
             {
                 // setup
@@ -558,6 +601,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                 AssetDatabase.SaveAssets();
 
                 BuildLayout layout = BuildAndExtractLayout();
+                layoutTEPFilePath = BuildScriptBase.GetLayoutTEPFilePath(layout.BuildStart);
 
                 // Test
                 Assert.IsTrue(layout.Groups[0].Bundles[0].Files[0].Assets[0].StreamedSize != 0);
@@ -570,6 +614,8 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                     Settings.RemoveGroup(group);
                 if (File.Exists(layoutFilePath))
                     File.Delete(layoutFilePath);
+                if (File.Exists(layoutTEPFilePath))
+                    File.Delete(layoutTEPFilePath);
                 DeleteTexture("t1");
             }
         }
@@ -581,6 +627,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             AddressableAssetGroup group = null;
             string assetPath = $"{m_TestAssetsRoot}/testpreset.preset";
 
+            var layoutTEPFilePath = string.Empty;
             try
             {
                 // setup
@@ -595,7 +642,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                 AssetDatabase.SaveAssets();
 
                 BuildLayout layout = BuildAndExtractLayout();
-
+                layoutTEPFilePath = BuildScriptBase.GetLayoutTEPFilePath(layout.BuildStart);
                 // Test
                 Assert.AreEqual(0, layout.Groups[0].Bundles[0].Files[0].Assets[0].SerializedSize);
             }
@@ -605,6 +652,8 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                     Settings.RemoveGroup(group);
                 if (File.Exists(layoutFilePath))
                     File.Delete(layoutFilePath);
+                if (File.Exists(layoutTEPFilePath))
+                    File.Delete(layoutTEPFilePath);
                 AssetDatabase.DeleteAsset(assetPath);
             }
         }
@@ -616,6 +665,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
             AddressableAssetGroup group = null;
 
+            var layoutTEPFilePath = string.Empty;
             try
             {
                 // setup
@@ -624,6 +674,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                 AssetDatabase.SaveAssets();
 
                 BuildLayout layout = BuildAndExtractLayout(out AddressablesPlayerBuildResult buildResult);
+                layoutTEPFilePath = BuildScriptBase.GetLayoutTEPFilePath(layout.BuildStart);
 
                 string hashPath = $"{layout.LocalCatalogBuildPath}/BuildManifestHash.txt";
                 string hash = File.Exists(hashPath) ? File.ReadAllText(hashPath) : "NoHashFound";
@@ -633,7 +684,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
 
                 Assert.AreEqual(1, layout.ContentDirectories.Count);
                 Assert.AreEqual($"{layout.LocalCatalogBuildPath}/{hash}.json", layout.ContentDirectories[0].ManifestPath);
-                Assert.AreEqual("ContentDirectoryCatalog", layout.ContentDirectories[0].CatalogName);
+                Assert.AreEqual(ResourceManagerRuntimeData.kCatalogAddress, layout.ContentDirectories[0].CatalogName);
 
                 Assert.IsNotNull(buildResult.ContentDirectoryBuildResults);
                 Assert.AreEqual(1, buildResult.ContentDirectoryBuildResults.Count);
@@ -647,6 +698,8 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                     buildResult.ContentDirectoryBuildResults[0].BuildSessionGUID,
                     layout.ContentDirectories[0].BuildSessionGUID,
                     "BuildSessionGUID in the build layout should match the one in the build result.");
+
+                VerifyTEP(buildResult);
             }
             finally // cleanup
             {
@@ -654,7 +707,43 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                     Settings.RemoveGroup(group);
                 if (File.Exists(layoutFilePath))
                     File.Delete(layoutFilePath);
+                if (File.Exists(layoutTEPFilePath))
+                    File.Delete(layoutTEPFilePath);
                 DeletePrefab("p1");
+            }
+        }
+
+        private void VerifyTEP(AddressablesPlayerBuildResult buildResult)
+        {
+            // Verify BuildContentTEP.json was merged into the main AddressablesBuildTEP.json
+            string mainTepPath = Addressables.LibraryPath + "AddressablesBuildTEP.json";
+            FileAssert.Exists(mainTepPath);
+            string mainTepText = File.ReadAllText(mainTepPath);
+            StringAssert.Contains("Building content directory AddressablesMainContentCatalog", mainTepText,
+                "AddressablesBuildTEP.json should contain the ContentDirectorySchemaBuilder build scope");
+
+            if (BuildHistory.TryGetFilePath(buildResult.ContentDirectoryBuildResults[0].BuildSessionGUID,
+                    "BuildContentTEP.json", out string buildContentTepPath))
+            {
+                string buildContentTepText = File.ReadAllText(buildContentTepPath);
+                int eventsStart = buildContentTepText.IndexOf("\"traceEvents\"", StringComparison.Ordinal);
+                Assert.Greater(eventsStart, -1, "BuildContentTEP.json should contain a traceEvents array");
+                int nameOffset = buildContentTepText.IndexOf("\"name\":", eventsStart, StringComparison.Ordinal);
+                Assert.Greater(nameOffset, -1, "BuildContentTEP.json should contain at least one named event");
+                int valueStart = buildContentTepText.IndexOf('"', nameOffset + 7) + 1;
+                int valueEnd = buildContentTepText.IndexOf('"', valueStart);
+                // this verifies the first value
+                string nativeEventName = buildContentTepText.Substring(valueStart, valueEnd - valueStart);
+                StringAssert.Contains(nativeEventName, mainTepText,
+                    "An event from BuildContentTEP.json should appear in AddressablesBuildTEP.json after the TEP merge");
+
+                // also verify a known value
+                StringAssert.Contains("UnifiedBuild", mainTepText,
+                    "The UnifiedBuild from BuildContentTEP.json should appear in AddressablesBuildTEP.json after the TEP merge");
+            }
+            else
+            {
+                Assert.Fail("BuildContentTEP.json was not found via BuildHistory — cannot verify TEP merge");
             }
         }
 #endif
@@ -757,6 +846,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             AddressableAssetGroup group = null;
             bool prevBuildRemoteCatalog = Settings.BuildRemoteCatalog;
 
+            var layoutTEPFilePath = string.Empty;
             try
             {
                 // setup
@@ -765,6 +855,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                 AssetDatabase.SaveAssets();
 
                 BuildLayout layout = BuildAndExtractLayout();
+                layoutTEPFilePath = BuildScriptBase.GetLayoutTEPFilePath(layout.BuildStart);
 
                 // Test
                 foreach (BuildLayout.ExplicitAsset explicitAsset in BuildLayoutHelpers.EnumerateAssets(layout))
@@ -793,6 +884,8 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                     Settings.RemoveGroup(group);
                 if (File.Exists(layoutFilePath))
                     File.Delete(layoutFilePath);
+                if (File.Exists(layoutTEPFilePath))
+                    File.Delete(layoutTEPFilePath);
                 DeleteScriptableObject("so1");
             }
         }
@@ -833,6 +926,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
             string layoutFilePath = BuildLayoutGenerationTask.GetLayoutFilePathForFormat(ProjectConfigData.BuildLayoutReportFileFormat);
             AddressableAssetGroup group = null;
 
+            var layoutTEPFilePath = string.Empty;
             try
             {
                 group = CreateGroup("Group1");
@@ -840,6 +934,7 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                 AssetDatabase.SaveAssets();
 
                 BuildLayout layout = BuildAndExtractLayout();
+                layoutTEPFilePath = BuildScriptBase.GetLayoutTEPFilePath(layout.BuildStart);
 
                 Assert.IsNotNull(layout, "Build should produce a layout.");
                 Assert.IsFalse(layout.AddressablesBuildSessionGUID.Empty(), "AddressablesBuildSessionGUID should be set for every build.");
@@ -851,6 +946,8 @@ namespace BuildLayoutGenerationTaskPerPlatformTests
                     Settings.RemoveGroup(group);
                 if (File.Exists(layoutFilePath))
                     File.Delete(layoutFilePath);
+                if (File.Exists(layoutTEPFilePath))
+                    File.Delete(layoutTEPFilePath);
                 DeletePrefab("p1");
             }
         }

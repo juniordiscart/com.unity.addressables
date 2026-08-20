@@ -78,6 +78,7 @@ namespace Tests.Editor.GUI
                     File.Delete(m_variantPath);
             }
         }
+#if !UNITY_6000_6_OR_NEWER
         [Test]
         public void TestFastIcon_AssetGUID()
         {
@@ -85,6 +86,7 @@ namespace Tests.Editor.GUI
             var typeGuid = IconLazyLoad.GetTypeGuidFromAsset("Assets/SomeAsset.asset");
                 Assert.IsTrue(AssetDatabase.GUIDToAssetPath(typeGuid).EndsWith("SomeScriptableObject.cs"));
         }
+#endif
 
         [Test]
         public void TestFastIcon_PrefabDetermination()
@@ -119,7 +121,11 @@ namespace Tests.Editor.GUI
                 Assert.IsNull(tex);
                 return;
             }
-            Assert.AreEqual(tex.name, expected);
+            // ensure pass condition does not depend on which editor skin we use
+            var name = tex.name;
+            if (tex.name.StartsWith("d_"))
+                name = tex.name.Substring(2);
+            Assert.AreEqual(name, expected);
         }
 
         [Test]
@@ -133,15 +139,20 @@ namespace Tests.Editor.GUI
             Assert.IsNull(CallIconLazyLoadWithPathOnly("Assets/SomeTexture.png", false), "Texture icon should be null as it cannot be fast loaded");
             Assert.IsNull(CallIconLazyLoadWithPathOnly("Assets/SomeTexture.png", true), "Texture icon should be null as it cannot be fast loaded");
 
+#if UNITY_6000_6_OR_NEWER
+            // We expect the method to immediately return an icon for Scriptable Objects on 6.6+
+            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/SomeAsset.asset", false, "ScriptableObject Icon");
+#else
             // We have no default icon for ScriptableObjects - we rely on MiniPreview, so it's Null
             TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/SomeAsset.asset", false, null);
-            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/Prefab.prefab", false, "d_Prefab Icon");
-            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/PrefabVariant.prefab", false, "d_Prefab Icon");
+#endif
+            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/Prefab.prefab", false, "Prefab Icon");
+            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/PrefabVariant.prefab", false, "Prefab Icon");
 
             // And, if we do perform file reads, we expect them to match AssetDB
-            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/SomeAsset.asset", true, "d_ScriptableObject Icon");
-            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/Prefab.prefab", true, "d_Prefab Icon");
-            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/PrefabVariant.prefab", true, "d_PrefabVariant Icon");
+            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/SomeAsset.asset", true, "ScriptableObject Icon");
+            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/Prefab.prefab", true, "Prefab Icon");
+            TestPathIsLoadedSameFromAssetDBAsFastPath("Assets/PrefabVariant.prefab", true, "PrefabVariant Icon");
         }
     }
 }

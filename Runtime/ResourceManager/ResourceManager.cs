@@ -396,7 +396,7 @@ namespace UnityEngine.ResourceManagement
         internal IOperationCacheKey CreateCacheKeyForLocation(IResourceProvider provider, IResourceLocation location, Type desiredType = null)
         {
             // Delegate to the provider's virtual method if it extends ResourceProviderBase.
-            // This allows providers like AssetBundleProvider and ContentDirectoryProvider to use
+            // This allows providers like AssetBundleProvider to use
             // TransformInternalId for cache key generation, which may return different values
             // before and after asset bundle is loaded (e.g., when using Play Asset Delivery for Android).
             if (provider is ResourceProviderBase rpb)

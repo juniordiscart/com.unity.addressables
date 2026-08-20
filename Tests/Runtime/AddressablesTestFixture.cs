@@ -9,6 +9,7 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.SceneManagement;
 #endif
 using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.Util;
 using UnityEngine.TestTools;
@@ -23,12 +24,12 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
     internal AddressablesImpl m_Addressables;
     internal string m_RuntimeSettingsPath;
     internal readonly string m_UniqueTestName;
-    protected const string kCatalogExt =
-#if ENABLE_JSON_CATALOG
-            ".json";
-#else
-        ".bin";
-#endif
+    protected virtual bool UseJsonCatalog => false;
+    protected string kCatalogExt => UseJsonCatalog ? ".json" : ".bin";
+
+    protected ContentCatalogData CreateCatalogData(string id = null) =>
+        AddressablesTestUtility.CreateCatalogData(UseJsonCatalog, id);
+
     protected AddressablesTestFixture()
     {
         m_UniqueTestName = this.GetType().Name;
@@ -115,6 +116,7 @@ public abstract class AddressablesTestFixture : IPrebuildSetup, IPostBuildCleanu
         string rootFolder = GetGeneratedAssetsPath();
         Directory.CreateDirectory(rootFolder);
         AddressableAssetSettings settings = CreateSettings("Settings", rootFolder);
+        settings.EnableJsonCatalog = UseJsonCatalog;
 
         Setup(settings, rootFolder);
         AssetDatabase.SaveAssets();

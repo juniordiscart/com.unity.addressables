@@ -17,6 +17,9 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         static readonly GUIContent k_PathsPreviewGUIContent =
             new GUIContent("Path Preview", "Preview of what the current paths will be evaluated to");
 
+        static readonly string k_NoSettingsWarning =
+            L10n.Tr("No Addressable Asset Settings found. Please create one via Window > Asset Management > Addressables > Groups.");
+
         internal static void ValidatePaths(AddressableAssetGroupSchema ownerSchema,
             AddressableAssetGroup group,
             ref ProfileValueReference buildPath,
@@ -43,6 +46,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             ref int selectedPathPairIndex)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                EditorGUILayout.HelpBox(k_NoSettingsWarning, MessageType.Warning);
+                return;
+            }
+
             var buildPathProperty = so.FindProperty("m_BuildPath");
             var loadPathProperty = so.FindProperty("m_LoadPath");
 
@@ -94,6 +103,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         {
             bool modified = false;
             var settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                EditorGUILayout.HelpBox(k_NoSettingsWarning, MessageType.Warning);
+                return false;
+            }
 
             var buildPathProperty = so.FindProperty("m_BuildPath");
             var loadPathProperty = so.FindProperty("m_LoadPath");

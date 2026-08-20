@@ -41,6 +41,7 @@ namespace UnityEditor.AddressableAssets.GUI
     internal class AddressablesGUIUtility
     {
         private static Dictionary<string, FoldoutSessionStateValue> m_CachedSessionStates = new Dictionary<string, FoldoutSessionStateValue>();
+        private static Dictionary<string, Texture2D> s_SchemaIconCache = new Dictionary<string, Texture2D>();
 
         internal static GUIStyle GetStyle(string styleName)
         {
@@ -75,6 +76,16 @@ namespace UnityEditor.AddressableAssets.GUI
             return str;
         }
 
+        internal static string TruncateWithEllipsis(string text, float maxWidth, float approxCharWidth)
+        {
+            int maxChars = Mathf.FloorToInt(maxWidth / approxCharWidth);
+            if (text.Length <= maxChars)
+                return text;
+            if (maxChars <= 3)
+                return text.Substring(0, Mathf.Max(1, maxChars));
+            return text.Substring(0, maxChars - 3) + "...";
+        }
+
         internal static bool GetFoldoutValue(string stateKey)
         {
             if (m_CachedSessionStates.TryGetValue(stateKey, out var val))
@@ -97,7 +108,7 @@ namespace UnityEditor.AddressableAssets.GUI
             m_CachedSessionStates.Add(stateKey, foldoutState);
         }
 
-        internal static float HeaderHeight = 22f;
+        internal static float HeaderHeight = 20f;
 
         internal static void DrawDivider()
         {
@@ -232,6 +243,80 @@ namespace UnityEditor.AddressableAssets.GUI
             return newEnabled;
         }
 
+        /// <summary>
+        /// Determines the icon type for a schema based on its type.
+        /// </summary>
+        /// <param name="schema">The schema to evaluate</param>
+        /// <returns>The icon type to display</returns>
+        internal static GroupIconType GetSchemaIconType(AddressableAssetGroupSchema schema)
+        {
+            if (schema == null) return GroupIconType.None;
+
+            if (schema is BundledAssetGroupSchema)
+                return GroupIconType.AssetBundle;
+            if (schema is ContentDirectoryGroupSchema)
+                return GroupIconType.ContentDirectory;
+
+            return GroupIconType.None;
+        }
+
+        /// <summary>
+        /// Gets the appropriate icon for a schema header based on schema type.
+        /// </summary>
+        /// <param name="schema">The schema to get the icon for</param>
+        /// <returns>The icon texture, or null if no icon should be displayed</returns>
+        internal static Texture2D GetSchemaIcon(AddressableAssetGroupSchema schema)
+        {
+            var iconType = GetSchemaIconType(schema);
+            if (iconType == GroupIconType.None)
+                return null;
+
+            // For Inspector headers, always use non-selected state
+            bool isDark = EditorGUIUtility.isProSkin;
+
+            string path;
+            if (iconType == GroupIconType.AssetBundle)
+            {
+                path = isDark
+                    ? "Packages/com.unity.addressables/Editor/Icons/Groups Window/Dark Theme/Asset Bundle/d_AssetBundle.png"
+                    : "Packages/com.unity.addressables/Editor/Icons/Groups Window/Light Theme/Asset Bundle/AssetBundle.png";
+            }
+            else // GroupIconType.ContentDirectory
+            {
+                path = isDark
+                    ? "Packages/com.unity.addressables/Editor/Icons/Groups Window/Dark Theme/Content Directory/d_ContentDirectory.png"
+                    : "Packages/com.unity.addressables/Editor/Icons/Groups Window/Light Theme/Content Directory/ContentDirectory.png";
+            }
+
+            // For high-DPI displays, try to load the @2x variant first
+            string hiDpiPath = null;
+            if (EditorGUIUtility.pixelsPerPoint > 1f)
+            {
+                hiDpiPath = path.Replace(".png", "@2x.png");
+            }
+
+            // Check cache first (use hi-DPI path as cache key if available)
+            string cacheKey = hiDpiPath ?? path;
+            if (s_SchemaIconCache.TryGetValue(cacheKey, out var cachedIcon))
+                return cachedIcon;
+
+            // Try to load hi-DPI variant first, fall back to base icon
+            Texture2D icon = null;
+            if (hiDpiPath != null)
+            {
+                icon = AssetDatabase.LoadAssetAtPath<Texture2D>(hiDpiPath);
+            }
+            if (icon == null)
+            {
+                icon = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            }
+
+            // Cache the result (including null to prevent repeated disk access)
+            s_SchemaIconCache[cacheKey] = icon;
+
+            return icon;
+        }
+
         public static bool BeginFoldoutHeaderGroupWithHelp(bool isActive, GUIContent content, Action helpAction = null, int indent = 0, Action<Rect> menuAction = null,
                                                            AddressableAssetGroupSchema schema = null, AddressableAssetGroup groupTarget = null, AddressableAssetGroup[] groupTargets = null)
         {
@@ -271,38 +356,57 @@ namespace UnityEditor.AddressableAssets.GUI
                     menuAction.Invoke(menuButtonRect);
             }
 
-            var toggleRect = headerRect;
-            bool schemaIsEnabled = true;
-            float labelOffset = 7f;
-            if (schema != null && schema is ICanBeEnabled)
-            {
-                labelOffset = 20f;
-                toggleRect.x += 7;
-                schemaIsEnabled = DrawEnableButton(toggleRect, schema, groupTarget, groupTargets);
-            }
-
             if (helpAction != null)
             {
                 Rect helpRect = headerRect;
-                helpRect.y = headerRect.y + 3;
+                helpRect.y = headerRect.y + (HeaderHeight - 16f) / 2f;
                 helpRect.x = headerRect.x + headerRect.width - helpRect.height;
                 if (menuAction != null)
                     helpRect.x -= helpRect.height;
-                helpRect.width = helpRect.height;
+                helpRect.width = 16f;
+                helpRect.height = 16f;
                 if (UnityEngine.GUI.Button(helpRect, EditorGUIUtility.IconContent("_Help"), iconStyle))
                     helpAction.Invoke();
             }
 
+            // Layout order: foldout arrow | icon | checkbox | label
+            // All elements vertically centered in the header
+            float currentX = headerRect.x + 7f;
+            float verticalCenter = headerRect.y + (HeaderHeight - 16f) / 2f;
+
+            // Get schema icon if available - draw BEFORE the checkbox
+            Texture2D schemaIcon = schema != null ? GetSchemaIcon(schema) : null;
+            bool schemaIsEnabled = true;
+            Rect toggleRect = Rect.zero;
+
+            if (schemaIcon != null)
+            {
+                Rect iconRect = new Rect(currentX, verticalCenter, 16f, 16f);
+                EditorGUI.BeginDisabledGroup(schema is ICanBeEnabled canBeEnabled && !canBeEnabled.IsEnabled);
+                UnityEngine.GUI.DrawTexture(iconRect, schemaIcon, ScaleMode.ScaleToFit);
+                EditorGUI.EndDisabledGroup();
+                currentX += 18f; // Icon width + padding
+            }
+
+            // Draw checkbox after icon - MUST be drawn before click detection so it can receive input
+            if (schema != null && schema is ICanBeEnabled)
+            {
+                toggleRect = new Rect(currentX, verticalCenter, 16f, 16f);
+                schemaIsEnabled = DrawEnableButton(toggleRect, schema, groupTarget, groupTargets);
+                currentX += 18f; // Checkbox width + padding
+            }
+
+            // Handle foldout click - exclude the checkbox area to allow it to receive clicks
             bool isPressedDown = isHover && UnityEngine.Event.current.type == UnityEngine.EventType.MouseDown && UnityEngine.Event.current.button == 0;
-            if (isPressedDown)
+            if (isPressedDown && !toggleRect.Contains(UnityEngine.Event.current.mousePosition))
             {
                 isActive = !isActive;
                 UnityEngine.Event.current.Use();
                 UnityEngine.GUI.changed = true;
             }
 
-            var labelRect = toggleRect;
-            labelRect.x += labelOffset;
+            // Draw label - use full header height so text aligns naturally
+            var labelRect = new Rect(currentX, headerRect.y, headerRect.width - (currentX - headerRect.x), HeaderHeight);
             EditorGUI.BeginDisabledGroup(!schemaIsEnabled);
             GUIStyle style = EditorStyles.boldLabel;
             EditorGUI.LabelField(labelRect, content, style);
@@ -320,16 +424,13 @@ namespace UnityEditor.AddressableAssets.GUI
         /// </summary>
         internal static void DrawErrorBoxWithLink(string message, string linkText, string url)
         {
-            DrawDivider();
-            GUILayout.Space(6f);
-
             EditorGUILayout.BeginVertical();
             {
                 EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
                 {
                     GUIContent iconContent = EditorGUIUtility.IconContent("console.erroricon");
                     if (iconContent != null && iconContent.image != null)
-                        GUILayout.Label(iconContent, GUILayout.ExpandWidth(false), GUILayout.MinWidth(20f));
+                        GUILayout.Label(iconContent, GUILayout.Width(20f), GUILayout.Height(20f));
 
                     EditorGUILayout.BeginVertical();
                     {

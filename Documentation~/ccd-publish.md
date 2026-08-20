@@ -1,5 +1,8 @@
 # Publish content with Cloud Content Delivery
 
+>[!IMPORTANT]
+>The following workflow is only applicable if you're using [AssetBundles as the content build system](content-build-systems.md) for your project.
+
 To publish content with Cloud Content Delivery (CCD), you have the following options:
 
 * Use CCD Dashboard/CLI

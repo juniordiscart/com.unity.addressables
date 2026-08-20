@@ -86,7 +86,9 @@ namespace UnityEditor.AddressableAssets.Settings
             m_addressables.ResourceManager.ResourceProviders.Add(new TextDataProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new JsonAssetProvider());
             m_addressables.ResourceManager.ResourceProviders.Add(new AtlasSpriteProvider());
-            m_addressables.ResourceManager.ResourceProviders.Add(new ContentCatalogProvider(m_addressables.ResourceManager));
+            m_addressables.ResourceManager.ResourceProviders.Add(new JsonCatalogProvider(m_addressables.ResourceManager));
+            m_addressables.ResourceManager.ResourceProviders.Add(new BinaryCatalogProvider(m_addressables.ResourceManager));
+            m_addressables.ResourceManager.ResourceProviders.Add(new BinaryAssetProvider<BinaryContentCatalogData.Serializer>());
             WebRequestQueue.SetMaxConcurrentRequests(m_settings.MaxConcurrentWebRequests);
             m_addressables.CatalogRequestsTimeout = m_settings.CatalogRequestsTimeout;
 

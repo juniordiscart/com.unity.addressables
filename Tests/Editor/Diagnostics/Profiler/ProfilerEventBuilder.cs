@@ -195,6 +195,9 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
         public AsyncOperationStatus Status { get; set; }
         public Exception OperationException { get; }
         public bool IsDone { get; }
+        public bool CompletedEventHasListeners { get; }
+        public bool HasReleaseOnCompletionRegistered { get; }
+        public void MarkReleaseOnCompletionRegistered() { }
         public Action<IAsyncOperation> OnDestroy { get; set; }
 
         public void GetDependencies(List<AsyncOperationHandle> deps)

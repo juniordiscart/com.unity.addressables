@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using UnityEditor;
-using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 using UnityEditor.AddressableAssets.Build.DataBuilders.SchemaBuilders;
-using UnityEditor.Build.Pipeline.Interfaces;
 using UnityEngine.Build.Pipeline;
 
 namespace UnityEditor.AddressableAssets.Build.DataBuilders
@@ -15,6 +12,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
     /// Build scripts used for player builds and running with bundles in the editor.
     /// </summary>
     [CreateAssetMenu(fileName = "BuildScriptPacked.asset", menuName = "Addressables/Content Builders/Default Build Script")]
+    [AddressablesHelpURL("builds-full-build.html")]
     public class BuildScriptPackedMode : BuildScriptBase
     {
         /// <summary>
@@ -30,7 +28,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <inheritdoc />
         public override string Name
         {
-            get { return "Default Build Script"; }
+            get { return "Build Script (AssetBundles)"; }
         }
 
         /// <summary>
@@ -47,7 +45,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             /// <inheritdoc />
             public override string Name
             {
-                get { return "Default Build Script"; }
+                get { return "Build Script (AssetBundles)"; }
             }
 
             /// <inheritdoc />
@@ -126,12 +124,12 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             }
 
             /// <inheritdoc />
-            public override void CopyAndRegisterContentState(string tempPath, string contentStatePath, AddressablesDataBuilderInput builderInput, AddressablesPlayerBuildResult addrResult)
+            public override void CopyAndRegisterContentState(string tempPath, string contentStatePath, FileRegistry registry, AddressablesPlayerBuildResult addrResult)
             {
                 if (m_OuterBuildScript != null)
-                    m_OuterBuildScript.CopyAndRegisterContentState(tempPath, contentStatePath, builderInput, addrResult);
+                    m_OuterBuildScript.CopyAndRegisterContentState(tempPath, contentStatePath, registry, addrResult);
                 else
-                    base.CopyAndRegisterContentState(tempPath, contentStatePath, builderInput, addrResult);
+                    base.CopyAndRegisterContentState(tempPath, contentStatePath, registry, addrResult);
             }
 
             /// <inheritdoc />
@@ -147,7 +145,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             /// <summary>
             /// Routes bundle naming to <see cref="BuildScriptPackedMode.ConstructAssetBundleName"/> so overrides on
-            /// the packed script run from <see cref="BuildScriptSchemaDriven.ConstructOutputName"/> during the build.
+            /// the packed script run from <see cref="BuildScriptSchemaDriven.GetConstructAssetBundleNameCallback"/> during the build.
             /// </summary>
             /// <param name="assetGroup">Group being built, if any.</param>
             /// <param name="schema">Bundled asset schema controlling naming.</param>
@@ -169,9 +167,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             /// Runs <see cref="BuildScriptSchemaDriven.BuildDataImplementation{TResult}"/> without re-entering the nested
             /// <see cref="BuildDataImplementation{TResult}"/> override. Used by the outer default to avoid infinite recursion.
             /// </summary>
-            internal TResult InvokeBaseBuildDataImplementation<TResult>(AddressablesDataBuilderInput builderInput) where TResult : IDataBuilderResult
-            {
-                return base.BuildDataImplementation<TResult>(builderInput);
+            internal TResult InvokeBaseBuildDataImplementation<TResult>(AddressablesDataBuilderInput builderInput)
+            where TResult : IDataBuilderResult
+        {
+            // Propagate the logger so catalog bundle builds don't fall back to
+            // creating their own BuildLog and writing buildlogtep.json (ADDR-1755).
+            Log = m_OuterBuildScript?.Log;
+            return base.BuildDataImplementation<TResult>(builderInput);
             }
 
             /// <summary>
@@ -235,7 +237,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             /// </summary>
             internal void InvokeBaseCopyAndRegisterContentState(string tempPath, string contentStatePath, AddressablesDataBuilderInput builderInput, AddressablesPlayerBuildResult addrResult)
             {
-                base.CopyAndRegisterContentState(tempPath, contentStatePath, builderInput, addrResult);
+                base.CopyAndRegisterContentState(tempPath, contentStatePath, builderInput.Registry, addrResult);
             }
 
             /// <summary>
@@ -460,12 +462,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// Do not dispatch through <see cref="SchemaDrivenBuildScriptInstance"/> from overrides in a way that re-enters this method;
         /// use <see langword="base"/> or <see cref="PackedModeSchemaDriven.InvokeBaseCopyAndRegisterContentState"/>.
         /// </remarks>
+        [Obsolete("Use CopyAndRegisterContentState(string, string, FileRegistry, AddressablesPlayerBuildResult)")]
         public override void CopyAndRegisterContentState(string tempPath, string contentStatePath, AddressablesDataBuilderInput builderInput, AddressablesPlayerBuildResult addrResult)
         {
             if (SchemaDrivenBuildScriptInstance is PackedModeSchemaDriven packed)
                 packed.InvokeBaseCopyAndRegisterContentState(tempPath, contentStatePath, builderInput, addrResult);
             else
-                SchemaDrivenBuildScriptInstance.CopyAndRegisterContentState(tempPath, contentStatePath, builderInput, addrResult);
+                SchemaDrivenBuildScriptInstance.CopyAndRegisterContentState(tempPath, contentStatePath, builderInput.Registry, addrResult);
         }
 
         /// <summary>

@@ -5,6 +5,7 @@ using UnityEngine.Serialization;
 using static UnityEditor.AddressableAssets.Settings.GroupSchemas.ContentDirectoryGroupSchema;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.ResourceManagement.Util;
+using UnityEngine.AddressableAssets.Initialization;
 using UnityEngine.AddressableAssets.ResourceProviders;
 using UnityEditor.AddressableAssets.GUI;
 
@@ -15,13 +16,39 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
     /// Content Directories provide an alternative to AssetBundles for organizing and loading addressable content.
     /// </summary>
     [DisplayName("Content Directory")]
-    public class ContentDirectoryGroupSchema : AddressableAssetGroupSchema, ISerializationCallbackReceiver, ICanIncludeInBuild
+    [AddressablesHelpURL("GroupSchemas.html")]
+    public class ContentDirectoryGroupSchema : AddressableAssetGroupSchema,
+        ISerializationCallbackReceiver,
+        IBuildableSchema,
+        ICanIncludeFolderKeys,
+        ICanIncludeLabels
     {
+        // Retained (serialized) only so a project's previously-stored per-schema value can be migrated up to the
+        // group on load. The IncludeInBuild property below no longer reads this field; it forwards to the group.
         [SerializeField]
         bool m_IncludeInBuild = true;
 
+        internal override bool? GetDeprecatedIncludeInBuild() => m_IncludeInBuild;
+
+        /// <summary>
+        /// If true, the group's content will be included in the Addressables build.
+        /// </summary>
+        /// <remarks>
+        /// Include in Build is stored on the owning <see cref="AddressableAssetGroup"/>. This property forwards to
+        /// <see cref="AddressableAssetGroup.IncludeInBuild"/> so the group remains the single source of truth.
+        /// </remarks>
+        public bool IncludeInBuild
+        {
+            get => Group == null || Group.IncludeInBuild;
+            set
+            {
+                if (Group != null)
+                    Group.IncludeInBuild = value;
+            }
+        }
+
         [SerializeField]
-        string m_CatalogName = "ContentDirectoryCatalog";
+        string m_CatalogName = ResourceManagerRuntimeData.kCatalogAddress;
 
         /// <summary>
         /// Gets or sets the catalog identifier for this content directory group.
@@ -92,70 +119,82 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
 
         [SerializeField]
         [SerializedTypeRestriction(type = typeof(IResourceProvider))]
-        [Tooltip("The provider type to use for loading content directories.")]
-        SerializedType m_ContentDirectoryProviderType;
-
-        /// <summary>
-        /// The provider type to use for loading content directories.
-        /// </summary>
-        public SerializedType ContentDirectoryProviderType
-        {
-            get => m_ContentDirectoryProviderType;
-            set
-            {
-                m_ContentDirectoryProviderType = value;
-                SetDirty(true);
-            }
-        }
-
-        [SerializeField]
-        [SerializedTypeRestriction(type = typeof(IResourceProvider))]
-        [Tooltip("The provider type to use for loading group root assets from content directories.")]
-        SerializedType m_GroupRootAssetProviderType;
-
-        /// <summary>
-        /// The provider type to use for loading group root assets from content directories.
-        /// </summary>
-        public SerializedType GroupRootAssetProviderType
-        {
-            get => m_GroupRootAssetProviderType;
-            set
-            {
-                m_GroupRootAssetProviderType = value;
-                SetDirty(true);
-            }
-        }
-
-        [SerializeField]
-        [SerializedTypeRestriction(type = typeof(IResourceProvider))]
         [Tooltip("The provider type to use for loading entries from group root assets.")]
-        SerializedType m_GroupRootAssetEntryProviderType;
+        SerializedType m_GroupAssetEntryProviderType;
 
         /// <summary>
         /// The provider type to use for loading entries from group root assets.
         /// </summary>
-        public SerializedType GroupRootAssetEntryProviderType
+        public SerializedType GroupAssetEntryProviderType
         {
-            get => m_GroupRootAssetEntryProviderType;
+            get => m_GroupAssetEntryProviderType;
             set
             {
-                m_GroupRootAssetEntryProviderType = value;
+                m_GroupAssetEntryProviderType = value;
                 SetDirty(true);
             }
         }
 
+        [SerializeField]
+        bool m_IncludeLabelsInCatalog = true;
+
+        [SerializeField]
+        bool m_IncludeFolderKeysInCatalog = true;
+
+        [SerializeField]
+        bool m_IncludeAddressesForFolderChildren = true;
+
         /// <summary>
-        /// Gets or sets whether this group should be included in the Addressables build.
-        /// When false, the group's content will not be built or included in the catalog.
+        /// Gets or sets whether labels are included in the content catalog for this content
+        /// directory group. This is required if labels are used at runtime to load assets.
         /// </summary>
-        public bool IncludeInBuild
+        public bool IncludeLabelsInCatalog
         {
-            get => m_IncludeInBuild;
+            get => m_IncludeLabelsInCatalog;
             set
             {
-                if (m_IncludeInBuild != value)
+                if (m_IncludeLabelsInCatalog != value)
                 {
-                    m_IncludeInBuild = value;
+                    m_IncludeLabelsInCatalog = value;
+                    SetDirty(true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether each addressable folder's own address is included as an extra
+        /// shared key on every asset within that folder. This allows loading every asset in an
+        /// addressable folder with a single call, for example
+        /// Addressables.LoadAssetsAsync(folderAddress, ...), similar to Resources.LoadAll.
+        /// </summary>
+        public bool IncludeFolderKeysInCatalog
+        {
+            get => m_IncludeFolderKeysInCatalog;
+            set
+            {
+                if (m_IncludeFolderKeysInCatalog != value)
+                {
+                    m_IncludeFolderKeysInCatalog = value;
+                    SetDirty(true);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether assets inside an addressable folder keep their own individual
+        /// address in the catalog, in addition to the folder's shared key (see
+        /// IncludeFolderKeysInCatalog). GUIDs are unaffected. Only takes effect when
+        /// IncludeFolderKeysInCatalog is enabled. Disable to reduce catalog size when assets
+        /// are always loaded via the folder key.
+        /// </summary>
+        public bool IncludeAddressesForFolderChildren
+        {
+            get => m_IncludeAddressesForFolderChildren;
+            set
+            {
+                if (m_IncludeAddressesForFolderChildren != value)
+                {
+                    m_IncludeAddressesForFolderChildren = value;
                     SetDirty(true);
                 }
             }
@@ -164,7 +203,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
         /// <summary>
         /// Determines whether a given schema will be included in a Schema Driven build. This is particularly useful
         /// if you want to alternate between building AssetBundles and ContentDirectories.
-        /// Only one ICanIncludeInBuildSchema can be enabled on a group at a time. If you attempt to enable multiple at once, an error will be thrown.
+        /// Only one buildable schema can be enabled on a group at a time. If you attempt to enable multiple at once, an error will be thrown.
         /// </summary>
         public override bool IsEnabled
         {
@@ -215,14 +254,19 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             }
 
 #if ENABLE_CONTENT_DIRECTORIES
-            if (m_ContentDirectoryProviderType.Value == null)
-                m_ContentDirectoryProviderType.Value = typeof(ContentDirectoryProvider);
-            if (m_GroupRootAssetProviderType.Value == null)
-                m_GroupRootAssetProviderType.Value = typeof(GroupRootAssetProvider);
-            if (m_GroupRootAssetEntryProviderType.Value == null)
-                m_GroupRootAssetEntryProviderType.Value = typeof(GroupRootAssetEntryProvider);
+            if (m_GroupAssetEntryProviderType.Value == null)
+                m_GroupAssetEntryProviderType.Value = typeof(NativeContentAssetEntryProvider);
 #endif
         }
+
+        static readonly GUIContent k_IncludeLabelsInCatalogContent = new GUIContent("Include Labels in Catalog",
+            "If disabled, labels from this group will not be included in the catalog.  This is useful for reducing the size of the catalog if labels are not needed.");
+
+        static readonly GUIContent k_IncludeFolderKeysInCatalogContent = new GUIContent("Include Folder Keys in Catalog",
+            "If enabled, each addressable folder's address is included as a shared key on every asset in that folder, so the folder's address can be used to load every asset inside it in one call.  If disabled, this is useful for reducing the size of the catalog if whole-folder loading is not needed.");
+
+        static readonly GUIContent k_IncludeAddressesForFolderChildrenContent = new GUIContent("Include Individual Addresses for Folder Assets",
+            "If disabled, assets inside an addressable folder will not have their own individual address included in the catalog -- only the folder's shared key will be included.  GUIDs are unaffected.  Disable this if you always load these assets via the folder to reduce the size of the catalog.");
 
         // Overriding the OnGUI here prevents the Include in Build setting from being shown twice
         // Currently the GUI for it is created in AssetInspectorGUI.DrawIncludeInBuildToggle
@@ -233,6 +277,14 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             BuildAndLoadPathUIHelper.DrawPathPair(this, SchemaSerializedObject,
                 ref m_BuildPath, ref m_LoadPath, ref m_UseCustomPaths, ref m_ShowPaths,
                 ref m_SelectedPathPairIndex);
+            EditorGUILayout.PropertyField(SchemaSerializedObject.FindProperty(nameof(m_IncludeLabelsInCatalog)), k_IncludeLabelsInCatalogContent, true);
+            EditorGUILayout.PropertyField(SchemaSerializedObject.FindProperty(nameof(m_IncludeFolderKeysInCatalog)), k_IncludeFolderKeysInCatalogContent, true);
+            if (m_IncludeFolderKeysInCatalog)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(SchemaSerializedObject.FindProperty(nameof(m_IncludeAddressesForFolderChildren)), k_IncludeAddressesForFolderChildrenContent, true);
+                EditorGUI.indentLevel--;
+            }
             SchemaSerializedObject.ApplyModifiedProperties();
             EditorGUI.EndDisabledGroup();
         }
@@ -253,13 +305,32 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
                     ref m_BuildPath, ref m_LoadPath, ref m_UseCustomPaths, ref m_ShowPaths,
                     ref m_SelectedPathPairIndex);
 
-                if (pathPairModified)
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(SchemaSerializedObject.FindProperty(nameof(m_IncludeLabelsInCatalog)), k_IncludeLabelsInCatalogContent, true);
+                EditorGUILayout.PropertyField(SchemaSerializedObject.FindProperty(nameof(m_IncludeFolderKeysInCatalog)), k_IncludeFolderKeysInCatalogContent, true);
+                if (m_IncludeFolderKeysInCatalog)
+                {
+                    EditorGUI.indentLevel++;
+                    EditorGUILayout.PropertyField(SchemaSerializedObject.FindProperty(nameof(m_IncludeAddressesForFolderChildren)), k_IncludeAddressesForFolderChildrenContent, true);
+                    EditorGUI.indentLevel--;
+                }
+                bool catalogTogglesModified = EditorGUI.EndChangeCheck();
+
+                // Apply pending SerializedProperty edits to this schema's own fields before they
+                // are read (by SetCatalogToggleOptions) to propagate to the other selected schemas.
+                if (catalogTogglesModified)
+                    SchemaSerializedObject.ApplyModifiedProperties();
+
+                if (pathPairModified || catalogTogglesModified)
                 {
                     Undo.SetCurrentGroupName("ContentDirectoryGroupSchemas BuildAndLoad Undos");
                     foreach (var schema in otherContentDirectorySchemas)
                     {
                         Undo.RecordObject(schema, "ContentDirectoryGroupSchema BuildAndLoad" + schema.name);
-                        SetPathPairOption(this, schema);
+                        if (pathPairModified)
+                            SetPathPairOption(this, schema);
+                        if (catalogTogglesModified)
+                            SetCatalogToggleOptions(this, schema);
                     }
                     SchemaSerializedObject.ApplyModifiedProperties();
                     Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
@@ -284,6 +355,26 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             dst.SetDirty(true);
         }
 
+
+        void SetCatalogToggleOptions(ContentDirectoryGroupSchema src, ContentDirectoryGroupSchema dst)
+        {
+            if (dst.m_IncludeLabelsInCatalog != src.m_IncludeLabelsInCatalog)
+                dst.m_IncludeLabelsInCatalog = src.m_IncludeLabelsInCatalog;
+
+            if (dst.m_IncludeFolderKeysInCatalog != src.m_IncludeFolderKeysInCatalog)
+                dst.m_IncludeFolderKeysInCatalog = src.m_IncludeFolderKeysInCatalog;
+
+            if (dst.m_IncludeAddressesForFolderChildren != src.m_IncludeAddressesForFolderChildren)
+                dst.m_IncludeAddressesForFolderChildren = src.m_IncludeAddressesForFolderChildren;
+
+            dst.SetDirty(true);
+        }
+
+        internal int DetermineSelectedIndex(List<ProfileGroupType> groupTypes, int defaultValue, AddressableAssetSettings addressableAssetSettings, HashSet<string> vars)
+        {
+            return BuildAndLoadPathUIHelper.DetermineSelectedIndex(BuildPath, LoadPath, m_UseCustomPaths, groupTypes, defaultValue, addressableAssetSettings, vars);
+        }
+
         /// <summary>
         /// Implementation of ISerializationCallbackReceiver. Used to set callbacks for ProfileValueReference changes and default provider types.
         /// </summary>
@@ -294,12 +385,8 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas
             LoadPath.OnValueChanged -= OnPathValueChanged;
             LoadPath.OnValueChanged += OnPathValueChanged;
 #if ENABLE_CONTENT_DIRECTORIES
-            if (m_ContentDirectoryProviderType.Value == null)
-                m_ContentDirectoryProviderType.Value = typeof(ContentDirectoryProvider);
-            if (m_GroupRootAssetProviderType.Value == null)
-                m_GroupRootAssetProviderType.Value = typeof(GroupRootAssetProvider);
-            if (m_GroupRootAssetEntryProviderType.Value == null)
-                m_GroupRootAssetEntryProviderType.Value = typeof(GroupRootAssetEntryProvider);
+            if (m_GroupAssetEntryProviderType.Value == null)
+                m_GroupAssetEntryProviderType.Value = typeof(NativeContentAssetEntryProvider);
 #endif
         }
 

@@ -68,7 +68,6 @@ namespace AddressableTests.SyncAddressables
             AddressableAssetEntry sceneEntry = settings.CreateOrMoveEntry(sceneGuid, syncGroup);
             sceneEntry.address = m_SceneKey;
 
-#if ENABLE_ASYNC_ASSETBUNDLE_UWR
             AddressableAssetGroup syncGroup3 = settings.CreateGroup("SyncAddressables3", false, false, true,
                 new List<AddressableAssetGroupSchema>(), typeof(BundledAssetGroupSchema));
             syncGroup3.GetSchema<BundledAssetGroupSchema>().BundleNaming = BundledAssetGroupSchema.BundleNamingStyle.OnlyHash;
@@ -109,7 +108,6 @@ namespace AddressableTests.SyncAddressables
                 AddressableAssetEntry prefabDepsEntry = settings.CreateOrMoveEntry(prefabDepsGuid, syncGroupPrefabWithDeps);
                 prefabDepsEntry.address = m_PrefabWithDep;
             }
-#endif
         }
 
 #endif
@@ -354,11 +352,12 @@ namespace AddressableTests.SyncAddressables
             ReleaseOp(requestOp);
         }
 
-        #if ENABLE_JSON_CATALOG
         [Test]
         public void LoadContentCatalogSynchronously_SuccessfullyCompletes_WithValidPath()
         {
-            string catalogPath = m_RuntimeSettingsPath.Replace("settings", "catalog");
+            // Build catalog path from settings path, accounting for the active catalog extension.
+            string settingsPath = m_RuntimeSettingsPath;
+            string catalogPath = settingsPath.Replace("settings", "catalog").Replace(".json", kCatalogExt);
 
             //There's no catalog created for fast mode.  Creating one at this point had issues on CI
             if (catalogPath.StartsWith("GUID:"))
@@ -381,7 +380,7 @@ namespace AddressableTests.SyncAddressables
             bool savedLogAssertState = LogAssert.ignoreFailingMessages;
             LogAssert.ignoreFailingMessages = true;
 
-            var loadCatalogOp = m_Addressables.LoadContentCatalogAsync("not a real path.json", false);
+            var loadCatalogOp = m_Addressables.LoadContentCatalogAsync("not a real path" + kCatalogExt, false);
 
             var result = loadCatalogOp.WaitForCompletion();
             Assert.AreEqual(AsyncOperationStatus.Failed, loadCatalogOp.Status);
@@ -392,8 +391,6 @@ namespace AddressableTests.SyncAddressables
             ReleaseOp(loadCatalogOp);
             LogAssert.ignoreFailingMessages = savedLogAssertState;
         }
-
-#endif
 
         [Test]
         public void InstanceOperation_WithFailedBundleLoad_CompletesSync()
@@ -608,11 +605,48 @@ namespace AddressableTests.SyncAddressables
             get { return TestBuildScriptMode.PackedPlaymode; }
         }
     }
+
+    class SyncAddressableTests_FastMode_Json : SyncAddressablesWithSceneTests
+    {
+        protected override bool UseJsonCatalog => true;
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Fast; }
+        }
+    }
+
+    class SyncAddressableTests_PackedPlaymodeMode_SceneTests_Json : SyncAddressablesWithSceneTests
+    {
+        protected override bool UseJsonCatalog => true;
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
+
+    class SyncAddressableTests_PackedPlaymodeMode_UnityWebRequestTests_Json : SyncAddressableTests_UnityWebRequestTests
+    {
+        protected override bool UseJsonCatalog => true;
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.PackedPlaymode; }
+        }
+    }
 #endif
 
     [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
     class SyncAddressableTests_PackedMode_UnityWebRequestTests : SyncAddressableTests_UnityWebRequestTests
     {
+        protected override TestBuildScriptMode BuildScriptMode
+        {
+            get { return TestBuildScriptMode.Packed; }
+        }
+    }
+
+    [UnityPlatform(exclude = new[] { RuntimePlatform.WindowsEditor, RuntimePlatform.OSXEditor, RuntimePlatform.LinuxEditor })]
+    class SyncAddressableTests_PackedMode_UnityWebRequestTests_Json : SyncAddressableTests_UnityWebRequestTests
+    {
+        protected override bool UseJsonCatalog => true;
         protected override TestBuildScriptMode BuildScriptMode
         {
             get { return TestBuildScriptMode.Packed; }

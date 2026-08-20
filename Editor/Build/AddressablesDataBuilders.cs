@@ -85,9 +85,9 @@ namespace UnityEditor.AddressableAssets.Build
     /// </summary>
     public class AddressablesPlayerBuildResult : AddressableAssetBuildResult
     {
-        internal List<BundleBuildResult> m_AssetBundleBuildResults = new List<BundleBuildResult>();
+        private List<BundleBuildResult> m_AssetBundleBuildResults = new List<BundleBuildResult>();
 
-        internal List<ContentDirectoryBuildResult> m_ContentDirectoryBuildResults = new List<ContentDirectoryBuildResult>();
+        private List<ContentDirectoryBuildResult> m_ContentDirectoryBuildResults = new List<ContentDirectoryBuildResult>();
 
         /// <summary>
         /// Information about a bundle build results.
@@ -134,9 +134,9 @@ namespace UnityEditor.AddressableAssets.Build
             public string ContentDirectoryPath;
 
             /// <summary>
-            /// The list of metadata file paths created for the content directory.
+            /// The path to the build report directory for this content directory build.
             /// </summary>
-            public string ContentDirectoryMetaDataPath;
+            public string BuildReportDirectory;
 
             /// <summary>
             /// The hash of the build manifest for the content directory.
