@@ -19,7 +19,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         [SerializeField]
         private List<ExternalCatalogConfig> externalCatalogs = new List<ExternalCatalogConfig>();
 
-        public override string Name => "Multi-Catalog Build Script";
+        public override string Name => "Multi-Catalog Build Script (AssetBundles)";
 
         public override ISchemaBuilder[] CreateSchemaBuilders()
         {

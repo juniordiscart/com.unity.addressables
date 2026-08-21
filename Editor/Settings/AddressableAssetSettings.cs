@@ -2127,8 +2127,6 @@ namespace UnityEditor.AddressableAssets.Settings
 				m_DataBuilders.Add(CreateScriptAsset<BuildScriptPackedMode>());
 				m_DataBuilders.Add(CreateScriptAsset<BuildScriptMultiCatalogPackedMode>());
                 m_DataBuilders.Add(CreateScriptAsset<BuildScriptSchemaDriven>());
-
-				m_ActivePlayerDataBuilderIndex = 4;
 			}
             else
             {
