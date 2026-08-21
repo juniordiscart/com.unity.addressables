@@ -18,6 +18,8 @@ you require a specific version.
    up-to-date sporadically.
 3. For additional features found in this fork of Addressables, check the [Additional features](#additional-features)
    section.
+4. Bugs that you encounter with general Addressables behaviour should be reported with the appropriate Unity channels.
+   Only issues related to the multi-catalogs features should be reported here.
 
 ## Upgrades notes
 
