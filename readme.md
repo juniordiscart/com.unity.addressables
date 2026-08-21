@@ -47,10 +47,12 @@ your project and assigning these asset groups to the DLC catalog object.
 
 ## Installation
 
-This package is best installed using Unity's Package Manager. Fill in the URL found below in the package manager's input
-field for git-tracked packages:
+This package is best installed using Unity's Package Manager. Fill in one of the URL found below in the package manager's input
+field for git-tracked packages appropriate for your version of Unity:
 
-> <https://github.com/juniordiscart/com.unity.addressables.git>
+* Unity 6+: <https://github.com/juniordiscart/com.unity.addressables.git>
+* Unity 2023.1: <https://github.com/juniordiscart/com.unity.addressables.git#2.9.1_multi-catalog>
+* Unity 2022.3: <https://github.com/juniordiscart/com.unity.addressables.git#1.29.0_multi-catalog>
 
 ### Updating a vanilla installation
 
